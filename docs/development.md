@@ -46,7 +46,7 @@ make check      # всё должно пройти
 | `make schema-check`      | падает, если `openapi.yaml` устарел или у view нет описания для схемы |
 | `make test-backend`      | pytest (нужен `make dev-deps`)                                        |
 | `make fmt`               | отформатировать всё: Prettier, `ruff check --fix`, `ruff format`      |
-| `pnpm test:hooks`        | тесты хуков Claude Code (`node:test`)                                 |
+| `pnpm test:tooling`      | тесты хуков Claude Code и скриптов `scripts/` (`node:test`)           |
 
 Команды Django — из `backend/` через uv: `uv run python manage.py <команда>`. Например,
 `uv run python manage.py makemigrations`, `uv run python manage.py createsuperuser`.
@@ -57,6 +57,21 @@ make check      # всё должно пройти
 | ------------ | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `git commit` | `pre-commit` | lint-staged по изменённым файлам: `*.py` в `backend/` — `ruff check --fix` и `ruff format`; `mjs`, `json`, `md`, `yml` — Prettier. Исправления добавляются в коммит, неисправимые ошибки ruff останавливают коммит |
 | `git commit` | `commit-msg` | commitlint: сообщение коммита в формате Conventional Commits                                                                                                                                                       |
+| `git push`   | `pre-push`   | `scripts/pre-push.mjs`: проверки только тех частей, которые меняют отправляемые коммиты (см. ниже)                                                                                                                 |
+
+Как `pre-push` выбирает проверки:
+
+| Изменены файлы                                                     | Что запускается                                                       |
+| ------------------------------------------------------------------ | --------------------------------------------------------------------- |
+| `backend/**`                                                       | `make dev-deps check-backend` — поднимет Postgres, если он не запущен |
+| `.claude/hooks/**`, `scripts/**`                                   | `pnpm test:tooling`                                                   |
+| `Makefile`, `docker-compose.yml`, `package.json`, `pnpm-lock.yaml` | проверки всех частей                                                  |
+| только документация                                                | ничего                                                                |
+
+Отправляемые коммиты — от того, что уже есть на remote, до отправляемого. Ветка, которой
+ещё нет на remote, сравнивается с тем, что есть на любом remote; если remote пуст —
+проверяется всё. Новая часть репозитория (frontend, e2e) добавляется в `PARTS` в
+`scripts/pre-push.mjs` вместе со строкой в `pre-push.test.mjs`.
 
 Хуки не обходим (`--no-verify`): если проверка мешает, исправляем причину или обсуждаем
 правило.
@@ -139,5 +154,10 @@ docs: describe pre-push hook
   проверяются линтером (сгенерированный код). В тестах разрешены `assert` и пароли в коде.
 
 ## Нюансы
+
+- `pre-push` проверяет **рабочую копию**, а не содержимое отправляемых коммитов: так
+  устроены git-хуки. Незакоммиченные изменения могут как уронить push, так и замаскировать
+  ошибку в коммите. Перед push лучше иметь чистый `git status`; полную проверку именно
+  коммитов делает CI.
 
 - `docs/task.md` — текст задания как есть; Prettier его не трогает (`.prettierignore`).

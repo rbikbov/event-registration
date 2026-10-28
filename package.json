@@ -9,7 +9,7 @@
   "scripts": {
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test:hooks": "node --test '.claude/hooks/*.test.mjs'",
+    "test:tooling": "node --test '.claude/hooks/*.test.mjs' 'scripts/*.test.mjs'",
     "prepare": "husky"
   },
   "lint-staged": {

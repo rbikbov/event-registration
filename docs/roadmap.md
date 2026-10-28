@@ -22,7 +22,7 @@
 - [x] Хуки Claude Code: защита от обхода git-хуков, форматирование после правки
 - [x] Backend: Django, своя модель пользователя, ruff, mypy, pytest; Postgres в compose; Makefile
 - [x] Backend: health endpoint, OpenAPI-схема и проверка её актуальности
-- [ ] Хук `pre-push`: проверки затронутой части
+- [x] Хук `pre-push`: проверки затронутой части
 - [ ] Правила backend и миграций, хук защиты закоммиченных миграций
 - [ ] Frontend: Vue, страница health, ESLint, vue-tsc, Vitest, FSD-каркас
 - [ ] Весь стек в docker compose (backend, frontend, mailpit)

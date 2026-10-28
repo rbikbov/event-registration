@@ -15,6 +15,7 @@
 ```text
 backend/              Django + DRF: config/ — настройки и URL, accounts/ — модель пользователя
 Makefile              все команды (make help); docker-compose.yml — сервисы
+scripts/              скрипты репозитория (pre-push.mjs) с тестами
 docs/task.md          текст задания — не редактируется
 docs/decisions.md     лог решений с временем
 docs/development.md   руководство разработчика: установка, команды, проверки, нюансы
