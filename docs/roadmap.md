@@ -12,7 +12,7 @@
 
 Как вести этот файл — skill `session-handoff` (`.claude/skills/session-handoff/`).
 
-## Фаза 0. Каркас — в работе
+## Фаза 0. Каркас — готова
 
 Критерии: `make check` и e2e smoke проходят локально и в CI; хуки работают; по
 `docs/development.md` проект поднимается с нуля.
@@ -28,11 +28,11 @@
 - [x] Frontend: Vue, страница health, ESLint, vue-tsc, Vitest, FSD-каркас
 - [x] Весь стек в docker compose (postgres, backend, frontend), `make up`; README с запуском
 - [x] e2e smoke на Playwright
-- [x] CI в GitHub Actions (на GitHub ещё не запускался — нет remote)
+- [x] CI в GitHub Actions; первый зелёный прогон на GitHub — 2026-10-28
 - [x] Правила агента для frontend и e2e; skills `anti-slop-review`, `feature-workflow`,
       `fsd-frontend`, агент `reviewer` (`api-change` — с первым доменным эндпоинтом, фаза 1)
 
-## Фаза 1. Регистрация, лист ожидания, отказ — не начата
+## Фаза 1. Регистрация, лист ожидания, отказ — в работе
 
 Spec и задачи — `docs/features/registration/`. Критерии: организатор входит и создаёт событие;
 повторная регистрация не создаёт
