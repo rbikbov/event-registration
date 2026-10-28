@@ -1,0 +1,47 @@
+openapi: 3.0.3
+info:
+  title: Event registration API
+  version: 0.1.0
+paths:
+  /api/health/:
+    get:
+      operationId: api_health_retrieve
+      description: Liveness and database check for compose healthchecks, e2e and the
+        frontend.
+      tags:
+      - api
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+          description: ''
+        '503':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+          description: ''
+components:
+  schemas:
+    Health:
+      type: object
+      properties:
+        status:
+          $ref: '#/components/schemas/HealthStateEnum'
+        database:
+          $ref: '#/components/schemas/HealthStateEnum'
+      required:
+      - database
+      - status
+    HealthStateEnum:
+      enum:
+      - ok
+      - error
+      type: string
+      description: |-
+        * `ok` - ok
+        * `error` - error

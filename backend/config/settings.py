@@ -109,4 +109,5 @@ SPECTACULAR_SETTINGS = {
     "TITLE": "Event registration API",
     "VERSION": "0.1.0",
     "SERVE_INCLUDE_SCHEMA": False,
+    "ENUM_NAME_OVERRIDES": {"HealthStateEnum": "config.health.HEALTH_STATES"},
 }

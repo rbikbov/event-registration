@@ -33,18 +33,20 @@ make check      # всё должно пройти
 Основной вход — `make`; `make help` печатает список целей с описанием. Если команда
 появилась — она должна быть в Makefile и в этой таблице.
 
-| Команда                  | Что делает                                                       |
-| ------------------------ | ---------------------------------------------------------------- |
-| `make install`           | установить зависимости Node и backend, git-хуки                  |
-| `make dev-deps`          | поднять Postgres в Docker и дождаться готовности                 |
-| `make check`             | все линтеры, проверки типов и тесты                              |
-| `make check-backend`     | то же только для backend                                         |
-| `make lint-backend`      | ruff: линтер и проверка форматирования                           |
-| `make typecheck-backend` | mypy (strict)                                                    |
-| `make migrations-check`  | падает, если модели изменены, а миграция не создана              |
-| `make test-backend`      | pytest (нужен `make dev-deps`)                                   |
-| `make fmt`               | отформатировать всё: Prettier, `ruff check --fix`, `ruff format` |
-| `pnpm test:hooks`        | тесты хуков Claude Code (`node:test`)                            |
+| Команда                  | Что делает                                                            |
+| ------------------------ | --------------------------------------------------------------------- |
+| `make install`           | установить зависимости Node и backend, git-хуки                       |
+| `make dev-deps`          | поднять Postgres в Docker и дождаться готовности                      |
+| `make check`             | все линтеры, проверки типов и тесты                                   |
+| `make check-backend`     | то же только для backend                                              |
+| `make lint-backend`      | ruff: линтер и проверка форматирования                                |
+| `make typecheck-backend` | mypy (strict)                                                         |
+| `make migrations-check`  | падает, если модели изменены, а миграция не создана                   |
+| `make schema`            | пересобрать `backend/openapi.yaml` после изменения API                |
+| `make schema-check`      | падает, если `openapi.yaml` устарел или у view нет описания для схемы |
+| `make test-backend`      | pytest (нужен `make dev-deps`)                                        |
+| `make fmt`               | отформатировать всё: Prettier, `ruff check --fix`, `ruff format`      |
+| `pnpm test:hooks`        | тесты хуков Claude Code (`node:test`)                                 |
 
 Команды Django — из `backend/` через uv: `uv run python manage.py <команда>`. Например,
 `uv run python manage.py makemigrations`, `uv run python manage.py createsuperuser`.
@@ -124,6 +126,15 @@ docs: describe pre-push hook
 - mypy в режиме `strict` с плагинами django-stubs и drf-stubs. Generic-классы Django
   (`UserAdmin[User]`) работают в runtime благодаря `django_stubs_ext.monkeypatch()` в
   настройках. `# type: ignore` — только с кодом ошибки и причиной в комментарии.
+- API описан OpenAPI-схемой `backend/openapi.yaml` (drf-spectacular), она закоммичена. По
+  ней фронтенд получает типы. После изменения serializer'а, view или URL — `make schema` и
+  закоммитить схему вместе с кодом; `make schema-check` (входит в `make check`) иначе
+  упадёт и покажет diff. Генерация идёт с `--fail-on-warn`: view без описания ответа или
+  неоднозначное имя enum — ошибка, а не тихий пробел в схеме. Нестандартные ответы
+  описываются через `@extend_schema` (пример — `config/health.py`). Prettier схему не
+  трогает (`.prettierignore`), иначе она никогда не совпала бы с генерацией.
+- `GET /api/health/` — проверка процесса и БД: 200 `{"status": "ok", "database": "ok"}` или
+  503, если БД недоступна. Используется healthcheck'ами compose, e2e и фронтендом.
 - ruff: правила `E, F, W, I, B, UP, DJ, S, SIM, RUF`. Миграции форматируются, но не
   проверяются линтером (сгенерированный код). В тестах разрешены `assert` и пароли в коде.
 
