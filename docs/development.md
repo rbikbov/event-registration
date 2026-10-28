@@ -251,8 +251,22 @@ make dev-frontend   # терминал 2: http://localhost:5173
 
 - [db-migrations.md](rules/db-migrations.md) — миграции БД.
 
-Правила для кода папки — в её `AGENTS.md` (например, [backend/AGENTS.md](../backend/AGENTS.md)).
-Их полезно прочитать и человеку: это те же договорённости, что действуют для агента.
+Правила для кода папки — в её `AGENTS.md`. Их полезно прочитать и человеку: это те же
+договорённости, что действуют для агента.
+
+| Файл                                                                      | О чём                                                                      |
+| ------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| [AGENTS.md](../AGENTS.md)                                                 | правила для всего репозитория: лог решений, коммиты, язык, проверки        |
+| [backend/AGENTS.md](../backend/AGENTS.md)                                 | тонкие view и `services.py`, env, API и схема, тесты, время, логи          |
+| [frontend/AGENTS.md](../frontend/AGENTS.md)                               | слои FSD, сеть через `shared/api`, состояния UI, имена, тесты              |
+| [frontend/src/shared/api/AGENTS.md](../frontend/src/shared/api/AGENTS.md) | клиент API, `AppError`, сгенерированные типы                               |
+| [e2e/AGENTS.md](../e2e/AGENTS.md)                                         | `await`, ожидания без `sleep`, локаторы, независимые данные, два контекста |
+
+Процедуры (как сделать X по шагам) — skills в `.claude/skills/`: `session-handoff`,
+`feature-workflow`, `fsd-frontend`, `anti-slop-review`; агент независимого ревью —
+`.claude/agents/reviewer.md`. Их источник — шаблон
+[rbikbov/frontend-starter](https://github.com/rbikbov/frontend-starter), адаптированный
+под Django + Vue. Шаблоны spec и задач фазы — `docs/features/_template/`.
 
 ## Нюансы
 

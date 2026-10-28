@@ -28,8 +28,8 @@
 - [x] Весь стек в docker compose (postgres, backend, frontend), `make up`; README с запуском
 - [x] e2e smoke на Playwright
 - [x] CI в GitHub Actions (на GitHub ещё не запускался — нет remote)
-- [ ] Правила агента для frontend и e2e; skills `api-change`,
-      `anti-slop-review`, `feature-workflow`, `fsd-frontend`, агент `reviewer`
+- [x] Правила агента для frontend и e2e; skills `anti-slop-review`, `feature-workflow`,
+      `fsd-frontend`, агент `reviewer` (`api-change` — с первым доменным эндпоинтом, фаза 1)
 
 ## Фаза 1. Регистрация, лист ожидания, отказ — не начата
 

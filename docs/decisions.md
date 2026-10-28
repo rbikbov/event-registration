@@ -227,3 +227,11 @@ test:tooling`; общие файлы — Makefile, compose, package.json, lock �
   Conventional Commits, а локально формат проверяет хук `commit-msg`. Тесты хуков и скриптов
   вошли в `make check` (`check-tooling`). Workflow проверен actionlint; на GitHub не
   запускался — remote ещё нет.
+- **23:00** — правила для frontend (`frontend/AGENTS.md`, `frontend/src/shared/api/AGENTS.md`) и
+  e2e (`e2e/AGENTS.md`). Из шаблона перенесены и адаптированы: `fsd-frontend` (сокращён, на
+  Vue: `provide`/`inject` и composables вместо React context и hooks; компоненты —
+  PascalCase по стилю Vue, остальные файлы — kebab-case), `feature-workflow` (без PRD, spec и
+  tasks только для крупных механизмов — по решению от 21:25), `anti-slop-review` и агент
+  `reviewer` (Django + Vue: гонки, транзакции, миграции, контракт API). Шаблоны spec и задач —
+  `docs/features/_template/`. Skill `api-change` — с первым доменным эндпоинтом в фазе 1,
+  когда процедуру будет на чём показать.
