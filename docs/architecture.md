@@ -90,7 +90,10 @@
 - `POST /api/events/{id}/registrations/` `{email, name}` → `{status, position?}`; кода билета
   в ответе нет — он приходит только письмом, иначе любой получил бы чужой билет, введя чужой
   email
-- `GET /api/tickets/{manage_token}/`, `POST /api/tickets/{manage_token}/cancel/`
+- `POST /api/tickets/{manage_token}/cancel/` — отказ (фаза 1: API и тесты, токен в тестах
+  берётся из БД — пользователю он приходит только письмом в фазе 2)
+- `GET /api/tickets/{manage_token}/` — билет: код, статус, номер в листе (фаза 2, вместе с
+  экраном билета)
 - `GET /api/events/{id}/stream/` — SSE: свободные места
 
 **План — организатор, сессия + CSRF (фазы 1, 3, 4, 5):**

@@ -6,7 +6,8 @@
 папок (подгружаются при работе в папке) и в `docs/rules/`.
 
 Команды (`make help`), инструменты и что проверяют хуки — [docs/development.md](docs/development.md).
-Перед тем как сказать, что задача готова, — `make check`.
+Перед тем как сказать, что задача готова, — `make check` (нужны запущенный Postgres —
+`make dev-deps` — и сеть: `check-ci` сверяет теги actions с GitHub).
 Как устроена система и что запланировано — [docs/architecture.md](docs/architecture.md). Где остановилась работа —
 [docs/roadmap.md](docs/roadmap.md); как вести его — skill `session-handoff`.
 
