@@ -15,5 +15,45 @@ services:
       timeout: 3s
       retries: 15
 
+  backend:
+    build: ./backend
+    environment:
+      POSTGRES_HOST: postgres
+      # The frontend dev server proxies /api with the backend service name as Host.
+      DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1,backend
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health/')",
+        ]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    environment:
+      API_PROXY_TARGET: http://backend:8000
+    ports:
+      - "${FRONTEND_PORT:-5173}:5173"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:5173/"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
 volumes:
   postgres-data:

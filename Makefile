@@ -7,6 +7,18 @@ FRONTEND := cd frontend &&
 help: ## List targets
 	@grep -hE '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-20s %s\n", $$1, $$2}'
 
+.PHONY: up
+up: ## Build and start the whole stack; open http://localhost:5173
+	docker compose up -d --build --wait
+
+.PHONY: down
+down: ## Stop the stack (data in the postgres-data volume is kept)
+	docker compose down
+
+.PHONY: logs
+logs: ## Follow logs of all services
+	docker compose logs -f
+
 .PHONY: dev-deps
 dev-deps: ## Start services needed for local development and tests (Postgres)
 	docker compose up -d --wait postgres

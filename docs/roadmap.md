@@ -25,7 +25,7 @@
 - [x] Хук `pre-push`: проверки затронутой части
 - [x] Правила backend и миграций, хук защиты закоммиченных миграций
 - [x] Frontend: Vue, страница health, ESLint, vue-tsc, Vitest, FSD-каркас
-- [ ] Весь стек в docker compose (backend, frontend, mailpit)
+- [x] Весь стек в docker compose (postgres, backend, frontend), `make up`; README с запуском
 - [ ] e2e smoke на Playwright
 - [ ] CI в GitHub Actions
 - [ ] Правила агента для frontend и e2e; skills `api-change`,
@@ -47,7 +47,7 @@ Email участника нормализуется только по регис
 
 Spec и задачи — `docs/features/emails/`. Критерии: письма `ticket`, `waitlisted`,
 `promoted` создаются в транзакции изменения и доставляются воркером в Mailpit; повторы при
-ошибке SMTP.
+ошибке SMTP. Mailpit и сервис `worker` добавляются в compose в этой фазе.
 
 ## Фаза 3. Чекин и статистика организатора — не начата
 

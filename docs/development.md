@@ -35,6 +35,9 @@ make check      # всё должно пройти
 
 | Команда                   | Что делает                                                                               |
 | ------------------------- | ---------------------------------------------------------------------------------------- |
+| `make up`                 | весь стек в Docker: postgres, backend, frontend; <http://localhost:5173>                 |
+| `make down`               | остановить стек (данные БД сохраняются)                                                  |
+| `make logs`               | логи всех сервисов                                                                       |
 | `make install`            | установить зависимости Node и backend, git-хуки                                          |
 | `make dev-deps`           | поднять Postgres в Docker и дождаться готовности                                         |
 | `make check`              | всё: форматирование, линтеры, проверки типов, схема, тесты backend и frontend            |
@@ -165,6 +168,19 @@ docs: describe pre-push hook
 - ruff: правила `E, F, W, I, B, UP, DJ, S, SIM, RUF`. Миграции форматируются, но не
   проверяются линтером (сгенерированный код). В тестах разрешены `assert` и пароли в коде.
 
+## Весь стек в Docker
+
+`make up` собирает образы и поднимает `postgres`, `backend`, `frontend`, дожидаясь их
+healthcheck (`--wait`); `make down` останавливает, данные БД остаются в томе
+`postgres-data` (удалить: `docker compose down -v`). `make logs` — логи всех сервисов.
+
+- `backend/Dockerfile`: Python 3.12 + uv, зависимости из `uv.lock` без dev-группы; при старте
+  `migrate`, затем uvicorn (ASGI — понадобится для SSE).
+- `frontend/Dockerfile`: собирается из корня репозитория (там pnpm workspace и lock-файл),
+  запускает dev-сервер Vite с `API_PROXY_TARGET=http://backend:8000`.
+- `make up` и локальные `make dev-*` занимают одни и те же порты (5173, 8000) — одновременно
+  не запускать или поменять порты переменными `FRONTEND_PORT`, `BACKEND_PORT`.
+
 ## Локальная разработка
 
 ```sh
@@ -207,6 +223,12 @@ make dev-frontend   # терминал 2: http://localhost:5173
 Их полезно прочитать и человеку: это те же договорённости, что действуют для агента.
 
 ## Нюансы
+
+- Healthcheck фронтенда обращается к `127.0.0.1`, а не к `localhost`: в Alpine `localhost`
+  резолвится в IPv6 `::1`, а Vite слушает только IPv4 — проверка падала при работающем
+  сервере.
+- Под uvicorn Django не раздаёт статику, поэтому стили админки (`/admin/`) в `make up` не
+  грузятся; под `make dev-backend` (`runserver`) — грузятся.
 
 - TypeScript закреплён на `~6.0`: typescript-eslint поддерживает TypeScript `<6.1`, а
   TypeScript 7 (компилятор на Go) — другой API, его пока не поддерживают ни typescript-eslint,

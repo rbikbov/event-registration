@@ -207,3 +207,9 @@ test:tooling`; общие файлы — Makefile, compose, package.json, lock �
   Prettier), хук агента после правки (Prettier + ESLint, ошибки — агенту), `pre-push`
   (`frontend/` → `make check-frontend`), `make check` (+ `format-check`). Добавлены
   `make dev-backend` и `make dev-frontend` для локальной разработки.
+- **22:53** — весь стек в compose: `postgres`, `backend` (uvicorn, `migrate` при старте),
+  `frontend` (dev-сервер Vite), у всех healthcheck; `make up` = `docker compose up -d
+--build --wait`. Проверяющему нужен только Docker. Mailpit и `worker` — в фазе 2, когда у
+  них появятся потребители. Frontend в контейнере — dev-сервер, а не сборка за nginx: прокси
+  `/api` уже настроен в Vite, а продакшен-раздача вне объёма задания. Известное ограничение:
+  под uvicorn не раздаётся статика админки — отложено, пока админка не нужна.
