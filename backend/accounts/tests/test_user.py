@@ -22,6 +22,15 @@ def test_email_is_unique_regardless_of_case() -> None:
         User.objects.create_user(email="ORGANIZER@example.com", password="secret-pass-2")
 
 
+def test_dots_in_local_part_make_a_different_email() -> None:
+    # RFC 5321 leaves the local part to the receiving host; dot-insensitivity is a Gmail
+    # rule, not a standard one, so only the case is normalized.
+    first = User.objects.create_user(email="organizer@example.com", password="secret-pass-1")
+    second = User.objects.create_user(email="orga.nizer@example.com", password="secret-pass-1")
+
+    assert first.pk != second.pk
+
+
 def test_authenticate_by_email_in_any_case() -> None:
     User.objects.create_user(email="organizer@example.com", password="secret-pass-1")
 
