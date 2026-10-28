@@ -15,6 +15,7 @@
 ```text
 backend/              Django + DRF: config/ — настройки и URL, accounts/ — модель пользователя.
                       Правила: backend/AGENTS.md
+frontend/              Vue 3 + Vite, слои FSD в src/: app, pages, shared
 Makefile              все команды (make help); docker-compose.yml — сервисы
 scripts/              скрипты репозитория (pre-push.mjs) с тестами
 docs/task.md          текст задания — не редактируется

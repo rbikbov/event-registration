@@ -17,6 +17,10 @@
       "uv run --project backend ruff check --fix",
       "uv run --project backend ruff format"
     ],
+    "frontend/**/*.{ts,vue,js}": [
+      "pnpm --dir frontend exec eslint --fix",
+      "prettier --write"
+    ],
     "*.{mjs,json,md,yml,yaml}": [
       "prettier --write"
     ]
@@ -27,5 +31,11 @@
     "husky": "^9.1.7",
     "lint-staged": "^17.6.0",
     "prettier": "^3.9.10"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "unrs-resolver",
+      "vue-demi"
+    ]
   }
 }

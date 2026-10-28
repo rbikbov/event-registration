@@ -34,6 +34,25 @@ if (PRETTIER_EXTENSIONS.has(extname(file))) {
   if (!prettier.ok) fail(`prettier failed on ${file}:\n${prettier.output}`);
 }
 
+const FRONTEND_EXTENSIONS = new Set([".ts", ".vue", ".js"]);
+
+if (FRONTEND_EXTENSIONS.has(extname(file)) && relative(root, file).startsWith("frontend/")) {
+  const prettier = run(join(root, "node_modules/.bin/prettier"), [
+    "--write",
+    "--log-level",
+    "warn",
+    file,
+  ]);
+  if (!prettier.ok) fail(`prettier failed on ${file}:\n${prettier.output}`);
+  // ESLint runs from frontend/ so it picks up frontend/eslint.config.js.
+  const eslint = spawnSync(join(root, "frontend/node_modules/.bin/eslint"), ["--fix", file], {
+    cwd: join(root, "frontend"),
+    encoding: "utf8",
+  });
+  if (eslint.status !== 0)
+    fail(`eslint found problems in ${file}:\n${eslint.stdout}${eslint.stderr}`);
+}
+
 if (extname(file) === ".py" && relative(root, file).startsWith("backend/")) {
   const ruff = ["run", "--project", "backend", "ruff"];
   run("uv", [...ruff, "format", "--quiet", file]);

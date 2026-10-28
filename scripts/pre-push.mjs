@@ -8,10 +8,18 @@ import { pathToFileURL } from "node:url";
 const ZERO_SHA = /^0+$/;
 
 // A change in any of these affects every part, so everything is checked.
-const SHARED = [/^Makefile$/, /^docker-compose\.yml$/, /^package\.json$/, /^pnpm-lock\.yaml$/];
+const SHARED = [
+  /^Makefile$/,
+  /^docker-compose\.yml$/,
+  /^package\.json$/,
+  /^pnpm-lock\.yaml$/,
+  /^pnpm-workspace\.yaml$/,
+  /^\.prettierrc\.json$/,
+];
 
 const PARTS = [
   { name: "backend", match: /^backend\//, command: "make dev-deps check-backend" },
+  { name: "frontend", match: /^frontend\//, command: "make check-frontend" },
   {
     name: "Claude Code hooks and scripts",
     match: /^(\.claude\/hooks|scripts)\//,

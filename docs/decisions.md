@@ -188,3 +188,22 @@ test:tooling`; общие файлы — Makefile, compose, package.json, lock �
   Хук `guard-migrations.mjs` блокирует правку закоммиченных миграций через Edit/Write;
   незакоммиченную можно пересоздать. Ограничение: правку через shell хук не видит — указано в
   `docs/development.md`.
+- **22:49** — каркас frontend: Vue 3 + Vite 8 + vue-router + @tanstack/vue-query, pnpm workspace
+  (`frontend/`). Клиент API — openapi-fetch с типами от openapi-typescript: типизированные
+  вызовы без ручных обёрток и без zod на каждый ответ (решение от 21:42). `unwrap()` переводит
+  ответ в данные или `AppError` с `kind` по статусу, повтор запросов — только для `network`
+  и `server`. Слои FSD без префиксов (`app`, `pages`, `shared`; остальные — с первым
+  срезом), границы проверяет eslint-plugin-boundaries — проверено на намеренных нарушениях.
+  Тесты — Vitest + @vue/test-utils + MSW, запрос без обработчика роняет тест.
+- **22:49** — TypeScript закреплён на `~6.0.3`. Почему: `latest` уже 7.0 (компилятор на Go с
+  другим API), а typescript-eslint поддерживает `<6.1`; vue-tsc тоже работает через JS API.
+  `@types/node` — `^22` под Node 22 из `.nvmrc`.
+- **22:49** — тексты интерфейса — по-русски (заказчик и проверяющие русскоязычные); код,
+  идентификаторы и логи — по-английски, как и раньше.
+- **22:49** — `make schema` пересобирает и `openapi.yaml`, и `schema.d.ts`; `make schema-check`
+  сверяет оба с генерацией. Проверка сразу поймала реальную ошибку: Prettier переформатировал
+  сгенерированный `schema.d.ts` раньше, чем файл попал в `.prettierignore`.
+- **22:49** — frontend подключён ко всем уровням проверок: lint-staged (`eslint --fix` +
+  Prettier), хук агента после правки (Prettier + ESLint, ошибки — агенту), `pre-push`
+  (`frontend/` → `make check-frontend`), `make check` (+ `format-check`). Добавлены
+  `make dev-backend` и `make dev-frontend` для локальной разработки.

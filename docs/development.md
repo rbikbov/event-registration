@@ -33,44 +33,52 @@ make check      # всё должно пройти
 Основной вход — `make`; `make help` печатает список целей с описанием. Если команда
 появилась — она должна быть в Makefile и в этой таблице.
 
-| Команда                  | Что делает                                                            |
-| ------------------------ | --------------------------------------------------------------------- |
-| `make install`           | установить зависимости Node и backend, git-хуки                       |
-| `make dev-deps`          | поднять Postgres в Docker и дождаться готовности                      |
-| `make check`             | все линтеры, проверки типов и тесты                                   |
-| `make check-backend`     | то же только для backend                                              |
-| `make lint-backend`      | ruff: линтер и проверка форматирования                                |
-| `make typecheck-backend` | mypy (strict)                                                         |
-| `make migrations-check`  | падает, если модели изменены, а миграция не создана                   |
-| `make schema`            | пересобрать `backend/openapi.yaml` после изменения API                |
-| `make schema-check`      | падает, если `openapi.yaml` устарел или у view нет описания для схемы |
-| `make test-backend`      | pytest (нужен `make dev-deps`)                                        |
-| `make fmt`               | отформатировать всё: Prettier, `ruff check --fix`, `ruff format`      |
-| `pnpm test:tooling`      | тесты хуков Claude Code и скриптов `scripts/` (`node:test`)           |
+| Команда                   | Что делает                                                                               |
+| ------------------------- | ---------------------------------------------------------------------------------------- |
+| `make install`            | установить зависимости Node и backend, git-хуки                                          |
+| `make dev-deps`           | поднять Postgres в Docker и дождаться готовности                                         |
+| `make check`              | всё: форматирование, линтеры, проверки типов, схема, тесты backend и frontend            |
+| `make check-backend`      | то же только для backend                                                                 |
+| `make lint-backend`       | ruff: линтер и проверка форматирования                                                   |
+| `make typecheck-backend`  | mypy (strict)                                                                            |
+| `make migrations-check`   | падает, если модели изменены, а миграция не создана                                      |
+| `make schema`             | пересобрать `backend/openapi.yaml` и типы фронтенда `schema.d.ts` после изменения API    |
+| `make schema-check`       | падает, если `openapi.yaml` или `schema.d.ts` устарели или у view нет описания для схемы |
+| `make test-backend`       | pytest (нужен `make dev-deps`)                                                           |
+| `make check-frontend`     | ESLint, vue-tsc, Vitest                                                                  |
+| `make lint-frontend`      | ESLint: правила на типах и границы слоёв FSD                                             |
+| `make typecheck-frontend` | vue-tsc                                                                                  |
+| `make test-frontend`      | Vitest: unit- и компонентные тесты                                                       |
+| `make format-check`       | Prettier: проверка форматирования всех файлов                                            |
+| `make dev-backend`        | применить миграции и запустить backend на :8000 (нужен `make dev-deps`)                  |
+| `make dev-frontend`       | dev-сервер фронтенда на :5173, `/api` проксируется на :8000                              |
+| `make fmt`                | отформатировать всё: `eslint --fix`, Prettier, `ruff check --fix`, `ruff format`         |
+| `pnpm test:tooling`       | тесты хуков Claude Code и скриптов `scripts/` (`node:test`)                              |
 
 Команды Django — из `backend/` через uv: `uv run python manage.py <команда>`. Например,
 `uv run python manage.py makemigrations`, `uv run python manage.py createsuperuser`.
 
 ## Что проверяется автоматически
 
-| Когда        | Хук          | Что проверяет                                                                                                                                                                                                      |
-| ------------ | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `git commit` | `pre-commit` | lint-staged по изменённым файлам: `*.py` в `backend/` — `ruff check --fix` и `ruff format`; `mjs`, `json`, `md`, `yml` — Prettier. Исправления добавляются в коммит, неисправимые ошибки ruff останавливают коммит |
-| `git commit` | `commit-msg` | commitlint: сообщение коммита в формате Conventional Commits                                                                                                                                                       |
-| `git push`   | `pre-push`   | `scripts/pre-push.mjs`: проверки только тех частей, которые меняют отправляемые коммиты (см. ниже)                                                                                                                 |
+| Когда        | Хук          | Что проверяет                                                                                                                                                                                                                                                                    |
+| ------------ | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `git commit` | `pre-commit` | lint-staged по изменённым файлам: `*.py` в `backend/` — `ruff check --fix` и `ruff format`; `ts`, `vue`, `js` во `frontend/` — `eslint --fix` и Prettier; `mjs`, `json`, `md`, `yml` — Prettier. Исправления добавляются в коммит, неисправимые ошибки ruff останавливают коммит |
+| `git commit` | `commit-msg` | commitlint: сообщение коммита в формате Conventional Commits                                                                                                                                                                                                                     |
+| `git push`   | `pre-push`   | `scripts/pre-push.mjs`: проверки только тех частей, которые меняют отправляемые коммиты (см. ниже)                                                                                                                                                                               |
 
 Как `pre-push` выбирает проверки:
 
-| Изменены файлы                                                     | Что запускается                                                       |
-| ------------------------------------------------------------------ | --------------------------------------------------------------------- |
-| `backend/**`                                                       | `make dev-deps check-backend` — поднимет Postgres, если он не запущен |
-| `.claude/hooks/**`, `scripts/**`                                   | `pnpm test:tooling`                                                   |
-| `Makefile`, `docker-compose.yml`, `package.json`, `pnpm-lock.yaml` | проверки всех частей                                                  |
-| только документация                                                | ничего                                                                |
+| Изменены файлы                                                                                                | Что запускается                                                       |
+| ------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| `backend/**`                                                                                                  | `make dev-deps check-backend` — поднимет Postgres, если он не запущен |
+| `frontend/**`                                                                                                 | `make check-frontend`                                                 |
+| `.claude/hooks/**`, `scripts/**`                                                                              | `pnpm test:tooling`                                                   |
+| `Makefile`, `docker-compose.yml`, `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `.prettierrc.json` | проверки всех частей                                                  |
+| только документация                                                                                           | ничего                                                                |
 
 Отправляемые коммиты — от того, что уже есть на remote, до отправляемого. Ветка, которой
 ещё нет на remote, сравнивается с тем, что есть на любом remote; если remote пуст —
-проверяется всё. Новая часть репозитория (frontend, e2e) добавляется в `PARTS` в
+проверяется всё. Новая часть репозитория (например, e2e) добавляется в `PARTS` в
 `scripts/pre-push.mjs` вместе со строкой в `pre-push.test.mjs`.
 
 Хуки не обходим (`--no-verify`): если проверка мешает, исправляем причину или обсуждаем
@@ -157,6 +165,38 @@ docs: describe pre-push hook
 - ruff: правила `E, F, W, I, B, UP, DJ, S, SIM, RUF`. Миграции форматируются, но не
   проверяются линтером (сгенерированный код). В тестах разрешены `assert` и пароли в коде.
 
+## Локальная разработка
+
+```sh
+make dev-deps       # Postgres
+make dev-backend    # терминал 1: backend на :8000
+make dev-frontend   # терминал 2: http://localhost:5173
+```
+
+Фронтенд и API открываются с одного адреса (:5173): Vite проксирует `/api` на backend.
+Поэтому cookie сессии и `EventSource` работают без CORS. Адрес backend для прокси —
+переменная `API_PROXY_TARGET` (по умолчанию `http://localhost:8000`).
+
+## Frontend
+
+- Vue 3 + Vite + TypeScript (`strict`, `noUncheckedIndexedAccess`), vue-router,
+  `@tanstack/vue-query` для серверных данных. pnpm workspace: зависимости ставит
+  `pnpm install` в корне.
+- Слои Feature-Sliced Design в `frontend/src/`: `app` (приложение, роутер, QueryClient) →
+  `pages` → `widgets` → `features` → `entities` → `shared`. Импорт — только в нижние слои, в
+  чужой срез — только через его `index.ts`. Проверяет ESLint (`eslint-plugin-boundaries`).
+  Слои `widgets`, `features`, `entities` появятся с первым срезом — пустыми не создаются.
+- API: `api` из `@/shared/api` — клиент openapi-fetch, типизированный схемой из
+  `backend/openapi.yaml` (`src/shared/api/schema.d.ts`, генерируется `make schema`, руками
+  не правится). Несуществующий путь, метод или поле — ошибка vue-tsc. `unwrap()` превращает
+  ответ в данные или `AppError`; выше `shared/api` ошибки различаются только по `kind`
+  (`network`, `unauthorized`, `not_found`, `conflict`, `validation`, `server`, …).
+- Повтор запросов (vue-query) — только для `network` и `server`: 4xx повтор не исправит.
+- Тесты: Vitest + `@vue/test-utils` в jsdom, сеть — MSW. Каждый тест объявляет свою сеть через
+  `server.use()`; запрос без обработчика роняет тест (`onUnhandledFrame: "error"`).
+- ESLint с правилами на типах: `no-floating-promises`, `no-misused-promises`,
+  `switch-exhaustiveness-check`, `consistent-type-imports`, запрет `any`.
+
 ## Правила по темам
 
 Правила, которые относятся к одной теме, а не к папке, — в [docs/rules/](rules/):
@@ -167,6 +207,20 @@ docs: describe pre-push hook
 Их полезно прочитать и человеку: это те же договорённости, что действуют для агента.
 
 ## Нюансы
+
+- TypeScript закреплён на `~6.0`: typescript-eslint поддерживает TypeScript `<6.1`, а
+  TypeScript 7 (компилятор на Go) — другой API, его пока не поддерживают ни typescript-eslint,
+  ни vue-tsc. openapi-typescript предупреждает о peer `typescript@^5`, но с 6.0 генерация
+  работает (проверяется `make schema-check`).
+- Клиент openapi-fetch получает `fetch: (r) => globalThis.fetch(r)`: иначе он запоминает
+  `fetch` при импорте, и подмена сети в тестах (MSW включается позже) не срабатывает — тесты
+  уходили в настоящую сеть.
+- MSW 3: опция называется `onUnhandledFrame`, а не `onUnhandledRequest`, как в MSW 2 и в
+  большинстве примеров в интернете.
+- Сгенерированные `backend/openapi.yaml` и `frontend/src/shared/api/schema.d.ts` исключены из
+  Prettier и ESLint: `make schema-check` сравнивает их с генерацией байт в байт.
+- pnpm запускает install-скрипты только у пакетов из `pnpm.onlyBuiltDependencies` в корневом
+  `package.json` (`unrs-resolver` — резолвер импортов для ESLint, `vue-demi`).
 
 - `pre-push` проверяет **рабочую копию**, а не содержимое отправляемых коммитов: так
   устроены git-хуки. Незакоммиченные изменения могут как уронить push, так и замаскировать

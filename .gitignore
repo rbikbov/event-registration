@@ -20,3 +20,7 @@ __pycache__/
 .mypy_cache/
 .pytest_cache/
 .ruff_cache/
+
+# frontend build output and TypeScript build info
+dist/
+*.tsbuildinfo

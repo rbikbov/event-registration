@@ -24,7 +24,7 @@
 - [x] Backend: health endpoint, OpenAPI-схема и проверка её актуальности
 - [x] Хук `pre-push`: проверки затронутой части
 - [x] Правила backend и миграций, хук защиты закоммиченных миграций
-- [ ] Frontend: Vue, страница health, ESLint, vue-tsc, Vitest, FSD-каркас
+- [x] Frontend: Vue, страница health, ESLint, vue-tsc, Vitest, FSD-каркас
 - [ ] Весь стек в docker compose (backend, frontend, mailpit)
 - [ ] e2e smoke на Playwright
 - [ ] CI в GitHub Actions
