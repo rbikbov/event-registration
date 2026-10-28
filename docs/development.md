@@ -91,6 +91,7 @@ make down   # остановить; данные БД остаются в том
 | `make check-frontend`                                         | ESLint, vue-tsc, Vitest                                                                  |
 | `make check-e2e`                                              | ESLint и tsc для кода e2e-тестов (сами тесты не запускает)                               |
 | `make check-tooling`                                          | тесты хуков Claude Code и `scripts/` (`node:test`)                                       |
+| `make check-ci`                                               | workflow GitHub Actions: actionlint и существование тегов actions (нужна сеть)           |
 | `make format-check`                                           | Prettier: форматирование всех файлов                                                     |
 | `make lint-backend` / `typecheck-backend` / `test-backend`    | по отдельности: ruff / mypy / pytest (pytest нужен `make dev-deps`)                      |
 | `make lint-frontend` / `typecheck-frontend` / `test-frontend` | по отдельности: ESLint / vue-tsc / Vitest                                                |
@@ -159,6 +160,7 @@ make down   # остановить; данные БД остаются в том
 | `backend/**`                                                                                                  | `make dev-deps check-backend` — поднимет Postgres, если он не запущен |
 | `frontend/**`                                                                                                 | `make check-frontend`                                                 |
 | `e2e/**`                                                                                                      | `make check-e2e`                                                      |
+| `.github/**`                                                                                                  | `make check-ci`                                                       |
 | `.claude/hooks/**`, `scripts/**`                                                                              | `make check-tooling`                                                  |
 | `Makefile`, `docker-compose.yml`, `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `.prettierrc.json` | проверки всех частей                                                  |
 | только документация                                                                                           | ничего                                                                |
@@ -177,8 +179,11 @@ make down   # остановить; данные БД остаются в том
 | `e2e`    | браузер Playwright, `make e2e` (весь стек в Docker); при падении — логи сервисов и отчёт Playwright в артефактах            |
 
 `--frozen-lockfile` / `--frozen`: если `package.json` или `pyproject.toml` изменён без
-обновления lock-файла, CI падает. Проверить workflow локально:
-`uvx --from actionlint-py actionlint .github/workflows/ci.yml`.
+обновления lock-файла, CI падает. Workflow проверяет `make check-ci` (входит в `make check`
+и в `pre-push` при изменениях в `.github/`): actionlint — синтаксис и выражения,
+`scripts/check-action-refs.mjs` — что у каждого `uses: owner/repo@ref` есть такой тег или
+ветка. actionlint этого не проверяет: `astral-sh/setup-uv@v10` он пропустил, а CI упал —
+проект не публикует мажорные теги, только полные версии.
 
 Хуки не обходим (`--no-verify`): если проверка мешает, исправляем причину или обсуждаем
 правило.

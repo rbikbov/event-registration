@@ -266,3 +266,12 @@ test:tooling`; общие файлы — Makefile, compose, package.json, lock �
   на GitHub — зелёные, разделы фазы в `architecture.md` помечены «реализовано». Объём фазы
   по ходу изменился: `docker-compose.yml` и Makefile появились вместе с backend, Mailpit
   перенесён в фазу 2, `api-change` — в фазу 1. Фаза 1 — в работе.
+
+## 2026-10-29
+
+- **00:11** — проверки workflow: `make check-ci` = actionlint + `scripts/check-action-refs.mjs`
+  (каждый `uses: owner/repo@ref` существует как тег или ветка, через `git ls-remote` — без
+  авторизации `gh`; закреплённый SHA не проверяется). Входит в `make check` (значит, и в
+  CI) и в `pre-push` при изменениях в `.github/`. Почему: actionlint не ловит
+  несуществующий тег — так прошёл `setup-uv@v10`. Проверено на этом случае: скрипт его
+  находит. Цена: `make check` теперь требует сети.

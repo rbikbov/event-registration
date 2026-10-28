@@ -19,6 +19,10 @@ test("e2e changes run static checks of the e2e code", () => {
   assert.deepEqual(commandsFor(["e2e/tests/smoke.spec.ts"]), ["make check-e2e"]);
 });
 
+test("workflow changes run CI workflow checks", () => {
+  assert.deepEqual(commandsFor([".github/workflows/ci.yml"]), ["make check-ci"]);
+});
+
 test("hook changes run tooling tests", () => {
   assert.deepEqual(commandsFor([".claude/hooks/guard-bash.mjs"]), ["make check-tooling"]);
 });
@@ -28,6 +32,7 @@ test("shared files run every part", () => {
     "make dev-deps check-backend",
     "make check-frontend",
     "make check-e2e",
+    "make check-ci",
     "make check-tooling",
   ]);
 });
