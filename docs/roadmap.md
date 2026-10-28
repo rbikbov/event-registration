@@ -19,7 +19,7 @@
 - [x] Инструменты в корне: Prettier, husky, lint-staged, commitlint
 - [x] Правила агента в `AGENTS.md`, карта репозитория
 - [x] Дорожная карта, skill `session-handoff`, хук `SessionStart`
-- [ ] Хуки Claude Code: защита от обхода git-хуков, форматирование после правки
+- [x] Хуки Claude Code: защита от обхода git-хуков, форматирование после правки
 - [ ] Backend: Django, health endpoint, своя модель пользователя, ruff, mypy, pytest, `pre-push`
 - [ ] Frontend: Vue, страница health, ESLint, vue-tsc, Vitest, FSD-каркас
 - [ ] docker compose и Makefile
