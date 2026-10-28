@@ -145,3 +145,51 @@ event-registration/
 6. Напоминания и перенос события.
 7. Экраны фронтенда.
 8. Playwright, README с таблицей «требование → тест».
+
+## Каркас
+
+Тонкий сквозной путь, на котором уже работают все проверки: `GET /api/health/` (с проверкой
+БД) + своя модель пользователя → страница фронтенда со статусом health через прокси → e2e,
+который видит «ok». Воркера, Event и SSE в каркасе нет — у них ещё нет потребителя.
+
+Петля обратной связи:
+| Уровень | Что проверяет |
+|---|---|
+| Редактор / хук Claude Code `PostToolUse` | ruff / eslint + prettier на файл сразу после правки |
+| `pre-commit` | lint-staged по изменённым файлам: ruff check --fix + ruff format; eslint --fix + prettier |
+| `commit-msg` | commitlint, `@commitlint/config-conventional` |
+| `pre-push` | только затронутая часть: backend — mypy, pytest, `makemigrations --check`, актуальность OpenAPI-схемы; frontend — vue-tsc, vitest |
+| CI | всё по всему репозиторию, сборка фронтенда, e2e на `docker compose` |
+
+Инструменты:
+- backend: uv, Python 3.12, Django 5.2 LTS, DRF, ruff, mypy + django-stubs (strict), pytest +
+  pytest-django на настоящем Postgres, drf-spectacular (схема в репозитории);
+- frontend: pnpm workspace (корень, `frontend/`, `e2e/`), Vue 3 + Vite + TS strict,
+  vue-router, @tanstack/vue-query, ESLint (vue, typescript-eslint с правилами на типах,
+  boundaries для FSD), Prettier, vue-tsc, Vitest + @vue/test-utils + MSW, типы API из
+  OpenAPI через openapi-typescript;
+- хуки: husky + lint-staged + commitlint в корневом `package.json`;
+- `make`: `up`, `down`, `dev-deps`, `check`, `test`, `e2e`, `fmt`, `schema`, `seed`.
+
+Правила агента: текст в `AGENTS.md`, рядом `CLAUDE.md` = `@AGENTS.md`. Уровни: корень,
+`backend/`, `frontend/`, `frontend/src/shared/api/`, `frontend/src/shared/config/`, `e2e/`,
+`docs/rules/db-migrations.md`. Остальные правила — вместе с первым кодом, к которому
+относятся.
+
+Из шаблона `rbikbov/frontend-starter`: структура AGENTS.md, правила ESLint, `shared/api` и
+`shared/config`, хуки и CI, `anti-slop-review` и агент `reviewer` (без Next/React-специфики,
+с пунктами про Django), облегчённый `feature-workflow`, сокращённый `fsd-frontend` для Vue.
+Не берём: `frontend-bootstrap`, `frontend-auth-session`, `adr-writer`.
+
+Процесс фичи: PRD не пишется (его роль — `docs/task.md`); spec и tasks — только для
+регистрации с листом ожидания, outbox с письмами и realtime; остальное — задачами.
+
+Коммиты каркаса:
+1. `chore: add root tooling` — pnpm workspace, husky, lint-staged, commitlint, prettier,
+   editorconfig; `CLAUDE.md` → `AGENTS.md`.
+2. `feat(backend): scaffold Django project with health endpoint`.
+3. `feat(frontend): scaffold Vue app with health page`.
+4. `build(infra): add docker compose and Makefile`.
+5. `test(e2e): add Playwright smoke test`.
+6. `ci: add GitHub Actions workflow`.
+7. `docs: add agent rules for backend, frontend, e2e and migrations` + skills и `reviewer`.
