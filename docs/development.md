@@ -177,6 +177,8 @@ feat(backend): register for an event with a seat limit        ← tracer bullet
 feat(backend): put registrations over the limit on the waitlist
 feat(backend): promote the first waitlisted on cancellation
 test(backend): race for the last seat on Postgres
+feat(frontend): event page with registration form
+test(e2e): organizer creates an event, participant registers
 docs: close phase 1 (registration)
 ```
 
