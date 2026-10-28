@@ -20,7 +20,7 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: pnpm
-      - uses: astral-sh/setup-uv@v10
+      - uses: astral-sh/setup-uv@v10.3.3 # no major tags since v8, only full versions
         with:
           version: "0.13.6"
           enable-cache: true
