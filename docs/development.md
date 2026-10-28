@@ -299,7 +299,7 @@ docs: describe pre-push hook
   совпадают с сервисами `docker compose`, поэтому локально ничего задавать не нужно.
 - Своя модель пользователя `accounts.User`: вход по email, username нет. Email хранится в
   нижнем регистре (приводится в `save()`), поэтому обычный `unique` работает без учёта
-  регистра. Точки и `+tag` в адресе значимы — см. запись от 22:38 в
+  регистра. Точки и `+tag` в адресе значимы — см. запись от 2026-10-28 22:38 в
   [decisions.md](decisions.md).
 - Тесты — pytest + pytest-django на настоящем Postgres (`make dev-deps`): блокировки,
   `SKIP LOCKED` и `LISTEN/NOTIFY` на SQLite не проверить. pytest-django создаёт отдельную
