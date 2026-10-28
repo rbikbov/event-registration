@@ -180,3 +180,11 @@ test:tooling`; общие файлы — Makefile, compose, package.json, lock �
   Выбор проверок — чистая функция с тестами. Скрипт `test:hooks` переименован в
   `test:tooling` и покрывает и `scripts/`. Ограничение git-хуков: проверяется рабочая
   копия, а не содержимое коммитов, — описано в `docs/development.md`.
+- **22:42** — правила backend — `backend/AGENTS.md` (+ `CLAUDE.md` = `@AGENTS.md`): тонкие view и
+  логика в `services.py`, env только в settings, API-изменения вместе со схемой, тесты на
+  Postgres, время через `timezone.now`/параметр `now`, `type: ignore` с причиной, без
+  персональных данных в логах. Правила миграций — `docs/rules/db-migrations.md` (не править
+  закоммиченные, схема и данные раздельно, инварианты в БД, `sqlmigrate` перед коммитом).
+  Хук `guard-migrations.mjs` блокирует правку закоммиченных миграций через Edit/Write;
+  незакоммиченную можно пересоздать. Ограничение: правку через shell хук не видит — указано в
+  `docs/development.md`.
