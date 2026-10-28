@@ -7,7 +7,7 @@
 
 Команды (`make help`), инструменты и что проверяют хуки — [docs/development.md](docs/development.md).
 Перед тем как сказать, что задача готова, — `make check`.
-Текущий план — [PLAN.md](PLAN.md) (временный). Где остановилась работа —
+Как устроена система и что запланировано — [docs/architecture.md](docs/architecture.md). Где остановилась работа —
 [docs/roadmap.md](docs/roadmap.md); как вести его — skill `session-handoff`.
 
 ## Карта
@@ -22,9 +22,9 @@ scripts/              скрипты репозитория (pre-push.mjs) с т
 docs/task.md          текст задания — не редактируется
 docs/decisions.md     лог решений с временем
 docs/development.md   руководство разработчика: установка, команды, проверки, нюансы
+docs/architecture.md  устройство системы: модель, API, realtime, письма; статус разделов
 docs/roadmap.md       фазы, статусы, критерии, задачи небольших фаз
 docs/rules/           правила по темам: db-migrations.md
-PLAN.md               согласованный план (временный)
 .claude/settings.json хуки Claude Code; скрипты — .claude/hooks/
 .claude/skills/       процедуры агента (skills)
 ```

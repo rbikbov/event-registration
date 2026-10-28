@@ -2,7 +2,8 @@
 
 Тестовое задание: сервис регистрации на мероприятия с лимитом мест, листом ожидания,
 билетами и чекином. Задание — [docs/task.md](docs/task.md), решения —
-[docs/decisions.md](docs/decisions.md), ход работы — [docs/roadmap.md](docs/roadmap.md).
+[docs/decisions.md](docs/decisions.md), устройство системы —
+[docs/architecture.md](docs/architecture.md), ход работы — [docs/roadmap.md](docs/roadmap.md).
 
 Стек: Vue 3 + Vite, Django + DRF, PostgreSQL.
 
