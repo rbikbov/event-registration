@@ -142,16 +142,9 @@ event-registration/
 └── .github/workflows/ci.yml
 ```
 
-## Порядок работы (срок — 2026-11-05)
+## Порядок работы
 
-1. Каркас — **сначала спланировать отдельно** (линтеры, хуки, типы, тесты, правила агента).
-2. Модели, регистрация, лист ожидания, отказ, тесты гонок.
-3. Outbox, воркер, письма.
-4. Чекин и статистика организатора.
-5. SSE.
-6. Напоминания и перенос события.
-7. Экраны фронтенда.
-8. Playwright, README с таблицей «требование → тест».
+Фазы, их статус и критерии — [docs/roadmap.md](docs/roadmap.md).
 
 ## Каркас
 
@@ -189,6 +182,14 @@ event-registration/
 `shared/config`, хуки и CI, `anti-slop-review` и агент `reviewer` (без Next/React-специфики,
 с пунктами про Django), облегчённый `feature-workflow`, сокращённый `fsd-frontend` для Vue.
 Не берём: `frontend-bootstrap`, `frontend-auth-session`, `adr-writer`.
+
+Контракт: типы фронтенда генерируются из OpenAPI-схемы (`make schema`), схема проверяется на
+актуальность в `pre-push` и CI; zod — только для валидации форм.
+
+Хуки Claude Code: `SessionStart` (текущая фаза и последние коммиты), `PreToolUse` на Bash
+(запрет `--no-verify`, force push, amend отправленных коммитов), `PreToolUse` на правку
+закоммиченных миграций, `PostToolUse` (форматирование и линтер на изменённый файл). Свои
+skills: `session-handoff`, `api-change` (с первым доменным эндпоинтом).
 
 Процесс фичи: PRD не пишется (его роль — `docs/task.md`); spec и tasks — только для
 регистрации с листом ожидания, outbox с письмами и realtime; остальное — задачами.

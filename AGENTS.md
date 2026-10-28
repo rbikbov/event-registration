@@ -6,7 +6,8 @@
 папок (подгружаются при работе в папке) и в `docs/rules/`.
 
 Команды, инструменты и что проверяют хуки — [docs/development.md](docs/development.md).
-Текущий план — [PLAN.md](PLAN.md) (временный).
+Текущий план — [PLAN.md](PLAN.md) (временный). Где остановилась работа —
+[docs/roadmap.md](docs/roadmap.md); как вести его — skill `session-handoff`.
 
 ## Карта
 
@@ -14,7 +15,10 @@
 docs/task.md          текст задания — не редактируется
 docs/decisions.md     лог решений с временем
 docs/development.md   руководство разработчика: установка, команды, проверки, нюансы
+docs/roadmap.md       фазы, статусы, критерии, задачи небольших фаз
 PLAN.md               согласованный план (временный)
+.claude/settings.json хуки Claude Code; скрипты — .claude/hooks/
+.claude/skills/       процедуры агента (skills)
 ```
 
 ## Правила, которые действуют всегда
