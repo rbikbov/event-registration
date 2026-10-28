@@ -1,0 +1,15 @@
+# dependencies
+node_modules/
+
+# env files; .env.example is committed
+.env*
+!.env.example
+
+# editors and OS
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# local Claude Code settings
+.claude/settings.local.json

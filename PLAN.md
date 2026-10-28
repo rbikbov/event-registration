@@ -10,11 +10,13 @@
 Сейчас это только организаторы; участники аккаунтов не имеют.
 
 **Event**
+
 - `organizer` (FK → User), `title`, `description`, `starts_at` (timestamptz, UTC), `capacity`
 - `schedule_version` (int) — увеличивается при каждом переносе; входит в ключи
   дедупликации писем о переносе и напоминаний.
 
 **Registration**
+
 - `event` (FK), `email` (в нижнем регистре), `name`
 - `status`: `confirmed` / `waitlisted` / `cancelled`
 - `queued_at` — порядок в листе ожидания
@@ -26,6 +28,7 @@
   ожидания определяются заново, `ticket_code` выдаётся новый.
 
 **OutboxEmail** — очередь писем в Postgres
+
 - `kind`: `ticket` / `waitlisted` / `promoted` / `reminder` / `rescheduled`
 - `registration` (FK), `dedup_key UNIQUE`, `status` (`pending`/`sent`/`failed`), `attempts`,
   `next_attempt_at`, `sent_at`, `last_error`
@@ -41,13 +44,14 @@
   и письмо `promoted` — в одной транзакции.
 - Лимит: увеличение повышает людей из листа; уменьшение ниже числа `confirmed` → 400.
 - Чекин: один атомарный `UPDATE … WHERE ticket_code=? AND event=? AND status='confirmed'
-  AND checked_in_at IS NULL`; при 0 строк — выяснение причины (уже отмечен / не найден /
+AND checked_in_at IS NULL`; при 0 строк — выяснение причины (уже отмечен / не найден /
   отменён / в листе ожидания).
 - Тесты гонок — на реальном Postgres, N потоков с `threading.Barrier`.
 
 ## API (DRF)
 
 Публичное:
+
 - `GET /api/events/`, `GET /api/events/{id}/` — с числом свободных мест
 - `POST /api/events/{id}/registrations/` `{email, name}` → `{status, position?}`; кода билета
   в ответе нет — он приходит только письмом
@@ -55,6 +59,7 @@
 - `GET /api/events/{id}/stream/` — SSE: свободные места
 
 Организатор (сессия + CSRF):
+
 - `POST /api/auth/login/`, `POST /api/auth/logout/`, `GET /api/auth/me/`
 - `GET/POST /api/org/events/`, `GET/PATCH /api/org/events/{id}/` (перенос → письма;
   лимит → повышение)
@@ -78,6 +83,7 @@
 ## Фоновые задачи и письма
 
 Отдельный процесс `manage.py run_worker`, цикл:
+
 1. Рассылка: `SELECT … FOR UPDATE SKIP LOCKED LIMIT 20` из outbox → SMTP → `sent`; ошибки —
    повтор с нарастающей паузой, после N попыток — `failed`.
 2. Напоминания раз в ~30 с: события с `starts_at − 24h ≤ now < starts_at` → письмо
@@ -86,13 +92,14 @@
 3. Чистка отправленных писем старше N дней.
 
 Письма:
-| kind | кому | когда |
-|---|---|---|
-| `ticket` | получил место при регистрации | один раз |
-| `waitlisted` | попал в лист ожидания; номер «на момент письма» + ссылка управления | один раз при попадании в лист |
-| `promoted` | повышен из листа ожидания | один раз |
-| `reminder` | `confirmed`, место получено до начала 24-часового окна | раз на каждую дату события |
-| `rescheduled` | `confirmed` и `waitlisted` | раз на каждый перенос |
+
+| kind          | кому                                                                | когда                         |
+| ------------- | ------------------------------------------------------------------- | ----------------------------- |
+| `ticket`      | получил место при регистрации                                       | один раз                      |
+| `waitlisted`  | попал в лист ожидания; номер «на момент письма» + ссылка управления | один раз при попадании в лист |
+| `promoted`    | повышен из листа ожидания                                           | один раз                      |
+| `reminder`    | `confirmed`, место получено до начала 24-часового окна              | раз на каждую дату события    |
+| `rescheduled` | `confirmed` и `waitlisted`                                          | раз на каждый перенос         |
 
 Повторная регистрация на тот же email писем не шлёт.
 
@@ -153,15 +160,17 @@ event-registration/
 который видит «ok». Воркера, Event и SSE в каркасе нет — у них ещё нет потребителя.
 
 Петля обратной связи:
-| Уровень | Что проверяет |
-|---|---|
-| Редактор / хук Claude Code `PostToolUse` | ruff / eslint + prettier на файл сразу после правки |
-| `pre-commit` | lint-staged по изменённым файлам: ruff check --fix + ruff format; eslint --fix + prettier |
-| `commit-msg` | commitlint, `@commitlint/config-conventional` |
-| `pre-push` | только затронутая часть: backend — mypy, pytest, `makemigrations --check`, актуальность OpenAPI-схемы; frontend — vue-tsc, vitest |
-| CI | всё по всему репозиторию, сборка фронтенда, e2e на `docker compose` |
+
+| Уровень                                  | Что проверяет                                                                                                                     |
+| ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| Редактор / хук Claude Code `PostToolUse` | ruff / eslint + prettier на файл сразу после правки                                                                               |
+| `pre-commit`                             | lint-staged по изменённым файлам: ruff check --fix + ruff format; eslint --fix + prettier                                         |
+| `commit-msg`                             | commitlint, `@commitlint/config-conventional`                                                                                     |
+| `pre-push`                               | только затронутая часть: backend — mypy, pytest, `makemigrations --check`, актуальность OpenAPI-схемы; frontend — vue-tsc, vitest |
+| CI                                       | всё по всему репозиторию, сборка фронтенда, e2e на `docker compose`                                                               |
 
 Инструменты:
+
 - backend: uv, Python 3.12, Django 5.2 LTS, DRF, ruff, mypy + django-stubs (strict), pytest +
   pytest-django на настоящем Postgres, drf-spectacular (схема в репозитории);
 - frontend: pnpm workspace (корень, `frontend/`, `e2e/`), Vue 3 + Vite + TS strict,
@@ -185,6 +194,7 @@ event-registration/
 регистрации с листом ожидания, outbox с письмами и realtime; остальное — задачами.
 
 Коммиты каркаса:
+
 1. `chore: add root tooling` — pnpm workspace, husky, lint-staged, commitlint, prettier,
    editorconfig; `CLAUDE.md` → `AGENTS.md`.
 2. `feat(backend): scaffold Django project with health endpoint`.
