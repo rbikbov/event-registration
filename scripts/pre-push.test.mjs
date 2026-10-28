@@ -20,7 +20,7 @@ test("e2e changes run static checks of the e2e code", () => {
 });
 
 test("hook changes run tooling tests", () => {
-  assert.deepEqual(commandsFor([".claude/hooks/guard-bash.mjs"]), ["pnpm test:tooling"]);
+  assert.deepEqual(commandsFor([".claude/hooks/guard-bash.mjs"]), ["make check-tooling"]);
 });
 
 test("shared files run every part", () => {
@@ -28,6 +28,6 @@ test("shared files run every part", () => {
     "make dev-deps check-backend",
     "make check-frontend",
     "make check-e2e",
-    "pnpm test:tooling",
+    "make check-tooling",
   ]);
 });

@@ -30,11 +30,15 @@ install: ## Install all dependencies, the Playwright browser and git hooks
 	$(BACKEND) uv sync
 
 .PHONY: check
-check: format-check check-backend check-frontend check-e2e ## Run all linters, type checks and tests
+check: format-check check-tooling check-backend check-frontend check-e2e ## Run all linters, type checks and tests
 
 .PHONY: format-check
 format-check: ## Prettier: check formatting of all files it knows
 	pnpm format:check
+
+.PHONY: check-tooling
+check-tooling: ## Tests of Claude Code hooks and repository scripts
+	pnpm test:tooling
 
 .PHONY: check-backend
 check-backend: lint-backend typecheck-backend migrations-check schema-check test-backend ## Backend: lint, types, migrations, schema, tests

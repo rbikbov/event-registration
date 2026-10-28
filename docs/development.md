@@ -41,6 +41,7 @@ make check      # всё должно пройти
 | `make install`            | установить зависимости Node и backend, браузер Playwright (chromium), git-хуки                   |
 | `make dev-deps`           | поднять Postgres в Docker и дождаться готовности                                                 |
 | `make check`              | всё, кроме запуска e2e: форматирование, линтеры, проверки типов, схема, тесты backend и frontend |
+| `make check-tooling`      | тесты хуков Claude Code и `scripts/`                                                             |
 | `make check-backend`      | то же только для backend                                                                         |
 | `make lint-backend`       | ruff: линтер и проверка форматирования                                                           |
 | `make typecheck-backend`  | mypy (strict)                                                                                    |
@@ -78,7 +79,7 @@ make check      # всё должно пройти
 | `backend/**`                                                                                                  | `make dev-deps check-backend` — поднимет Postgres, если он не запущен |
 | `frontend/**`                                                                                                 | `make check-frontend`                                                 |
 | `e2e/**`                                                                                                      | `make check-e2e`                                                      |
-| `.claude/hooks/**`, `scripts/**`                                                                              | `pnpm test:tooling`                                                   |
+| `.claude/hooks/**`, `scripts/**`                                                                              | `make check-tooling`                                                  |
 | `Makefile`, `docker-compose.yml`, `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `.prettierrc.json` | проверки всех частей                                                  |
 | только документация                                                                                           | ничего                                                                |
 
@@ -107,6 +108,20 @@ docs: describe pre-push hook
   репозитории не указывается.
 - Один коммит — одно логическое изменение, после которого проект собирается и тесты
   проходят.
+
+## CI
+
+`.github/workflows/ci.yml`, на push в `main` и на pull request. Команды те же, что локально, —
+отличий между «у меня проходит» и «в CI падает» быть не должно.
+
+| Job      | Что делает                                                                                                                  |
+| -------- | --------------------------------------------------------------------------------------------------------------------------- |
+| `checks` | `pnpm install --frozen-lockfile`, `uv sync --frozen`, `make dev-deps`, `make check`; на PR — commitlint по всем коммитам PR |
+| `e2e`    | браузер Playwright, `make e2e` (весь стек в Docker); при падении — логи сервисов и отчёт Playwright в артефактах            |
+
+`--frozen-lockfile` / `--frozen`: если `package.json` или `pyproject.toml` изменён без
+обновления lock-файла, CI падает. Файл проверяется `actionlint`:
+`uvx --from actionlint-py actionlint .github/workflows/ci.yml`.
 
 ## Хуки Claude Code
 

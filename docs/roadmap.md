@@ -27,7 +27,7 @@
 - [x] Frontend: Vue, страница health, ESLint, vue-tsc, Vitest, FSD-каркас
 - [x] Весь стек в docker compose (postgres, backend, frontend), `make up`; README с запуском
 - [x] e2e smoke на Playwright
-- [ ] CI в GitHub Actions
+- [x] CI в GitHub Actions (на GitHub ещё не запускался — нет remote)
 - [ ] Правила агента для frontend и e2e; skills `api-change`,
       `anti-slop-review`, `feature-workflow`, `fsd-frontend`, агент `reviewer`
 

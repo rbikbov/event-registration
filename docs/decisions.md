@@ -220,3 +220,10 @@ test:tooling`; общие файлы — Makefile, compose, package.json, lock �
   запуск требует поднятого стека; полный прогон — `make e2e` и CI. Правило
   `no-floating-promises` обязательно: забытый `await` делает тест Playwright зелёным без
   проверки.
+- **22:56** — CI (GitHub Actions): job `checks` (`make dev-deps` + `make check`, lock-файлы
+  `--frozen`, commitlint по коммитам PR) и job `e2e` (`make e2e` на стеке из compose, при
+  падении — логи сервисов и отчёт Playwright). CI вызывает те же make-цели, что и разработчик.
+  commitlint в CI — только на pull request: первые коммиты репозитория сделаны до правила
+  Conventional Commits, а локально формат проверяет хук `commit-msg`. Тесты хуков и скриптов
+  вошли в `make check` (`check-tooling`). Workflow проверен actionlint; на GitHub не
+  запускался — remote ещё нет.

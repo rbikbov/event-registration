@@ -24,7 +24,7 @@ const PARTS = [
   {
     name: "Claude Code hooks and scripts",
     match: /^(\.claude\/hooks|scripts)\//,
-    command: "pnpm test:tooling",
+    command: "make check-tooling",
   },
 ];
 
