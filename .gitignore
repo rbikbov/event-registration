@@ -28,3 +28,6 @@ dist/
 # playwright
 playwright-report/
 test-results/
+
+# django collectstatic output
+backend/staticfiles/

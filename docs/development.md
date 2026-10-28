@@ -313,6 +313,14 @@ docs: describe pre-push hook
 - API описан OpenAPI-схемой `backend/openapi.yaml` (drf-spectacular), она закоммичена, по ней
   фронтенд получает типы (см. «Изменить API»). Генерация идёт с `--fail-on-warn`: view без
   описания ответа или неоднозначное имя enum — ошибка, а не тихий пробел в схеме.
+- Статику (админка) раздаёт WhiteNoise — одинаково под uvicorn, `runserver`
+  (`whitenoise.runserver_nostatic`) и в тестах: файлы с хэшем в имени из `STATIC_ROOT`
+  (`backend/staticfiles/`, собирается `collectstatic`, в git не попадает). Образ собирает
+  статику при сборке; pytest — один раз за сессию (фикстура в `backend/conftest.py`), потому
+  что тесты идут с `DEBUG=False`, как продакшен.
+- Админка — <http://localhost:8000/admin/> (напрямую на backend: Vite проксирует только
+  `/api`); вход по email, нужен `is_staff`. Каждая модель наших приложений обязана быть
+  зарегистрирована в админке — это проверяет тест.
 - `GET /api/health/` — проверка процесса и БД: 200 `{"status": "ok", "database": "ok"}` или
   503, если БД недоступна. Используют healthcheck'и compose, e2e и фронтенд.
 
@@ -409,8 +417,6 @@ Django + Vue. Шаблоны spec и задач фазы — `docs/features/_tem
 - Healthcheck фронтенда обращается к `127.0.0.1`, а не к `localhost`: в Alpine `localhost`
   резолвится в IPv6 `::1`, а Vite слушает только IPv4 — проверка падала при работающем
   сервере.
-- Под uvicorn Django не раздаёт статику, поэтому стили админки (`/admin/`) в `make up` не
-  грузятся; под `make dev-backend` (`runserver`) — грузятся.
 - Если на Linux chromium для e2e не стартует из-за системных библиотек:
   `cd e2e && pnpm exec playwright install --with-deps chromium` (нужен sudo).
 
