@@ -153,5 +153,5 @@
   `pre-push` и CI.
 - **22:21** — Python подключён к lint-staged и к хуку агента после правки: `ruff check --fix` и
   `ruff format`; оставшиеся ошибки ruff хук показывает агенту.
-- **22:24** — ruff: `force-exclude = true`. Без него `exclude` не действует на явно переданные
+- **22:22** — ruff: `force-exclude = true`. Без него `exclude` не действует на явно переданные
   файлы, и lint-staged проверял миграции — это поймал первый же коммит backend.
