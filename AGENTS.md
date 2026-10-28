@@ -5,13 +5,16 @@
 начале каждой сессии, поэтому в нём только то, что нужно всегда. Подробности — в `AGENTS.md`
 папок (подгружаются при работе в папке) и в `docs/rules/`.
 
-Команды, инструменты и что проверяют хуки — [docs/development.md](docs/development.md).
+Команды (`make help`), инструменты и что проверяют хуки — [docs/development.md](docs/development.md).
+Перед тем как сказать, что задача готова, — `make check`.
 Текущий план — [PLAN.md](PLAN.md) (временный). Где остановилась работа —
 [docs/roadmap.md](docs/roadmap.md); как вести его — skill `session-handoff`.
 
 ## Карта
 
 ```text
+backend/              Django + DRF: config/ — настройки и URL, accounts/ — модель пользователя
+Makefile              все команды (make help); docker-compose.yml — сервисы
 docs/task.md          текст задания — не редактируется
 docs/decisions.md     лог решений с временем
 docs/development.md   руководство разработчика: установка, команды, проверки, нюансы

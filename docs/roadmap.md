@@ -20,12 +20,15 @@
 - [x] Правила агента в `AGENTS.md`, карта репозитория
 - [x] Дорожная карта, skill `session-handoff`, хук `SessionStart`
 - [x] Хуки Claude Code: защита от обхода git-хуков, форматирование после правки
-- [ ] Backend: Django, health endpoint, своя модель пользователя, ruff, mypy, pytest, `pre-push`
+- [x] Backend: Django, своя модель пользователя, ruff, mypy, pytest; Postgres в compose; Makefile
+- [ ] Backend: health endpoint, OpenAPI-схема и проверка её актуальности
+- [ ] Хук `pre-push`: проверки затронутой части
+- [ ] Правила backend и миграций, хук защиты закоммиченных миграций
 - [ ] Frontend: Vue, страница health, ESLint, vue-tsc, Vitest, FSD-каркас
-- [ ] docker compose и Makefile
+- [ ] Весь стек в docker compose (backend, frontend, mailpit)
 - [ ] e2e smoke на Playwright
 - [ ] CI в GitHub Actions
-- [ ] Правила агента для backend, frontend, e2e, миграций; skills `api-change`,
+- [ ] Правила агента для frontend и e2e; skills `api-change`,
       `anti-slop-review`, `feature-workflow`, `fsd-frontend`, агент `reviewer`
 
 ## Фаза 1. Регистрация, лист ожидания, отказ — не начата

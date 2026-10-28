@@ -8,34 +8,53 @@
 
 ## Что установить
 
-| Инструмент | Версия                                     | Зачем                    | Как поставить                                        |
-| ---------- | ------------------------------------------ | ------------------------ | ---------------------------------------------------- |
-| Node.js    | 22 (см. `.nvmrc`)                          | git-хуки, форматирование | `nvm install` в корне репозитория                    |
-| pnpm       | 10 (см. `packageManager` в `package.json`) | зависимости Node         | `corepack enable` — версию возьмёт из `package.json` |
+| Инструмент       | Версия                                     | Зачем                                                                                      | Как поставить                                                                                 |
+| ---------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------- |
+| Node.js          | 22 (см. `.nvmrc`)                          | git-хуки, форматирование                                                                   | `nvm install` в корне репозитория                                                             |
+| pnpm             | 10 (см. `packageManager` в `package.json`) | зависимости Node                                                                           | `corepack enable` — версию возьмёт из `package.json`                                          |
+| uv               | 0.13+                                      | Python и зависимости backend; нужную версию Python (`backend/.python-version`) скачает сам | `curl -LsSf https://astral.sh/uv/install.sh \| sh`                                            |
+| Docker + Compose | Docker Desktop или Docker Engine           | Postgres и остальные сервисы                                                               | WSL: в Docker Desktop включить Settings → Resources → WSL Integration для своего дистрибутива |
+| make             | любая (GNU)                                | единая точка входа для команд                                                              | обычно уже есть; Debian/Ubuntu: `apt install make`                                            |
 
 ## Первая настройка
 
 ```sh
-pnpm install
+make install    # pnpm install + uv sync в backend/
+make dev-deps   # Postgres в Docker
+make check      # всё должно пройти
 ```
 
-Кроме зависимостей, команда устанавливает git-хуки (скрипт `prepare` → husky прописывает
-`core.hooksPath=.husky/_`). Без неё хуки не работают и проверки сработают только в CI.
+`pnpm install` (внутри `make install`) кроме зависимостей устанавливает git-хуки: скрипт
+`prepare` → husky прописывает `core.hooksPath=.husky/_`. Без него хуки не работают и
+проверки сработают только в CI.
 
 ## Команды
 
-| Команда             | Что делает                                        |
-| ------------------- | ------------------------------------------------- |
-| `pnpm format`       | отформатировать все файлы, которые знает Prettier |
-| `pnpm format:check` | проверить форматирование без изменений            |
-| `pnpm test:hooks`   | тесты хуков Claude Code (`node:test`)             |
+Основной вход — `make`; `make help` печатает список целей с описанием. Если команда
+появилась — она должна быть в Makefile и в этой таблице.
+
+| Команда                  | Что делает                                                       |
+| ------------------------ | ---------------------------------------------------------------- |
+| `make install`           | установить зависимости Node и backend, git-хуки                  |
+| `make dev-deps`          | поднять Postgres в Docker и дождаться готовности                 |
+| `make check`             | все линтеры, проверки типов и тесты                              |
+| `make check-backend`     | то же только для backend                                         |
+| `make lint-backend`      | ruff: линтер и проверка форматирования                           |
+| `make typecheck-backend` | mypy (strict)                                                    |
+| `make migrations-check`  | падает, если модели изменены, а миграция не создана              |
+| `make test-backend`      | pytest (нужен `make dev-deps`)                                   |
+| `make fmt`               | отформатировать всё: Prettier, `ruff check --fix`, `ruff format` |
+| `pnpm test:hooks`        | тесты хуков Claude Code (`node:test`)                            |
+
+Команды Django — из `backend/` через uv: `uv run python manage.py <команда>`. Например,
+`uv run python manage.py makemigrations`, `uv run python manage.py createsuperuser`.
 
 ## Что проверяется автоматически
 
-| Когда        | Хук          | Что проверяет                                                                                       |
-| ------------ | ------------ | --------------------------------------------------------------------------------------------------- |
-| `git commit` | `pre-commit` | lint-staged: Prettier форматирует изменённые `mjs`, `json`, `md`, `yml` и добавляет правки в коммит |
-| `git commit` | `commit-msg` | commitlint: сообщение коммита в формате Conventional Commits                                        |
+| Когда        | Хук          | Что проверяет                                                                                                                                                                                                      |
+| ------------ | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `git commit` | `pre-commit` | lint-staged по изменённым файлам: `*.py` в `backend/` — `ruff check --fix` и `ruff format`; `mjs`, `json`, `md`, `yml` — Prettier. Исправления добавляются в коммит, неисправимые ошибки ruff останавливают коммит |
+| `git commit` | `commit-msg` | commitlint: сообщение коммита в формате Conventional Commits                                                                                                                                                       |
 
 Хуки не обходим (`--no-verify`): если проверка мешает, исправляем причину или обсуждаем
 правило.
@@ -67,7 +86,7 @@ docs: describe pre-push hook
 | -------------------------- | ------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
 | `SessionStart`             | `session-start.mjs` | выводит агенту фазу «в работе» из `docs/roadmap.md` и последние коммиты                                                          |
 | `PreToolUse` (Bash)        | `guard-bash.mjs`    | блокирует обход git-хуков (`--no-verify`, `-n`, `HUSKY=0`, смена `core.hooksPath`), force push и `--amend` отправленного коммита |
-| `PostToolUse` (Edit/Write) | `format-file.mjs`   | форматирует изменённый файл Prettier'ом, как это сделал бы `pre-commit`                                                          |
+| `PostToolUse` (Edit/Write) | `format-file.mjs`   | форматирует изменённый файл, как `pre-commit`: Prettier или ruff; оставшиеся ошибки ruff показывает агенту                       |
 
 Как устроен `guard-bash.mjs`: из команды сначала вырезаются heredoc и строки в кавычках
 (иначе `-n` в тексте сообщения коммита сработал бы как флаг), затем каждая простая команда
@@ -88,6 +107,25 @@ docs: describe pre-push hook
 Любой выбор, влияющий на код, структуру, стек или сроки, записывается в
 [decisions.md](decisions.md) в том же коммите, что и изменение. Формат и правила — в
 [AGENTS.md](../AGENTS.md).
+
+## Backend
+
+- Структура: `backend/config/` — настройки, корневые URL, ASGI; приложения Django — папки
+  рядом (`accounts/`).
+- Настройки читают переменные окружения только в `config/settings.py`. Значения по умолчанию
+  совпадают с сервисами `docker compose`, поэтому локально переменные задавать не нужно.
+- Своя модель пользователя `accounts.User`: вход по email, username нет. Email хранится в
+  нижнем регистре (приводится в `save()`), поэтому обычный `unique` работает без учёта
+  регистра. Создать организатора: `uv run python manage.py createsuperuser`.
+- Тесты — pytest + pytest-django, на настоящем Postgres (`make dev-deps`): блокировки,
+  `SKIP LOCKED` и `LISTEN/NOTIFY` на SQLite не проверить. pytest-django создаёт отдельную
+  тестовую БД `test_<имя>` и удаляет её после прогона. Тест, которому нужна БД, помечается
+  `pytest.mark.django_db`.
+- mypy в режиме `strict` с плагинами django-stubs и drf-stubs. Generic-классы Django
+  (`UserAdmin[User]`) работают в runtime благодаря `django_stubs_ext.monkeypatch()` в
+  настройках. `# type: ignore` — только с кодом ошибки и причиной в комментарии.
+- ruff: правила `E, F, W, I, B, UP, DJ, S, SIM, RUF`. Миграции форматируются, но не
+  проверяются линтером (сгенерированный код). В тестах разрешены `assert` и пароли в коде.
 
 ## Нюансы
 

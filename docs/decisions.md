@@ -135,3 +135,23 @@
   `-n` и `--no-verify` встречались в тексте. У хука — тесты на `node:test`
   (`pnpm test:hooks`), без зависимостей. Защита закоммиченных миграций — вместе с backend:
   пока миграций нет, хуку нечего защищать. Prettier теперь форматирует и `.mjs`.
+- **22:21** — uv установлен на хост официальным скриптом (`~/.local/bin`). Backend: Python 3.12
+  (совпадает с системным), Django 5.2 LTS, DRF, psycopg 3, drf-spectacular. Отклонён Django
+  6.0: для тестового задания важнее LTS и зрелость django-stubs.
+- **22:21** — своя модель `accounts.User` на `AbstractUser` без username, вход по email. Email
+  хранится в нижнем регистре (`save()`, поиск при входе — тоже в нижнем), поэтому обычный
+  `unique=True` работает без учёта регистра. Отклонён функциональный `UNIQUE(Lower(email))`:
+  Django требует `unique=True` у поля входа (auth.E003).
+- **22:21** — `django-stubs-ext` в основных зависимостях и `monkeypatch()` в настройках: без
+  него generic-классы Django (`UserAdmin[User]`) падают в runtime, а без параметра типа их не
+  пропускает mypy strict.
+- **22:21** — ruff не проверяет миграции (сгенерированный код), но форматирует их; в тестах
+  разрешены `assert` и пароли (S101, S105, S106).
+- **22:21** — `docker-compose.yml` и Makefile появились вместе с backend, а не отдельным шагом:
+  тестам backend нужен Postgres. В compose пока только `postgres`, остальные сервисы —
+  по мере появления. Makefile — единая точка входа (`make help`), его же будут вызывать
+  `pre-push` и CI.
+- **22:21** — Python подключён к lint-staged и к хуку агента после правки: `ruff check --fix` и
+  `ruff format`; оставшиеся ошибки ruff хук показывает агенту.
+- **22:24** — ruff: `force-exclude = true`. Без него `exclude` не действует на явно переданные
+  файлы, и lint-staged проверял миграции — это поймал первый же коммит backend.
