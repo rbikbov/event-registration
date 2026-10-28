@@ -34,9 +34,12 @@ if (PRETTIER_EXTENSIONS.has(extname(file))) {
   if (!prettier.ok) fail(`prettier failed on ${file}:\n${prettier.output}`);
 }
 
-const FRONTEND_EXTENSIONS = new Set([".ts", ".vue", ".js"]);
+// Node packages with their own eslint.config.js; ESLint runs from the package directory.
+const ESLINT_PACKAGES = ["frontend", "e2e"];
+const ESLINT_EXTENSIONS = new Set([".ts", ".vue", ".js"]);
+const eslintPackage = ESLINT_PACKAGES.find((pkg) => relative(root, file).startsWith(`${pkg}/`));
 
-if (FRONTEND_EXTENSIONS.has(extname(file)) && relative(root, file).startsWith("frontend/")) {
+if (eslintPackage && ESLINT_EXTENSIONS.has(extname(file))) {
   const prettier = run(join(root, "node_modules/.bin/prettier"), [
     "--write",
     "--log-level",
@@ -44,9 +47,8 @@ if (FRONTEND_EXTENSIONS.has(extname(file)) && relative(root, file).startsWith("f
     file,
   ]);
   if (!prettier.ok) fail(`prettier failed on ${file}:\n${prettier.output}`);
-  // ESLint runs from frontend/ so it picks up frontend/eslint.config.js.
-  const eslint = spawnSync(join(root, "frontend/node_modules/.bin/eslint"), ["--fix", file], {
-    cwd: join(root, "frontend"),
+  const eslint = spawnSync(join(root, eslintPackage, "node_modules/.bin/eslint"), ["--fix", file], {
+    cwd: join(root, eslintPackage),
     encoding: "utf8",
   });
   if (eslint.status !== 0)

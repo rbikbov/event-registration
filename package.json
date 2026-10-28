@@ -21,6 +21,10 @@
       "pnpm --dir frontend exec eslint --fix",
       "prettier --write"
     ],
+    "e2e/**/*.{ts,js}": [
+      "pnpm --dir e2e exec eslint --fix",
+      "prettier --write"
+    ],
     "*.{mjs,json,md,yml,yaml}": [
       "prettier --write"
     ]

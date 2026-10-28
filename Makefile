@@ -24,12 +24,13 @@ dev-deps: ## Start services needed for local development and tests (Postgres)
 	docker compose up -d --wait postgres
 
 .PHONY: install
-install: ## Install all dependencies and git hooks
+install: ## Install all dependencies, the Playwright browser and git hooks
 	pnpm install
+	cd e2e && pnpm exec playwright install chromium
 	$(BACKEND) uv sync
 
 .PHONY: check
-check: format-check check-backend check-frontend ## Run all linters, type checks and tests
+check: format-check check-backend check-frontend check-e2e ## Run all linters, type checks and tests
 
 .PHONY: format-check
 format-check: ## Prettier: check formatting of all files it knows
@@ -85,6 +86,15 @@ typecheck-frontend: ## Frontend: vue-tsc
 .PHONY: test-frontend
 test-frontend: ## Frontend: Vitest unit and component tests
 	$(FRONTEND) pnpm test
+
+.PHONY: check-e2e
+check-e2e: ## e2e: ESLint and tsc for the test code (does not run the tests)
+	cd e2e && pnpm lint
+	cd e2e && pnpm typecheck
+
+.PHONY: e2e
+e2e: up ## Start the stack and run Playwright tests against it
+	cd e2e && pnpm test
 
 .PHONY: dev-frontend
 dev-frontend: ## Frontend dev server on :5173, proxies /api to localhost:8000

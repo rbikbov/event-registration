@@ -20,6 +20,7 @@ const SHARED = [
 const PARTS = [
   { name: "backend", match: /^backend\//, command: "make dev-deps check-backend" },
   { name: "frontend", match: /^frontend\//, command: "make check-frontend" },
+  { name: "e2e", match: /^e2e\//, command: "make check-e2e" },
   {
     name: "Claude Code hooks and scripts",
     match: /^(\.claude\/hooks|scripts)\//,

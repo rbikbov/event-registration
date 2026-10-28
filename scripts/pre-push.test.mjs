@@ -15,6 +15,10 @@ test("frontend changes run frontend checks", () => {
   assert.deepEqual(commandsFor(["frontend/src/app/App.vue"]), ["make check-frontend"]);
 });
 
+test("e2e changes run static checks of the e2e code", () => {
+  assert.deepEqual(commandsFor(["e2e/tests/smoke.spec.ts"]), ["make check-e2e"]);
+});
+
 test("hook changes run tooling tests", () => {
   assert.deepEqual(commandsFor([".claude/hooks/guard-bash.mjs"]), ["pnpm test:tooling"]);
 });
@@ -23,6 +27,7 @@ test("shared files run every part", () => {
   assert.deepEqual(commandsFor(["Makefile"]), [
     "make dev-deps check-backend",
     "make check-frontend",
+    "make check-e2e",
     "pnpm test:tooling",
   ]);
 });

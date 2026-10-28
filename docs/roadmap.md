@@ -26,7 +26,7 @@
 - [x] Правила backend и миграций, хук защиты закоммиченных миграций
 - [x] Frontend: Vue, страница health, ESLint, vue-tsc, Vitest, FSD-каркас
 - [x] Весь стек в docker compose (postgres, backend, frontend), `make up`; README с запуском
-- [ ] e2e smoke на Playwright
+- [x] e2e smoke на Playwright
 - [ ] CI в GitHub Actions
 - [ ] Правила агента для frontend и e2e; skills `api-change`,
       `anti-slop-review`, `feature-workflow`, `fsd-frontend`, агент `reviewer`

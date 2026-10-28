@@ -24,3 +24,7 @@ __pycache__/
 # frontend build output and TypeScript build info
 dist/
 *.tsbuildinfo
+
+# playwright
+playwright-report/
+test-results/
