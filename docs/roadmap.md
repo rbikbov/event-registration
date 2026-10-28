@@ -55,8 +55,11 @@ E2E: организатор создаёт событие, участник ре
 - skill `api-change` — процедура изменения API, на примере первого доменного эндпоинта;
 - `docs/rules/concurrency.md` — как писать код с блокировками и тесты гонок;
 - в README — таблица «требование → тест» со строками требований фазы;
-- демо-организатор `demo@example.com` / `demo`: management-команда при старте `backend` в
-  compose — им входят проверяющий после `make up` и e2e (`architecture.md`, «Окружение»);
+- демо-учётки — management-команда при старте `backend` в compose: организатор
+  `demo@example.com` / `demo` (им входят проверяющий и e2e) и отдельный администратор
+  `admin@example.com` / `admin` для админки (`architecture.md`, «Окружение»);
+- Event и Registration в админке; Registration — только для чтения (`backend/AGENTS.md`,
+  правило 9);
 - CSRF на фронтенде: `shared/api` передаёт `X-CSRFToken` из cookie `csrftoken` в изменяющих
   запросах — иначе первый `POST` после входа получит 403.
 
