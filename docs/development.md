@@ -61,7 +61,7 @@ docs: describe pre-push hook
 
 Любой выбор, влияющий на код, структуру, стек или сроки, записывается в
 [decisions.md](decisions.md) в том же коммите, что и изменение. Формат и правила — в
-[CLAUDE.md](../CLAUDE.md).
+[AGENTS.md](../AGENTS.md).
 
 ## Нюансы
 
