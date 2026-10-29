@@ -382,10 +382,20 @@ docs: describe pre-push hook
 Code); правило по теме — `docs/rules/<тема>.md`.
 
 Процедуры («как сделать X по шагам») — skills в `.claude/skills/`: `session-handoff`,
-`feature-workflow`, `fsd-frontend`, `anti-slop-review`; агент независимого ревью —
-`.claude/agents/reviewer.md`. Источник — шаблон
+`feature-workflow`, `fsd-frontend`, `anti-slop-review`, `api-change` (черновик); агент
+независимого ревью — `.claude/agents/reviewer.md`. Источник — шаблон
 [rbikbov/frontend-starter](https://github.com/rbikbov/frontend-starter), адаптированный под
 Django + Vue. Шаблоны spec и задач фазы — `docs/features/_template/`.
+
+Чужие skills (`django-security`, `vue-best-practices`, `vue-router-best-practices`,
+`vue-testing-best-practices`) лежат в `.agents/skills/`, а в `.claude/skills/` — симлинки на
+них; версии — в `skills-lock.json`. Их не правят: `npx skills update` и
+`npx skills experimental_install` (восстановить по lock-файлу) перезапишут папку из
+источника. Уточнения под проект — в `AGENTS.md` или в своих skills. Папка `.agents/`
+исключена из Prettier. Симлинки хранятся в git как есть: на Linux, macOS и WSL `git clone`
+создаёт их сам; на Windows без developer mode (или с `core.symlinks=false`) они станут
+текстовыми файлами и skills будут недоступны — клонировать из WSL или включить
+`git config core.symlinks true`.
 
 ## Хуки Claude Code
 
