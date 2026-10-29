@@ -40,6 +40,10 @@ format-check: ## Prettier: check formatting of all files it knows
 check-tooling: ## Tests of Claude Code hooks and repository scripts
 	pnpm test:tooling
 
+.PHONY: worktime
+worktime: ## Working time summed from session markers in docs/decisions.md
+	node scripts/worktime.mjs
+
 .PHONY: check-ci
 check-ci: ## GitHub Actions workflows: actionlint and existence of action tags (needs network)
 	uvx --from actionlint-py actionlint
