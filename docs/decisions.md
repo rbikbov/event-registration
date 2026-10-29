@@ -410,3 +410,13 @@ test:tooling`; общие файлы — Makefile, compose, package.json, lock �
   идемпотентная команда `create_demo_users`, вызываемая в `CMD` Dockerfile `backend` после
   `migrate`. Почему: так в spec (400 вместо 401, учётки при старте compose). Отклонено:
   отдельный сервис-инициализатор в compose — лишний контейнер без потребителя.
+- **01:42** — UI-библиотека: shadcn-vue (Reka UI + Tailwind v4), компоненты в
+  `src/shared/ui/shadcn/`, самописные — в `src/shared/ui/`; токены — CSS-переменные
+  нейтральной темы в `src/app/styles.css`, тёмной темы нет. Установлены `button`, `input`,
+  `label`, `card`, `alert` (экраны входа и форм). Почему: код компонентов в репозитории,
+  токены меняются в одном месте. Отклонено: PrimeVue/Naive UI — тяжелее, токены
+  переопределять сложнее; голый Reka UI со своим CSS — вся вёрстка на нас. Отступление от
+  договорённости: `cn()` лежит в `shared/lib/class-names.ts`, а не `utils.ts`, — skill
+  `fsd-frontend` запрещает имена по роли; алиас `utils` в `components.json` указывает на
+  этот файл. Правила ESLint `multi-word-component-names` и `require-default-prop` смягчены
+  только для `shared/ui/shadcn/` — это соглашение сгенерированного кода.

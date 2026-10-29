@@ -354,6 +354,15 @@ docs: describe pre-push hook
   `src/pages/health/ui/HealthPage.test.ts`.
 - ESLint с правилами на типах: `no-floating-promises`, `no-misused-promises`,
   `switch-exhaustiveness-check`, `consistent-type-imports`, запрет `any`.
+- UI-компоненты — shadcn-vue (Reka UI + Tailwind CSS v4). Код компонентов лежит в
+  репозитории: `src/shared/ui/shadcn/` (сгенерированный, правила ESLint для него смягчены
+  в `eslint.config.js`); `src/shared/ui/` вне этой папки — самописные компоненты.
+  Добавить компонент: `cd frontend && pnpm dlx shadcn-vue@latest add <имя>` — только тот,
+  у которого есть потребитель. Настройка — `frontend/components.json`; `cn()` лежит в
+  `src/shared/lib/class-names.ts`. Дизайн-токены — CSS-переменные в `src/app/styles.css`
+  (`:root`). Нюансы CLI: ему нужен `paths` в `frontend/tsconfig.json` (без него падает с
+  `resolvedPaths: Required`); при несовпадении алиаса он подставляет в импорты npm-пакет
+  `cn` — после `add` проверить `grep -r 'from "cn"' src` и зависимости в `package.json`.
 - Тексты интерфейса — по-русски; код, идентификаторы и логи — по-английски.
 
 ## E2E

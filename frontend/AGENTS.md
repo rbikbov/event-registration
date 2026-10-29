@@ -10,6 +10,7 @@ src/main.ts          точка входа: mountApp("#app")
 src/app/             приложение: App.vue, router.ts, query-client.ts
 src/pages/<page>/    экраны: ui/, api/ (запросы, нужные только странице), index.ts
 src/shared/api/      клиент API, AppError, unwrap, сгенерированный schema.d.ts. Правила: src/shared/api/AGENTS.md
+src/shared/ui/       самописные компоненты; ui/shadcn/ — сгенерированные shadcn-vue, руками не правятся
 src/shared/lib/      утилиты; lib/test/ — MSW и setup для Vitest
 src/widgets|features|entities/   появляются с первым срезом, пустыми не создаются
 ```
@@ -32,3 +33,6 @@ src/widgets|features|entities/   появляются с первым срезо
    `await` или `void` с обработкой ошибки внутри.
 8. Тесты: сеть — только MSW (`server.use()` в каждом тесте), свои модули не мокаются через
    `vi.mock` — зависимости передаются явно (skill `fsd-frontend`, раздел про DI).
+9. Компонент из `shared/ui/shadcn/` не правится: нужен другой вид — обёртка в `shared/ui/`
+   или токены в `app/styles.css`. Новый — `pnpm dlx shadcn-vue@latest add <имя>`, только
+   с потребителем.
