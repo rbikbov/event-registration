@@ -130,6 +130,22 @@ MUST: проверять поведение через публичный API с
 а не `vi.mock` своих модулей. Пример компонентного теста —
 `src/pages/health/ui/HealthPage.test.ts`.
 
+Что чем подменять:
+
+| Что нужно подменить                         | Чем                                                                                            |
+| ------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| HTTP-запросы                                | MSW: `server.use(http.get(...))` в самом тесте; `onUnhandledFrame: "error"` ловит забытые      |
+| Свой модуль (store, composable, api-модуль) | не подменять: передать фейк через props, `provide` или `createX(deps)`                         |
+| Браузерный API без аналога в jsdom          | `vi.stubGlobal("EventSource", FakeEventSource)`; сброс — `vi.unstubAllGlobals()` в `afterEach` |
+| Время (таймеры, `Date`)                     | `vi.useFakeTimers()` и `vi.setSystemTime(...)`; возврат — `vi.useRealTimers()` в `afterEach`   |
+| Router                                      | настоящий `createRouter` с `createMemoryHistory()`, не мок `useRouter`                         |
+| Пакет из `node_modules`                     | `vi.mock` допустим, если у него нет границы, на которой подменяется без мока                   |
+
+Фейк браузерного API — маленький класс в `shared/lib/test/`, который тест может «дёрнуть»
+(`fake.emit(...)`); логика, которая его использует, получает конструктор через `deps`, а не
+читает `globalThis`. Если без `vi.mock` своего модуля тест не написать — модуль слишком
+связан с соседом: исправить границу, а не тест.
+
 ## 9. Готово, когда
 
 - `make check-frontend` проходит: ESLint (с границами), vue-tsc, Vitest.
