@@ -204,7 +204,9 @@ docs: close phase 1 (registration)
    [rules/db-migrations.md](rules/db-migrations.md).
 
 **Создать организатора** (вход в админку и экраны организатора):
-`cd backend && uv run python manage.py createsuperuser`.
+`cd backend && uv run python manage.py createsuperuser`. Демо-учётки `demo@example.com` /
+`demo` и `admin@example.com` / `admin` создаёт `python manage.py create_demo_users` (идемпотентна,
+сбрасывает пароли); в compose она запускается при старте `backend`.
 
 **Запустить один тест:**
 

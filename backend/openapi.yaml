@@ -3,13 +3,70 @@ info:
   title: Event registration API
   version: 0.1.0
 paths:
+  /api/auth/login/:
+    post:
+      operationId: auth_login_create
+      description: |-
+        Starts a session. Wrong credentials are 400, not 401, so the frontend does not
+        mistake them for an expired session.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Login'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Login'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Login'
+        required: true
+      security:
+      - cookieAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /api/auth/logout/:
+    post:
+      operationId: auth_logout_create
+      tags:
+      - auth
+      security:
+      - cookieAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/auth/me/:
+    get:
+      operationId: auth_me_retrieve
+      description: |-
+        The frontend asks who is signed in; the response also hands out the CSRF cookie
+        that it sends back in X-CSRFToken on unsafe requests.
+      tags:
+      - auth
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
   /api/health/:
     get:
-      operationId: api_health_retrieve
+      operationId: health_retrieve
       description: Liveness and database check for compose healthchecks, e2e and the
         frontend.
       tags:
-      - api
+      - health
       security:
       - {}
       responses:
@@ -45,3 +102,33 @@ components:
       description: |-
         * `ok` - ok
         * `error` - error
+    Login:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          writeOnly: true
+      required:
+      - email
+      - password
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        email:
+          type: string
+          format: email
+          readOnly: true
+      required:
+      - email
+      - id
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid

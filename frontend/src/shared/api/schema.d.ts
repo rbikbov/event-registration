@@ -4,6 +4,62 @@
  */
 
 export interface paths {
+    "/api/auth/login/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * @description Starts a session. Wrong credentials are 400, not 401, so the frontend does not
+         *     mistake them for an expired session.
+         */
+        post: operations["auth_login_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/logout/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["auth_logout_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/me/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * @description The frontend asks who is signed in; the response also hands out the CSRF cookie
+         *     that it sends back in X-CSRFToken on unsafe requests.
+         */
+        get: operations["auth_me_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/health/": {
         parameters: {
             query?: never;
@@ -12,7 +68,7 @@ export interface paths {
             cookie?: never;
         };
         /** @description Liveness and database check for compose healthchecks, e2e and the frontend. */
-        get: operations["api_health_retrieve"];
+        get: operations["health_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
@@ -35,6 +91,16 @@ export interface components {
          * @enum {string}
          */
         HealthStateEnum: "ok" | "error";
+        Login: {
+            /** Format: email */
+            email: string;
+            password: string;
+        };
+        User: {
+            readonly id: number;
+            /** Format: email */
+            readonly email: string;
+        };
     };
     responses: never;
     parameters: never;
@@ -44,7 +110,69 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    api_health_retrieve: {
+    auth_login_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Login"];
+                "application/x-www-form-urlencoded": components["schemas"]["Login"];
+                "multipart/form-data": components["schemas"]["Login"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["User"];
+                };
+            };
+        };
+    };
+    auth_logout_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description No response body */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    auth_me_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["User"];
+                };
+            };
+        };
+    };
+    health_retrieve: {
         parameters: {
             query?: never;
             header?: never;

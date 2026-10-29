@@ -10,7 +10,7 @@ backend → frontend → e2e/доки. Логика — тест вперёд; �
 
 Сквозной контракт: view → `openapi.yaml` → типы → страница. Проходит весь путь api-change.
 
-- [ ] 1.1 backend: `POST /api/auth/login/`, `logout/`, `GET me/` (сессия, CSRF),
+- [x] 1.1 backend: `POST /api/auth/login/`, `logout/`, `GET me/` (сессия, CSRF),
       management-команда демо-учёток, вызов при старте `backend` в compose. Готово, когда:
       тесты входа/выхода/`me` зелёные, `openapi.yaml` обновлён, `docker compose up`
       создаёт `demo@` и `admin@`.
