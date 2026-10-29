@@ -9,10 +9,11 @@
 src/main.ts          точка входа: mountApp("#app")
 src/app/             приложение: App.vue, router.ts, query-client.ts
 src/pages/<page>/    экраны: ui/, api/ (запросы, нужные только странице), index.ts
+src/entities/session/ кто вошёл: meQuery (null — гость)
 src/shared/api/      клиент API, AppError, unwrap, сгенерированный schema.d.ts. Правила: src/shared/api/AGENTS.md
 src/shared/ui/       самописные компоненты; ui/shadcn/ — сгенерированные shadcn-vue, руками не правятся
 src/shared/lib/      утилиты; lib/test/ — MSW и setup для Vitest
-src/widgets|features|entities/   появляются с первым срезом, пустыми не создаются
+src/widgets|features/            появляются с первым срезом, пустыми не создаются
 ```
 
 ## Правила

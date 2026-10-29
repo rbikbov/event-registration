@@ -420,3 +420,13 @@ test:tooling`; общие файлы — Makefile, compose, package.json, lock �
   `fsd-frontend` запрещает имена по роли; алиас `utils` в `components.json` указывает на
   этот файл. Правила ESLint `multi-word-component-names` и `require-default-prop` смягчены
   только для `shared/ui/shadcn/` — это соглашение сгенерированного кода.
+- **02:05** — вход на фронтенде: «кто вошёл» — срез `entities/session` (`meQuery`; гость —
+  `null`, а не ошибка: 403 на `me` — состояние страницы); guard в `app/router.ts`
+  (`createAppRouter(queryClient, history)` — фабрика, чтобы тестировать с memory history и
+  MSW), маршруты с `meta.requiresAuth`. Сессия кэшируется в vue-query (`ensureQueryData`);
+  после входа `setQueryData`. Ошибка проверки сессии кроме 401/403 (сервер недоступен)
+  обрывает переход — громко, а не как «гость». Форма входа валидируется zod-схемой
+  (`pages/login/model`), чистая функция возвращает коды ошибок, тексты — в компоненте
+  (правило 5). `/org/events` пока заглушка с заголовком до задачи 2.2. Почему zod здесь:
+  решение от 21:42 — «zod с первой формой». Отклонено: guard через `useQuery` в
+  компоненте — страница мигала бы до ответа `me`.

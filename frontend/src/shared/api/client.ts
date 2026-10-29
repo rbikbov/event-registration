@@ -1,6 +1,7 @@
 import createClient from "openapi-fetch";
 
 import { AppError } from "./app-error";
+import { csrfMiddleware } from "./csrf";
 import type { paths } from "./schema";
 
 // Typed from backend/openapi.yaml: a path, method or field missing from the contract
@@ -11,6 +12,8 @@ export const api = createClient<paths>({
   // and request interception set up later (MSW in tests) would be bypassed.
   fetch: (request) => globalThis.fetch(request),
 });
+
+api.use(csrfMiddleware);
 
 interface ApiResult<Data> {
   data?: Data;

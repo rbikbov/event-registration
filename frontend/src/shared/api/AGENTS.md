@@ -4,6 +4,8 @@
   данные или бросает `AppError`; сетевую ошибку — как `kind: "network"`.
 - `AppError.kind` выводится из HTTP-статуса в `app-error.ts` и только там. Новый статус или
   новый `kind` — правка `kindForStatus` и новый случай в `app-error.test.ts`.
+- `csrf.ts` — middleware: `X-CSRFToken` из cookie `csrftoken` на всех изменяющих запросах;
+  страницы заголовок сами не ставят.
 - Выше этой папки не читают `Response`, статусы и тексты ошибок — только `kind`.
 - `schema.d.ts` генерируется из `backend/openapi.yaml` (`make schema`) и руками не правится;
   `make schema-check` сравнивает его с генерацией.
