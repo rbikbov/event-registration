@@ -267,6 +267,10 @@ docs: close phase 1 (registration)
 ветка. actionlint этого не проверяет: `astral-sh/setup-uv@v10` он пропустил, а CI упал —
 проект не публикует мажорные теги, только полные версии.
 
+`actions/checkout` в job `checks` берёт полную историю (`fetch-depth: 0`): по умолчанию клон
+поверхностный, базового коммита PR в нём нет, и commitlint падает с `Invalid revision range`,
+хотя `make check` прошёл.
+
 Хуки не обходим (`--no-verify`): если проверка мешает, исправляем причину или обсуждаем
 правило.
 
