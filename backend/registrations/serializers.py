@@ -1,3 +1,5 @@
+from typing import Any
+
 from rest_framework import serializers
 
 from registrations.models import Registration
@@ -8,10 +10,11 @@ class RegisterRequestSerializer(serializers.Serializer[None]):
     name = serializers.CharField(max_length=200)
 
 
-class RegistrationResultSerializer(serializers.ModelSerializer[Registration]):
-    """What the participant sees: no ticket code or manage token, they go out by email only."""
+class RegistrationResultSerializer(serializers.Serializer[dict[str, Any]]):
+    """What the participant sees: no ticket code or manage token, they go out by email only.
 
-    class Meta:
-        model = Registration
-        fields = ("status",)
-        read_only_fields = fields
+    `position` is present only for a waitlisted registration.
+    """
+
+    status = serializers.ChoiceField(choices=Registration.Status.choices, read_only=True)
+    position = serializers.IntegerField(min_value=1, required=False, read_only=True)

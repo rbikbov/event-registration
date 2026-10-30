@@ -50,13 +50,28 @@ def test_repeat_returns_200_and_no_second_registration(event: Event) -> None:
     assert Registration.objects.count() == 1
 
 
-def test_full_event_is_409(event: Event) -> None:
+def test_full_event_returns_the_waitlist_position(event: Event) -> None:
     APIClient().post(url(event.id), body(), format="json")
 
-    response = APIClient().post(url(event.id), body(email="b@x.io"), format="json")
+    first = APIClient().post(url(event.id), body(email="b@x.io"), format="json")
+    second = APIClient().post(url(event.id), body(email="c@x.io"), format="json")
 
-    assert response.status_code == 409
-    assert Registration.objects.count() == 1
+    assert first.status_code == 201
+    assert first.json() == {"status": "waitlisted", "position": 1}
+    assert second.json() == {"status": "waitlisted", "position": 2}
+    assert Registration.objects.count() == 3
+
+
+def test_repeat_on_the_waitlist_is_200_with_the_same_position(event: Event) -> None:
+    client = APIClient()
+    client.post(url(event.id), body(), format="json")
+    client.post(url(event.id), body(email="b@x.io"), format="json")
+
+    response = client.post(url(event.id), body(email="B@x.io"), format="json")
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "waitlisted", "position": 1}
+    assert Registration.objects.count() == 2
 
 
 def test_unknown_event_is_404() -> None:
