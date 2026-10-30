@@ -125,10 +125,17 @@ STACK_COMPOSE = POSTGRES_PORT=$(STACK_POSTGRES_PORT) BACKEND_PORT=$(call slot_po
 stack-slot:
 	@case "$(SLOT)" in [1-9]) ;; *) echo "SLOT must be 1-9; slot 0 is make up" >&2; exit 1 ;; esac
 
-.PHONY: stack-check
-stack-check: stack-slot ## make check against the Postgres of slot SLOT (default 1)
+.PHONY: stack-postgres
+stack-postgres: stack-slot
 	$(STACK_COMPOSE) up -d --wait postgres
+
+.PHONY: stack-check
+stack-check: stack-postgres ## make check against the Postgres of slot SLOT (default 1)
 	POSTGRES_PORT=$(STACK_POSTGRES_PORT) $(MAKE) check
+
+.PHONY: stack-check-backend
+stack-check-backend: stack-postgres ## make check-backend against the Postgres of slot SLOT
+	POSTGRES_PORT=$(STACK_POSTGRES_PORT) $(MAKE) check-backend
 
 .PHONY: stack-up
 stack-up: stack-slot ## Stack of slot SLOT: frontend on 5173+SLOT, Mailpit on 8025+SLOT
