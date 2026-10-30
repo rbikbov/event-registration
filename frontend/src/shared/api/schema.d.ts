@@ -60,6 +60,56 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/events/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Future events with free seats, for everyone. */
+        get: operations["events_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/events/{event_id}/registrations/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Registers a participant by email. Open to everyone and independent of the session. */
+        post: operations["events_registrations_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/events/{id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["events_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/health/": {
         parameters: {
             query?: never;
@@ -106,6 +156,10 @@ export interface components {
             /** Format: date-time */
             starts_at: string;
             capacity: number;
+            /** @default 0 */
+            readonly confirmed: number;
+            /** @default 0 */
+            readonly waitlisted: number;
         };
         EventRequest: {
             title: string;
@@ -129,6 +183,39 @@ export interface components {
             email: string;
             password: string;
         };
+        PublicEvent: {
+            readonly id: number;
+            readonly title: string;
+            readonly description: string;
+            /** Format: date-time */
+            readonly starts_at: string;
+            readonly capacity: number;
+            readonly free_seats: number;
+        };
+        PublicEventList: {
+            readonly id: number;
+            readonly title: string;
+            /** Format: date-time */
+            readonly starts_at: string;
+            readonly capacity: number;
+            readonly free_seats: number;
+        };
+        RegisterRequestRequest: {
+            /** Format: email */
+            email: string;
+            name: string;
+        };
+        /** @description What the participant sees: no ticket code or manage token, they go out by email only. */
+        RegistrationResult: {
+            readonly status: components["schemas"]["RegistrationResultStatusEnum"];
+        };
+        /**
+         * @description * `confirmed` - Confirmed
+         *     * `waitlisted` - Waitlisted
+         *     * `cancelled` - Cancelled
+         * @enum {string}
+         */
+        RegistrationResultStatusEnum: "confirmed" | "waitlisted" | "cancelled";
         User: {
             readonly id: number;
             /** Format: email */
@@ -214,6 +301,103 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["User"];
+                };
+            };
+        };
+    };
+    events_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicEventList"][];
+                };
+            };
+        };
+    };
+    events_registrations_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegisterRequestRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["RegisterRequestRequest"];
+                "multipart/form-data": components["schemas"]["RegisterRequestRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RegistrationResult"];
+                };
+            };
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RegistrationResult"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidationError"];
+                };
+            };
+            /** @description No such event */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No free seats */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    events_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PublicEvent"];
                 };
             };
         };
