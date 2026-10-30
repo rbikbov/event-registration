@@ -10,7 +10,7 @@ Spec — `spec.md`. Одна задача — один коммит; отмет�
 
 Сквозной путь: `register` → outbox в транзакции → воркер → SMTP → письмо в Mailpit.
 
-- [ ] 1.1 backend: приложение `emails`, модель OutboxEmail + миграция, админка (только
+- [x] 1.1 backend: приложение `emails`, модель OutboxEmail + миграция, админка (только
       чтение); `enqueue_email` (снимок текста, `ON CONFLICT DO NOTHING`), шаблон `ticket`;
       `register` ставит `ticket` в той же транзакции; настройки `EMAIL_*`,
       `DEFAULT_FROM_EMAIL`, `FRONTEND_URL`. Готово, когда: тесты «одно письмо с кодом и

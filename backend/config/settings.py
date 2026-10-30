@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     "accounts",
     "events",
     "registrations",
+    "emails",
 ]
 
 MIDDLEWARE = [
@@ -106,6 +107,13 @@ STORAGES = {
 }
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# SMTP of the local Mailpit; tests switch to the locmem backend on their own.
+EMAIL_HOST = env("EMAIL_HOST", "localhost")
+EMAIL_PORT = int(env("EMAIL_PORT", "1025"))
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", "events@example.com")
+# Links in emails lead to the frontend, not to the API host.
+FRONTEND_URL = env("FRONTEND_URL", "http://localhost:5173")
 
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
