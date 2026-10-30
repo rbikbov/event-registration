@@ -72,3 +72,15 @@ def test_batch_takes_the_oldest_due_emails_up_to_its_size(event: Event) -> None:
 
     assert sent == [email.id for email in queued[:BATCH_SIZE]]
     assert process_batch() == [queued[-1].id]
+
+
+def test_event_title_with_line_breaks_is_sent_with_a_one_line_subject(event: Event) -> None:
+    # A line break in a header makes Django refuse the whole message.
+    event.title = "Meetup\r\nafter work"
+    event.save()
+    queue_ticket(event, "a@x.io")
+
+    process_batch()
+
+    [message] = mail.outbox
+    assert message.subject == "Билет: Meetup after work"
