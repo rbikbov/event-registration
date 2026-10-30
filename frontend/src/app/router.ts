@@ -2,6 +2,7 @@ import type { QueryClient } from "@tanstack/vue-query";
 import { createRouter, type RouterHistory } from "vue-router";
 
 import { meQuery } from "@/entities/session";
+import { EventPage } from "@/pages/event";
 import { HealthPage } from "@/pages/health";
 import { HomePage } from "@/pages/home";
 import { LoginPage } from "@/pages/login";
@@ -14,6 +15,7 @@ export function createAppRouter(queryClient: QueryClient, history: RouterHistory
     history,
     routes: [
       { path: routes.home, component: HomePage },
+      { path: routes.event, component: EventPage },
       { path: routes.health, component: HealthPage },
       { path: routes.login, component: LoginPage },
       { path: routes.orgEvents, component: OrgEventsPage, meta: { requiresAuth: true } },
