@@ -109,6 +109,23 @@ check-e2e: ## e2e: ESLint and tsc for the test code (does not run the tests)
 e2e: up ## Start the stack and run Playwright tests against it
 	cd e2e && pnpm test
 
+# A separate compose project with its own containers, volumes and ports, so a review does
+# not recreate the developer's stack or touch its data.
+REVIEW_COMPOSE := POSTGRES_PORT=5433 BACKEND_PORT=8001 FRONTEND_PORT=5174 MAILPIT_PORT=8026 \
+	MAILPIT_SMTP_PORT=1026 docker compose -p review
+
+.PHONY: review-up
+review-up: ## Separate review stack: http://localhost:5174, Mailpit http://localhost:8026
+	$(REVIEW_COMPOSE) up -d --build --wait
+
+.PHONY: review-e2e
+review-e2e: review-up ## Start the review stack and run Playwright tests against it
+	cd e2e && E2E_BASE_URL=http://localhost:5174 pnpm test
+
+.PHONY: review-down
+review-down: ## Remove the review stack with its volumes
+	$(REVIEW_COMPOSE) down -v
+
 .PHONY: dev-frontend
 dev-frontend: ## Frontend dev server on :5173, proxies /api to localhost:8000
 	$(FRONTEND) pnpm dev
