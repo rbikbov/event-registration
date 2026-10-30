@@ -5,7 +5,7 @@ FRONTEND := cd frontend &&
 
 .PHONY: help
 help: ## List targets
-	@grep -hE '^[a-z0-9-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-20s %s\n", $$1, $$2}'
+	@grep -hE '^[a-z0-9-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-24s %s\n", $$1, $$2}'
 
 .PHONY: up
 up: ## Build and start the whole stack; open http://localhost:5173
@@ -109,29 +109,53 @@ check-e2e: ## e2e: ESLint and tsc for the test code (does not run the tests)
 e2e: up ## Start the stack and run Playwright tests against it
 	cd e2e && pnpm test
 
-# A separate compose project with its own containers, volumes and ports, so a review does
-# not recreate the developer's stack or touch its data. The project name is global to the
-# Docker daemon, hence the repository prefix.
-REVIEW_POSTGRES_PORT := 5433
-REVIEW_COMPOSE := POSTGRES_PORT=$(REVIEW_POSTGRES_PORT) BACKEND_PORT=8001 FRONTEND_PORT=5174 \
-	MAILPIT_PORT=8026 MAILPIT_SMTP_PORT=1026 docker compose -p event-registration-review
+# Slot stacks: separate compose projects with their own containers, volumes and ports, so
+# the developer (slot 0, `make up`), the agent (slot 1) and the reviewer (slot 2) can run
+# at the same time. Every port is the default plus the slot number. The project name is
+# global to the Docker daemon, hence the repository prefix.
+SLOT ?= 1
+slot_port = $(shell echo $$(($(1) + $(SLOT))))
+STACK_POSTGRES_PORT = $(call slot_port,5432)
+STACK_FRONTEND_PORT = $(call slot_port,5173)
+STACK_COMPOSE = POSTGRES_PORT=$(STACK_POSTGRES_PORT) BACKEND_PORT=$(call slot_port,8000) \
+	FRONTEND_PORT=$(STACK_FRONTEND_PORT) MAILPIT_PORT=$(call slot_port,8025) \
+	MAILPIT_SMTP_PORT=$(call slot_port,1025) docker compose -p event-registration-s$(SLOT)
 
-.PHONY: review-check
-review-check: ## make check against the review stack's Postgres (port 5433)
-	$(REVIEW_COMPOSE) up -d --wait postgres
-	POSTGRES_PORT=$(REVIEW_POSTGRES_PORT) $(MAKE) check
+.PHONY: stack-slot
+stack-slot:
+	@case "$(SLOT)" in [1-9]) ;; *) echo "SLOT must be 1-9; slot 0 is make up" >&2; exit 1 ;; esac
 
-.PHONY: review-up
-review-up: ## Separate review stack: http://localhost:5174, Mailpit http://localhost:8026
-	$(REVIEW_COMPOSE) up -d --build --wait
+.PHONY: stack-check
+stack-check: stack-slot ## make check against the Postgres of slot SLOT (default 1)
+	$(STACK_COMPOSE) up -d --wait postgres
+	POSTGRES_PORT=$(STACK_POSTGRES_PORT) $(MAKE) check
 
-.PHONY: review-e2e
-review-e2e: review-up ## Start the review stack and run Playwright tests against it
-	cd e2e && E2E_BASE_URL=http://localhost:5174 pnpm test
+.PHONY: stack-up
+stack-up: stack-slot ## Stack of slot SLOT: frontend on 5173+SLOT, Mailpit on 8025+SLOT
+	$(STACK_COMPOSE) up -d --build --wait
 
-.PHONY: review-down
-review-down: ## Remove the review stack with its volumes
-	$(REVIEW_COMPOSE) down -v
+.PHONY: stack-e2e
+stack-e2e: stack-up ## Start the stack of slot SLOT and run Playwright tests against it
+	cd e2e && E2E_BASE_URL=http://localhost:$(STACK_FRONTEND_PORT) pnpm test
+
+.PHONY: stack-down
+stack-down: stack-slot ## Remove the stack of slot SLOT with its volumes
+	$(STACK_COMPOSE) down -v
+
+# A detached worktree at REF for the reviewer, so it checks exactly the reviewed commits
+# while the working tree keeps changing. Dependencies come from the pnpm and uv caches.
+REVIEW_WORKTREE := .claude/worktrees/review
+
+.PHONY: review-worktree
+review-worktree: ## Worktree for the reviewer at REF in .claude/worktrees/review
+	@test -n "$(REF)" || { echo "usage: make review-worktree REF=<commit>" >&2; exit 1; }
+	git worktree add --detach $(REVIEW_WORKTREE) $(REF)
+	cd $(REVIEW_WORKTREE) && pnpm install --frozen-lockfile --prefer-offline
+	cd $(REVIEW_WORKTREE)/backend && uv sync --frozen
+
+.PHONY: review-worktree-remove
+review-worktree-remove: ## Remove the reviewer's worktree
+	git worktree remove $(REVIEW_WORKTREE)
 
 .PHONY: dev-frontend
 dev-frontend: ## Frontend dev server on :5173, proxies /api to localhost:8000
