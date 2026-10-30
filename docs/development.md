@@ -69,9 +69,10 @@ make down   # остановить; данные БД остаются в том
 - `make up` = `docker compose up -d --build --wait`: ждёт healthcheck всех сервисов.
 - `backend/Dockerfile`: Python 3.12 + uv, зависимости из `uv.lock` без dev-группы; при старте
   `migrate`, затем uvicorn (ASGI — понадобится для SSE).
-- `worker` — тот же образ `backend` с командой `python manage.py run_worker`: раз в секунду
-  берёт из outbox пачку до 20 писем и отправляет их в Mailpit. Стартует после healthy
-  `backend` (миграции применены) и Mailpit. В логе — только `id` писем, без адресов и ссылок.
+- `worker` — тот же образ `backend` с командой `python manage.py run_worker`: берёт из outbox
+  пачки до 20 писем подряд и отправляет их в Mailpit; если писем нет — ждёт 1 с. Стартует
+  после healthy `backend` (миграции применены) и Mailpit, после падения перезапускается
+  (`restart: unless-stopped`). В логе — только `id` писем, без адресов и ссылок.
 - Mailpit — SMTP-ловушка: письма не уходят наружу, их видно в веб-интерфейсе
   http://localhost:8025 (он же API для e2e). SMTP опубликован на :1025 для `make dev-worker`.
 - `frontend/Dockerfile` собирается из корня репозитория (там pnpm workspace и lock-файл) и
