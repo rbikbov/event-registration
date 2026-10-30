@@ -37,7 +37,8 @@ def enqueue_email(kind: OutboxEmail.Kind, registration: Registration) -> None:
         registration=registration,
         dedup_key=f"{kind}:{registration.id}:{registration.ticket_code}",
         to=registration.email,
-        subject=SUBJECTS[kind].format(title=event.title),
+        # One line: a line break in a header makes Django refuse to send the message.
+        subject=SUBJECTS[kind].format(title=" ".join(event.title.split())),
         body=render_to_string(f"emails/{kind}.txt", context),
     )
     # ON CONFLICT DO NOTHING: the unique dedup_key keeps one email per change.
