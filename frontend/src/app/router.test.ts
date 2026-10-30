@@ -15,7 +15,7 @@ function signedIn(): void {
 }
 
 function guest(): void {
-  server.use(http.get("*/api/auth/me/", () => HttpResponse.json({}, { status: 403 })));
+  server.use(http.get("*/api/auth/me/", () => HttpResponse.json({}, { status: 401 })));
 }
 
 function setup() {

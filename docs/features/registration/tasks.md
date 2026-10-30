@@ -25,7 +25,8 @@ backend → frontend → e2e/доки. Логика — тест вперёд; �
 
 ## Этап 2. Организатор создаёт событие и видит список
 
-- [ ] 2.1 backend: приложение `events`, модель Event + миграция, админка, `for_organizer`;
+- [ ] 2.1 backend (в т.ч. решить формат ошибок полей — черновик в skill `api-change`, раздел
+      «Ошибки»; `docs/decisions.md` от 03:20): приложение `events`, модель Event + миграция, админка, `for_organizer`;
       `GET/POST /api/org/events/` со счётчиками через `annotate`. Готово, когда: тесты
       создания, валидации, «чужое не видно», `django_assert_num_queries` зелёные.
 - [ ] 2.2 frontend: сущность `event`, страницы `/org/events` и `/org/events/new`, состояния

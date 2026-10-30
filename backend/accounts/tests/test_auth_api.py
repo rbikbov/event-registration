@@ -41,7 +41,7 @@ def test_login_rejects_bad_credentials_with_400(organizer: User, payload: dict[s
     response = client.post("/api/auth/login/", payload)
 
     assert response.status_code == 400
-    assert client.get("/api/auth/me/").status_code == 403
+    assert client.get("/api/auth/me/").status_code == 401
 
 
 def test_login_rejects_inactive_user(organizer: User) -> None:
@@ -55,10 +55,11 @@ def test_login_rejects_inactive_user(organizer: User) -> None:
     assert response.status_code == 400
 
 
-def test_me_without_session_is_403_and_sets_csrf_cookie() -> None:
+def test_me_without_session_is_401_and_sets_csrf_cookie() -> None:
     response = APIClient().get("/api/auth/me/")
 
-    assert response.status_code == 403
+    assert response.status_code == 401
+    assert response["WWW-Authenticate"] == "Session"
     assert "csrftoken" in response.cookies
 
 
@@ -79,11 +80,11 @@ def test_logout_ends_session(organizer: User) -> None:
     response = client.post("/api/auth/logout/")
 
     assert response.status_code == 204
-    assert client.get("/api/auth/me/").status_code == 403
+    assert client.get("/api/auth/me/").status_code == 401
 
 
-def test_logout_without_session_is_403() -> None:
-    assert APIClient().post("/api/auth/logout/").status_code == 403
+def test_logout_without_session_is_401() -> None:
+    assert APIClient().post("/api/auth/logout/").status_code == 401
 
 
 def test_logout_requires_csrf_token(organizer: User) -> None:

@@ -36,7 +36,7 @@ description: >
   `IsAuthenticated`; публичный view явно ставит `AllowAny`). Событие берётся через
   `get_org_event(user, id)`: несуществующее — 404, чужое — 403 (решение от 01:17 в
   `docs/decisions.md`); список — через `Event.objects.for_organizer(user)`. Тест:
-  пользователь A по id события B получает 403, а не данные.
+  пользователь A по id события B получает 403, а не данные; гость — 401.
 - **CSRF.** Изменяющий запрос организатора идёт с `X-CSRFToken` (`shared/api/csrf.ts`
   добавляет сам). Тест CSRF — `APIClient(enforce_csrf_checks=True)`, образец —
   `test_logout_requires_csrf_token`.
@@ -54,9 +54,18 @@ description: >
 `{"non_field_errors": [...]}`; остальные 4xx — `{"detail": "..."}`. Фронтенд тело не читает:
 `AppError.kind` выводится из статуса (`shared/api/app-error.ts`: 400/422 — `validation`,
 401 — `unauthorized`, 403 — `forbidden`, 404 — `not_found`, 409 — `conflict`, 5xx — `server`).
-Новый статус — правка `kindForStatus` и тест; ошибку поля показывает форма по своим кодам, а
-не по тексту сервера. Анонимный запрос к закрытому эндпоинту (`SessionAuthentication`) даёт
-403, не 401; «неверный логин» — 400, чтобы не путать с протухшей сессией.
+Новый статус — правка `kindForStatus` и тест. Анонимный запрос к закрытому эндпоинту — 401
+(`accounts.authentication.SessionAuthenticationWith401`: без заголовка `WWW-Authenticate`
+DRF подменяет 401 на 403); 403 — «вошёл, но нельзя» (чужое событие, CSRF). «Неверный логин» —
+400, чтобы не путать с протухшей сессией.
+
+> ЧЕРНОВИК (решить и проверить на задачах 2.1–2.2, первая форма с серверной валидацией):
+> ошибки полей. DRF по умолчанию отдаёт английский текст, показывать его в русском
+> интерфейсе нельзя. Предложение: свой exception handler отдаёт для 400 коды —
+> `{"errors": {"capacity": ["min_value"]}}` (`exc.get_codes()`); `unwrap()` кладёт их в
+> `AppError.fields`; форма сопоставляет код с текстом в своём `<i18n>`. Формат описывается в
+> схеме OpenAPI. Решение и итоговый формат — в `docs/decisions.md`; после этого убрать
+> пометку и перенести формат в этот раздел.
 
 Образец теста эндпоинта — `backend/accounts/tests/test_auth_api.py`: `APIClient`,
 `force_login`, параметризованные плохие входы, статус и тело.
