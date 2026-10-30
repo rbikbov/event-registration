@@ -93,3 +93,37 @@ def test_logout_requires_csrf_token(organizer: User) -> None:
 
     assert client.post("/api/auth/logout/").status_code == 403
     assert client.get("/api/auth/me/").status_code == 200
+
+
+def test_guest_logs_in_without_a_csrf_token(organizer: User) -> None:
+    client = APIClient(enforce_csrf_checks=True)
+
+    response = client.post("/api/auth/login/", {"email": organizer.email, "password": PASSWORD})
+
+    assert response.status_code == 200
+
+
+def test_signed_in_user_logs_in_again_with_a_csrf_token(organizer: User) -> None:
+    client = APIClient(enforce_csrf_checks=True)
+    client.post("/api/auth/login/", {"email": organizer.email, "password": PASSWORD})
+    token = client.get("/api/auth/me/").cookies["csrftoken"].value
+
+    response = client.post(
+        "/api/auth/login/",
+        {"email": organizer.email, "password": PASSWORD},
+        headers={"X-CSRFToken": token},
+    )
+
+    assert response.status_code == 200
+
+
+def test_login_replaces_the_session_key(organizer: User) -> None:
+    client = APIClient()
+    session = client.session
+    session["seen"] = True
+    session.save()
+    before = client.cookies["sessionid"].value
+
+    client.post("/api/auth/login/", {"email": organizer.email, "password": PASSWORD})
+
+    assert client.cookies["sessionid"].value != before
