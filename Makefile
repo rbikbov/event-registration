@@ -5,7 +5,7 @@ FRONTEND := cd frontend &&
 
 .PHONY: help
 help: ## List targets
-	@grep -hE '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-20s %s\n", $$1, $$2}'
+	@grep -hE '^[a-z0-9-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-20s %s\n", $$1, $$2}'
 
 .PHONY: up
 up: ## Build and start the whole stack; open http://localhost:5173
@@ -110,9 +110,16 @@ e2e: up ## Start the stack and run Playwright tests against it
 	cd e2e && pnpm test
 
 # A separate compose project with its own containers, volumes and ports, so a review does
-# not recreate the developer's stack or touch its data.
-REVIEW_COMPOSE := POSTGRES_PORT=5433 BACKEND_PORT=8001 FRONTEND_PORT=5174 MAILPIT_PORT=8026 \
-	MAILPIT_SMTP_PORT=1026 docker compose -p review
+# not recreate the developer's stack or touch its data. The project name is global to the
+# Docker daemon, hence the repository prefix.
+REVIEW_POSTGRES_PORT := 5433
+REVIEW_COMPOSE := POSTGRES_PORT=$(REVIEW_POSTGRES_PORT) BACKEND_PORT=8001 FRONTEND_PORT=5174 \
+	MAILPIT_PORT=8026 MAILPIT_SMTP_PORT=1026 docker compose -p event-registration-review
+
+.PHONY: review-check
+review-check: ## make check against the review stack's Postgres (port 5433)
+	$(REVIEW_COMPOSE) up -d --wait postgres
+	POSTGRES_PORT=$(REVIEW_POSTGRES_PORT) $(MAKE) check
 
 .PHONY: review-up
 review-up: ## Separate review stack: http://localhost:5174, Mailpit http://localhost:8026
