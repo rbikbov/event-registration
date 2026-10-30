@@ -64,7 +64,6 @@ const fieldErrors = computed<RegistrationFormErrors>(() => ({
 // A 400 without field codes, or any other failure, has no field to blame.
 const submitError = computed(() => {
   if (!(error.value instanceof AppError)) return null;
-  if (error.value.kind === "conflict") return t("full");
   if (error.value.kind === "validation" && Object.keys(fieldErrors.value).length > 0) return null;
   return t("tryLater");
 });
@@ -124,7 +123,11 @@ const fields: { name: "email" | "name"; type: string; autocomplete: string }[] =
         <CardContent>
           <Alert v-if="result" role="status">
             <AlertDescription>
-              {{ result.status === "confirmed" ? t("confirmed") : t("accepted") }}
+              {{
+                result.status === "waitlisted" && result.position !== undefined
+                  ? t("waitlisted", { position: result.position })
+                  : t("confirmed")
+              }}
             </AlertDescription>
           </Alert>
           <form v-else class="grid gap-4" novalidate @submit.prevent="submit">
@@ -162,7 +165,7 @@ const fields: { name: "email" | "name"; type: string; autocomplete: string }[] =
   "retry": "Повторить",
   "notFound": "Такого события нет",
   "freeSeats": "Свободно {count} место | Свободно {count} места | Свободно {count} мест",
-  "noSeats": "Свободных мест нет",
+  "noSeats": "Свободных мест нет, можно встать в лист ожидания",
   "register": "Регистрация",
   "fields": {
     "email": "Email",
@@ -171,8 +174,7 @@ const fields: { name: "email" | "name"; type: string; autocomplete: string }[] =
   "submit": "Зарегистрироваться",
   "submitting": "Отправляем…",
   "confirmed": "Место подтверждено",
-  "accepted": "Регистрация принята",
-  "full": "Свободных мест не осталось",
+  "waitlisted": "Вы в листе ожидания, №{position}",
   "tryLater": "Не удалось зарегистрироваться, попробуйте позже",
   "errors": {
     "required": "Обязательное поле",
