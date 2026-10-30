@@ -94,6 +94,18 @@ def test_promotion_follows_queued_at_then_id(event: Event) -> None:
     assert statuses(event)["late@x.io"] == "waitlisted"
 
 
+def test_promotion_breaks_a_queued_at_tie_by_id(event: Event) -> None:
+    now = timezone.now()
+    first = register(event.id, "a@x.io", "Ann", now=now).registration
+    second = register(event.id, "b@x.io", "Bob", now=now)
+    register(event.id, "c@x.io", "Cid", now=now)
+    assert second.position == 1
+
+    cancel(first.manage_token)
+
+    assert statuses(event) == {"a@x.io": "cancelled", "b@x.io": "confirmed", "c@x.io": "waitlisted"}
+
+
 def test_cancel_with_an_unknown_token_raises() -> None:
     with pytest.raises(Registration.DoesNotExist):
         cancel("nope")
@@ -103,8 +115,9 @@ def test_register_after_cancel_revives_the_row_with_a_new_ticket_code(event: Eve
     first = register(event.id, "a@x.io", "Ann").registration
     old_code, old_token = first.ticket_code, first.manage_token
     cancel(first.manage_token)
+    now = timezone.now()
 
-    result = register(event.id, "a@x.io", "Ann again")
+    result = register(event.id, "a@x.io", "Ann again", now=now)
 
     assert result.created is True
     assert result.registration.id == first.id
@@ -112,6 +125,8 @@ def test_register_after_cancel_revives_the_row_with_a_new_ticket_code(event: Eve
     assert result.registration.cancelled_at is None
     assert result.registration.ticket_code != old_code
     assert result.registration.manage_token == old_token
+    assert result.registration.queued_at == now
+    assert result.registration.confirmed_at == now
     assert Registration.objects.count() == 1
 
 
@@ -126,6 +141,29 @@ def test_register_after_cancel_on_a_full_event_goes_to_the_waitlist_tail(event: 
     assert result.registration.status == "waitlisted"
     assert result.position == 2
     assert result.registration.confirmed_at is None
+
+
+def test_revived_from_the_waitlist_goes_to_the_tail(event: Event) -> None:
+    register(event.id, "a@x.io", "Ann")
+    waiting = register(event.id, "b@x.io", "Bob").registration
+    register(event.id, "c@x.io", "Cid")
+    cancel(waiting.manage_token)
+
+    result = register(event.id, "b@x.io", "Bob")
+
+    assert result.registration.status == "waitlisted"
+    assert result.position == 2
+
+
+def test_revived_registration_can_be_cancelled_and_promotes_the_next(event: Event) -> None:
+    first = register(event.id, "a@x.io", "Ann").registration
+    cancel(first.manage_token)
+    revived = register(event.id, "a@x.io", "Ann").registration
+    register(event.id, "b@x.io", "Bob")
+
+    cancel(revived.manage_token)
+
+    assert statuses(event) == {"a@x.io": "cancelled", "b@x.io": "confirmed"}
 
 
 def url(token: str) -> str:

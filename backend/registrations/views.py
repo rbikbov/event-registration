@@ -11,10 +11,7 @@ from rest_framework.views import APIView
 from config.exceptions import ValidationErrorSerializer
 from events.models import Event
 from registrations.models import Registration
-from registrations.serializers import (
-    RegisterRequestSerializer,
-    RegistrationResultSerializer,
-)
+from registrations.serializers import RegisterRequestSerializer, RegistrationResultSerializer
 from registrations.services import cancel, register
 
 

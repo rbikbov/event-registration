@@ -110,3 +110,16 @@ def test_signed_in_user_registers_without_csrf_token(event: Event) -> None:
     client.force_login(event.organizer)
 
     assert client.post(url(event.id), body(), format="json").status_code == 201
+
+
+def test_register_after_cancel_is_201_again(event: Event) -> None:
+    client = APIClient()
+    client.post(url(event.id), body(), format="json")
+    token = Registration.objects.get().manage_token
+    client.post(f"/api/tickets/{token}/cancel/")
+
+    response = client.post(url(event.id), body(), format="json")
+
+    assert response.status_code == 201
+    assert response.json() == {"status": "confirmed"}
+    assert Registration.objects.count() == 1
