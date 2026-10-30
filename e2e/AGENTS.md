@@ -1,6 +1,6 @@
 # e2e/ — Playwright
 
-Команды — `docs/development.md`, раздел «E2E». Тесты идут против стека из `make up`.
+Команды — `docs/development.md`, раздел «E2E». Тесты идут против поднятого стека: человек — `make up` / `make e2e`, агент — `make stack-e2e` (слот 1).
 
 ## Правила
 
