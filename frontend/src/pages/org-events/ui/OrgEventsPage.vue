@@ -42,7 +42,9 @@ function startsAt(iso: string): string {
             <CardTitle as="h2">{{ event.title }}</CardTitle>
           </CardHeader>
           <CardContent class="text-muted-foreground text-sm">
-            {{ startsAt(event.starts_at) }} · {{ t("capacity", event.capacity) }}
+            {{ startsAt(event.starts_at) }} ·
+            {{ t("seats", { confirmed: event.confirmed, capacity: event.capacity }) }} ·
+            {{ t("waitlist", { count: event.waitlisted }) }}
           </CardContent>
         </Card>
       </li>
@@ -58,6 +60,7 @@ function startsAt(iso: string): string {
   "error": "Не удалось загрузить события",
   "retry": "Повторить",
   "empty": "Событий пока нет",
-  "capacity": "{count} место | {count} места | {count} мест"
+  "seats": "Занято {confirmed} из {capacity}",
+  "waitlist": "в листе ожидания {count}"
 }
 </i18n>

@@ -23,7 +23,7 @@ test("organizer signs in, creates an event and sees it in the list", async ({ pa
 
   const card = page.getByRole("heading", { name: title });
   await expect(card).toBeVisible();
-  await expect(page.getByRole("listitem").filter({ has: card })).toContainText("30 мест");
+  await expect(page.getByRole("listitem").filter({ has: card })).toContainText("Занято 0 из 30");
 });
 
 test("organizer sees the field error from the form and stays on it", async ({ page }) => {
