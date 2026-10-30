@@ -45,3 +45,14 @@ test("organizer sees the field error from the form and stays on it", async ({ pa
   );
   await expect(page.getByRole("heading", { name: "Новое событие" })).toBeVisible();
 });
+
+test("a wrong password shows the server error and keeps the login form", async ({ page }) => {
+  await page.goto("/login");
+  await page.getByLabel("Email").fill(ORGANIZER.email);
+  await page.getByLabel("Пароль").fill("not-the-password");
+  await page.getByRole("button", { name: "Войти" }).click();
+
+  await expect(page.getByRole("alert")).toHaveText("Неверный email или пароль");
+  await expect(page.getByRole("heading", { name: "Вход для организатора" })).toBeVisible();
+  await expect(page).toHaveURL(/\/login$/);
+});
