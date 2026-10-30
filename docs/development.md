@@ -109,8 +109,9 @@ make down   # остановить; данные БД остаются в том
 | `make migrations-check`                                       | падает, если модели изменены, а миграция не создана                                      |
 | `make schema-check`                                           | падает, если `openapi.yaml` или `schema.d.ts` устарели или у view нет описания для схемы |
 | `make e2e`                                                    | поднять стек (`make up`) и прогнать Playwright против него                               |
-| `make review-up` / `review-e2e` / `review-down`               | отдельный стек для ревью (см. «E2E»): поднять / e2e против него / удалить с томами       |
-| `make review-check`                                           | `make check` на Postgres стека ревью (5433), а не на Postgres из `make dev-deps`         |
+| `make stack-up` / `stack-e2e` / `stack-down` `SLOT=<N>`       | стек слота (см. «E2E»): поднять / e2e против него / удалить с томами                     |
+| `make stack-check SLOT=<N>`                                   | `make check` на Postgres слота, а не на Postgres из `make dev-deps`                      |
+| `make review-worktree REF=<sha>` / `review-worktree-remove`   | копия репозитория для агента `reviewer` на коммите `<sha>` / удалить её                  |
 | **Изменения**                                                 |                                                                                          |
 | `make schema`                                                 | пересобрать `backend/openapi.yaml` и типы фронтенда `schema.d.ts` после изменения API    |
 | `make fmt`                                                    | отформатировать всё: `eslint --fix`, Prettier, `ruff check --fix`, `ruff format`         |
@@ -399,14 +400,25 @@ docs: describe pre-push hook
 
 - Playwright, пакет `e2e/`, только chromium. Тесты идут против стека из `make up` — того же,
   что запускает проверяющий; `make e2e` поднимает его сам. Другой адрес — `E2E_BASE_URL`.
-- Стек ревью — `make review-up` / `review-e2e` / `review-check` / `review-down`:
-  compose-проект `event-registration-review` со своими контейнерами, томами и портами
-  (фронтенд 5174, backend 8001, Postgres 5433, Mailpit 8026, SMTP 1026). Нужен, когда стек
-  разработчика уже запущен: тот же проект на других портах пересоздал бы его контейнеры, а
-  тесты backend пересоздавали бы `test_event_registration` в его Postgres. Агент `reviewer`
-  работает только с этим стеком; `review-down` удаляет тома проекта
-  `event-registration-review`. Имя проекта общее для всего Docker на машине, поэтому два
-  ревью одновременно делят один стек — запускать по очереди.
+- Слоты — чтобы человек, агент и ревьюер работали одновременно. Слот — compose-проект
+  `event-registration-s<N>` со своими контейнерами, томами и портами: каждый порт — порт по
+  умолчанию плюс номер слота. Цели: `make stack-up` / `stack-e2e` / `stack-check` /
+  `stack-down`, слот — `SLOT=<N>` (по умолчанию 1). `stack-check` — это `make check` на
+  Postgres слота: иначе тесты backend пересоздавали бы `test_event_registration` в чужом
+  Postgres. `stack-down` удаляет тома только своего слота.
+
+  | Слот | Кто                            | Фронтенд | Backend | Postgres | Mailpit | SMTP |
+  | ---- | ------------------------------ | -------- | ------- | -------- | ------- | ---- |
+  | 0    | человек: `make up`, `dev-deps` | 5173     | 8000    | 5432     | 8025    | 1025 |
+  | 1    | основная сессия агента         | 5174     | 8001    | 5433     | 8026    | 1026 |
+  | 2    | агент `reviewer`               | 5175     | 8002    | 5434     | 8027    | 1027 |
+
+- Ревьюер проверяет коммиты в своей копии репозитория: `make review-worktree REF=<sha>`
+  создаёт worktree в `.claude/worktrees/review` (папка в `.gitignore`) и ставит
+  зависимости из кэшей pnpm и uv — около 5 с; `make review-worktree-remove` удаляет её.
+  Без копии проверки ревьюера шли бы по незакоммиченным правкам автора. Симлинки на
+  `node_modules` и `.venv` основной папки отклонены: при изменении зависимостей в
+  проверяемом диапазоне ревьюер молча проверял бы со старыми.
 - При падении сохраняется trace:
   `cd e2e && pnpm exec playwright show-trace test-results/<папка теста>/trace.zip`.
 - В `make check` e2e не запускаются (нужен поднятый стек) — там только ESLint и tsc для их

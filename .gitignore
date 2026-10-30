@@ -31,3 +31,6 @@ test-results/
 
 # django collectstatic output
 backend/staticfiles/
+
+# worktrees for the reviewer agent (make review-worktree)
+.claude/worktrees/
