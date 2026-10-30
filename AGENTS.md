@@ -25,7 +25,7 @@ docs/decisions.md     лог решений с временем
 docs/development.md   руководство разработчика: установка, команды, проверки, нюансы
 docs/architecture.md  устройство системы: модель, API, realtime, письма; статус разделов
 docs/roadmap.md       фазы, статусы, критерии, задачи небольших фаз
-docs/rules/           правила по темам: db-migrations.md
+docs/rules/           правила по темам: db-migrations.md, concurrency.md
 .claude/settings.json хуки Claude Code; скрипты — .claude/hooks/
 .claude/skills/       процедуры агента (skills)
 ```
