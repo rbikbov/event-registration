@@ -121,5 +121,7 @@ SPECTACULAR_SETTINGS = {
     "TITLE": "Event registration API",
     "VERSION": "0.1.0",
     "SERVE_INCLUDE_SCHEMA": False,
+    # Read-only fields (id) stay out of request bodies: the frontend sends Event without an id.
+    "COMPONENT_SPLIT_REQUEST": True,
     "ENUM_NAME_OVERRIDES": {"HealthStateEnum": "config.health.HEALTH_STATES"},
 }

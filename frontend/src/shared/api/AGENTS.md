@@ -6,6 +6,8 @@
   новый `kind` — правка `kindForStatus` и новый случай в `app-error.test.ts`.
 - `csrf.ts` — middleware: `X-CSRFToken` из cookie `csrftoken` на всех изменяющих запросах;
   страницы заголовок сами не ставят.
+- - 400 несёт `AppError.fields` — коды ошибок по полям (`{"errors": {поле: [код]}}`); тексты по
+    кодам подбирает форма в своём `<i18n>`.
 - Выше этой папки не читают `Response`, статусы и тексты ошибок — только `kind`.
 - `schema.d.ts` генерируется из `backend/openapi.yaml` (`make schema`) и руками не правится;
   `make schema-check` сравнивает его с генерацией.

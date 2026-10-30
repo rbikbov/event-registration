@@ -15,13 +15,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Login'
+              $ref: '#/components/schemas/LoginRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/Login'
+              $ref: '#/components/schemas/LoginRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/Login'
+              $ref: '#/components/schemas/LoginRequest'
         required: true
       security:
       - cookieAuth: []
@@ -116,13 +116,13 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Event'
+              $ref: '#/components/schemas/EventRequest'
           application/x-www-form-urlencoded:
             schema:
-              $ref: '#/components/schemas/Event'
+              $ref: '#/components/schemas/EventRequest'
           multipart/form-data:
             schema:
-              $ref: '#/components/schemas/Event'
+              $ref: '#/components/schemas/EventRequest'
         required: true
       security:
       - cookieAuth: []
@@ -165,6 +165,27 @@ components:
       - id
       - starts_at
       - title
+    EventRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          maxLength: 2000
+        starts_at:
+          type: string
+          format: date-time
+        capacity:
+          type: integer
+          maximum: 10000
+          minimum: 1
+      required:
+      - capacity
+      - starts_at
+      - title
     Health:
       type: object
       properties:
@@ -183,15 +204,17 @@ components:
       description: |-
         * `ok` - ok
         * `error` - error
-    Login:
+    LoginRequest:
       type: object
       properties:
         email:
           type: string
           format: email
+          minLength: 1
         password:
           type: string
           writeOnly: true
+          minLength: 1
       required:
       - email
       - password

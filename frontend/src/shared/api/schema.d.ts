@@ -107,6 +107,13 @@ export interface components {
             starts_at: string;
             capacity: number;
         };
+        EventRequest: {
+            title: string;
+            description?: string;
+            /** Format: date-time */
+            starts_at: string;
+            capacity: number;
+        };
         Health: {
             status: components["schemas"]["HealthStateEnum"];
             database: components["schemas"]["HealthStateEnum"];
@@ -117,7 +124,7 @@ export interface components {
          * @enum {string}
          */
         HealthStateEnum: "ok" | "error";
-        Login: {
+        LoginRequest: {
             /** Format: email */
             email: string;
             password: string;
@@ -150,9 +157,9 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["Login"];
-                "application/x-www-form-urlencoded": components["schemas"]["Login"];
-                "multipart/form-data": components["schemas"]["Login"];
+                "application/json": components["schemas"]["LoginRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["LoginRequest"];
+                "multipart/form-data": components["schemas"]["LoginRequest"];
             };
         };
         responses: {
@@ -266,9 +273,9 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["Event"];
-                "application/x-www-form-urlencoded": components["schemas"]["Event"];
-                "multipart/form-data": components["schemas"]["Event"];
+                "application/json": components["schemas"]["EventRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["EventRequest"];
+                "multipart/form-data": components["schemas"]["EventRequest"];
             };
         };
         responses: {

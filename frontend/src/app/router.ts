@@ -5,6 +5,7 @@ import { meQuery } from "@/entities/session";
 import { HealthPage } from "@/pages/health";
 import { HomePage } from "@/pages/home";
 import { LoginPage } from "@/pages/login";
+import { OrgEventNewPage } from "@/pages/org-event-new";
 import { OrgEventsPage } from "@/pages/org-events";
 import { routes } from "@/shared/config";
 
@@ -16,6 +17,7 @@ export function createAppRouter(queryClient: QueryClient, history: RouterHistory
       { path: routes.health, component: HealthPage },
       { path: routes.login, component: LoginPage },
       { path: routes.orgEvents, component: OrgEventsPage, meta: { requiresAuth: true } },
+      { path: routes.orgEventsNew, component: OrgEventNewPage, meta: { requiresAuth: true } },
     ],
   });
 

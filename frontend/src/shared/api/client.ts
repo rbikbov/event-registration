@@ -17,6 +17,7 @@ api.use(csrfMiddleware);
 
 interface ApiResult<Data> {
   data?: Data;
+  error?: unknown;
   response: Response;
 }
 
@@ -29,7 +30,7 @@ export async function unwrap<Data>(request: Promise<ApiResult<Data>>): Promise<D
   } catch (cause) {
     throw new AppError("network", { cause });
   }
-  if (!result.response.ok) throw AppError.fromStatus(result.response.status);
+  if (!result.response.ok) throw AppError.fromStatus(result.response.status, result.error);
   if (result.data === undefined) throw new AppError("unknown", { status: result.response.status });
   return result.data;
 }

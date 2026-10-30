@@ -20,3 +20,26 @@ describe("AppError.fromStatus", () => {
     expect(error.status).toBe(status);
   });
 });
+
+describe("AppError.fromStatus field errors", () => {
+  it("reads codes per field from a 400 body", () => {
+    const error = AppError.fromStatus(400, {
+      errors: { capacity: ["min_value"], title: ["blank"] },
+    });
+
+    expect(error.fields).toEqual({ capacity: ["min_value"], title: ["blank"] });
+  });
+
+  it.each([undefined, null, "text", {}, { errors: "x" }, { detail: "no" }])(
+    "gives no fields for body %j",
+    (body) => {
+      expect(AppError.fromStatus(400, body).fields).toBeUndefined();
+    },
+  );
+
+  it("skips fields whose codes are not strings", () => {
+    const error = AppError.fromStatus(400, { errors: { title: [1], capacity: ["invalid"] } });
+
+    expect(error.fields).toEqual({ capacity: ["invalid"] });
+  });
+});
