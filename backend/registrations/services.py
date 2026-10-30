@@ -84,13 +84,14 @@ def cancel(manage_token: str, *, now: datetime | None = None) -> Registration:
     Cancelling twice, or cancelling from the waitlist, promotes nobody. Raises
     Registration.DoesNotExist for an unknown token.
     """
-    now = now or timezone.now()
     with transaction.atomic():
         event_id = Registration.objects.values_list("event_id", flat=True).get(
             manage_token=manage_token
         )
         # The status is read only after the lock: a concurrent cancel or promotion changes it.
         Event.objects.select_for_update().get(pk=event_id)
+        # After the lock, like in `register`: the promotion time is when it really happened.
+        now = now or timezone.now()
         registration = Registration.objects.get(manage_token=manage_token)
         if registration.status == Registration.Status.CANCELLED:
             return registration

@@ -47,6 +47,8 @@ def run_together[T](calls: Sequence[Callable[[], T]]) -> list[T]:
         thread.start()
     for thread in threads:
         thread.join(timeout=30)
+    # A hung thread would leave None in the results and keep its connection open.
+    assert not any(thread.is_alive() for thread in threads), "a worker thread did not finish"
     if errors:
         raise errors[0]
     return results  # type: ignore[return-value]  # no None left: every worker either set it or raised
