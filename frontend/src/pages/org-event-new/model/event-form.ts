@@ -24,7 +24,8 @@ export interface EventFormInput {
   description: string;
   // `datetime-local` value: local time without a zone, "2030-05-01T18:00".
   starts_at: string;
-  capacity: string;
+  // `undefined` while the number field is empty.
+  capacity: number | undefined;
 }
 
 export interface EventFormValues {
@@ -57,11 +58,10 @@ function eventSchema(now: Date) {
         return date.toISOString();
       }),
     capacity: z
-      .string()
-      .trim()
-      .min(1, "required")
-      .transform(Number)
-      .pipe(z.number("invalid").int("invalid").min(1, "min_value").max(10000, "max_value")),
+      .number({ error: (issue) => (issue.input === undefined ? "required" : "invalid") })
+      .int("invalid")
+      .min(1, "min_value")
+      .max(10000, "max_value"),
   });
 }
 

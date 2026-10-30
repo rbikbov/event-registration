@@ -9,7 +9,7 @@ function input(overrides: Partial<EventFormInput> = {}): EventFormInput {
     title: "Meetup",
     description: "",
     starts_at: "2030-05-01T18:00",
-    capacity: "30",
+    capacity: 30,
     ...overrides,
   };
 }
@@ -36,11 +36,11 @@ describe("parseEventForm", () => {
     [{ starts_at: "" }, "starts_at", "required"],
     [{ starts_at: "garbage" }, "starts_at", "invalid"],
     [{ starts_at: "2029-12-31T10:00" }, "starts_at", "past"],
-    [{ capacity: "" }, "capacity", "required"],
-    [{ capacity: "many" }, "capacity", "invalid"],
-    [{ capacity: "2.5" }, "capacity", "invalid"],
-    [{ capacity: "0" }, "capacity", "min_value"],
-    [{ capacity: "10001" }, "capacity", "max_value"],
+    [{ capacity: undefined }, "capacity", "required"],
+    [{ capacity: Number.NaN }, "capacity", "invalid"],
+    [{ capacity: 2.5 }, "capacity", "invalid"],
+    [{ capacity: 0 }, "capacity", "min_value"],
+    [{ capacity: 10001 }, "capacity", "max_value"],
   ] as const)("rejects %j", (overrides, field, code) => {
     const result = parseEventForm(input(overrides), now);
 

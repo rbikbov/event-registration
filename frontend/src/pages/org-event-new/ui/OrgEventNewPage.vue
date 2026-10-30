@@ -12,20 +12,32 @@ import { Button } from "@/shared/ui/shadcn/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/shadcn/card";
 import { Input } from "@/shared/ui/shadcn/input";
 import { Label } from "@/shared/ui/shadcn/label";
+import {
+  NumberField,
+  NumberFieldContent,
+  NumberFieldDecrement,
+  NumberFieldIncrement,
+  NumberFieldInput,
+} from "@/shared/ui/shadcn/number-field";
 
 import { createEvent } from "../api/create-event";
 import {
   parseEventForm,
   serverFormErrors,
-  type EventField,
   type EventFormErrors,
+  type EventFormInput,
 } from "../model/event-form";
 
 const { t } = useI18n({ useScope: "local" });
 const router = useRouter();
 const queryClient = useQueryClient();
 
-const form = reactive({ title: "", description: "", starts_at: "", capacity: "" });
+const form = reactive<EventFormInput>({
+  title: "",
+  description: "",
+  starts_at: "",
+  capacity: undefined,
+});
 const clientErrors = ref<EventFormErrors>({});
 
 const { mutate, isPending, error } = useMutation({
@@ -58,13 +70,10 @@ function submit(): void {
   mutate(parsed.values);
 }
 
-// Capacity is a text field with a numeric keyboard: v-model on type="number" would hand the
-// form a number, and parseEventForm validates what the user typed.
-const fields: { name: EventField; type: string; inputmode?: "numeric" }[] = [
+const textFields: { name: "title" | "description" | "starts_at"; type: string }[] = [
   { name: "title", type: "text" },
   { name: "description", type: "text" },
   { name: "starts_at", type: "datetime-local" },
-  { name: "capacity", type: "text", inputmode: "numeric" },
 ];
 </script>
 
@@ -79,17 +88,29 @@ const fields: { name: EventField; type: string; inputmode?: "numeric" }[] = [
           <Alert v-if="submitError" variant="destructive" role="alert">
             <AlertDescription>{{ submitError }}</AlertDescription>
           </Alert>
-          <div v-for="field in fields" :key="field.name" class="grid gap-2">
+          <div v-for="field in textFields" :key="field.name" class="grid gap-2">
             <Label :for="field.name">{{ t(`fields.${field.name}`) }}</Label>
             <Input
               :id="field.name"
               v-model="form[field.name]"
               :type="field.type"
-              :inputmode="field.inputmode"
               :aria-invalid="fieldErrors[field.name] !== undefined"
             />
             <p v-if="fieldErrors[field.name]" class="text-destructive text-sm">
               {{ t(`errors.${fieldErrors[field.name]}`) }}
+            </p>
+          </div>
+          <div class="grid gap-2">
+            <Label for="capacity">{{ t("fields.capacity") }}</Label>
+            <NumberField id="capacity" v-model="form.capacity">
+              <NumberFieldContent>
+                <NumberFieldDecrement />
+                <NumberFieldInput :aria-invalid="fieldErrors.capacity !== undefined" />
+                <NumberFieldIncrement />
+              </NumberFieldContent>
+            </NumberField>
+            <p v-if="fieldErrors.capacity" class="text-destructive text-sm">
+              {{ t(`errors.${fieldErrors.capacity}`) }}
             </p>
           </div>
           <div class="flex gap-2">

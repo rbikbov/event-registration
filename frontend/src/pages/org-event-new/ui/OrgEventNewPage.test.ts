@@ -30,9 +30,17 @@ async function mountPage() {
 type Wrapper = Awaited<ReturnType<typeof mountPage>>["wrapper"];
 
 async function fill(wrapper: Wrapper, values: Record<string, string>) {
-  for (const [id, value] of Object.entries(values)) await wrapper.get(`#${id}`).setValue(value);
+  await type(wrapper, values);
   await wrapper.get("form").trigger("submit");
   await flushPromises();
+}
+
+// The number field applies what was typed on blur or Enter, not on every keystroke.
+async function type(wrapper: Wrapper, values: Record<string, string>) {
+  for (const [id, value] of Object.entries(values)) {
+    await wrapper.get(`#${id}`).setValue(value);
+    await wrapper.get(`#${id}`).trigger("blur");
+  }
 }
 
 function nextYear(): string {
@@ -104,7 +112,7 @@ describe("OrgEventNewPage", () => {
       }),
     );
     const { wrapper } = await mountPage();
-    for (const [id, value] of Object.entries(valid())) await wrapper.get(`#${id}`).setValue(value);
+    await type(wrapper, valid());
 
     await wrapper.get("form").trigger("submit");
 

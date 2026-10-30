@@ -14,6 +14,7 @@
     "gen:api": "openapi-typescript ../backend/openapi.yaml -o src/shared/api/schema.d.ts"
   },
   "dependencies": {
+    "@lucide/vue": "^1.64.0",
     "@tailwindcss/vite": "^4.3.3",
     "@tanstack/vue-query": "^5.105.0",
     "@vueuse/core": "^15.0.0",
