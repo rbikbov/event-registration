@@ -66,6 +66,93 @@ paths:
               schema:
                 $ref: '#/components/schemas/User'
           description: ''
+  /api/events/:
+    get:
+      operationId: events_list
+      description: Future events with free seats, for everyone.
+      tags:
+      - events
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PublicEventList'
+          description: ''
+  /api/events/{event_id}/registrations/:
+    post:
+      operationId: events_registrations_create
+      description: Registers a participant by email. Open to everyone and independent
+        of the session.
+      parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - events
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/RegisterRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/RegisterRequestRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegistrationResult'
+          description: ''
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegistrationResult'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+          description: ''
+        '404':
+          description: No such event
+        '409':
+          description: No free seats
+  /api/events/{id}/:
+    get:
+      operationId: events_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - events
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicEvent'
+          description: ''
   /api/health/:
     get:
       operationId: health_retrieve
@@ -160,11 +247,21 @@ components:
           type: integer
           maximum: 10000
           minimum: 1
+        confirmed:
+          type: integer
+          readOnly: true
+          default: 0
+        waitlisted:
+          type: integer
+          readOnly: true
+          default: 0
       required:
       - capacity
+      - confirmed
       - id
       - starts_at
       - title
+      - waitlisted
     EventRequest:
       type: object
       properties:
@@ -218,6 +315,96 @@ components:
       required:
       - email
       - password
+    PublicEvent:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        description:
+          type: string
+          readOnly: true
+        starts_at:
+          type: string
+          format: date-time
+          readOnly: true
+        capacity:
+          type: integer
+          readOnly: true
+        free_seats:
+          type: integer
+          readOnly: true
+      required:
+      - capacity
+      - description
+      - free_seats
+      - id
+      - starts_at
+      - title
+    PublicEventList:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        starts_at:
+          type: string
+          format: date-time
+          readOnly: true
+        capacity:
+          type: integer
+          readOnly: true
+        free_seats:
+          type: integer
+          readOnly: true
+      required:
+      - capacity
+      - free_seats
+      - id
+      - starts_at
+      - title
+    RegisterRequestRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+          maxLength: 254
+        name:
+          type: string
+          minLength: 1
+          maxLength: 200
+      required:
+      - email
+      - name
+    RegistrationResult:
+      type: object
+      description: 'What the participant sees: no ticket code or manage token, they
+        go out by email only.'
+      properties:
+        status:
+          allOf:
+          - $ref: '#/components/schemas/RegistrationResultStatusEnum'
+          readOnly: true
+      required:
+      - status
+    RegistrationResultStatusEnum:
+      enum:
+      - confirmed
+      - waitlisted
+      - cancelled
+      type: string
+      description: |-
+        * `confirmed` - Confirmed
+        * `waitlisted` - Waitlisted
+        * `cancelled` - Cancelled
     User:
       type: object
       properties:

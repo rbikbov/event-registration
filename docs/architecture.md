@@ -51,7 +51,7 @@
 - `schedule_version` (int) — увеличивается при каждом переносе; входит в ключи
   дедупликации писем о переносе и напоминаний.
 
-**Registration** — план (фаза 1):
+**Registration** — реализовано (фаза 1, этап 3; приложение `registrations`; `checked_in_at` — с фазы 3):
 
 - `event` (FK), `email` (в нижнем регистре), `name`
 - `status`: `confirmed` / `waitlisted` / `cancelled`
@@ -97,12 +97,15 @@
 
 - `GET /api/health/` — 200 `{"status": "ok", "database": "ok"}` или 503.
 
+**Реализовано — публичное (без сессии и CSRF):**
+
+- `GET /api/events/`, `GET /api/events/{id}/` — будущие события со свободными местами
+- `POST /api/events/{id}/registrations/` `{email, name}` → 201 / 200 (повтор) `{status}`; кода
+  билета в ответе нет — он приходит только письмом, иначе любой получил бы чужой билет, введя
+  чужой email. Мест нет → 409 (временно, до листа ожидания в 4.1; тогда `position`)
+
 **План — публичное (фазы 1, 4):**
 
-- `GET /api/events/`, `GET /api/events/{id}/` — с числом свободных мест
-- `POST /api/events/{id}/registrations/` `{email, name}` → `{status, position?}`; кода билета
-  в ответе нет — он приходит только письмом, иначе любой получил бы чужой билет, введя чужой
-  email
 - `POST /api/tickets/{manage_token}/cancel/` — отказ (фаза 1: API и тесты, токен в тестах
   берётся из БД — пользователю он приходит только письмом в фазе 2)
 - `GET /api/tickets/{manage_token}/` — билет: код, статус, номер в листе (фаза 2, вместе с
@@ -112,8 +115,7 @@
 **План — организатор, сессия + CSRF (фазы 1, 3, 4, 5):**
 
 - `POST /api/auth/login/`, `POST /api/auth/logout/`, `GET /api/auth/me/`
-- `GET/POST /api/org/events/` — реализовано (фаза 1; счётчики `confirmed` / `waitlisted` в
-  списке появятся с моделью Registration)
+- `GET/POST /api/org/events/` — реализовано (фаза 1; в списке `confirmed` / `waitlisted`)
 - `GET/PATCH /api/org/events/{id}/` (перенос → письма; лимит → повышение из листа)
 - `GET /api/org/events/{id}/registrations/?status=`
 - `POST /api/org/events/{id}/checkin/` `{code}` → 200 / 404 / 409 (уже отмечен) / 422 (билет

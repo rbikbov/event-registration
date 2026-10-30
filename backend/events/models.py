@@ -3,6 +3,8 @@ from typing import ClassVar, Self
 from django.conf import settings
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+from django.db.models import Count, F, Q
+from django.utils import timezone
 
 from accounts.models import User
 
@@ -12,6 +14,18 @@ MAX_CAPACITY = 10000
 class EventQuerySet(models.QuerySet["Event"]):
     def for_organizer(self, user: User) -> Self:
         return self.filter(organizer=user).order_by("starts_at", "id")
+
+    def upcoming(self) -> Self:
+        return self.filter(starts_at__gt=timezone.now()).order_by("starts_at", "id")
+
+    def with_registration_counts(self) -> Self:
+        # Statuses are Registration.Status values; events cannot import registrations (it imports
+        # events), so the counts go through the reverse relation by string value.
+        return self.annotate(
+            confirmed=Count("registrations", filter=Q(registrations__status="confirmed")),
+            waitlisted=Count("registrations", filter=Q(registrations__status="waitlisted")),
+            free_seats=F("capacity") - F("confirmed"),
+        )
 
 
 class Event(models.Model):

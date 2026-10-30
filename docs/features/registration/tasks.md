@@ -38,7 +38,7 @@ backend → frontend → e2e/доки. Логика — тест вперёд; �
 
 ## Этап 3. Участник регистрируется на свободное место
 
-- [ ] 3.1 backend: модель Registration + миграция, админка (только чтение); счётчики
+- [x] 3.1 backend: модель Registration + миграция, админка (только чтение); счётчики
       `confirmed` / `waitlisted` в `GET /api/org/events/` через `annotate` (+ тест числа запросов);
       `registrations.services.register` (блокировка Event, `confirmed`, нормализация email,
       идемпотентность); `GET /api/events/`, `GET /api/events/{id}/`, `POST …/registrations/`.

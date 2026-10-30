@@ -9,6 +9,8 @@ from rest_framework.test import APIClient
 
 from accounts.models import User
 from events.models import Event
+from registrations.models import Registration
+from registrations.services import register
 
 pytestmark = pytest.mark.django_db
 
@@ -58,6 +60,8 @@ def test_create_makes_the_caller_the_organizer(client: APIClient, organizer: Use
         "description": "Talks and pizza",
         "starts_at": response.json()["starts_at"],
         "capacity": 30,
+        "confirmed": 0,
+        "waitlisted": 0,
     }
 
 
@@ -126,6 +130,24 @@ def test_list_has_only_own_events_ordered_by_start(client: APIClient, organizer:
     assert [row["id"] for row in response.json()] == [earlier.id, later.id]
 
 
+def test_list_has_registration_counts(client: APIClient, organizer: User) -> None:
+    event = make_event(organizer)
+    other = make_event(organizer, title="Other")
+    for email, status in [
+        ("a@x.io", "confirmed"),
+        ("b@x.io", "confirmed"),
+        ("c@x.io", "waitlisted"),
+        ("d@x.io", "cancelled"),
+    ]:
+        Registration.objects.create(event=event, email=email, name="N", status=status)
+    Registration.objects.create(event=other, email="a@x.io", name="N", status="waitlisted")
+
+    rows = {row["id"]: row for row in client.get(URL).json()}
+
+    assert (rows[event.id]["confirmed"], rows[event.id]["waitlisted"]) == (2, 1)
+    assert (rows[other.id]["confirmed"], rows[other.id]["waitlisted"]) == (0, 1)
+
+
 def test_list_is_empty_for_new_organizer(client: APIClient) -> None:
     response = client.get(URL)
 
@@ -141,7 +163,7 @@ def test_list_query_count_does_not_depend_on_number_of_events(
         client.get(URL)
 
     for _ in range(5):
-        make_event(organizer)
+        register(make_event(organizer).id, "a@x.io", "Ann")
     with django_assert_num_queries(3):
         client.get(URL)
 
