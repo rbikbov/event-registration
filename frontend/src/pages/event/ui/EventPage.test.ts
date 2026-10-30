@@ -183,18 +183,26 @@ describe("EventPage", () => {
     expect(wrapper.find('[role="alert"]').exists()).toBe(false);
   });
 
-  it("says the seats ran out on a 409 and keeps the form", async () => {
+  it("shows the waitlist position", async () => {
     eventLoaded();
     server.use(
       http.post("*/api/events/7/registrations/", () =>
-        HttpResponse.json({ detail: "No free seats." }, { status: 409 }),
+        HttpResponse.json({ status: "waitlisted", position: 3 }, { status: 201 }),
       ),
     );
     const { wrapper } = await mountPage();
 
     await fill(wrapper, { email: "a@x.io", name: "Ann" });
 
-    expect(wrapper.get('[role="alert"]').text()).toBe("Свободных мест не осталось");
+    expect(wrapper.get('[role="status"]').text()).toBe("Вы в листе ожидания, №3");
+    expect(wrapper.find("form").exists()).toBe(false);
+  });
+
+  it("offers the waitlist when no seats are left", async () => {
+    server.use(http.get("*/api/events/7/", () => HttpResponse.json({ ...event, free_seats: 0 })));
+    const { wrapper } = await mountPage();
+
+    expect(wrapper.text()).toContain("Свободных мест нет, можно встать в лист ожидания");
     expect(wrapper.find("form").exists()).toBe(true);
   });
 
