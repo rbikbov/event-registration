@@ -1,10 +1,15 @@
-from datetime import UTC
+from datetime import UTC, datetime
 
 from django.conf import settings
+from django.core.mail import EmailMessage, get_connection
+from django.db import transaction
 from django.template.loader import render_to_string
+from django.utils import timezone
 
 from emails.models import OutboxEmail
 from registrations.models import Registration
+
+BATCH_SIZE = 20
 
 SUBJECTS = {
     OutboxEmail.Kind.TICKET: "Билет: {title}",
@@ -37,3 +42,29 @@ def enqueue_email(kind: OutboxEmail.Kind, registration: Registration) -> None:
     )
     # ON CONFLICT DO NOTHING: the unique dedup_key keeps one email per change.
     OutboxEmail.objects.bulk_create([email], ignore_conflicts=True)
+
+
+def process_batch(*, now: datetime | None = None) -> list[int]:
+    """Send up to BATCH_SIZE due pending emails; return the ids of the sent ones.
+
+    The rows stay locked until the batch is committed, and SKIP LOCKED lets another worker take
+    other rows meanwhile instead of waiting or sending the same email. Delivery is at least
+    once: a crash after SMTP but before the commit sends the email again.
+    """
+    with transaction.atomic():
+        now = now or timezone.now()
+        emails = list(
+            OutboxEmail.objects.select_for_update(skip_locked=True)
+            .filter(status=OutboxEmail.Status.PENDING, next_attempt_at__lte=now)
+            .order_by("next_attempt_at", "id")[:BATCH_SIZE]
+        )
+        if not emails:
+            return []
+        # One SMTP connection for the whole batch.
+        with get_connection() as connection:
+            for email in emails:
+                EmailMessage(email.subject, email.body, to=[email.to], connection=connection).send()
+                email.status = OutboxEmail.Status.SENT
+                email.sent_at = now
+                email.save(update_fields=["status", "sent_at"])
+        return [email.id for email in emails]

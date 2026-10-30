@@ -20,8 +20,8 @@ logs: ## Follow logs of all services
 	docker compose logs -f
 
 .PHONY: dev-deps
-dev-deps: ## Start services needed for local development and tests (Postgres)
-	docker compose up -d --wait postgres
+dev-deps: ## Start services needed for local development and tests (Postgres, Mailpit)
+	docker compose up -d --wait postgres mailpit
 
 .PHONY: install
 install: ## Install all dependencies, the Playwright browser and git hooks
@@ -117,6 +117,10 @@ dev-frontend: ## Frontend dev server on :5173, proxies /api to localhost:8000
 dev-backend: ## Backend dev server on :8000 (needs `make dev-deps`)
 	$(BACKEND) uv run python manage.py migrate
 	$(BACKEND) uv run python manage.py runserver 8000
+
+.PHONY: dev-worker
+dev-worker: ## Email worker: sends the outbox to Mailpit, http://localhost:8025 (needs `make dev-deps`)
+	$(BACKEND) uv run python manage.py run_worker
 
 .PHONY: fmt
 fmt: ## Format all files

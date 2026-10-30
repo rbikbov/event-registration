@@ -35,7 +35,7 @@
 
 ```sh
 make install    # зависимости Node и backend, браузер Playwright, git-хуки
-make dev-deps   # Postgres в Docker
+make dev-deps   # Postgres и Mailpit в Docker
 make check      # всё должно пройти
 ```
 
@@ -48,9 +48,10 @@ make check      # всё должно пройти
 **Для разработки** — сервисы локально, с перезагрузкой при изменениях:
 
 ```sh
-make dev-deps       # Postgres
+make dev-deps       # Postgres и Mailpit
 make dev-backend    # терминал 1: миграции + backend на :8000
 make dev-frontend   # терминал 2: http://localhost:5173
+make dev-worker     # терминал 3, если нужны письма: outbox → Mailpit, http://localhost:8025
 ```
 
 Фронтенд и API открываются с одного адреса (:5173): Vite проксирует `/api` на backend,
@@ -60,7 +61,7 @@ make dev-frontend   # терминал 2: http://localhost:5173
 **Весь стек в Docker** — как его запускает проверяющий:
 
 ```sh
-make up     # собрать и поднять postgres, backend, frontend; http://localhost:5173
+make up     # собрать и поднять postgres, backend, worker, mailpit, frontend; http://localhost:5173
 make logs   # логи всех сервисов
 make down   # остановить; данные БД остаются в томе postgres-data
 ```
@@ -68,10 +69,17 @@ make down   # остановить; данные БД остаются в том
 - `make up` = `docker compose up -d --build --wait`: ждёт healthcheck всех сервисов.
 - `backend/Dockerfile`: Python 3.12 + uv, зависимости из `uv.lock` без dev-группы; при старте
   `migrate`, затем uvicorn (ASGI — понадобится для SSE).
+- `worker` — тот же образ `backend` с командой `python manage.py run_worker`: раз в секунду
+  берёт из outbox пачку до 20 писем и отправляет их в Mailpit. Стартует после healthy
+  `backend` (миграции применены) и Mailpit. В логе — только `id` писем, без адресов и ссылок.
+- Mailpit — SMTP-ловушка: письма не уходят наружу, их видно в веб-интерфейсе
+  http://localhost:8025 (он же API для e2e). SMTP опубликован на :1025 для `make dev-worker`.
 - `frontend/Dockerfile` собирается из корня репозитория (там pnpm workspace и lock-файл) и
   запускает dev-сервер Vite с `API_PROXY_TARGET=http://backend:8000`.
 - `make up` и `make dev-*` занимают одни и те же порты (5173, 8000): не запускать одновременно
-  или поменять порты переменными `FRONTEND_PORT`, `BACKEND_PORT`, `POSTGRES_PORT`.
+  или поменять порты переменными `FRONTEND_PORT`, `BACKEND_PORT`, `POSTGRES_PORT`,
+  `MAILPIT_PORT` (веб, 8025), `MAILPIT_SMTP_PORT` (1025). Ссылки в письмах ведут на
+  `http://localhost:${FRONTEND_PORT}`.
 - Стереть данные БД: `docker compose down -v`.
 
 ## Команды
@@ -83,8 +91,9 @@ make down   # остановить; данные БД остаются в том
 | ------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
 | **Окружение**                                                 |                                                                                          |
 | `make install`                                                | зависимости Node и backend, браузер Playwright (chromium), git-хуки                      |
-| `make dev-deps`                                               | поднять Postgres в Docker и дождаться готовности                                         |
+| `make dev-deps`                                               | поднять Postgres и Mailpit в Docker и дождаться готовности                               |
 | `make dev-backend` / `make dev-frontend`                      | локальные dev-серверы (см. «Запуск»)                                                     |
+| `make dev-worker`                                             | локальный воркер писем: outbox → Mailpit (`manage.py run_worker`)                        |
 | `make up` / `make down` / `make logs`                         | весь стек в Docker                                                                       |
 | **Проверки**                                                  |                                                                                          |
 | `make check`                                                  | всё, кроме запуска e2e: форматирование, линтеры, типы, схема, тесты — то же, что CI      |

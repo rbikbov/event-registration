@@ -16,7 +16,7 @@ Spec — `spec.md`. Одна задача — один коммит; отмет�
       `DEFAULT_FROM_EMAIL`, `FRONTEND_URL`. Готово, когда: тесты «одно письмо с кодом и
       ссылкой», «повтор — без письма», «откат — без письма», «тот же ключ — одна строка»
       зелёные.
-- [ ] 1.2 backend + инфраструктура: `process_batch()` (`SKIP LOCKED`, `sent`) и команда
+- [x] 1.2 backend + инфраструктура: `process_batch()` (`SKIP LOCKED`, `sent`) и команда
       `run_worker`; сервисы `mailpit` и `worker` в compose, `FRONTEND_URL` из
       `FRONTEND_PORT`; `development.md` (Mailpit, воркер, порты). Готово, когда: тест
       «`pending` → `sent`, письмо в `mail.outbox`» зелёный; после `make up` регистрация в
