@@ -1,5 +1,6 @@
 import { fileURLToPath, URL } from "node:url";
 
+import VueI18nPlugin from "@intlify/unplugin-vue-i18n/vite";
 import tailwindcss from "@tailwindcss/vite";
 import vue from "@vitejs/plugin-vue";
 import { defineConfig } from "vite";
@@ -9,7 +10,7 @@ import { defineConfig } from "vite";
 const apiTarget = process.env.API_PROXY_TARGET ?? "http://localhost:8000";
 
 export default defineConfig({
-  plugins: [vue(), tailwindcss()],
+  plugins: [VueI18nPlugin({ include: [] }), vue(), tailwindcss()],
   resolve: {
     alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) },
   },

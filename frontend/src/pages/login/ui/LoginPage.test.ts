@@ -6,6 +6,7 @@ import { createMemoryHistory, createRouter } from "vue-router";
 
 import { meQuery } from "@/entities/session";
 import { routes } from "@/shared/config";
+import { createAppI18n } from "@/shared/lib/i18n";
 import { server } from "@/shared/lib/test/msw";
 
 import LoginPage from "./LoginPage.vue";
@@ -21,7 +22,7 @@ async function mountPage() {
   });
   await router.push(routes.login);
   const wrapper = mount(LoginPage, {
-    global: { plugins: [router, [VueQueryPlugin, { queryClient }]] },
+    global: { plugins: [router, [VueQueryPlugin, { queryClient }], createAppI18n()] },
   });
   return { wrapper, router, queryClient };
 }
@@ -64,6 +65,14 @@ describe("LoginPage", () => {
     await fill(wrapper, "", "");
 
     expect(wrapper.text()).toContain("Обязательное поле");
+  });
+
+  it("shows the email format hint with a literal @", async () => {
+    const { wrapper } = await mountPage();
+
+    await fill(wrapper, "not-an-email", "x");
+
+    expect(wrapper.text()).toContain("name@example.com");
   });
 
   it("shows an error for wrong credentials and stays on the page", async () => {

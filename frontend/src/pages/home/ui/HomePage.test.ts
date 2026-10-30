@@ -4,13 +4,14 @@ import { createMemoryHistory, createRouter } from "vue-router";
 
 import HomePage from "./HomePage.vue";
 
+import { createAppI18n } from "@/shared/lib/i18n";
 import { routes } from "@/shared/config";
 
 describe("HomePage", () => {
   it("links to the login, organizer and health pages", () => {
     const router = createRouter({ history: createMemoryHistory(), routes: [] });
 
-    const wrapper = mount(HomePage, { global: { plugins: [router] } });
+    const wrapper = mount(HomePage, { global: { plugins: [router, createAppI18n()] } });
 
     const hrefs = wrapper.findAll("a").map((a) => a.attributes("href"));
     expect(hrefs).toEqual([routes.login, routes.orgEvents, routes.health]);

@@ -3,13 +3,16 @@ import { flushPromises, mount } from "@vue/test-utils";
 import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 
+import { createAppI18n } from "@/shared/lib/i18n";
 import { server } from "@/shared/lib/test/msw";
 
 import HealthPage from "./HealthPage.vue";
 
 function mountPage() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return mount(HealthPage, { global: { plugins: [[VueQueryPlugin, { queryClient }]] } });
+  return mount(HealthPage, {
+    global: { plugins: [[VueQueryPlugin, { queryClient }], createAppI18n()] },
+  });
 }
 
 describe("HealthPage", () => {
