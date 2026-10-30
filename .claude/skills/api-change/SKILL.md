@@ -33,10 +33,11 @@ description: >
 ## Что проверить на каждом эндпоинте
 
 - **Права.** Организаторский эндпоинт (`/api/org/...`) требует входа (права по умолчанию —
-  `IsAuthenticated`; публичный view явно ставит `AllowAny`). Событие берётся через
-  `get_org_event(user, id)`: несуществующее — 404, чужое — 403 (решение от 01:17 в
-  `docs/decisions.md`); список — через `Event.objects.for_organizer(user)`. Тест:
-  пользователь A по id события B получает 403, а не данные; гость — 401.
+  `IsAuthenticated`; публичный view явно ставит `AllowAny`). Список событий — через
+  `Event.objects.for_organizer(user)`. Эндпоинта по id пока нет; когда появится, событие берётся
+  через `get_org_event(user, id)` (её ещё нет): несуществующее — 404, чужое — 403 (решение от
+  01:17 в `docs/decisions.md`). Тест: пользователь A по id события B получает 403, а не
+  данные; гость — 401.
 - **CSRF.** Изменяющий запрос организатора идёт с `X-CSRFToken` (`shared/api/csrf.ts`
   добавляет сам). Тест CSRF — `APIClient(enforce_csrf_checks=True)`, образец —
   `test_logout_requires_csrf_token`.

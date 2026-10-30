@@ -1,1 +1,1 @@
-export { meQuery, type SessionUser } from "./api/me";
+export { meQuery } from "./api/me";

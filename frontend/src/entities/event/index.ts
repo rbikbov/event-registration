@@ -1,4 +1,4 @@
-export { orgEventsQuery, type OrgEvent } from "./api/org-events";
+export { orgEventsQuery } from "./api/org-events";
 export {
   publicEventQuery,
   publicEventsQuery,
