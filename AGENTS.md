@@ -6,8 +6,15 @@
 папок (подгружаются при работе в папке) и в `docs/rules/`.
 
 Команды (`make help`), инструменты и что проверяют хуки — [docs/development.md](docs/development.md).
-Перед тем как сказать, что задача готова, — `make check` (нужны запущенный Postgres —
-`make dev-deps` — и сеть: `check-ci` сверяет теги actions с GitHub).
+Перед тем как сказать, что задача готова, — `make stack-check` (это `make check` на Postgres
+слота 1 в Docker; нужна сеть: `check-ci` сверяет теги actions с GitHub).
+
+Человек, агент и ревьюер работают одновременно, каждый в своём слоте (таблица —
+[docs/development.md](docs/development.md), «E2E»): слот 0 — человек (`make up`,
+`make dev-deps`, `make check`, `make e2e`), слот 1 — агент (`make stack-*`), слот 2 — агент
+`reviewer`. Цели слота 0 и чужие слоты агенту не запускать: это стеки и базы других.
+Отдельные проверки с БД (`make check-backend`, `make test-backend`, `uv run pytest`) — с
+`POSTGRES_PORT=5433`; Postgres слота 1 поднимают `make stack-check` и `make stack-up`.
 Как устроена система и что запланировано — [docs/architecture.md](docs/architecture.md). Где остановилась работа —
 [docs/roadmap.md](docs/roadmap.md); как вести его — skill `session-handoff`.
 
@@ -41,6 +48,8 @@ docs/rules/           правила по темам: db-migrations.md, concurre
    пробовал и какая гипотеза.
 5. Новая команда, инструмент, проверка или нюанс окружения — в
    [docs/development.md](docs/development.md) в том же коммите.
+6. Этап крупной фазы (или фаза без spec) не готов, пока по нему не прошёл агент `reviewer` и
+   человек не разобрал его находки. Как передавать — skill `feature-workflow`, «Ревью».
 
 ## Лог решений — `docs/decisions.md`
 
@@ -88,7 +97,13 @@ docs/rules/           правила по темам: db-migrations.md, concurre
 | `feature-workflow` | начало фазы roadmap: spec → задачи → tracer bullet → тест вперёд → ревью → браузер      |
 | `fsd-frontend`     | код фронтенда: слои, связь срезов, состояние, ошибки, тесты                             |
 | `anti-slop-review` | перед коммитом крупного изменения и перед сдачей: мусор и утверждения без подтверждения |
-| агент `reviewer`   | независимое ревью после задачи или фазы, с чистым контекстом                            |
+| агент `reviewer`   | независимое ревью этапа или фазы с чистым контекстом; без субагентов — новая сессия     |
+
+Skills проекта лежат в `.claude/skills/<имя>/SKILL.md`, агент — в `.claude/agents/reviewer.md`.
+Агенту без поддержки skills (Codex, Antigravity) — читать `SKILL.md` оттуда по таблице выше.
+Без субагентов ревью — новая сессия: промпт — текст `reviewer.md` после frontmatter, первым
+шагом прочитать `.claude/skills/anti-slop-review/SKILL.md`, дальше — те же входные данные,
+что и агенту (skill `feature-workflow`, «Ревью»).
 
 ## Файлы правил
 
