@@ -10,8 +10,12 @@ from rest_framework.views import APIView
 
 from config.exceptions import ValidationErrorSerializer
 from events.models import Event
-from registrations.serializers import RegisterRequestSerializer, RegistrationResultSerializer
-from registrations.services import register
+from registrations.models import Registration
+from registrations.serializers import (
+    RegisterRequestSerializer,
+    RegistrationResultSerializer,
+)
+from registrations.services import cancel, register
 
 
 class RegisterView(APIView):
@@ -43,3 +47,24 @@ class RegisterView(APIView):
             RegistrationResultSerializer(payload).data,
             status=status.HTTP_201_CREATED if result.created else status.HTTP_200_OK,
         )
+
+
+class CancelView(APIView):
+    """Cancels a registration by the secret manage token. Repeating it changes nothing."""
+
+    authentication_classes = ()
+    permission_classes = (AllowAny,)
+
+    @extend_schema(
+        request=None,
+        responses={
+            200: RegistrationResultSerializer,
+            404: OpenApiResponse(description="Unknown token"),
+        },
+    )
+    def post(self, request: Request, manage_token: str) -> Response:
+        try:
+            registration = cancel(manage_token)
+        except Registration.DoesNotExist:
+            raise NotFound from None
+        return Response(RegistrationResultSerializer({"status": registration.status}).data)
