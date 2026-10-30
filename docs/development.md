@@ -111,6 +111,7 @@ make down   # остановить; данные БД остаются в том
 | `make e2e`                                                    | поднять стек (`make up`) и прогнать Playwright против него                               |
 | `make stack-up` / `stack-e2e` / `stack-down` `SLOT=<N>`       | стек слота (см. «E2E»): поднять / e2e против него / удалить с томами                     |
 | `make stack-check SLOT=<N>`                                   | `make check` на Postgres слота, а не на Postgres из `make dev-deps`                      |
+| `make stack-check-backend SLOT=<N>`                           | `make check-backend` на Postgres слота                                                   |
 | `make review-worktree REF=<sha>` / `review-worktree-remove`   | копия репозитория для агента `reviewer` на коммите `<sha>` / удалить её                  |
 | **Изменения**                                                 |                                                                                          |
 | `make schema`                                                 | пересобрать `backend/openapi.yaml` и типы фронтенда `schema.d.ts` после изменения API    |
@@ -256,15 +257,15 @@ docs: close phase 1 (registration)
 **`pre-push`.** Медленные проверки (типы, тесты) — здесь, а не в `pre-commit`: хук, который
 тормозит каждый коммит, начинают обходить.
 
-| Изменены файлы                                                                                                | Что запускается                                                       |
-| ------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- |
-| `backend/**`                                                                                                  | `make dev-deps check-backend` — поднимет Postgres, если он не запущен |
-| `frontend/**`                                                                                                 | `make check-frontend`                                                 |
-| `e2e/**`                                                                                                      | `make check-e2e`                                                      |
-| `.github/**`                                                                                                  | `make check-ci`                                                       |
-| `.claude/hooks/**`, `scripts/**`                                                                              | `make check-tooling`                                                  |
-| `Makefile`, `docker-compose.yml`, `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `.prettierrc.json` | проверки всех частей                                                  |
-| только документация                                                                                           | ничего                                                                |
+| Изменены файлы                                                                                                | Что запускается                                                                                                                                |
+| ------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `backend/**`                                                                                                  | `make dev-deps check-backend` — поднимет Postgres, если он не запущен; при заданном `SLOT` (push агента) — `make stack-check-backend SLOT=<N>` |
+| `frontend/**`                                                                                                 | `make check-frontend`                                                                                                                          |
+| `e2e/**`                                                                                                      | `make check-e2e`                                                                                                                               |
+| `.github/**`                                                                                                  | `make check-ci`                                                                                                                                |
+| `.claude/hooks/**`, `scripts/**`                                                                              | `make check-tooling`                                                                                                                           |
+| `Makefile`, `docker-compose.yml`, `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `.prettierrc.json` | проверки всех частей                                                                                                                           |
+| только документация                                                                                           | ничего                                                                                                                                         |
 
 Отправляемые коммиты — от того, что уже есть на remote, до отправляемого. Ветка, которой
 ещё нет на remote, сравнивается с тем, что есть на любом remote; если remote пуст —

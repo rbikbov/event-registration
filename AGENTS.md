@@ -14,7 +14,9 @@
 `make dev-deps`, `make check`, `make e2e`), слот 1 — агент (`make stack-*`), слот 2 — агент
 `reviewer`. Цели слота 0 и чужие слоты агенту не запускать: это стеки и базы других.
 Отдельные проверки с БД (`make check-backend`, `make test-backend`, `uv run pytest`) — с
-`POSTGRES_PORT=5433`; Postgres слота 1 поднимают `make stack-check` и `make stack-up`.
+`POSTGRES_PORT=5433` или `make stack-check-backend`; Postgres слота 1 поднимают `make stack-check`,
+`make stack-check-backend` и `make stack-up`. Push — `SLOT=1 git push`: хук `pre-push` проверит
+backend на Postgres слота 1, а не на Postgres человека.
 Как устроена система и что запланировано — [docs/architecture.md](docs/architecture.md). Где остановилась работа —
 [docs/roadmap.md](docs/roadmap.md); как вести его — skill `session-handoff`.
 

@@ -11,6 +11,16 @@ test("backend changes run backend checks", () => {
   assert.deepEqual(commandsFor(["backend/config/health.py"]), ["make dev-deps check-backend"]);
 });
 
+test("backend changes pushed from a slot use the slot's Postgres", () => {
+  assert.deepEqual(commandsFor(["backend/config/health.py"], "1"), [
+    "make stack-check-backend SLOT=1",
+  ]);
+});
+
+test("shared files pushed from a slot check the backend on the slot's Postgres", () => {
+  assert.equal(commandsFor(["Makefile"], "1")[0], "make stack-check-backend SLOT=1");
+});
+
 test("frontend changes run frontend checks", () => {
   assert.deepEqual(commandsFor(["frontend/src/app/App.vue"]), ["make check-frontend"]);
 });

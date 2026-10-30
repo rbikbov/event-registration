@@ -17,8 +17,13 @@ const SHARED = [
   /^\.prettierrc\.json$/,
 ];
 
+// The agent pushes with SLOT set, so backend tests run against the Postgres of its slot
+// instead of the developer's one from make dev-deps.
+const backendCommand = (slot) =>
+  slot ? `make stack-check-backend SLOT=${slot}` : "make dev-deps check-backend";
+
 const PARTS = [
-  { name: "backend", match: /^backend\//, command: "make dev-deps check-backend" },
+  { name: "backend", match: /^backend\//, command: backendCommand },
   { name: "frontend", match: /^frontend\//, command: "make check-frontend" },
   { name: "e2e", match: /^e2e\//, command: "make check-e2e" },
   { name: "CI workflows", match: /^\.github\//, command: "make check-ci" },
@@ -29,12 +34,12 @@ const PARTS = [
   },
 ];
 
-export function commandsFor(files) {
-  if (files.some((file) => SHARED.some((pattern) => pattern.test(file)))) {
-    return PARTS.map((part) => part.command);
-  }
-  return PARTS.filter((part) => files.some((file) => part.match.test(file))).map(
-    (part) => part.command,
+export function commandsFor(files, slot) {
+  const parts = files.some((file) => SHARED.some((pattern) => pattern.test(file)))
+    ? PARTS
+    : PARTS.filter((part) => files.some((file) => part.match.test(file)));
+  return parts.map((part) =>
+    typeof part.command === "function" ? part.command(slot) : part.command,
   );
 }
 
@@ -64,7 +69,7 @@ function main() {
     for (const file of changedFiles(localSha, remoteSha)) files.add(file);
   }
 
-  const commands = commandsFor([...files]);
+  const commands = commandsFor([...files], process.env.SLOT);
   if (commands.length === 0) {
     console.log("pre-push: no checked parts changed, nothing to run");
     return;
