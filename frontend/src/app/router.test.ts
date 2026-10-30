@@ -3,7 +3,7 @@ import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 import { createMemoryHistory } from "vue-router";
 
-import { routes } from "@/shared/config";
+import { eventPath, routes } from "@/shared/config";
 import { server } from "@/shared/lib/test/msw";
 
 import { createAppRouter } from "./router";
@@ -72,5 +72,14 @@ describe("route guard", () => {
     const router = setup();
 
     await expect(router.push(routes.orgEvents)).rejects.toMatchObject({ kind: "server" });
+  });
+
+  it("opens a public page without asking who is signed in", async () => {
+    // No handler for `me`: the request would fail the test as unhandled.
+    const router = setup();
+
+    await router.push(eventPath(1));
+
+    expect(router.currentRoute.value.path).toBe(eventPath(1));
   });
 });
