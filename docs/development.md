@@ -110,6 +110,7 @@ make down   # остановить; данные БД остаются в том
 | `make schema-check`                                           | падает, если `openapi.yaml` или `schema.d.ts` устарели или у view нет описания для схемы |
 | `make e2e`                                                    | поднять стек (`make up`) и прогнать Playwright против него                               |
 | `make review-up` / `review-e2e` / `review-down`               | отдельный стек для ревью (см. «E2E»): поднять / e2e против него / удалить с томами       |
+| `make review-check`                                           | `make check` на Postgres стека ревью (5433), а не на Postgres из `make dev-deps`         |
 | **Изменения**                                                 |                                                                                          |
 | `make schema`                                                 | пересобрать `backend/openapi.yaml` и типы фронтенда `schema.d.ts` после изменения API    |
 | `make fmt`                                                    | отформатировать всё: `eslint --fix`, Prettier, `ruff check --fix`, `ruff format`         |
@@ -398,11 +399,14 @@ docs: describe pre-push hook
 
 - Playwright, пакет `e2e/`, только chromium. Тесты идут против стека из `make up` — того же,
   что запускает проверяющий; `make e2e` поднимает его сам. Другой адрес — `E2E_BASE_URL`.
-- Стек ревью — `make review-up` / `review-e2e` / `review-down`: compose-проект `review` со
-  своими контейнерами, томами и портами (фронтенд 5174, backend 8001, Postgres 5433, Mailpit
-  8026, SMTP 1026). Нужен, когда стек разработчика уже запущен: тот же проект на других
-  портах пересоздал бы его контейнеры. Агент `reviewer` работает только с ним; `review-down`
-  удаляет тома проекта `review` и ничего больше.
+- Стек ревью — `make review-up` / `review-e2e` / `review-check` / `review-down`:
+  compose-проект `event-registration-review` со своими контейнерами, томами и портами
+  (фронтенд 5174, backend 8001, Postgres 5433, Mailpit 8026, SMTP 1026). Нужен, когда стек
+  разработчика уже запущен: тот же проект на других портах пересоздал бы его контейнеры, а
+  тесты backend пересоздавали бы `test_event_registration` в его Postgres. Агент `reviewer`
+  работает только с этим стеком; `review-down` удаляет тома проекта
+  `event-registration-review`. Имя проекта общее для всего Docker на машине, поэтому два
+  ревью одновременно делят один стек — запускать по очереди.
 - При падении сохраняется trace:
   `cd e2e && pnpm exec playwright show-trace test-results/<папка теста>/trace.zip`.
 - В `make check` e2e не запускаются (нужен поднятый стек) — там только ESLint и tsc для их
