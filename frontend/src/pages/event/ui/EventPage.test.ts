@@ -234,6 +234,27 @@ describe("EventPage", () => {
     );
   });
 
+  it("keeps the form and the loaded event when a registration fails", async () => {
+    let loads = 0;
+    server.use(
+      http.get("*/api/events/7/", () => {
+        loads += 1;
+        // Only the first load works: a reload after the failure would replace the page.
+        return loads === 1 ? HttpResponse.json(event) : HttpResponse.error();
+      }),
+      http.post("*/api/events/7/registrations/", () => HttpResponse.error()),
+    );
+    const { wrapper } = await mountPage();
+
+    await fill(wrapper, { email: "a@x.io", name: "Ann" });
+
+    expect(loads).toBe(1);
+    expect(wrapper.get('[role="alert"]').text()).toBe(
+      "Не удалось зарегистрироваться, попробуйте позже",
+    );
+    expect(wrapper.get("#email").element).toHaveProperty("value", "a@x.io");
+  });
+
   it("disables the submit button while the request is in flight", async () => {
     eventLoaded();
     server.use(
