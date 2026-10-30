@@ -1,5 +1,6 @@
 from typing import Any
 
+from django.conf import settings
 from django.core.management.base import BaseCommand
 
 from accounts.models import User
@@ -11,9 +12,14 @@ DEMO_ADMIN = ("admin@example.com", "admin")
 
 
 class Command(BaseCommand):
-    help = "Create or reset the demo organizer and the demo admin."
+    help = "Create or reset the demo organizer and the demo admin (only with DJANGO_DEBUG=true)."
 
     def handle(self, *args: Any, **options: Any) -> None:
+        # Known passwords and a superuser must never reach a deployment that runs without DEBUG.
+        # Skipping, not failing: the compose `backend` runs this on every start.
+        if not settings.DEBUG:
+            self.stderr.write("DEBUG is off: demo users are not created.")
+            return
         for (email, password), is_admin in ((DEMO_ORGANIZER, False), (DEMO_ADMIN, True)):
             user, _ = User.objects.get_or_create(email=email)
             user.set_password(password)
