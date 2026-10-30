@@ -13,7 +13,7 @@ test("organizer signs in, creates an event and sees it in the list", async ({ pa
   await page.getByLabel("Пароль").fill(ORGANIZER.password);
   await page.getByRole("button", { name: "Войти" }).click();
 
-  await expect(page.getByRole("heading", { name: "События", exact: true })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Мои события" })).toBeVisible();
   await page.getByRole("link", { name: "Создать событие" }).click();
 
   await page.getByLabel("Название", { exact: true }).fill(title);

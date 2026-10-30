@@ -24,6 +24,8 @@ export function createAppRouter(queryClient: QueryClient, history: RouterHistory
   });
 
   router.beforeEach(async (to) => {
+    // Public pages do not depend on the session; asking `me` there only logs a 401 for a guest.
+    if (!to.meta.requiresAuth && to.path !== routes.login) return true;
     const user = await queryClient.ensureQueryData(meQuery);
     if (to.meta.requiresAuth && user === null) return routes.login;
     if (to.path === routes.login && user !== null) return routes.orgEvents;

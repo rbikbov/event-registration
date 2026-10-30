@@ -52,7 +52,7 @@ function startsAt(iso: string): string {
 
 <i18n lang="json" locale="ru">
 {
-  "title": "События",
+  "title": "Мои события",
   "create": "Создать событие",
   "loading": "Загружаем…",
   "error": "Не удалось загрузить события",
