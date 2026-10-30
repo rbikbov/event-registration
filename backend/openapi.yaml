@@ -224,6 +224,30 @@ paths:
               schema:
                 $ref: '#/components/schemas/ValidationError'
           description: ''
+  /api/tickets/{manage_token}/cancel/:
+    post:
+      operationId: tickets_cancel_create
+      description: Cancels a registration by the secret manage token. Repeating it
+        changes nothing.
+      parameters:
+      - in: path
+        name: manage_token
+        schema:
+          type: string
+        required: true
+      tags:
+      - tickets
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegistrationResult'
+          description: ''
+        '404':
+          description: Unknown token
 components:
   schemas:
     Event:
