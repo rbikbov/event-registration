@@ -21,6 +21,8 @@ services:
       POSTGRES_HOST: postgres
       # The frontend dev server proxies /api with the backend service name as Host.
       DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1,backend
+      # Links in emails are rendered by the backend, when the change is made.
+      FRONTEND_URL: http://localhost:${FRONTEND_PORT:-5173}
     ports:
       - "${BACKEND_PORT:-8000}:8000"
     depends_on:
@@ -37,6 +39,27 @@ services:
       interval: 2s
       timeout: 3s
       retries: 30
+
+  mailpit:
+    image: axllent/mailpit:v1.31.6
+    ports:
+      - "${MAILPIT_PORT:-8025}:8025"
+      - "${MAILPIT_SMTP_PORT:-1025}:1025"
+
+  worker:
+    build: ./backend
+    command: python manage.py run_worker
+    environment:
+      POSTGRES_HOST: postgres
+      EMAIL_HOST: mailpit
+      # Show the worker log in `docker compose logs` as it is written.
+      PYTHONUNBUFFERED: "1"
+    depends_on:
+      # Healthy backend means migrations are applied.
+      backend:
+        condition: service_healthy
+      mailpit:
+        condition: service_healthy
 
   frontend:
     build:
