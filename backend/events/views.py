@@ -30,7 +30,7 @@ class OrgEventListView(ListCreateAPIView[Event]):
 
 
 class PublicEventListView(ListAPIView[Event]):
-    """Future events with free seats, for everyone."""
+    """Future events with their free seat count (full ones stay in the list), for everyone."""
 
     # No session authentication: a public endpoint must not depend on cookies or CSRF.
     authentication_classes = ()

@@ -67,7 +67,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description Future events with free seats, for everyone. */
+        /** @description Future events with their free seat count (full ones stay in the list), for everyone. */
         get: operations["events_list"];
         put?: never;
         post?: never;

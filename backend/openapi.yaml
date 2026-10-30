@@ -69,7 +69,8 @@ paths:
   /api/events/:
     get:
       operationId: events_list
-      description: Future events with free seats, for everyone.
+      description: Future events with their free seat count (full ones stay in the
+        list), for everyone.
       tags:
       - events
       security:
