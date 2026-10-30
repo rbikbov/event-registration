@@ -27,7 +27,8 @@ description: >
 5. **Фронтенд.** Тип ответа — `components["schemas"]["<Имя>"]`, вызов — через `api` и
    `unwrap()` из `@/shared/api`. Если поле или путь изменились, `make check-frontend`
    упадёт на vue-tsc — это и есть проверка контракта (`frontend/AGENTS.md`, правила 2–3).
-6. **Проверка.** `make check-backend` (в нём `schema-check`) и `make check-frontend`.
+6. **Проверка.** `make stack-check` (в нём `schema-check` и vue-tsc; `make check-backend`
+   без `POSTGRES_PORT=5433` идёт в Postgres человека).
    Схема и типы — в том же коммите, что и код.
 
 ## Что проверить на каждом эндпоинте
@@ -72,7 +73,7 @@ DRF подменяет 401 на 403); 403 — «вошёл, но нельзя» 
 
 ## Готово, когда
 
-- Тест эндпоинта и тест логики проходят; `make check-backend` и `make check-frontend` зелёные.
+- Тест эндпоинта и тест логики проходят; `make stack-check` зелёный.
 - `openapi.yaml` и `schema.d.ts` в коммите; `git diff` схемы содержит только ожидаемое.
 - Изменение документировано: эндпоинт в `docs/architecture.md` (раздел «API») приведён к
   коду, статус раздела обновлён.

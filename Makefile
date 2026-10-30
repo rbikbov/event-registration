@@ -144,14 +144,16 @@ stack-down: stack-slot ## Remove the stack of slot SLOT with its volumes
 
 # A detached worktree at REF for the reviewer, so it checks exactly the reviewed commits
 # while the working tree keeps changing. Dependencies come from the pnpm and uv caches.
+# A half-installed worktree would block the next run, so it is removed on failure.
 REVIEW_WORKTREE := .claude/worktrees/review
 
 .PHONY: review-worktree
 review-worktree: ## Worktree for the reviewer at REF in .claude/worktrees/review
 	@test -n "$(REF)" || { echo "usage: make review-worktree REF=<commit>" >&2; exit 1; }
 	git worktree add --detach $(REVIEW_WORKTREE) $(REF)
-	cd $(REVIEW_WORKTREE) && pnpm install --frozen-lockfile --prefer-offline
-	cd $(REVIEW_WORKTREE)/backend && uv sync --frozen
+	(cd $(REVIEW_WORKTREE) && pnpm install --frozen-lockfile --prefer-offline \
+		&& cd backend && uv sync --frozen) \
+		|| { git worktree remove --force $(REVIEW_WORKTREE); exit 1; }
 
 .PHONY: review-worktree-remove
 review-worktree-remove: ## Remove the reviewer's worktree
