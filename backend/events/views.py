@@ -1,5 +1,6 @@
 from typing import Any
 
+from django.db.models import QuerySet
 from drf_spectacular.utils import extend_schema
 from rest_framework.generics import ListAPIView, ListCreateAPIView, RetrieveAPIView
 from rest_framework.permissions import AllowAny
@@ -36,7 +37,7 @@ class PublicEventListView(ListAPIView[Event]):
     permission_classes = (AllowAny,)
     serializer_class = PublicEventListSerializer
 
-    def get_queryset(self):  # type: ignore[no-untyped-def]
+    def get_queryset(self) -> QuerySet[Event]:
         return Event.objects.upcoming().with_registration_counts()
 
 
@@ -45,5 +46,5 @@ class PublicEventDetailView(RetrieveAPIView[Event]):
     permission_classes = (AllowAny,)
     serializer_class = PublicEventSerializer
 
-    def get_queryset(self):  # type: ignore[no-untyped-def]
+    def get_queryset(self) -> QuerySet[Event]:
         return Event.objects.with_registration_counts()

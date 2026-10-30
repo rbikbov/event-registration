@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
-import { computed, reactive, ref } from "vue";
+import { computed, reactive, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
 
@@ -38,12 +38,22 @@ const {
   isPending: isSubmitting,
   error,
   data: result,
+  reset,
 } = useMutation({
   mutationFn: (values: RegistrationFormInput) => registerForEvent(eventId.value, values),
   onSettled: async () => {
     await queryClient.invalidateQueries({ queryKey: eventQuery.value.queryKey });
     await queryClient.invalidateQueries({ queryKey: publicEventsQuery.queryKey });
   },
+});
+
+// The router reuses this component when the id changes (history between two events): the
+// result and the typed values belong to the previous event.
+watch(eventId, () => {
+  reset();
+  form.email = "";
+  form.name = "";
+  clientErrors.value = {};
 });
 
 const fieldErrors = computed<RegistrationFormErrors>(() => ({
