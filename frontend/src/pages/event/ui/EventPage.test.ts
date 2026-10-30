@@ -34,7 +34,7 @@ async function mountPage() {
     global: { plugins: [router, [VueQueryPlugin, { queryClient }], createAppI18n()] },
   });
   await vi.waitFor(() => expect(wrapper.find('[role="status"]').exists()).toBe(false));
-  return { wrapper, queryClient };
+  return { wrapper, queryClient, router };
 }
 
 type Wrapper = Awaited<ReturnType<typeof mountPage>>["wrapper"];
@@ -114,6 +114,25 @@ describe("EventPage", () => {
     expect(wrapper.get('[role="status"]').text()).toBe("Место подтверждено");
     expect(wrapper.find("form").exists()).toBe(false);
     expect(queryClient.getQueryState(publicEventsQuery.queryKey)?.isInvalidated).toBe(true);
+  });
+
+  it("forgets the result when the route moves to another event", async () => {
+    eventLoaded();
+    server.use(
+      http.get("*/api/events/8/", () => HttpResponse.json({ ...event, id: 8, title: "Other" })),
+      http.post("*/api/events/7/registrations/", () =>
+        HttpResponse.json({ status: "confirmed" }, { status: 201 }),
+      ),
+    );
+    const { wrapper, router } = await mountPage();
+    await fill(wrapper, { email: "a@x.io", name: "Ann" });
+    expect(wrapper.get('[role="status"]').text()).toBe("Место подтверждено");
+
+    await router.push(eventPath(8));
+
+    await vi.waitFor(() => expect(wrapper.text()).toContain("Other"));
+    expect(wrapper.find("form").exists()).toBe(true);
+    expect(wrapper.find('[role="status"]').exists()).toBe(false);
   });
 
   it("shows the same result for a repeated registration", async () => {
