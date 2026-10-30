@@ -4,7 +4,7 @@ import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 import { createMemoryHistory, createRouter } from "vue-router";
 
-import { orgEventsQuery } from "@/entities/event";
+import { orgEventsQuery, publicEventsQuery } from "@/entities/event";
 import { routes } from "@/shared/config";
 import { createAppI18n } from "@/shared/lib/i18n";
 import { server } from "@/shared/lib/test/msw";
@@ -60,12 +60,14 @@ describe("OrgEventNewPage", () => {
     );
     const { wrapper, router, queryClient } = await mountPage();
     queryClient.setQueryData(orgEventsQuery.queryKey, []);
+    queryClient.setQueryData(publicEventsQuery.queryKey, []);
 
     await fill(wrapper, { ...valid(), description: "Talks" });
 
     expect(body).toMatchObject({ title: "Meetup", description: "Talks", capacity: 30 });
     expect(router.currentRoute.value.path).toBe(routes.orgEvents);
     expect(queryClient.getQueryState(orgEventsQuery.queryKey)?.isInvalidated).toBe(true);
+    expect(queryClient.getQueryState(publicEventsQuery.queryKey)?.isInvalidated).toBe(true);
   });
 
   it("shows field errors without sending a request", async () => {
@@ -91,6 +93,22 @@ describe("OrgEventNewPage", () => {
     expect(wrapper.text()).toContain("Начало должно быть в будущем");
     expect(wrapper.find('[role="alert"]').exists()).toBe(false);
     expect(router.currentRoute.value.path).toBe(routes.orgEventsNew);
+  });
+
+  it("drops the server error of a field once the field is edited", async () => {
+    server.use(
+      http.post("*/api/org/events/", () =>
+        HttpResponse.json({ errors: { starts_at: ["past"] } }, { status: 400 }),
+      ),
+    );
+    const { wrapper } = await mountPage();
+    await fill(wrapper, valid());
+    expect(wrapper.text()).toContain("Начало должно быть в будущем");
+
+    await type(wrapper, { starts_at: `${new Date().getFullYear() + 2}-05-01T18:00` });
+
+    expect(wrapper.text()).not.toContain("Начало должно быть в будущем");
+    expect(wrapper.get("#starts_at").attributes("aria-invalid")).toBe("false");
   });
 
   it("shows a general error when the server fails", async () => {
