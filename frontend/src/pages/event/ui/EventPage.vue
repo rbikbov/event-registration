@@ -41,7 +41,9 @@ const {
   reset,
 } = useMutation({
   mutationFn: (values: RegistrationFormInput) => registerForEvent(eventId.value, values),
-  onSettled: async () => {
+  // Only on success: a failed registration changed nothing, and a reload of the event while the
+  // network is down would replace the form with a load error.
+  onSuccess: async () => {
     await queryClient.invalidateQueries({ queryKey: eventQuery.value.queryKey });
     await queryClient.invalidateQueries({ queryKey: publicEventsQuery.queryKey });
   },

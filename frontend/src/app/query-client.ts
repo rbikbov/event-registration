@@ -9,6 +9,11 @@ function shouldRetry(failureCount: number, error: unknown): boolean {
   return retryable && failureCount < 2;
 }
 
+// "always": by default a request made while the browser reports offline is paused, never sent,
+// and the form hangs on "sending" with no error. Sent, it fails and the page shows the error.
 export const queryClient = new QueryClient({
-  defaultOptions: { queries: { retry: shouldRetry } },
+  defaultOptions: {
+    queries: { retry: shouldRetry, networkMode: "always" },
+    mutations: { networkMode: "always" },
+  },
 });
