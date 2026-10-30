@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { useMutation, useQueryClient } from "@tanstack/vue-query";
-import { computed, reactive, ref } from "vue";
+import { computed, reactive, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 
-import { orgEventsQuery } from "@/entities/event";
+import { orgEventsQuery, publicEventsQuery } from "@/entities/event";
 import { AppError } from "@/shared/api";
 import { routes } from "@/shared/config";
 import { Alert, AlertDescription } from "@/shared/ui/shadcn/alert";
@@ -40,12 +40,18 @@ const form = reactive<EventFormInput>({
 });
 const clientErrors = ref<EventFormErrors>({});
 
-const { mutate, isPending, error } = useMutation({
+const { mutate, isPending, error, reset } = useMutation({
   mutationFn: createEvent,
   onSuccess: async () => {
     await queryClient.invalidateQueries({ queryKey: orgEventsQuery.queryKey });
+    await queryClient.invalidateQueries({ queryKey: publicEventsQuery.queryKey });
     await router.push(routes.orgEvents);
   },
+});
+
+// A server error describes the values that were sent; once they change it is stale.
+watch(form, () => {
+  if (error.value !== null) reset();
 });
 
 const fieldErrors = computed<EventFormErrors>(() => ({
