@@ -50,22 +50,21 @@ description: >
 
 ## Ошибки
 
-Тело ошибки — формат DRF по умолчанию: 400 — `{"поле": ["сообщение"]}` или
-`{"non_field_errors": [...]}`; остальные 4xx — `{"detail": "..."}`. Фронтенд тело не читает:
-`AppError.kind` выводится из статуса (`shared/api/app-error.ts`: 400/422 — `validation`,
+Фронтенд приводит статус к `AppError.kind` (`shared/api/app-error.ts`: 400/422 — `validation`,
 401 — `unauthorized`, 403 — `forbidden`, 404 — `not_found`, 409 — `conflict`, 5xx — `server`).
 Новый статус — правка `kindForStatus` и тест. Анонимный запрос к закрытому эндпоинту — 401
 (`accounts.authentication.SessionAuthenticationWith401`: без заголовка `WWW-Authenticate`
 DRF подменяет 401 на 403); 403 — «вошёл, но нельзя» (чужое событие, CSRF). «Неверный логин» —
 400, чтобы не путать с протухшей сессией.
 
-> ЧЕРНОВИК (решить и проверить на задачах 2.1–2.2, первая форма с серверной валидацией):
-> ошибки полей. DRF по умолчанию отдаёт английский текст, показывать его в русском
-> интерфейсе нельзя. Предложение: свой exception handler отдаёт для 400 коды —
-> `{"errors": {"capacity": ["min_value"]}}` (`exc.get_codes()`); `unwrap()` кладёт их в
-> `AppError.fields`; форма сопоставляет код с текстом в своём `<i18n>`. Формат описывается в
-> схеме OpenAPI. Решение и итоговый формат — в `docs/decisions.md`; после этого убрать
-> пометку и перенести формат в этот раздел.
+Ошибки полей (400 `ValidationError`) — коды, а не тексты: DRF отдаёт английские сообщения, а
+интерфейс русский. `config.exceptions.api_exception_handler` превращает тело в
+`{"errors": {"поле": ["код"]}}` (`exc.get_codes()`: `required`, `blank`, `max_length`,
+`min_value`, `invalid`…); ошибка вне поля (из `validate()`) — под `non_field_errors`. Свой код
+для правила предметной области — `ValidationError(msg, code="past")`. Форма сопоставляет код
+с текстом в своём `<i18n>`; коды полей фронтенд кладёт в `AppError.fields` (задача 2.2). В схему 400 попадает через
+`responses={400: ValidationErrorSerializer}` (`config.exceptions`) — указывать у каждого
+эндпоинта с телом запроса. Остальные 4xx сохраняют `{"detail": "..."}`.
 
 Образец теста эндпоинта — `backend/accounts/tests/test_auth_api.py`: `APIClient`,
 `force_login`, параметризованные плохие входы, статус и тело.

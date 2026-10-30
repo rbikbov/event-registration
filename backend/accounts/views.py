@@ -11,6 +11,7 @@ from rest_framework.views import APIView
 
 from accounts.models import User
 from accounts.serializers import LoginSerializer, UserSerializer
+from config.exceptions import ValidationErrorSerializer
 
 
 class LoginView(APIView):
@@ -19,7 +20,10 @@ class LoginView(APIView):
 
     permission_classes = (AllowAny,)
 
-    @extend_schema(request=LoginSerializer, responses={200: UserSerializer})
+    @extend_schema(
+        request=LoginSerializer,
+        responses={200: UserSerializer, 400: ValidationErrorSerializer},
+    )
     def post(self, request: Request) -> Response:
         serializer = LoginSerializer(data=request.data, context={"request": request})
         serializer.is_valid(raise_exception=True)

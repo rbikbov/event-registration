@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "drf_spectacular",
     "accounts",
+    "events",
 ]
 
 MIDDLEWARE = [
@@ -112,6 +113,7 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticated",
     ],
+    "EXCEPTION_HANDLER": "config.exceptions.api_exception_handler",
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
 

@@ -33,6 +33,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/User'
           description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+          description: ''
   /api/auth/logout/:
     post:
       operationId: auth_logout_create
@@ -82,8 +88,83 @@ paths:
               schema:
                 $ref: '#/components/schemas/Health'
           description: ''
+  /api/org/events/:
+    get:
+      operationId: org_events_list
+      description: The signed-in organizer's own events; creating one makes the caller
+        its organizer.
+      tags:
+      - org
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Event'
+          description: ''
+    post:
+      operationId: org_events_create
+      description: The signed-in organizer's own events; creating one makes the caller
+        its organizer.
+      tags:
+      - org
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Event'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/Event'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/Event'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+          description: ''
 components:
   schemas:
+    Event:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+          maxLength: 2000
+        starts_at:
+          type: string
+          format: date-time
+        capacity:
+          type: integer
+          maximum: 10000
+          minimum: 1
+      required:
+      - capacity
+      - id
+      - starts_at
+      - title
     Health:
       type: object
       properties:
@@ -127,6 +208,17 @@ components:
       required:
       - email
       - id
+    ValidationError:
+      type: object
+      properties:
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+      required:
+      - errors
   securitySchemes:
     cookieAuth:
       type: apiKey

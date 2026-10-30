@@ -25,18 +25,21 @@ backend → frontend → e2e/доки. Логика — тест вперёд; �
 
 ## Этап 2. Организатор создаёт событие и видит список
 
-- [ ] 2.1 backend (в т.ч. решить формат ошибок полей — черновик в skill `api-change`, раздел
-      «Ошибки»; `docs/decisions.md` от 03:20): приложение `events`, модель Event + миграция, админка, `for_organizer`;
-      `GET/POST /api/org/events/` со счётчиками через `annotate`. Готово, когда: тесты
+- [x] 2.1 backend (в т.ч. решить формат ошибок полей — черновик в skill `api-change`, раздел
+      «Ошибки»): приложение `events`, модель Event + миграция, админка, `for_organizer`;
+      `GET/POST /api/org/events/`. Счётчики `confirmed` / `waitlisted` через `annotate` —
+      в 3.1, вместе с моделью Registration (решение в `docs/decisions.md`). Готово, когда: тесты
       создания, валидации, «чужое не видно», `django_assert_num_queries` зелёные.
 - [ ] 2.2 frontend: сущность `event`, страницы `/org/events` и `/org/events/new`, состояния
-      пусто/ошибка/загрузка. Готово, когда: Vitest зелёный; в браузере создание → строка в списке.
+      пусто/ошибка/загрузка; в списке пока `capacity` без `confirmed` / `waitlisted` (счётчики
+      приходят в 3.1), коды полей → `AppError.fields` и тексты в `<i18n>` формы. Готово, когда: Vitest зелёный; в браузере создание → строка в списке.
 - [ ] 2.3 e2e: организатор входит и создаёт событие. Готово, когда: сценарий проходит на
       стеке `make up`.
 
 ## Этап 3. Участник регистрируется на свободное место
 
-- [ ] 3.1 backend: модель Registration + миграция, админка (только чтение);
+- [ ] 3.1 backend: модель Registration + миграция, админка (только чтение); счётчики
+      `confirmed` / `waitlisted` в `GET /api/org/events/` через `annotate` (+ тест числа запросов);
       `registrations.services.register` (блокировка Event, `confirmed`, нормализация email,
       идемпотентность); `GET /api/events/`, `GET /api/events/{id}/`, `POST …/registrations/`.
       Готово, когда: тесты сервиса (в т.ч. регистр/точка/`+tag`, повтор) и API зелёные.

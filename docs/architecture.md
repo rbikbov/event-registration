@@ -45,7 +45,7 @@
 
 **User** — реализовано (см. выше).
 
-**Event** — план (фаза 1):
+**Event** — реализовано (фаза 1, без `schedule_version`: он нужен с фазы 5):
 
 - `organizer` (FK → User), `title`, `description`, `starts_at` (timestamptz, UTC), `capacity`
 - `schedule_version` (int) — увеличивается при каждом переносе; входит в ключи
@@ -112,8 +112,9 @@
 **План — организатор, сессия + CSRF (фазы 1, 3, 4, 5):**
 
 - `POST /api/auth/login/`, `POST /api/auth/logout/`, `GET /api/auth/me/`
-- `GET/POST /api/org/events/`, `GET/PATCH /api/org/events/{id}/` (перенос → письма;
-  лимит → повышение из листа)
+- `GET/POST /api/org/events/` — реализовано (фаза 1; счётчики `confirmed` / `waitlisted` в
+  списке появятся с моделью Registration)
+- `GET/PATCH /api/org/events/{id}/` (перенос → письма; лимит → повышение из листа)
 - `GET /api/org/events/{id}/registrations/?status=`
 - `POST /api/org/events/{id}/checkin/` `{code}` → 200 / 404 / 409 (уже отмечен) / 422 (билет
   не подтверждён)

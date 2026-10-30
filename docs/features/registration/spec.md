@@ -48,20 +48,20 @@ email и получает место или номер в листе ожида�
 
 ## API
 
-Ошибки — единый формат DRF; фронтенд приводит статус к `AppError.kind`
+Ошибки — 400 несёт коды полей `{"errors": {поле: [код]}}`, остальные 4xx — `{"detail": …}` (решение от 03:21 в `docs/decisions.md`); фронтенд приводит статус к `AppError.kind`
 (`validation` — 400, `unauthorized` — 401, `forbidden` — 403, `not_found` — 404, остальное — `unknown`/`server`; `forbidden` на чужое событие фронтенд показывает как «нет доступа», а гость (401, в том числе на `me`) отправляется на `/login`).
 
-| Метод и путь                               | Вход                                        | Ответ                                                         | Ошибки                   |
-| ------------------------------------------ | ------------------------------------------- | ------------------------------------------------------------- | ------------------------ |
-| `POST /api/auth/login/`                    | `{email, password}`                         | 200 `{id, email}`, cookie сессии                              | 400 неверные данные      |
-| `POST /api/auth/logout/`                   | —                                           | 204                                                           | 401 без сессии; 403 CSRF |
-| `GET /api/auth/me/`                        | —                                           | 200 `{id, email}`                                             | 401 без сессии           |
-| `GET /api/org/events/`                     | —                                           | 200 `[Event + confirmed, waitlisted]`, только свои            | 401                      |
-| `POST /api/org/events/`                    | `{title, description, starts_at, capacity}` | 201 Event                                                     | 400 поля; 401            |
-| `GET /api/events/`                         | —                                           | 200 `[{id, title, starts_at, capacity, free_seats}]`, будущие | —                        |
-| `GET /api/events/{id}/`                    | —                                           | 200 то же + `description`                                     | 404                      |
-| `POST /api/events/{id}/registrations/`     | `{email, name}`                             | 201 / 200 (повтор) `{status, position?}`                      | 400 поля; 404            |
-| `POST /api/tickets/{manage_token}/cancel/` | —                                           | 200 `{status: "cancelled"}`                                   | 404 неизвестный токен    |
+| Метод и путь                               | Вход                                        | Ответ                                                              | Ошибки                   |
+| ------------------------------------------ | ------------------------------------------- | ------------------------------------------------------------------ | ------------------------ |
+| `POST /api/auth/login/`                    | `{email, password}`                         | 200 `{id, email}`, cookie сессии                                   | 400 неверные данные      |
+| `POST /api/auth/logout/`                   | —                                           | 204                                                                | 401 без сессии; 403 CSRF |
+| `GET /api/auth/me/`                        | —                                           | 200 `{id, email}`                                                  | 401 без сессии           |
+| `GET /api/org/events/`                     | —                                           | 200 `[Event]` (+ `confirmed`, `waitlisted` с этапа 3), только свои | 401                      |
+| `POST /api/org/events/`                    | `{title, description, starts_at, capacity}` | 201 Event                                                          | 400 поля; 401            |
+| `GET /api/events/`                         | —                                           | 200 `[{id, title, starts_at, capacity, free_seats}]`, будущие      | —                        |
+| `GET /api/events/{id}/`                    | —                                           | 200 то же + `description`                                          | 404                      |
+| `POST /api/events/{id}/registrations/`     | `{email, name}`                             | 201 / 200 (повтор) `{status, position?}`                           | 400 поля; 404            |
+| `POST /api/tickets/{manage_token}/cancel/` | —                                           | 200 `{status: "cancelled"}`                                        | 404 неизвестный токен    |
 
 Вход по сессии без токенов в JS; `GET /api/auth/me/` нужен фронтенду, чтобы узнать, вошёл ли
 пользователь (CSRF-cookie выдаёт `ensure_csrf_cookie` на `me`). `position` — только для

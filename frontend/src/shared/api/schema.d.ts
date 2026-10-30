@@ -77,10 +77,36 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/org/events/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The signed-in organizer's own events; creating one makes the caller its organizer. */
+        get: operations["org_events_list"];
+        put?: never;
+        /** @description The signed-in organizer's own events; creating one makes the caller its organizer. */
+        post: operations["org_events_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        Event: {
+            readonly id: number;
+            title: string;
+            description?: string;
+            /** Format: date-time */
+            starts_at: string;
+            capacity: number;
+        };
         Health: {
             status: components["schemas"]["HealthStateEnum"];
             database: components["schemas"]["HealthStateEnum"];
@@ -100,6 +126,11 @@ export interface components {
             readonly id: number;
             /** Format: email */
             readonly email: string;
+        };
+        ValidationError: {
+            errors: {
+                [key: string]: string[];
+            };
         };
     };
     responses: never;
@@ -131,6 +162,14 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["User"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidationError"];
                 };
             };
         };
@@ -195,6 +234,58 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Health"];
+                };
+            };
+        };
+    };
+    org_events_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Event"][];
+                };
+            };
+        };
+    };
+    org_events_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Event"];
+                "application/x-www-form-urlencoded": components["schemas"]["Event"];
+                "multipart/form-data": components["schemas"]["Event"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Event"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidationError"];
                 };
             };
         };
