@@ -48,8 +48,9 @@ Spec — `spec.md`. Одна задача — один коммит; отмет�
 
 - [ ] 4.1 backend: ошибка SMTP → `attempts`, `last_error`, `next_attempt_at` с нарастающей
       паузой; после 5 попыток — `failed`; ошибка одного письма не останавливает пачку.
-      Готово, когда: тесты с падающим backend почты зелёные; в браузере: `docker compose stop
-  mailpit` → регистрация → в админке `attempts > 0` → `start mailpit` → письмо пришло.
+      Готово, когда: тесты с падающим backend почты зелёные; в браузере:
+      `docker compose stop mailpit` → регистрация → в админке `attempts > 0` →
+      `docker compose start mailpit` → письмо пришло.
 - [ ] 4.2 backend: тест гонки двух воркеров (`threading.Barrier`, Postgres) — каждое письмо
       отправлено один раз; правило в `docs/rules/concurrency.md`. Готово, когда: тест падает
       без `select_for_update`, 20 прогонов подряд зелёные.
