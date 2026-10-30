@@ -5,6 +5,8 @@ from django.db import transaction
 from django.db.models import Q
 from django.utils import timezone
 
+from emails.models import OutboxEmail
+from emails.services import enqueue_email
 from events.models import Event
 from registrations.models import Registration, new_ticket_code
 
@@ -37,6 +39,7 @@ def register(
     """Register an email for an event; a repeat returns the existing registration.
 
     A new registration is confirmed while seats remain, otherwise it joins the waitlist.
+    A seat comes with a ticket email, queued in the same transaction; the worker sends it.
     A cancelled registration is revived: seat or waitlist is decided anew, the ticket code is
     reissued and the place in the queue is the end of it.
 
@@ -75,6 +78,8 @@ def register(
             registration.cancelled_at = None
             registration.ticket_code = new_ticket_code()
             registration.save()
+        if confirmed:
+            enqueue_email(OutboxEmail.Kind.TICKET, registration)
         return RegisterResult(registration, created=True, position=waitlist_position(registration))
 
 

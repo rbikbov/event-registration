@@ -316,6 +316,11 @@ docs: describe pre-push hook
   Django — папки рядом (`accounts/`). Python 3.12, Django 5.2 LTS, DRF.
 - Переменные окружения читаются только в `config/settings.py`. Значения по умолчанию
   совпадают с сервисами `docker compose`, поэтому локально ничего задавать не нужно.
+- Почта: `EMAIL_HOST` / `EMAIL_PORT` (SMTP Mailpit, по умолчанию `localhost:1025`),
+  `DEFAULT_FROM_EMAIL`, `FRONTEND_URL` — адрес фронтенда для ссылок в письмах (по умолчанию
+  `http://localhost:5173`). Письма не отправляются из запроса: сервис кладёт их в outbox
+  (`emails.services.enqueue_email`) в своей транзакции. В тестах pytest-django сам
+  подменяет backend почты на `locmem`.
 - Своя модель пользователя `accounts.User`: вход по email, username нет. Email хранится в
   нижнем регистре (приводится в `save()`), поэтому обычный `unique` работает без учёта
   регистра. Точки и `+tag` в адресе значимы — см. запись от 2026-10-28 22:38 в
