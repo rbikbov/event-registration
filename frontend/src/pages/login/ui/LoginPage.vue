@@ -4,6 +4,7 @@ import { computed, reactive, ref } from "vue";
 import { useRouter } from "vue-router";
 
 import { meQuery } from "@/entities/session";
+import { routes } from "@/shared/config";
 import { AppError } from "@/shared/api";
 import { Alert, AlertDescription } from "@/shared/ui/shadcn/alert";
 import { Button } from "@/shared/ui/shadcn/button";
@@ -29,7 +30,7 @@ const { mutate, isPending, error } = useMutation({
   mutationFn: login,
   onSuccess: async (user) => {
     queryClient.setQueryData(meQuery.queryKey, user);
-    await router.push("/org/events");
+    await router.push(routes.orgEvents);
   },
 });
 

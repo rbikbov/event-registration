@@ -12,6 +12,7 @@ src/pages/<page>/    экраны: ui/, api/ (запросы, нужные то�
 src/entities/session/ кто вошёл: meQuery (null — гость)
 src/shared/api/      клиент API, AppError, unwrap, сгенерированный schema.d.ts. Правила: src/shared/api/AGENTS.md
 src/shared/ui/       самописные компоненты; ui/shadcn/ — сгенерированные shadcn-vue, руками не правятся
+src/shared/config/   routes — все пути приложения
 src/shared/lib/      утилиты; lib/test/ — MSW и setup для Vitest
 src/widgets|features/            появляются с первым срезом, пустыми не создаются
 ```
@@ -37,3 +38,5 @@ src/widgets|features/            появляются с первым срезо
 9. Компонент из `shared/ui/shadcn/` не правится: нужен другой вид — обёртка в `shared/ui/`
    или токены в `app/styles.css`. Новый — `pnpm dlx shadcn-vue@latest add <имя>`, только
    с потребителем.
+10. Пути маршрутов — только из `routes` (`@/shared/config`): ни в роутере, ни в
+    `router.push`/`RouterLink`, ни в тестах строкой `"/..."` не пишутся.

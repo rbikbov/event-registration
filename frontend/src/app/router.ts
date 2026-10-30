@@ -6,22 +6,23 @@ import { HealthPage } from "@/pages/health";
 import { HomePage } from "@/pages/home";
 import { LoginPage } from "@/pages/login";
 import { OrgEventsPage } from "@/pages/org-events";
+import { routes } from "@/shared/config";
 
 export function createAppRouter(queryClient: QueryClient, history: RouterHistory) {
   const router = createRouter({
     history,
     routes: [
-      { path: "/", component: HomePage },
-      { path: "/health", component: HealthPage },
-      { path: "/login", component: LoginPage },
-      { path: "/org/events", component: OrgEventsPage, meta: { requiresAuth: true } },
+      { path: routes.home, component: HomePage },
+      { path: routes.health, component: HealthPage },
+      { path: routes.login, component: LoginPage },
+      { path: routes.orgEvents, component: OrgEventsPage, meta: { requiresAuth: true } },
     ],
   });
 
   router.beforeEach(async (to) => {
     const user = await queryClient.ensureQueryData(meQuery);
-    if (to.meta.requiresAuth && user === null) return "/login";
-    if (to.path === "/login" && user !== null) return "/org/events";
+    if (to.meta.requiresAuth && user === null) return routes.login;
+    if (to.path === routes.login && user !== null) return routes.orgEvents;
     return true;
   });
 

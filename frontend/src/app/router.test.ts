@@ -3,6 +3,7 @@ import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 import { createMemoryHistory } from "vue-router";
 
+import { routes } from "@/shared/config";
 import { server } from "@/shared/lib/test/msw";
 
 import { createAppRouter } from "./router";
@@ -26,27 +27,27 @@ describe("route guard", () => {
     guest();
     const router = setup();
 
-    await router.push("/org/events");
+    await router.push(routes.orgEvents);
 
-    expect(router.currentRoute.value.path).toBe("/login");
+    expect(router.currentRoute.value.path).toBe(routes.login);
   });
 
   it("lets a signed-in user open an organizer page", async () => {
     signedIn();
     const router = setup();
 
-    await router.push("/org/events");
+    await router.push(routes.orgEvents);
 
-    expect(router.currentRoute.value.path).toBe("/org/events");
+    expect(router.currentRoute.value.path).toBe(routes.orgEvents);
   });
 
   it("sends a signed-in user from /login to the organizer page", async () => {
     signedIn();
     const router = setup();
 
-    await router.push("/login");
+    await router.push(routes.login);
 
-    expect(router.currentRoute.value.path).toBe("/org/events");
+    expect(router.currentRoute.value.path).toBe(routes.orgEvents);
   });
 
   it("does not ask the server about the session on every navigation", async () => {
@@ -59,9 +60,9 @@ describe("route guard", () => {
     );
     const router = setup();
 
-    await router.push("/org/events");
-    await router.push("/");
-    await router.push("/org/events");
+    await router.push(routes.orgEvents);
+    await router.push(routes.home);
+    await router.push(routes.orgEvents);
 
     expect(calls).toBe(1);
   });
@@ -70,6 +71,6 @@ describe("route guard", () => {
     server.use(http.get("*/api/auth/me/", () => HttpResponse.json({}, { status: 500 })));
     const router = setup();
 
-    await expect(router.push("/org/events")).rejects.toMatchObject({ kind: "server" });
+    await expect(router.push(routes.orgEvents)).rejects.toMatchObject({ kind: "server" });
   });
 });

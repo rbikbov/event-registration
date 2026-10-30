@@ -4,6 +4,8 @@ import { createMemoryHistory, createRouter } from "vue-router";
 
 import HomePage from "./HomePage.vue";
 
+import { routes } from "@/shared/config";
+
 describe("HomePage", () => {
   it("links to the login, organizer and health pages", () => {
     const router = createRouter({ history: createMemoryHistory(), routes: [] });
@@ -11,6 +13,6 @@ describe("HomePage", () => {
     const wrapper = mount(HomePage, { global: { plugins: [router] } });
 
     const hrefs = wrapper.findAll("a").map((a) => a.attributes("href"));
-    expect(hrefs).toEqual(["/login", "/org/events", "/health"]);
+    expect(hrefs).toEqual([routes.login, routes.orgEvents, routes.health]);
   });
 });

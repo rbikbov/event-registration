@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import { createMemoryHistory, createRouter } from "vue-router";
 
 import { meQuery } from "@/entities/session";
+import { routes } from "@/shared/config";
 import { server } from "@/shared/lib/test/msw";
 
 import LoginPage from "./LoginPage.vue";
@@ -14,11 +15,11 @@ async function mountPage() {
   const router = createRouter({
     history: createMemoryHistory(),
     routes: [
-      { path: "/login", component: LoginPage },
-      { path: "/org/events", component: { template: "<div />" } },
+      { path: routes.login, component: LoginPage },
+      { path: routes.orgEvents, component: { template: "<div />" } },
     ],
   });
-  await router.push("/login");
+  await router.push(routes.login);
   const wrapper = mount(LoginPage, {
     global: { plugins: [router, [VueQueryPlugin, { queryClient }]] },
   });
@@ -50,7 +51,7 @@ describe("LoginPage", () => {
     await fill(wrapper, "demo@example.com", "demo");
 
     expect(body).toEqual({ email: "demo@example.com", password: "demo" });
-    expect(router.currentRoute.value.path).toBe("/org/events");
+    expect(router.currentRoute.value.path).toBe(routes.orgEvents);
     expect(queryClient.getQueryData(meQuery.queryKey)).toEqual({
       id: 1,
       email: "demo@example.com",
@@ -72,7 +73,7 @@ describe("LoginPage", () => {
     await fill(wrapper, "demo@example.com", "wrong");
 
     expect(wrapper.get('[role="alert"]').text()).toBe("Неверный email или пароль");
-    expect(router.currentRoute.value.path).toBe("/login");
+    expect(router.currentRoute.value.path).toBe(routes.login);
   });
 
   it("shows a different error when the server fails", async () => {
