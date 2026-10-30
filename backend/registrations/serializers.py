@@ -16,5 +16,5 @@ class RegistrationResultSerializer(serializers.Serializer[dict[str, Any]]):
     `position` is present only for a waitlisted registration.
     """
 
-    status = serializers.ChoiceField(choices=Registration.Status.choices, read_only=True)
-    position = serializers.IntegerField(min_value=1, required=False, read_only=True)
+    status = serializers.ChoiceField(choices=Registration.Status.choices)
+    position = serializers.IntegerField(min_value=1, required=False)

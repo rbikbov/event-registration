@@ -198,6 +198,20 @@ describe("EventPage", () => {
     expect(wrapper.find("form").exists()).toBe(false);
   });
 
+  it("does not claim a seat when a waitlisted result has no position", async () => {
+    eventLoaded();
+    server.use(
+      http.post("*/api/events/7/registrations/", () =>
+        HttpResponse.json({ status: "waitlisted" }, { status: 201 }),
+      ),
+    );
+    const { wrapper } = await mountPage();
+
+    await fill(wrapper, { email: "a@x.io", name: "Ann" });
+
+    expect(wrapper.get('[role="status"]').text()).toBe("Вы в листе ожидания");
+  });
+
   it("offers the waitlist when no seats are left", async () => {
     server.use(http.get("*/api/events/7/", () => HttpResponse.json({ ...event, free_seats: 0 })));
     const { wrapper } = await mountPage();

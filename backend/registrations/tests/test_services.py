@@ -8,7 +8,7 @@ from django.utils import timezone
 from accounts.models import User
 from events.models import Event
 from registrations.models import Registration
-from registrations.services import register
+from registrations.services import register, waitlist_position
 
 pytestmark = pytest.mark.django_db
 
@@ -131,6 +131,18 @@ def test_waitlist_order_breaks_a_queued_at_tie_by_id(event: Event) -> None:
     second = register(event.id, "c@x.io", "Cid", now=now)
 
     assert (first.position, second.position) == (1, 2)
+
+
+def test_earlier_queued_at_wins_over_a_smaller_id(event: Event) -> None:
+    event.capacity = 1
+    event.save()
+    now = timezone.now()
+    register(event.id, "a@x.io", "Ann", now=now)
+    late = register(event.id, "late@x.io", "Late", now=now + timedelta(minutes=5))
+    early = register(event.id, "early@x.io", "Early", now=now + timedelta(minutes=1))
+
+    assert late.registration.id < early.registration.id
+    assert (early.position, waitlist_position(late.registration)) == (1, 2)
 
 
 def test_other_events_waitlist_does_not_shift_the_position(event: Event) -> None:

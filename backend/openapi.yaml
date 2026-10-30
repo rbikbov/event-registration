@@ -390,15 +390,11 @@ components:
         `position` is present only for a waitlisted registration.
       properties:
         status:
-          allOf:
-          - $ref: '#/components/schemas/RegistrationResultStatusEnum'
-          readOnly: true
+          $ref: '#/components/schemas/RegistrationResultStatusEnum'
         position:
           type: integer
           minimum: 1
-          readOnly: true
       required:
-      - position
       - status
     RegistrationResultStatusEnum:
       enum:

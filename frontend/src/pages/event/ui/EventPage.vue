@@ -68,6 +68,13 @@ const submitError = computed(() => {
   return t("tryLater");
 });
 
+const resultText = computed(() => {
+  if (result.value?.status !== "waitlisted") return t("confirmed");
+  return result.value.position === undefined
+    ? t("waitlistedNoPosition")
+    : t("waitlisted", { position: result.value.position });
+});
+
 const notFound = computed(
   () => loadError.value instanceof AppError && loadError.value.kind === "not_found",
 );
@@ -123,11 +130,7 @@ const fields: { name: "email" | "name"; type: string; autocomplete: string }[] =
         <CardContent>
           <Alert v-if="result" role="status">
             <AlertDescription>
-              {{
-                result.status === "waitlisted" && result.position !== undefined
-                  ? t("waitlisted", { position: result.position })
-                  : t("confirmed")
-              }}
+              {{ resultText }}
             </AlertDescription>
           </Alert>
           <form v-else class="grid gap-4" novalidate @submit.prevent="submit">
@@ -175,6 +178,7 @@ const fields: { name: "email" | "name"; type: string; autocomplete: string }[] =
   "submitting": "Отправляем…",
   "confirmed": "Место подтверждено",
   "waitlisted": "Вы в листе ожидания, №{position}",
+  "waitlistedNoPosition": "Вы в листе ожидания",
   "tryLater": "Не удалось зарегистрироваться, попробуйте позже",
   "errors": {
     "required": "Обязательное поле",
