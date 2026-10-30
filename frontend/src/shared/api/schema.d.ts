@@ -211,8 +211,8 @@ export interface components {
          *     `position` is present only for a waitlisted registration.
          */
         RegistrationResult: {
-            readonly status: components["schemas"]["RegistrationResultStatusEnum"];
-            readonly position: number;
+            status: components["schemas"]["RegistrationResultStatusEnum"];
+            position?: number;
         };
         /**
          * @description * `confirmed` - Confirmed
