@@ -42,6 +42,8 @@ describe("OrgEventsPage", () => {
             description: "",
             starts_at: "2030-05-01T18:00:00Z",
             capacity: 1,
+            confirmed: 1,
+            waitlisted: 0,
           },
           {
             id: 2,
@@ -49,6 +51,8 @@ describe("OrgEventsPage", () => {
             description: "",
             starts_at: "2030-06-01T18:00:00Z",
             capacity: 30,
+            confirmed: 12,
+            waitlisted: 3,
           },
         ]),
       ),
@@ -60,8 +64,9 @@ describe("OrgEventsPage", () => {
     const rows = wrapper.findAll("li");
     expect(rows).toHaveLength(2);
     expect(rows[0]?.text()).toContain("Meetup");
-    expect(rows[0]?.text()).toContain("1 место");
-    expect(rows[1]?.text()).toContain("30 мест");
+    expect(rows[0]?.text()).toContain("Занято 1 из 1");
+    expect(rows[1]?.text()).toContain("Занято 12 из 30");
+    expect(rows[1]?.text()).toContain("в листе ожидания 3");
   });
 
   it("says there are no events yet and offers to create one", async () => {
@@ -89,6 +94,8 @@ describe("OrgEventsPage", () => {
             description: "",
             starts_at: "2030-05-01T18:00:00Z",
             capacity: 5,
+            confirmed: 0,
+            waitlisted: 0,
           },
         ]),
       ),
