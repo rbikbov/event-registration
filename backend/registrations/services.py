@@ -42,12 +42,15 @@ def register(
 
     The event row is locked for the whole transaction, so registrations for one event run one
     after another: two requests cannot take the same last seat or insert the same email twice.
+    The queue order is the order of the locks.
     Raises Event.DoesNotExist for an unknown event.
     """
-    now = now or timezone.now()
     email = email.strip().lower()
     with transaction.atomic():
         event = Event.objects.select_for_update().get(pk=event_id)
+        # Read after the lock: a time taken before it lets a later request queue ahead of an
+        # earlier one and shifts the positions already reported.
+        now = now or timezone.now()
         existing = Registration.objects.filter(event=event, email=email).first()
         if existing is not None and existing.status != Registration.Status.CANCELLED:
             return RegisterResult(existing, created=False, position=waitlist_position(existing))
