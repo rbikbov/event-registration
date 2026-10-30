@@ -131,8 +131,6 @@ paths:
           description: ''
         '404':
           description: No such event
-        '409':
-          description: No free seats
   /api/events/{id}/:
     get:
       operationId: events_retrieve
@@ -386,14 +384,21 @@ components:
       - name
     RegistrationResult:
       type: object
-      description: 'What the participant sees: no ticket code or manage token, they
-        go out by email only.'
+      description: |-
+        What the participant sees: no ticket code or manage token, they go out by email only.
+
+        `position` is present only for a waitlisted registration.
       properties:
         status:
           allOf:
           - $ref: '#/components/schemas/RegistrationResultStatusEnum'
           readOnly: true
+        position:
+          type: integer
+          minimum: 1
+          readOnly: true
       required:
+      - position
       - status
     RegistrationResultStatusEnum:
       enum:

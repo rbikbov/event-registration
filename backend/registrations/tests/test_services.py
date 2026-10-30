@@ -8,7 +8,7 @@ from django.utils import timezone
 from accounts.models import User
 from events.models import Event
 from registrations.models import Registration
-from registrations.services import EventFull, register
+from registrations.services import register
 
 pytestmark = pytest.mark.django_db
 
@@ -81,21 +81,69 @@ def test_register_stores_the_email_in_lower_case(event: Event) -> None:
     assert Registration.objects.get().email == "ann@x.io"
 
 
-def test_register_raises_when_no_seats_are_left(event: Event) -> None:
+def test_register_waitlists_when_no_seats_are_left(event: Event) -> None:
     register(event.id, "a@x.io", "Ann")
     register(event.id, "b@x.io", "Bob")
 
-    with pytest.raises(EventFull):
-        register(event.id, "c@x.io", "Cid")
+    result = register(event.id, "c@x.io", "Cid")
 
+    assert result.created is True
+    assert result.registration.status == Registration.Status.WAITLISTED
+    assert result.registration.confirmed_at is None
+    assert result.position == 1
     assert Registration.objects.filter(status=Registration.Status.CONFIRMED).count() == 2
 
 
-def test_repeat_on_a_full_event_returns_the_existing_registration(event: Event) -> None:
+def test_confirmed_registration_has_no_position(event: Event) -> None:
+    assert register(event.id, "a@x.io", "Ann").position is None
+
+
+def test_waitlist_positions_grow_in_registration_order(event: Event) -> None:
+    event.capacity = 1
+    event.save()
+    register(event.id, "a@x.io", "Ann")
+
+    positions = [register(event.id, f"w{i}@x.io", "W").position for i in range(3)]
+
+    assert positions == [1, 2, 3]
+
+
+def test_repeat_on_the_waitlist_keeps_the_position(event: Event) -> None:
+    event.capacity = 1
+    event.save()
     register(event.id, "a@x.io", "Ann")
     register(event.id, "b@x.io", "Bob")
+    register(event.id, "c@x.io", "Cid")
 
-    assert register(event.id, "a@x.io", "Ann").created is False
+    again = register(event.id, "C@x.io", "Cid")
+
+    assert again.created is False
+    assert again.position == 2
+
+
+def test_waitlist_order_breaks_a_queued_at_tie_by_id(event: Event) -> None:
+    event.capacity = 1
+    event.save()
+    now = timezone.now()
+    register(event.id, "a@x.io", "Ann", now=now)
+
+    first = register(event.id, "b@x.io", "Bob", now=now)
+    second = register(event.id, "c@x.io", "Cid", now=now)
+
+    assert (first.position, second.position) == (1, 2)
+
+
+def test_other_events_waitlist_does_not_shift_the_position(event: Event) -> None:
+    other = Event.objects.create(
+        organizer=event.organizer, title="Other", starts_at=event.starts_at, capacity=1
+    )
+    event.capacity = 1
+    event.save()
+    for target in (event, other):
+        register(target.id, "a@x.io", "Ann")
+    register(other.id, "w@x.io", "W")
+
+    assert register(event.id, "b@x.io", "Bob").position == 1
 
 
 def test_register_for_an_unknown_event_raises(event: Event) -> None:

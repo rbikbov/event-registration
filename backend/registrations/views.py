@@ -1,3 +1,5 @@
+from typing import Any
+
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
 from rest_framework.exceptions import NotFound
@@ -9,7 +11,7 @@ from rest_framework.views import APIView
 from config.exceptions import ValidationErrorSerializer
 from events.models import Event
 from registrations.serializers import RegisterRequestSerializer, RegistrationResultSerializer
-from registrations.services import EventFull, register
+from registrations.services import register
 
 
 class RegisterView(APIView):
@@ -25,7 +27,6 @@ class RegisterView(APIView):
             201: RegistrationResultSerializer,
             400: ValidationErrorSerializer,
             404: OpenApiResponse(description="No such event"),
-            409: OpenApiResponse(description="No free seats"),
         },
     )
     def post(self, request: Request, event_id: int) -> Response:
@@ -35,9 +36,10 @@ class RegisterView(APIView):
             result = register(event_id, **serializer.validated_data)
         except Event.DoesNotExist:
             raise NotFound from None
-        except EventFull:
-            return Response({"detail": "No free seats."}, status=status.HTTP_409_CONFLICT)
+        payload: dict[str, Any] = {"status": result.registration.status}
+        if result.position is not None:
+            payload["position"] = result.position
         return Response(
-            RegistrationResultSerializer(result.registration).data,
+            RegistrationResultSerializer(payload).data,
             status=status.HTTP_201_CREATED if result.created else status.HTTP_200_OK,
         )

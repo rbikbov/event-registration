@@ -205,9 +205,14 @@ export interface components {
             email: string;
             name: string;
         };
-        /** @description What the participant sees: no ticket code or manage token, they go out by email only. */
+        /**
+         * @description What the participant sees: no ticket code or manage token, they go out by email only.
+         *
+         *     `position` is present only for a waitlisted registration.
+         */
         RegistrationResult: {
             readonly status: components["schemas"]["RegistrationResultStatusEnum"];
+            readonly position: number;
         };
         /**
          * @description * `confirmed` - Confirmed
@@ -367,13 +372,6 @@ export interface operations {
             };
             /** @description No such event */
             404: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description No free seats */
-            409: {
                 headers: {
                     [name: string]: unknown;
                 };
