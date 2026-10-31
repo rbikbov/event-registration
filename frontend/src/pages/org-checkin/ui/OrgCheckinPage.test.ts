@@ -49,6 +49,12 @@ async function enter(wrapper: Wrapper, code: string): Promise<void> {
   await flushPromises();
 }
 
+function nextButton(wrapper: Wrapper) {
+  const found = wrapper.findAll("button").find((b) => b.text() === "Следующий");
+  if (found === undefined) throw new Error('No button "Следующий"');
+  return found;
+}
+
 describe("OrgCheckinPage", () => {
   it("puts the cursor into the code field when the screen opens", async () => {
     const wrapper = await mountPage();
@@ -57,7 +63,7 @@ describe("OrgCheckinPage", () => {
     expect(document.activeElement).toBe(wrapper.get("#code").element);
   });
 
-  it("lets a confirmed ticket in, shows who it is and is ready for the next code", async () => {
+  it("lets a confirmed ticket in and shows who it is instead of the form", async () => {
     let sent: unknown;
     server.use(
       http.post(CHECKIN, async ({ request }) => {
@@ -74,28 +80,47 @@ describe("OrgCheckinPage", () => {
     expect(answer.text()).toContain("Пропущен");
     expect(answer.text()).toContain("Ivan");
     expect(answer.text()).toContain("iv***@gmail.com");
+    expect(wrapper.find("form").exists()).toBe(false);
+    expect(document.activeElement).toBe(nextButton(wrapper).element);
+  });
+
+  it("brings back an empty, focused field for the next participant", async () => {
+    server.use(http.post(CHECKIN, () => HttpResponse.json(checkedIn)));
+    const wrapper = await mountPage();
+    await enter(wrapper, "ABCD2345");
+
+    await nextButton(wrapper).trigger("click");
+    await flushPromises();
+
+    expect(wrapper.find("[data-answer]").exists()).toBe(false);
     const field = wrapper.get<HTMLInputElement>("#code");
     expect(field.element.value).toBe("");
     expect(document.activeElement).toBe(field.element);
   });
 
-  it("says the ticket is not found", async () => {
+  it("says the ticket is not found until the organizer moves on", async () => {
     server.use(http.post(CHECKIN, () => HttpResponse.json({}, { status: 404 })));
     const wrapper = await mountPage();
 
     await enter(wrapper, "ZZZZZZZZ");
 
-    expect(wrapper.get('[data-answer="not_found"]').text()).toBe("Билет не найден");
+    expect(wrapper.get('[data-answer="not_found"]').text()).toContain("Билет не найден");
+    expect(wrapper.find("form").exists()).toBe(false);
     expect(wrapper.find('[role="alert"]').exists()).toBe(false);
   });
 
-  it("shows an error when the check-in fails", async () => {
-    server.use(http.post(CHECKIN, () => HttpResponse.json({}, { status: 500 })));
+  it("keeps the code for a retry when the check-in fails", async () => {
+    server.use(http.post(CHECKIN, () => HttpResponse.json(checkedIn)));
     const wrapper = await mountPage();
-
     await enter(wrapper, "ABCD2345");
+    await nextButton(wrapper).trigger("click");
+    server.use(http.post(CHECKIN, () => HttpResponse.json({}, { status: 500 })));
+
+    await enter(wrapper, "EFGH6789");
 
     expect(wrapper.get('[role="alert"]').text()).toContain("Не удалось отметить");
+    expect(wrapper.find("[data-answer]").exists()).toBe(false);
+    expect(wrapper.get<HTMLInputElement>("#code").element.value).toBe("EFGH6789");
   });
 
   it("says the event belongs to another organizer", async () => {
@@ -127,6 +152,7 @@ describe("OrgCheckinPage", () => {
 
     answer();
     await flushPromises();
+    await nextButton(wrapper).trigger("click");
     expect(wrapper.get("#code").attributes("readonly")).toBeUndefined();
   });
 
