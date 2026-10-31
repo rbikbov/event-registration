@@ -76,4 +76,48 @@ describe("QueryState", () => {
 
     expect(wrapper.find('[role="alert"]').exists()).toBe(false);
   });
+
+  it("shows the loading state while a retry of the first load is under way", async () => {
+    let calls = 0;
+    const { wrapper } = mountWith(() => {
+      calls += 1;
+      return calls === 1 ? Promise.reject(new Error("down")) : new Promise<string>(() => {});
+    });
+    await flushPromises();
+
+    await wrapper.get('[role="alert"] button').trigger("click");
+
+    expect(wrapper.get('[role="status"]').text()).toBe("Загружаем…");
+    expect(wrapper.find('[role="alert"]').exists()).toBe(false);
+  });
+
+  it("shows that a retry of a refetch is under way and blocks a second one", async () => {
+    let calls = 0;
+    let finish: (value: string) => void = () => {};
+    const { wrapper, queryClient } = mountWith(() => {
+      calls += 1;
+      if (calls === 1) return Promise.resolve("Meetup");
+      if (calls === 2) return Promise.reject(new Error("down"));
+      return new Promise<string>((resolve) => (finish = resolve));
+    });
+    await flushPromises();
+    await queryClient.refetchQueries();
+    await flushPromises();
+
+    await wrapper.get('[role="alert"] button').trigger("click");
+    await flushPromises();
+
+    const button = wrapper.get('[role="alert"] button');
+    expect(button.text()).toBe("Загружаем…");
+    expect(button.attributes("disabled")).toBeDefined();
+    expect(wrapper.get("[data-shown]").text()).toBe("Meetup");
+    await button.trigger("click");
+    expect(calls).toBe(3);
+
+    finish("Meetup 2");
+    await flushPromises();
+
+    expect(wrapper.find('[role="alert"]').exists()).toBe(false);
+    expect(wrapper.get("[data-shown]").text()).toBe("Meetup 2");
+  });
 });

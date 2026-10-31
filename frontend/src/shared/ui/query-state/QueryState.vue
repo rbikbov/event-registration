@@ -6,6 +6,7 @@ export interface QueryStateSource<T> {
   data: Readonly<Ref<T | undefined>>;
   isPending: Readonly<Ref<boolean>>;
   isError: Readonly<Ref<boolean>>;
+  isFetching: Readonly<Ref<boolean>>;
   refetch: () => Promise<unknown>;
 }
 </script>
@@ -30,7 +31,10 @@ defineSlots<{ default(props: { data: T }): unknown }>();
 
 const { t } = useI18n({ useScope: "local" });
 
+// A retry of the first load shows the loading state (the query goes back to pending); a retry
+// after a failed refetch keeps the error and the data, so the button itself shows the request.
 function retry(): void {
+  if (props.query.isFetching.value) return;
   void props.query.refetch();
 }
 </script>
@@ -44,7 +48,9 @@ function retry(): void {
       <Alert v-if="query.isError.value" variant="destructive" class="mb-4" role="alert">
         <AlertDescription class="flex items-center justify-between gap-4">
           {{ refreshErrorText }}
-          <Button variant="outline" size="sm" @click="retry">{{ t("retry") }}</Button>
+          <Button variant="outline" size="sm" :disabled="query.isFetching.value" @click="retry">
+            {{ query.isFetching.value ? t("loading") : t("retry") }}
+          </Button>
         </AlertDescription>
       </Alert>
       <slot :data="query.data.value" />
