@@ -44,6 +44,13 @@ const {
     // A freed seat changes the free seats of the event and of the list.
     await queryClient.invalidateQueries({ queryKey: publicEventsQuery.queryKey });
   },
+  // 409: the ticket was checked in while the page was open. Not a failure: the reread shows it.
+  onError: async (error) => {
+    if (!(error instanceof AppError) || error.kind !== "conflict") return;
+    confirming.value = false;
+    reset();
+    await queryClient.invalidateQueries({ queryKey: query.value.queryKey });
+  },
 });
 
 // The router reuses this component for another token: the open confirmation is not its own.
@@ -63,6 +70,10 @@ function stopConfirming(): void {
 
 function startsAt(iso: string): string {
   return d(new Date(iso), { dateStyle: "long", timeStyle: "short" });
+}
+
+function time(iso: string): string {
+  return d(new Date(iso), { timeStyle: "short" });
 }
 </script>
 
@@ -98,6 +109,9 @@ function startsAt(iso: string): string {
           <p class="font-mono text-4xl font-semibold tracking-widest" data-ticket-code>
             {{ ticket.ticket_code }}
           </p>
+          <p v-if="ticket.checked_in_at" class="font-medium">
+            {{ t("checkedIn", { time: time(ticket.checked_in_at) }) }}
+          </p>
         </template>
         <p v-else-if="ticket.status === 'waitlisted'" class="font-medium">
           {{ t("waitlisted", { position: ticket.position ?? "" }) }}
@@ -109,7 +123,8 @@ function startsAt(iso: string): string {
           </RouterLink>
         </template>
 
-        <template v-if="ticket.status !== 'cancelled'">
+        <!-- A checked-in holder has taken the seat: the backend refuses to cancel it. -->
+        <template v-if="ticket.status !== 'cancelled' && !ticket.checked_in_at">
           <Alert v-if="cancelFailed" variant="destructive" role="alert">
             <AlertDescription>{{ t("cancelFailed") }}</AlertDescription>
           </Alert>
@@ -141,6 +156,7 @@ function startsAt(iso: string): string {
   "retry": "Повторить",
   "notFound": "Билет не найден",
   "code": "Код билета",
+  "checkedIn": "Вы отмечены на входе в {time}",
   "waitlisted": "Вы в листе ожидания, №{position}",
   "cancelled": "Регистрация отменена",
   "registerAgain": "Зарегистрироваться снова",

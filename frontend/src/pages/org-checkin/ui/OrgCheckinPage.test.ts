@@ -109,6 +109,72 @@ describe("OrgCheckinPage", () => {
     expect(wrapper.find('[role="alert"]').exists()).toBe(false);
   });
 
+  it("says a repeat ticket was already let in, and when", async () => {
+    server.use(
+      http.post(CHECKIN, () => HttpResponse.json({ ...checkedIn, result: "already_checked_in" })),
+    );
+    const wrapper = await mountPage();
+
+    await enter(wrapper, "ABCD2345");
+
+    // The time is shown in the browser's time zone, like the rest of the app.
+    const time = new Intl.DateTimeFormat("ru", { timeStyle: "short" }).format(
+      new Date(checkedIn.checked_in_at),
+    );
+    const answer = wrapper.get('[data-answer="already_checked_in"]');
+    expect(answer.text()).toContain(`Уже отмечен в ${time}`);
+    expect(answer.text()).toContain("Ivan");
+    expect(wrapper.find("form").exists()).toBe(false);
+    expect(document.activeElement).toBe(nextButton(wrapper).element);
+  });
+
+  it("says a waitlisted or cancelled ticket is not confirmed", async () => {
+    server.use(http.post(CHECKIN, () => HttpResponse.json({}, { status: 409 })));
+    const wrapper = await mountPage();
+
+    await enter(wrapper, "ABCD2345");
+
+    expect(wrapper.get('[data-answer="not_confirmed"]').text()).toContain(
+      "Билет не подтверждён: лист ожидания или отказ",
+    );
+    expect(wrapper.find('[role="alert"]').exists()).toBe(false);
+  });
+
+  it("says there is no connection and keeps the code for a retry", async () => {
+    server.use(http.post(CHECKIN, () => HttpResponse.error()));
+    const wrapper = await mountPage();
+
+    await enter(wrapper, "ABCD2345");
+
+    expect(wrapper.get('[role="alert"]').text()).toBe("Нет связи, повторите");
+    expect(wrapper.find("[data-answer]").exists()).toBe(false);
+    expect(wrapper.get<HTMLInputElement>("#code").element.value).toBe("ABCD2345");
+  });
+
+  it("sends one request for a double Enter", async () => {
+    let requests = 0;
+    let answer: () => void = () => undefined;
+    server.use(
+      http.post(CHECKIN, () => {
+        requests += 1;
+        return new Promise<Response>((resolve) => {
+          answer = () => resolve(HttpResponse.json(checkedIn));
+        });
+      }),
+    );
+    const wrapper = await mountPage();
+
+    await wrapper.get("#code").setValue("ABCD2345");
+    await wrapper.get("form").trigger("submit");
+    await wrapper.get("form").trigger("submit");
+    await flushPromises();
+    answer();
+    await flushPromises();
+
+    expect(requests).toBe(1);
+    expect(wrapper.find('[data-answer="checked_in"]').exists()).toBe(true);
+  });
+
   it("keeps the code for a retry when the check-in fails", async () => {
     server.use(http.post(CHECKIN, () => HttpResponse.json(checkedIn)));
     const wrapper = await mountPage();

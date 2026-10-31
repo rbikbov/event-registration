@@ -12,9 +12,13 @@ import { Label } from "@/shared/ui/shadcn/label";
 
 import { checkIn } from "../api/checkin";
 
-type Answer = { kind: "checked_in"; name: string; maskedEmail: string } | { kind: "not_found" };
+type Answer =
+  | { kind: "checked_in"; name: string; maskedEmail: string }
+  | { kind: "already_checked_in"; name: string; checkedInAt: string }
+  | { kind: "not_found" }
+  | { kind: "not_confirmed" };
 
-const { t } = useI18n({ useScope: "local" });
+const { t, d } = useI18n({ useScope: "local" });
 const route = useRoute();
 
 const eventId = computed(() => Number(route.params.id));
@@ -34,12 +38,21 @@ onMounted(focusCode);
 const { mutate, isPending, error, reset } = useMutation({
   mutationFn: (typed: string) => checkIn(eventId.value, typed),
   onSuccess: (result) => {
-    show({ kind: "checked_in", name: result.name, maskedEmail: result.masked_email });
+    show(
+      result.result === "checked_in"
+        ? { kind: "checked_in", name: result.name, maskedEmail: result.masked_email }
+        : { kind: "already_checked_in", name: result.name, checkedInAt: result.checked_in_at },
+    );
   },
+  // A missing or unconfirmed ticket is an answer about the ticket, not a failed request.
   onError: (error) => {
-    if (error instanceof AppError && error.kind === "not_found") {
+    if (!(error instanceof AppError)) return;
+    if (error.kind === "not_found") {
       reset();
       show({ kind: "not_found" });
+    } else if (error.kind === "conflict") {
+      reset();
+      show({ kind: "not_confirmed" });
     }
   },
 });
@@ -62,8 +75,13 @@ function next(): void {
 const failure = computed(() => {
   if (error.value === null) return null;
   if (error.value instanceof AppError && error.value.kind === "forbidden") return "foreign";
+  if (error.value instanceof AppError && error.value.kind === "network") return "offline";
   return "failed";
 });
+
+function time(iso: string): string {
+  return d(new Date(iso), { timeStyle: "short" });
+}
 
 function submit(): void {
   if (isPending.value || code.value.trim() === "") return;
@@ -85,8 +103,20 @@ function submit(): void {
         <p class="mt-2 text-xl">{{ answer.name }}</p>
         <p class="text-lg opacity-90">{{ answer.maskedEmail }}</p>
       </div>
-      <div v-else class="rounded-lg bg-red-600 p-6 text-white" data-answer="not_found">
-        <p class="text-4xl font-bold">{{ t("notFound") }}</p>
+      <div
+        v-else-if="answer.kind === 'already_checked_in'"
+        class="rounded-lg bg-yellow-400 p-6 text-black"
+        data-answer="already_checked_in"
+      >
+        <p class="text-4xl font-bold">
+          {{ t("alreadyCheckedIn", { time: time(answer.checkedInAt) }) }}
+        </p>
+        <p class="mt-2 text-xl">{{ answer.name }}</p>
+      </div>
+      <div v-else class="rounded-lg bg-red-600 p-6 text-white" :data-answer="answer.kind">
+        <p class="text-4xl font-bold">
+          {{ answer.kind === "not_found" ? t("notFound") : t("notConfirmed") }}
+        </p>
       </div>
       <Button size="lg" @click="next">{{ t("next") }}</Button>
     </div>
@@ -122,8 +152,11 @@ function submit(): void {
   "checking": "Проверяем…",
   "failed": "Не удалось отметить, повторите",
   "foreign": "Это событие другого организатора",
+  "offline": "Нет связи, повторите",
   "checkedIn": "Пропущен",
+  "alreadyCheckedIn": "Уже отмечен в {time}",
   "notFound": "Билет не найден",
+  "notConfirmed": "Билет не подтверждён: лист ожидания или отказ",
   "next": "Следующий"
 }
 </i18n>
