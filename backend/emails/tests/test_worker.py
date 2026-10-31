@@ -1,16 +1,48 @@
+import smtplib
+from collections.abc import Callable, Iterator, Sequence
 from datetime import timedelta
 
 import pytest
 from django.core import mail
+from django.core.mail import EmailMessage
+from django.core.mail.backends.locmem import EmailBackend
+from django.test import override_settings
 from django.utils import timezone
 
 from accounts.models import User
 from emails.models import OutboxEmail
-from emails.services import BATCH_SIZE, enqueue_email, process_batch
+from emails.services import BATCH_SIZE, MAX_ATTEMPTS, enqueue_email, process_batch
 from events.models import Event
 from registrations.models import Registration
 
 pytestmark = pytest.mark.django_db
+
+
+class RefusingBackend(EmailBackend):
+    """The locmem backend that refuses the addresses in `refused`, as an SMTP server would."""
+
+    refused: frozenset[str] = frozenset()
+
+    def send_messages(self, messages: Sequence[EmailMessage]) -> int:
+        for message in messages:
+            for address in message.to:
+                if address in self.refused:
+                    raise smtplib.SMTPRecipientsRefused({address: (550, b"No such user")})
+        return super().send_messages(messages)
+
+
+Refuse = Callable[..., None]
+
+
+@pytest.fixture
+def refuse(monkeypatch: pytest.MonkeyPatch) -> Iterator[Refuse]:
+    """Make the mail backend refuse the given addresses: `refuse("a@x.io")`; `refuse()` stops."""
+
+    def refuse_addresses(*addresses: str) -> None:
+        monkeypatch.setattr(RefusingBackend, "refused", frozenset(addresses))
+
+    with override_settings(EMAIL_BACKEND=f"{__name__}.RefusingBackend"):
+        yield refuse_addresses
 
 
 @pytest.fixture
@@ -84,3 +116,92 @@ def test_event_title_with_line_breaks_is_sent_with_a_one_line_subject(event: Eve
 
     [message] = mail.outbox
     assert message.subject == "Билет: Meetup after work"
+
+
+def test_failed_send_is_retried_later(event: Event, refuse: Refuse) -> None:
+    refuse("a@x.io")
+    queued = queue_ticket(event, "a@x.io")
+    now = timezone.now()
+
+    assert process_batch(now=now) == []
+
+    queued.refresh_from_db()
+    assert queued.status == OutboxEmail.Status.PENDING
+    assert queued.attempts == 1
+    assert queued.next_attempt_at == now + timedelta(seconds=30)
+    assert queued.last_error.startswith("SMTPRecipientsRefused")
+    assert queued.sent_at is None
+    # Not due yet.
+    assert process_batch(now=now + timedelta(seconds=29)) == []
+
+
+def test_pause_between_attempts_doubles_and_the_last_attempt_fails_the_email(
+    event: Event,
+    refuse: Refuse,
+) -> None:
+    refuse("a@x.io")
+    queued = queue_ticket(event, "a@x.io")
+    now = timezone.now()
+    pauses = []
+
+    for _ in range(MAX_ATTEMPTS - 1):
+        process_batch(now=now)
+        queued.refresh_from_db()
+        pauses.append(queued.next_attempt_at - now)
+        now = queued.next_attempt_at
+    process_batch(now=now)
+
+    assert pauses == [timedelta(seconds=s) for s in (30, 60, 120, 240)]
+    queued.refresh_from_db()
+    assert queued.status == OutboxEmail.Status.FAILED
+    assert queued.attempts == MAX_ATTEMPTS
+    assert process_batch(now=now + timedelta(days=1)) == []
+    assert mail.outbox == []
+
+
+def test_email_is_sent_when_the_server_accepts_it_again(event: Event, refuse: Refuse) -> None:
+    refuse("a@x.io")
+    queued = queue_ticket(event, "a@x.io")
+    now = timezone.now()
+    process_batch(now=now)
+
+    refuse()
+    later = now + timedelta(seconds=30)
+
+    assert process_batch(now=later) == [queued.id]
+    queued.refresh_from_db()
+    assert queued.status == OutboxEmail.Status.SENT
+    assert queued.sent_at == later
+    assert len(mail.outbox) == 1
+
+
+def test_failed_email_does_not_stop_the_batch(event: Event, refuse: Refuse) -> None:
+    refuse("bad@x.io")
+    first = queue_ticket(event, "a@x.io")
+    bad = queue_ticket(event, "bad@x.io")
+    last = queue_ticket(event, "b@x.io")
+
+    assert process_batch() == [first.id, last.id]
+
+    assert [m.to for m in mail.outbox] == [["a@x.io"], ["b@x.io"]]
+    statuses = dict(OutboxEmail.objects.values_list("id", "status"))
+    assert statuses == {
+        first.id: OutboxEmail.Status.SENT,
+        bad.id: OutboxEmail.Status.PENDING,
+        last.id: OutboxEmail.Status.SENT,
+    }
+
+
+def test_failure_is_logged_with_the_email_id_and_error_class_only(
+    event: Event,
+    refuse: Refuse,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    refuse("secret@x.io")
+    queued = queue_ticket(event, "secret@x.io")
+
+    process_batch()
+
+    assert str(queued.id) in caplog.text
+    assert "SMTPRecipientsRefused" in caplog.text
+    assert "secret@x.io" not in caplog.text
