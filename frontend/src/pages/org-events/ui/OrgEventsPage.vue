@@ -6,7 +6,8 @@ import { orgEventsQuery } from "@/entities/event";
 import { routes } from "@/shared/config";
 import { Alert, AlertDescription } from "@/shared/ui/shadcn/alert";
 import { Button } from "@/shared/ui/shadcn/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/shadcn/card";
+import { CardHeading } from "@/shared/ui/card-heading";
+import { Card, CardContent, CardHeader } from "@/shared/ui/shadcn/card";
 
 const { t, d } = useI18n({ useScope: "local" });
 const { data: events, isPending, isError, refetch } = useQuery(orgEventsQuery);
@@ -39,7 +40,7 @@ function startsAt(iso: string): string {
       <li v-for="event in events" :key="event.id">
         <Card>
           <CardHeader>
-            <CardTitle as="h2">{{ event.title }}</CardTitle>
+            <CardHeading :level="2">{{ event.title }}</CardHeading>
           </CardHeader>
           <CardContent class="text-muted-foreground text-sm">
             {{ startsAt(event.starts_at) }} ·

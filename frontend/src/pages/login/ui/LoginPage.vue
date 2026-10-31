@@ -9,7 +9,8 @@ import { routes } from "@/shared/config";
 import { AppError } from "@/shared/api";
 import { Alert, AlertDescription } from "@/shared/ui/shadcn/alert";
 import { Button } from "@/shared/ui/shadcn/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/shadcn/card";
+import { CardHeading } from "@/shared/ui/card-heading";
+import { Card, CardContent, CardHeader } from "@/shared/ui/shadcn/card";
 import { Input } from "@/shared/ui/shadcn/input";
 import { Label } from "@/shared/ui/shadcn/label";
 
@@ -51,7 +52,7 @@ function submit(): void {
   <main class="mx-auto flex min-h-screen max-w-sm items-center px-4">
     <Card class="w-full">
       <CardHeader>
-        <CardTitle as="h1">{{ t("title") }}</CardTitle>
+        <CardHeading :level="1">{{ t("title") }}</CardHeading>
       </CardHeader>
       <CardContent>
         <form class="grid gap-4" novalidate @submit.prevent="submit">
