@@ -424,7 +424,9 @@ docs: describe pre-push hook
   умолчанию плюс номер слота. Цели: `make stack-up` / `stack-e2e` / `stack-check` /
   `stack-down`, слот — `SLOT=<N>` (по умолчанию 1). `stack-check` — это `make check` на
   Postgres слота: иначе тесты backend пересоздавали бы `test_event_registration` в чужом
-  Postgres. `stack-down` удаляет тома только своего слота.
+  Postgres. `stack-down` удаляет тома только своего слота. Исходники в контейнеры слота не
+  монтируются — код собирается в образ: после правки снова `make stack-up` (или
+  `stack-e2e`, он вызывает `stack-up`), иначе браузер покажет старую версию.
 
   | Слот | Кто                            | Фронтенд | Backend | Postgres | Mailpit | SMTP |
   | ---- | ------------------------------ | -------- | ------- | -------- | ------- | ---- |

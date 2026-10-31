@@ -20,8 +20,9 @@ const route = useRoute();
 const eventId = computed(() => Number(route.params.id));
 const code = ref("");
 const answer = ref<Answer | null>(null);
-// The shadcn Input exposes no element, so the field is found inside its own wrapper.
+// shadcn Input and Button expose no element, so each is found inside its own wrapper.
 const codeField = useTemplateRef<HTMLDivElement>("code-field");
+const answerPanel = useTemplateRef<HTMLDivElement>("answer-panel");
 
 // `autofocus` works once per document: on a second visit in the SPA it is ignored.
 function focusCode(): void {
@@ -43,11 +44,16 @@ const { mutate, isPending, error, reset } = useMutation({
   },
 });
 
-// The next participant is already in front of the desk: the field is ready for their code. It is
-// read-only while a code is checked, so nothing typed meanwhile is cleared here.
+// The answer takes the place of the form until the organizer moves on, so it is never read as
+// the answer to the next code. "Next" gets the focus: Enter takes the organizer back to the field.
 function show(next: Answer): void {
   answer.value = next;
   code.value = "";
+  void nextTick(() => answerPanel.value?.querySelector("button")?.focus());
+}
+
+function next(): void {
+  answer.value = null;
   void nextTick(focusCode);
 }
 
@@ -69,7 +75,23 @@ function submit(): void {
   <main class="mx-auto max-w-xl px-4 py-8">
     <h1 class="text-2xl font-semibold">{{ t("title") }}</h1>
 
-    <form class="mt-6 grid gap-2" novalidate @submit.prevent="submit">
+    <div v-if="answer" ref="answer-panel" aria-live="polite" class="mt-6 grid gap-4">
+      <div
+        v-if="answer.kind === 'checked_in'"
+        class="rounded-lg bg-green-600 p-6 text-white"
+        data-answer="checked_in"
+      >
+        <p class="text-4xl font-bold">{{ t("checkedIn") }}</p>
+        <p class="mt-2 text-xl">{{ answer.name }}</p>
+        <p class="text-lg opacity-90">{{ answer.maskedEmail }}</p>
+      </div>
+      <div v-else class="rounded-lg bg-red-600 p-6 text-white" data-answer="not_found">
+        <p class="text-4xl font-bold">{{ t("notFound") }}</p>
+      </div>
+      <Button size="lg" @click="next">{{ t("next") }}</Button>
+    </div>
+
+    <form v-else class="mt-6 grid gap-2" novalidate @submit.prevent="submit">
       <Label for="code">{{ t("code") }}</Label>
       <div ref="code-field" class="flex gap-2">
         <Input
@@ -89,25 +111,6 @@ function submit(): void {
     <Alert v-if="failure" variant="destructive" class="mt-6" role="alert">
       <AlertDescription>{{ t(failure) }}</AlertDescription>
     </Alert>
-
-    <div aria-live="polite" class="mt-6">
-      <div
-        v-if="answer?.kind === 'checked_in'"
-        class="rounded-lg bg-green-600 p-6 text-white"
-        data-answer="checked_in"
-      >
-        <p class="text-4xl font-bold">{{ t("checkedIn") }}</p>
-        <p class="mt-2 text-xl">{{ answer.name }}</p>
-        <p class="text-lg opacity-90">{{ answer.maskedEmail }}</p>
-      </div>
-      <div
-        v-else-if="answer?.kind === 'not_found'"
-        class="rounded-lg bg-red-600 p-6 text-white"
-        data-answer="not_found"
-      >
-        <p class="text-4xl font-bold">{{ t("notFound") }}</p>
-      </div>
-    </div>
   </main>
 </template>
 
@@ -120,6 +123,7 @@ function submit(): void {
   "failed": "Не удалось отметить, повторите",
   "foreign": "Это событие другого организатора",
   "checkedIn": "Пропущен",
-  "notFound": "Билет не найден"
+  "notFound": "Билет не найден",
+  "next": "Следующий"
 }
 </i18n>
