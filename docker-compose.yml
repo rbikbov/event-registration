@@ -49,7 +49,8 @@ services:
   worker:
     build: ./backend
     command: python manage.py run_worker
-    # An unhandled error (database or SMTP down) ends the process; compose starts it again.
+    # Database and SMTP errors are retried inside the worker; any other error ends the
+    # process, and compose starts it again.
     restart: unless-stopped
     environment:
       POSTGRES_HOST: postgres
