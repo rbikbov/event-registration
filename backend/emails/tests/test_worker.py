@@ -221,9 +221,31 @@ def test_failure_is_logged_with_the_email_id_and_error_class_only(
 
     process_batch()
 
+    [record] = caplog.records
+    assert record.levelname == "WARNING"
     assert str(queued.id) in caplog.text
     assert "SMTPRecipientsRefused" in caplog.text
     assert "secret@x.io" not in caplog.text
+
+
+def test_bug_is_logged_as_an_error_with_the_stack_but_not_the_message(
+    event: Event,
+    refuse: Refuse,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    # A failing network is expected; a failing code needs the place it failed at.
+    refuse("secret@x.io", error=invalid_address)
+    queued = queue_ticket(event, "secret@x.io")
+
+    process_batch()
+
+    [record] = caplog.records
+    assert record.levelname == "ERROR"
+    assert str(queued.id) in caplog.text
+    assert "ValueError" in caplog.text
+    assert "in send_messages" in caplog.text
+    assert "secret@x.io" not in caplog.text
+    assert "Invalid address" not in caplog.text
 
 
 def test_smtp_backend_does_not_wait_forever() -> None:
