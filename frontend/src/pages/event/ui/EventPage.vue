@@ -7,6 +7,7 @@ import { useRoute } from "vue-router";
 import { publicEventQuery, publicEventsQuery } from "@/entities/event";
 import { AppError } from "@/shared/api";
 import { routes } from "@/shared/config";
+import { QueryState } from "@/shared/ui/query-state";
 import { Alert, AlertDescription } from "@/shared/ui/shadcn/alert";
 import { Button } from "@/shared/ui/shadcn/button";
 import { CardHeading } from "@/shared/ui/card-heading";
@@ -29,7 +30,7 @@ const queryClient = useQueryClient();
 // The route pattern admits digits only.
 const eventId = computed(() => Number(route.params.id));
 const eventQuery = computed(() => publicEventQuery(eventId.value));
-const { data: event, isPending, isError, error: loadError, refetch } = useQuery(eventQuery);
+const event = useQuery(eventQuery);
 
 const form = reactive<RegistrationFormInput>({ email: "", name: "" });
 const clientErrors = ref<RegistrationFormErrors>({});
@@ -42,8 +43,7 @@ const {
   reset,
 } = useMutation({
   mutationFn: (values: RegistrationFormInput) => registerForEvent(eventId.value, values),
-  // Only on success: a failed registration changed nothing, and a reload of the event while the
-  // network is down would replace the form with a load error.
+  // Only on success: a failed registration changed nothing.
   onSuccess: async () => {
     await queryClient.invalidateQueries({ queryKey: eventQuery.value.queryKey });
     await queryClient.invalidateQueries({ queryKey: publicEventsQuery.queryKey });
@@ -79,7 +79,7 @@ const resultText = computed(() => {
 });
 
 const notFound = computed(
-  () => loadError.value instanceof AppError && loadError.value.kind === "not_found",
+  () => event.error.value instanceof AppError && event.error.value.kind === "not_found",
 );
 
 function submit(): void {
@@ -108,22 +108,22 @@ const fields: { name: "email" | "name"; type: string; autocomplete: string }[] =
       {{ t("back") }}
     </RouterLink>
 
-    <p v-if="isPending" class="text-muted-foreground mt-6" role="status">{{ t("loading") }}</p>
-    <Alert v-else-if="notFound" class="mt-6" role="alert">
+    <Alert v-if="notFound" class="mt-6" role="alert">
       <AlertDescription>{{ t("notFound") }}</AlertDescription>
     </Alert>
-    <Alert v-else-if="isError" variant="destructive" class="mt-6" role="alert">
-      <AlertDescription class="flex items-center justify-between gap-4">
-        {{ t("error") }}
-        <Button variant="outline" size="sm" @click="refetch()">{{ t("retry") }}</Button>
-      </AlertDescription>
-    </Alert>
-    <template v-else-if="event">
-      <h1 class="mt-4 text-2xl font-semibold">{{ event.title }}</h1>
-      <p class="text-muted-foreground mt-1 text-sm">{{ startsAt(event.starts_at) }}</p>
-      <p v-if="event.description" class="mt-4 whitespace-pre-line">{{ event.description }}</p>
+    <QueryState
+      v-else
+      v-slot="{ data: loaded }"
+      class="mt-4"
+      :query="event"
+      :error-text="t('error')"
+      :refresh-error-text="t('refreshError')"
+    >
+      <h1 class="text-2xl font-semibold">{{ loaded.title }}</h1>
+      <p class="text-muted-foreground mt-1 text-sm">{{ startsAt(loaded.starts_at) }}</p>
+      <p v-if="loaded.description" class="mt-4 whitespace-pre-line">{{ loaded.description }}</p>
       <p class="mt-4 font-medium">
-        {{ event.free_seats > 0 ? t("freeSeats", event.free_seats) : t("noSeats") }}
+        {{ loaded.free_seats > 0 ? t("freeSeats", loaded.free_seats) : t("noSeats") }}
       </p>
 
       <Card class="mt-6">
@@ -159,16 +159,15 @@ const fields: { name: "email" | "name"; type: string; autocomplete: string }[] =
           </form>
         </CardContent>
       </Card>
-    </template>
+    </QueryState>
   </main>
 </template>
 
 <i18n lang="json" locale="ru">
 {
   "back": "Все события",
-  "loading": "Загружаем…",
   "error": "Не удалось загрузить событие",
-  "retry": "Повторить",
+  "refreshError": "Не удалось обновить событие, показаны прежние данные",
   "notFound": "Такого события нет",
   "freeSeats": "Свободно {count} место | Свободно {count} места | Свободно {count} мест",
   "noSeats": "Свободных мест нет, можно встать в лист ожидания",

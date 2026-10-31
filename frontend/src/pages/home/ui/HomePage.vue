@@ -4,13 +4,12 @@ import { useI18n } from "vue-i18n";
 
 import { publicEventsQuery } from "@/entities/event";
 import { eventPath, routes } from "@/shared/config";
-import { Alert, AlertDescription } from "@/shared/ui/shadcn/alert";
-import { Button } from "@/shared/ui/shadcn/button";
+import { QueryState } from "@/shared/ui/query-state";
 import { CardHeading } from "@/shared/ui/card-heading";
 import { Card, CardContent, CardHeader } from "@/shared/ui/shadcn/card";
 
 const { t, d } = useI18n({ useScope: "local" });
-const { data: events, isPending, isError, refetch } = useQuery(publicEventsQuery);
+const events = useQuery(publicEventsQuery);
 
 function startsAt(iso: string): string {
   return d(new Date(iso), { dateStyle: "medium", timeStyle: "short" });
@@ -26,31 +25,32 @@ function startsAt(iso: string): string {
       </RouterLink>
     </div>
 
-    <p v-if="isPending" class="text-muted-foreground mt-6" role="status">{{ t("loading") }}</p>
-    <Alert v-else-if="isError" variant="destructive" class="mt-6" role="alert">
-      <AlertDescription class="flex items-center justify-between gap-4">
-        {{ t("error") }}
-        <Button variant="outline" size="sm" @click="refetch()">{{ t("retry") }}</Button>
-      </AlertDescription>
-    </Alert>
-    <p v-else-if="events && events.length === 0" class="text-muted-foreground mt-6">
-      {{ t("empty") }}
-    </p>
-    <ul v-else-if="events" class="mt-6 grid gap-3">
-      <li v-for="event in events" :key="event.id">
-        <Card>
-          <CardHeader>
-            <CardHeading :level="2">
-              <RouterLink class="underline" :to="eventPath(event.id)">{{ event.title }}</RouterLink>
-            </CardHeading>
-          </CardHeader>
-          <CardContent class="text-muted-foreground text-sm">
-            {{ startsAt(event.starts_at) }} ·
-            {{ event.free_seats > 0 ? t("freeSeats", event.free_seats) : t("noSeats") }}
-          </CardContent>
-        </Card>
-      </li>
-    </ul>
+    <QueryState
+      v-slot="{ data: loaded }"
+      class="mt-6"
+      :query="events"
+      :error-text="t('error')"
+      :refresh-error-text="t('refreshError')"
+    >
+      <p v-if="loaded.length === 0" class="text-muted-foreground">{{ t("empty") }}</p>
+      <ul v-else class="grid gap-3">
+        <li v-for="event in loaded" :key="event.id">
+          <Card>
+            <CardHeader>
+              <CardHeading :level="2">
+                <RouterLink class="underline" :to="eventPath(event.id)">{{
+                  event.title
+                }}</RouterLink>
+              </CardHeading>
+            </CardHeader>
+            <CardContent class="text-muted-foreground text-sm">
+              {{ startsAt(event.starts_at) }} ·
+              {{ event.free_seats > 0 ? t("freeSeats", event.free_seats) : t("noSeats") }}
+            </CardContent>
+          </Card>
+        </li>
+      </ul>
+    </QueryState>
   </main>
 </template>
 
@@ -58,9 +58,8 @@ function startsAt(iso: string): string {
 {
   "title": "События",
   "login": "Вход для организатора",
-  "loading": "Загружаем…",
   "error": "Не удалось загрузить события",
-  "retry": "Повторить",
+  "refreshError": "Не удалось обновить события, показан прежний список",
   "empty": "Ближайших событий пока нет",
   "freeSeats": "свободно {count} место | свободно {count} места | свободно {count} мест",
   "noSeats": "мест нет"
