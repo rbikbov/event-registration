@@ -1,4 +1,5 @@
 import logging
+import traceback
 from datetime import UTC, datetime, timedelta
 from typing import Literal
 
@@ -112,10 +113,11 @@ def _record_failure(email: OutboxEmail, error: Exception, now: datetime) -> None
         email.next_attempt_at = now + FIRST_RETRY_DELAY * 2 ** (email.attempts - 1)
     email.save(update_fields=["attempts", "last_error", "status", "next_attempt_at"])
     # The class only: the error text may hold the address.
-    logger.warning(
-        "Email %s not sent (attempt %s of %s): %s",
-        email.id,
-        email.attempts,
-        MAX_ATTEMPTS,
-        type(error).__name__,
-    )
+    args = (email.id, email.attempts, MAX_ATTEMPTS, type(error).__name__)
+    if isinstance(error, OSError):  # SMTP and network errors; smtplib's are OSError too.
+        logger.warning("Email %s not sent (attempt %s of %s): %s", *args)
+    else:
+        # A bug: the stack shows where it failed. Its frames hold code lines, not values, so
+        # unlike the message they carry no address.
+        stack = "".join(traceback.format_tb(error.__traceback__))
+        logger.error("Email %s not sent (attempt %s of %s): %s\n%s", *args, stack)
