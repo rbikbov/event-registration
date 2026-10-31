@@ -1,13 +1,14 @@
 import smtplib
 import socket
 from collections.abc import Callable, Iterator, Sequence
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 import pytest
 from django.core import mail
 from django.core.mail import EmailMessage
 from django.core.mail.backends import smtp
 from django.core.mail.backends.locmem import EmailBackend
+from django.db.models import Max
 from django.test import override_settings
 from django.utils import timezone
 
@@ -75,6 +76,16 @@ def queue_ticket(event: Event, email: str) -> OutboxEmail:
     return OutboxEmail.objects.get(registration=registration)
 
 
+def due() -> datetime:
+    """The latest queuing time: every queued email is due by it.
+
+    Not the clock now: the wall clock may step back (WSL2 does by about 0.4 s every 30 s), and
+    the emails queued before the step are then not due yet.
+    """
+    latest: datetime = OutboxEmail.objects.aggregate(latest=Max("next_attempt_at"))["latest"]
+    return latest
+
+
 def test_pending_email_is_sent_and_marked_sent(event: Event) -> None:
     queued = queue_ticket(event, "a@x.io")
     now = timezone.now()
@@ -93,9 +104,9 @@ def test_pending_email_is_sent_and_marked_sent(event: Event) -> None:
 
 def test_sent_email_is_not_sent_again(event: Event) -> None:
     queue_ticket(event, "a@x.io")
-    process_batch()
+    process_batch(now=due())
 
-    assert process_batch() == []
+    assert process_batch(now=due()) == []
     assert len(mail.outbox) == 1
 
 
@@ -111,10 +122,10 @@ def test_email_waits_for_its_next_attempt(event: Event) -> None:
 def test_batch_takes_the_oldest_due_emails_up_to_its_size(event: Event) -> None:
     queued = [queue_ticket(event, f"u{i}@x.io") for i in range(BATCH_SIZE + 1)]
 
-    sent = process_batch()
+    sent = process_batch(now=due())
 
     assert sent == [email.id for email in queued[:BATCH_SIZE]]
-    assert process_batch() == [queued[-1].id]
+    assert process_batch(now=due()) == [queued[-1].id]
 
 
 def test_event_title_with_line_breaks_is_sent_with_a_one_line_subject(event: Event) -> None:
@@ -123,7 +134,7 @@ def test_event_title_with_line_breaks_is_sent_with_a_one_line_subject(event: Eve
     event.save()
     queue_ticket(event, "a@x.io")
 
-    process_batch()
+    process_batch(now=due())
 
     [message] = mail.outbox
     assert message.subject == "Билет: Meetup after work"
@@ -200,7 +211,7 @@ def test_failed_email_does_not_stop_the_batch(
     bad = queue_ticket(event, "bad@x.io")
     last = queue_ticket(event, "b@x.io")
 
-    assert process_batch() == [first.id, last.id]
+    assert process_batch(now=due()) == [first.id, last.id]
 
     assert [m.to for m in mail.outbox] == [["a@x.io"], ["b@x.io"]]
     statuses = dict(OutboxEmail.objects.values_list("id", "status"))
@@ -219,7 +230,7 @@ def test_failure_is_logged_with_the_email_id_and_error_class_only(
     refuse("secret@x.io")
     queued = queue_ticket(event, "secret@x.io")
 
-    process_batch()
+    process_batch(now=due())
 
     [record] = caplog.records
     assert record.levelname == "WARNING"
@@ -237,7 +248,7 @@ def test_bug_is_logged_as_an_error_with_the_stack_but_not_the_message(
     refuse("secret@x.io", error=invalid_address)
     queued = queue_ticket(event, "secret@x.io")
 
-    process_batch()
+    process_batch(now=due())
 
     [record] = caplog.records
     assert record.levelname == "ERROR"
@@ -264,7 +275,7 @@ def test_silent_smtp_server_is_retried_like_a_refusal(event: Event) -> None:
             EMAIL_PORT=port,
             EMAIL_TIMEOUT=0.2,
         ):
-            assert process_batch() == []
+            assert process_batch(now=due()) == []
 
     queued.refresh_from_db()
     assert queued.status == OutboxEmail.Status.PENDING
