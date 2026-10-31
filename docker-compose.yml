@@ -49,8 +49,8 @@ services:
   worker:
     build: ./backend
     command: python manage.py run_worker
-    # Database and SMTP errors are retried inside the worker; any other error ends the
-    # process, and compose starts it again.
+    # Errors while sending an email and database errors are handled inside the worker; any
+    # other error ends the process, and compose starts it again.
     restart: unless-stopped
     environment:
       POSTGRES_HOST: postgres
