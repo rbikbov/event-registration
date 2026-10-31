@@ -1,8 +1,9 @@
-from datetime import UTC, datetime
+import logging
+from datetime import UTC, datetime, timedelta
 from typing import Literal
 
 from django.conf import settings
-from django.core.mail import EmailMessage, get_connection
+from django.core.mail import EmailMessage
 from django.db import transaction
 from django.template.loader import render_to_string
 from django.utils import timezone
@@ -10,7 +11,12 @@ from django.utils import timezone
 from emails.models import OutboxEmail
 from registrations.models import Registration
 
+logger = logging.getLogger(__name__)
+
 BATCH_SIZE = 20
+# A failed email is tried again after 30 s, 60 s, 120 s, 240 s; the fifth failure is final.
+MAX_ATTEMPTS = 5
+FIRST_RETRY_DELAY = timedelta(seconds=30)
 
 SUBJECTS = {
     OutboxEmail.Kind.TICKET: "Билет: {title}",
@@ -70,6 +76,8 @@ def process_batch(*, now: datetime | None = None) -> list[int]:
     The rows stay locked until the batch is committed, and SKIP LOCKED lets another worker take
     other rows meanwhile instead of waiting or sending the same email. Delivery is at least
     once: a crash after SMTP but before the commit sends the email again.
+
+    An email that fails is retried later and does not stop the batch.
     """
     with transaction.atomic():
         now = now or timezone.now()
@@ -78,13 +86,34 @@ def process_batch(*, now: datetime | None = None) -> list[int]:
             .filter(status=OutboxEmail.Status.PENDING, next_attempt_at__lte=now)
             .order_by("next_attempt_at", "id")[:BATCH_SIZE]
         )
-        if not emails:
-            return []
-        # One SMTP connection for the whole batch.
-        with get_connection() as connection:
-            for email in emails:
-                EmailMessage(email.subject, email.body, to=[email.to], connection=connection).send()
-                email.status = OutboxEmail.Status.SENT
-                email.sent_at = now
-                email.save(update_fields=["status", "sent_at"])
-        return [email.id for email in emails]
+        sent = []
+        for email in emails:
+            # A connection per email: after an SMTP error a shared one may be left broken.
+            try:
+                EmailMessage(email.subject, email.body, to=[email.to]).send()
+            except OSError as error:  # SMTP and network errors; smtplib's are OSError too.
+                _record_failure(email, error, now)
+                continue
+            email.status = OutboxEmail.Status.SENT
+            email.sent_at = now
+            email.save(update_fields=["status", "sent_at"])
+            sent.append(email.id)
+        return sent
+
+
+def _record_failure(email: OutboxEmail, error: OSError, now: datetime) -> None:
+    email.attempts += 1
+    email.last_error = f"{type(error).__name__}: {error}"
+    if email.attempts >= MAX_ATTEMPTS:
+        email.status = OutboxEmail.Status.FAILED
+    else:
+        email.next_attempt_at = now + FIRST_RETRY_DELAY * 2 ** (email.attempts - 1)
+    email.save(update_fields=["attempts", "last_error", "status", "next_attempt_at"])
+    # The class only: the error text may hold the address.
+    logger.warning(
+        "Email %s not sent (attempt %s of %s): %s",
+        email.id,
+        email.attempts,
+        MAX_ATTEMPTS,
+        type(error).__name__,
+    )
