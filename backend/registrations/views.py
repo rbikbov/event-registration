@@ -11,8 +11,12 @@ from rest_framework.views import APIView
 from config.exceptions import ValidationErrorSerializer
 from events.models import Event
 from registrations.models import Registration
-from registrations.serializers import RegisterRequestSerializer, RegistrationResultSerializer
-from registrations.services import cancel, register
+from registrations.serializers import (
+    RegisterRequestSerializer,
+    RegistrationResultSerializer,
+    TicketSerializer,
+)
+from registrations.services import cancel, get_ticket, register
 
 
 class RegisterView(APIView):
@@ -44,6 +48,36 @@ class RegisterView(APIView):
             RegistrationResultSerializer(payload).data,
             status=status.HTTP_201_CREATED if result.created else status.HTTP_200_OK,
         )
+
+
+class TicketView(APIView):
+    """The ticket by the secret manage token from the email: status, code or waitlist place."""
+
+    authentication_classes = ()
+    permission_classes = (AllowAny,)
+
+    @extend_schema(
+        responses={
+            200: TicketSerializer,
+            404: OpenApiResponse(description="Unknown token"),
+        },
+    )
+    def get(self, request: Request, manage_token: str) -> Response:
+        try:
+            ticket = get_ticket(manage_token)
+        except Registration.DoesNotExist:
+            raise NotFound from None
+        registration = ticket.registration
+        payload: dict[str, Any] = {
+            "status": registration.status,
+            "name": registration.name,
+            "event": registration.event,
+        }
+        if registration.status == Registration.Status.CONFIRMED:
+            payload["ticket_code"] = registration.ticket_code
+        if ticket.position is not None:
+            payload["position"] = ticket.position
+        return Response(TicketSerializer(payload).data)
 
 
 class CancelView(APIView):

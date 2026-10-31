@@ -24,7 +24,7 @@ Spec — `spec.md`. Одна задача — один коммит; отмет�
 
 ## Этап 2. Страница билета по ссылке из письма
 
-- [ ] 2.1 backend: `GET /api/tickets/{manage_token}/` по пути api-change (сервис/сериализатор,
+- [x] 2.1 backend: `GET /api/tickets/{manage_token}/` по пути api-change (сервис/сериализатор,
       `openapi.yaml`, типы фронтенда). Готово, когда: тесты ответа для `confirmed` /
       `waitlisted` / `cancelled` и 404 зелёные, схема актуальна.
 - [ ] 2.2 frontend: сущность `ticket`, страница `/tickets/:token` — код, №N, «отменена»,
