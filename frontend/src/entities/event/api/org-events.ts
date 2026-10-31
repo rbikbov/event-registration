@@ -1,9 +1,10 @@
 import { queryOptions } from "@tanstack/vue-query";
 
 import { api, unwrap } from "@/shared/api";
-import type { components } from "@/shared/api";
+import type { components, paths } from "@/shared/api";
 
 export type OrgEvent = components["schemas"]["OrgEvent"];
+export type OrgEventStats = components["schemas"]["OrgEventStats"];
 
 export const orgEventsQuery = queryOptions({
   queryKey: ["org", "events"],
@@ -17,4 +18,12 @@ export function orgEventQuery(id: number) {
     queryFn: () =>
       unwrap(api.GET("/api/org/events/{event_id}/", { params: { path: { event_id: id } } })),
   });
+}
+
+// EventSource is not openapi-fetch: the path is checked against the contract here instead.
+const ORG_EVENT_STREAM = "/api/org/events/{event_id}/stream/" satisfies keyof paths;
+
+// Live counts of the event panel: `stats` messages with OrgEventStats.
+export function orgEventStreamUrl(id: number): string {
+  return ORG_EVENT_STREAM.replace("{event_id}", String(id));
 }

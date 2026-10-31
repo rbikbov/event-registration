@@ -1,11 +1,12 @@
 import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
 import { flushPromises, mount } from "@vue/test-utils";
 import { http, HttpResponse } from "msw";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createMemoryHistory, createRouter } from "vue-router";
 
 import { checkinPath, orgEventPath, routes } from "@/shared/config";
 import { createAppI18n } from "@/shared/lib/i18n";
+import { fakeEventSource } from "@/shared/lib/test/fake-event-source";
 import { server } from "@/shared/lib/test/msw";
 
 import OrgEventPage from "./OrgEventPage.vue";
@@ -66,6 +67,18 @@ async function mountPage(query: Record<string, string> = {}) {
 function counter(wrapper: Awaited<ReturnType<typeof mountPage>>["wrapper"], key: string) {
   return wrapper.get(`[data-counter="${key}"] dd`).text();
 }
+
+// jsdom has no EventSource; every test sees the page's stream through the fake.
+let streams: ReturnType<typeof fakeEventSource>;
+
+beforeEach(() => {
+  streams = fakeEventSource();
+  vi.stubGlobal("EventSource", streams.EventSource);
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 describe("OrgEventPage", () => {
   it("shows a loading state until the event arrives", async () => {
@@ -271,5 +284,38 @@ describe("OrgEventPage", () => {
 
     expect(wrapper.get('[role="alert"]').text()).toContain("Не удалось обновить участников");
     expect(wrapper.findAll("tbody tr")).toHaveLength(2);
+  });
+
+  it("updates the counters from a snapshot of the stream", async () => {
+    server.use(
+      http.get(EVENT, () => HttpResponse.json(event)),
+      http.get(REGISTRATIONS, () => HttpResponse.json([ann])),
+    );
+    const { wrapper } = await mountPage();
+    await flushPromises();
+
+    expect(streams.opened.map((stream) => stream.url)).toEqual([`/api/org/events/7/stream/`]);
+    streams.opened[0]?.emit("stats", { confirmed: 2, waitlisted: 0, checked_in: 2, free_seats: 0 });
+    await flushPromises();
+
+    expect(
+      ["capacity", "confirmed", "waitlisted", "checkedIn", "freeSeats"].map((key) =>
+        counter(wrapper, key),
+      ),
+    ).toEqual(["2", "2", "0", "2", "0"]);
+    expect(wrapper.get("h1").text()).toBe("Meetup");
+  });
+
+  it("closes the stream when the page is left", async () => {
+    server.use(
+      http.get(EVENT, () => HttpResponse.json(event)),
+      http.get(REGISTRATIONS, () => HttpResponse.json([])),
+    );
+    const { wrapper } = await mountPage();
+    await flushPromises();
+
+    wrapper.unmount();
+
+    expect(streams.opened[0]?.closed).toBe(true);
   });
 });

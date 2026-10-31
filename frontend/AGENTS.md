@@ -10,11 +10,11 @@ src/main.ts          точка входа: mountApp("#app")
 src/app/             приложение: App.vue, router.ts, query-client.ts
 src/pages/<page>/    экраны: ui/, api/ (запросы, нужные только странице), index.ts
 src/entities/session/ кто вошёл: meQuery (null — гость)
-src/entities/event/  события: orgEventsQuery / orgEventQuery(id) (организатор), publicEventsQuery / publicEventQuery(id) (публичные)
+src/entities/event/  события: orgEventsQuery / orgEventQuery(id) / orgEventStreamUrl(id) (организатор), publicEventsQuery / publicEventQuery(id) (публичные)
 src/shared/api/      клиент API, AppError, unwrap, сгенерированный schema.d.ts. Правила: src/shared/api/AGENTS.md
 src/shared/ui/       самописные компоненты (query-state — загрузка и ошибки запроса, `RetryAlert` — ошибка с повтором); ui/shadcn/ — сгенерированные shadcn-vue, руками не правятся
 src/shared/config/   routes — все пути приложения
-src/shared/lib/      утилиты; lib/test/ — MSW и setup для Vitest
+src/shared/lib/      утилиты; use-event-stream — поток SSE; lib/test/ — MSW, фейк EventSource и setup для Vitest
 src/widgets|features/            появляются с первым срезом, пустыми не создаются
 ```
 

@@ -1,12 +1,18 @@
 <script setup lang="ts">
-import { useQuery } from "@tanstack/vue-query";
+import { useQuery, useQueryClient } from "@tanstack/vue-query";
 import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
 
-import { orgEventQuery, type OrgEvent } from "@/entities/event";
+import {
+  orgEventQuery,
+  orgEventStreamUrl,
+  type OrgEvent,
+  type OrgEventStats,
+} from "@/entities/event";
 import { AppError } from "@/shared/api";
 import { checkinPath, orgEventPath, routes } from "@/shared/config";
+import { useEventStream } from "@/shared/lib/use-event-stream";
 import { QueryState } from "@/shared/ui/query-state";
 import { Alert, AlertDescription } from "@/shared/ui/shadcn/alert";
 import { Button } from "@/shared/ui/shadcn/button";
@@ -23,6 +29,19 @@ const status = computed(() => statusFilter(route.query.status));
 
 const event = useQuery(computed(() => orgEventQuery(eventId.value)));
 const registrations = useQuery(computed(() => orgRegistrationsQuery(eventId.value, status.value)));
+
+// Live counts: each snapshot replaces those in the cached event. Before the event has loaded
+// there is nothing to update, and its GET reads counts at least as fresh.
+const queryClient = useQueryClient();
+useEventStream<OrgEventStats>(
+  () => orgEventStreamUrl(eventId.value),
+  "stats",
+  (stats) => {
+    queryClient.setQueryData(orgEventQuery(eventId.value).queryKey, (cached) =>
+      cached ? { ...cached, ...stats } : cached,
+    );
+  },
+);
 
 // Not found and someone else's event are answers, not failures: retrying changes nothing.
 const loadAnswer = computed(() => {
