@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/vue-query";
 import { useI18n } from "vue-i18n";
 
 import { orgEventsQuery } from "@/entities/event";
-import { checkinPath, routes } from "@/shared/config";
+import { checkinPath, orgEventPath, routes } from "@/shared/config";
 import { Alert, AlertDescription } from "@/shared/ui/shadcn/alert";
 import { Button } from "@/shared/ui/shadcn/button";
 import { CardHeading } from "@/shared/ui/card-heading";
@@ -40,7 +40,11 @@ function startsAt(iso: string): string {
       <li v-for="event in events" :key="event.id">
         <Card>
           <CardHeader>
-            <CardHeading :level="2">{{ event.title }}</CardHeading>
+            <CardHeading :level="2">
+              <RouterLink class="hover:underline" :to="orgEventPath(event.id)">
+                {{ event.title }}
+              </RouterLink>
+            </CardHeading>
           </CardHeader>
           <CardContent class="flex items-center justify-between gap-4">
             <span class="text-muted-foreground text-sm">

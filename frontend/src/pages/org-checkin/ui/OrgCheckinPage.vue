@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { useMutation } from "@tanstack/vue-query";
+import { useMutation, useQuery } from "@tanstack/vue-query";
 import { computed, nextTick, onMounted, ref, useTemplateRef } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
 
+import { orgEventQuery } from "@/entities/event";
 import { AppError } from "@/shared/api";
+import { orgEventPath } from "@/shared/config";
 import { Alert, AlertDescription } from "@/shared/ui/shadcn/alert";
 import { Button } from "@/shared/ui/shadcn/button";
 import { Input } from "@/shared/ui/shadcn/input";
@@ -22,6 +24,22 @@ const { t, d } = useI18n({ useScope: "local" });
 const route = useRoute();
 
 const eventId = computed(() => Number(route.params.id));
+const {
+  data: event,
+  error: loadError,
+  isError: loadFailed,
+  refetch,
+} = useQuery(computed(() => orgEventQuery(eventId.value)));
+
+// A missing or someone else's event takes the place of the form: every code would be "not
+// found" or "foreign". Any other load failure leaves the form working, the title is only a label.
+const eventAnswer = computed(() => {
+  if (!(loadError.value instanceof AppError)) return null;
+  if (loadError.value.kind === "not_found") return "eventNotFound";
+  if (loadError.value.kind === "forbidden") return "foreign";
+  return null;
+});
+
 const code = ref("");
 const answer = ref<Answer | null>(null);
 // shadcn Input and Button expose no element, so each is found inside its own wrapper.
@@ -91,62 +109,88 @@ function submit(): void {
 
 <template>
   <main class="mx-auto max-w-xl px-4 py-8">
-    <h1 class="text-2xl font-semibold">{{ t("title") }}</h1>
+    <RouterLink
+      v-if="event"
+      class="text-muted-foreground text-sm underline"
+      :to="orgEventPath(event.id)"
+    >
+      {{ t("back") }}
+    </RouterLink>
+    <h1 class="text-2xl font-semibold">
+      {{ event ? t("titleOf", { title: event.title }) : t("title") }}
+    </h1>
 
-    <div v-if="answer" ref="answer-panel" aria-live="polite" class="mt-6 grid gap-4">
-      <div
-        v-if="answer.kind === 'checked_in'"
-        class="rounded-lg bg-green-600 p-6 text-white"
-        data-answer="checked_in"
-      >
-        <p class="text-4xl font-bold">{{ t("checkedIn") }}</p>
-        <p class="mt-2 text-xl">{{ answer.name }}</p>
-        <p class="text-lg opacity-90">{{ answer.maskedEmail }}</p>
-      </div>
-      <div
-        v-else-if="answer.kind === 'already_checked_in'"
-        class="rounded-lg bg-yellow-400 p-6 text-black"
-        data-answer="already_checked_in"
-      >
-        <p class="text-4xl font-bold">
-          {{ t("alreadyCheckedIn", { time: time(answer.checkedInAt) }) }}
-        </p>
-        <p class="mt-2 text-xl">{{ answer.name }}</p>
-      </div>
-      <div v-else class="rounded-lg bg-red-600 p-6 text-white" :data-answer="answer.kind">
-        <p class="text-4xl font-bold">
-          {{ answer.kind === "not_found" ? t("notFound") : t("notConfirmed") }}
-        </p>
-      </div>
-      <Button size="lg" @click="next">{{ t("next") }}</Button>
-    </div>
-
-    <form v-else class="mt-6 grid gap-2" novalidate @submit.prevent="submit">
-      <Label for="code">{{ t("code") }}</Label>
-      <div ref="code-field" class="flex gap-2">
-        <Input
-          id="code"
-          v-model="code"
-          :readonly="isPending"
-          autocomplete="off"
-          autocapitalize="characters"
-          class="font-mono text-lg tracking-widest uppercase"
-        />
-        <Button type="submit" :disabled="isPending || code.trim() === ''">
-          {{ isPending ? t("checking") : t("submit") }}
-        </Button>
-      </div>
-    </form>
-
-    <Alert v-if="failure" variant="destructive" class="mt-6" role="alert">
-      <AlertDescription>{{ t(failure) }}</AlertDescription>
+    <Alert v-if="eventAnswer" class="mt-6" role="alert">
+      <AlertDescription>{{ t(eventAnswer) }}</AlertDescription>
     </Alert>
+    <template v-else>
+      <Alert v-if="loadFailed" variant="destructive" class="mt-6" role="alert">
+        <AlertDescription class="flex items-center justify-between gap-4">
+          {{ t("eventError") }}
+          <Button variant="outline" size="sm" @click="refetch()">{{ t("retry") }}</Button>
+        </AlertDescription>
+      </Alert>
+
+      <div v-if="answer" ref="answer-panel" aria-live="polite" class="mt-6 grid gap-4">
+        <div
+          v-if="answer.kind === 'checked_in'"
+          class="rounded-lg bg-green-600 p-6 text-white"
+          data-answer="checked_in"
+        >
+          <p class="text-4xl font-bold">{{ t("checkedIn") }}</p>
+          <p class="mt-2 text-xl">{{ answer.name }}</p>
+          <p class="text-lg opacity-90">{{ answer.maskedEmail }}</p>
+        </div>
+        <div
+          v-else-if="answer.kind === 'already_checked_in'"
+          class="rounded-lg bg-yellow-400 p-6 text-black"
+          data-answer="already_checked_in"
+        >
+          <p class="text-4xl font-bold">
+            {{ t("alreadyCheckedIn", { time: time(answer.checkedInAt) }) }}
+          </p>
+          <p class="mt-2 text-xl">{{ answer.name }}</p>
+        </div>
+        <div v-else class="rounded-lg bg-red-600 p-6 text-white" :data-answer="answer.kind">
+          <p class="text-4xl font-bold">
+            {{ answer.kind === "not_found" ? t("notFound") : t("notConfirmed") }}
+          </p>
+        </div>
+        <Button size="lg" @click="next">{{ t("next") }}</Button>
+      </div>
+
+      <form v-else class="mt-6 grid gap-2" novalidate @submit.prevent="submit">
+        <Label for="code">{{ t("code") }}</Label>
+        <div ref="code-field" class="flex gap-2">
+          <Input
+            id="code"
+            v-model="code"
+            :readonly="isPending"
+            autocomplete="off"
+            autocapitalize="characters"
+            class="font-mono text-lg tracking-widest uppercase"
+          />
+          <Button type="submit" :disabled="isPending || code.trim() === ''">
+            {{ isPending ? t("checking") : t("submit") }}
+          </Button>
+        </div>
+      </form>
+
+      <Alert v-if="failure" variant="destructive" class="mt-6" role="alert">
+        <AlertDescription>{{ t(failure) }}</AlertDescription>
+      </Alert>
+    </template>
   </main>
 </template>
 
 <i18n lang="json" locale="ru">
 {
   "title": "Чекин",
+  "titleOf": "Чекин: {title}",
+  "back": "Панель события",
+  "eventNotFound": "Событие не найдено",
+  "eventError": "Не удалось загрузить событие, чекин работает",
+  "retry": "Повторить",
   "code": "Код билета",
   "submit": "Отметить",
   "checking": "Проверяем…",

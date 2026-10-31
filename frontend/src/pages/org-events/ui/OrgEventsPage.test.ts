@@ -4,7 +4,7 @@ import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 import { createMemoryHistory, createRouter } from "vue-router";
 
-import { checkinPath, routes } from "@/shared/config";
+import { checkinPath, orgEventPath, routes } from "@/shared/config";
 import { createAppI18n } from "@/shared/lib/i18n";
 import { server } from "@/shared/lib/test/msw";
 
@@ -68,6 +68,7 @@ describe("OrgEventsPage", () => {
     expect(rows[1]?.text()).toContain("Занято 12 из 30");
     expect(rows[1]?.text()).toContain("в листе ожидания 3");
     expect(rows[1]?.get(`a[href="${checkinPath(2)}"]`).text()).toBe("Чекин");
+    expect(rows[1]?.get(`a[href="${orgEventPath(2)}"]`).text()).toBe("Workshop");
   });
 
   it("says there are no events yet and offers to create one", async () => {

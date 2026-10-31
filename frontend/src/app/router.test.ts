@@ -3,7 +3,7 @@ import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 import { createMemoryHistory } from "vue-router";
 
-import { eventPath, routes } from "@/shared/config";
+import { eventPath, orgEventPath, routes } from "@/shared/config";
 import { server } from "@/shared/lib/test/msw";
 
 import { createAppRouter } from "./router";
@@ -28,6 +28,15 @@ describe("route guard", () => {
     const router = setup();
 
     await router.push(routes.orgEvents);
+
+    expect(router.currentRoute.value.path).toBe(routes.login);
+  });
+
+  it("sends a guest from an event panel to /login", async () => {
+    guest();
+    const router = setup();
+
+    await router.push(orgEventPath(7));
 
     expect(router.currentRoute.value.path).toBe(routes.login);
   });
