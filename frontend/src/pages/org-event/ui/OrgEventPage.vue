@@ -4,15 +4,10 @@ import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
 
-import {
-  orgEventQuery,
-  orgEventStreamUrl,
-  type OrgEvent,
-  type OrgEventStats,
-} from "@/entities/event";
+import { orgEventQuery, orgEventLive, type OrgEvent, type OrgEventStats } from "@/entities/event";
 import { AppError } from "@/shared/api";
 import { checkinPath, orgEventPath, routes } from "@/shared/config";
-import { useEventStream } from "@/shared/lib/use-event-stream";
+import { useLive } from "@/shared/lib/use-live";
 import { QueryState } from "@/shared/ui/query-state";
 import { Alert, AlertDescription } from "@/shared/ui/shadcn/alert";
 import { Button } from "@/shared/ui/shadcn/button";
@@ -36,9 +31,8 @@ const registrations = useQuery(computed(() => orgRegistrationsQuery(eventId.valu
 // read again, after the snapshot. Invalidation alone would not do: it joins a first load in
 // flight instead of cancelling it.
 const queryClient = useQueryClient();
-useEventStream<OrgEventStats>(
-  () => orgEventStreamUrl(eventId.value),
-  "stats",
+useLive<OrgEventStats>(
+  () => orgEventLive(eventId.value),
   (stats) => {
     const { queryKey } = orgEventQuery(eventId.value);
     const cached = queryClient.getQueryData(queryKey);

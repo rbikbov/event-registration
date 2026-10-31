@@ -1,7 +1,7 @@
 export {
   orgEventQuery,
   orgEventsQuery,
-  orgEventStreamUrl,
+  orgEventLive,
   type OrgEvent,
   type OrgEventStats,
 } from "./api/org-events";
