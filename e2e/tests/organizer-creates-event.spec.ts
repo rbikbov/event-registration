@@ -1,7 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-// Created by `create_demo_users` when the backend starts (docs/architecture.md, "Окружение").
-const ORGANIZER = { email: "demo@example.com", password: "demo" };
+import { ORGANIZER } from "./helpers";
 
 test("organizer signs in, creates an event and sees it in the list", async ({ page }) => {
   const title = `Meetup ${Date.now()}`;
