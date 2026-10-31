@@ -111,7 +111,10 @@
 - **Чекин:** один атомарный
   `UPDATE … WHERE ticket_code = ? AND event = ? AND status = 'confirmed' AND checked_in_at IS NULL`;
   при 0 строк — выяснение причины (уже отмечен / не найден / отменён / в листе ожидания).
-- **Тесты гонок** — для лимита мест и чекина, так же, как в фазах 1–2.
+  `CHECK (checked_in_at IS NULL OR status = 'confirmed')`. Отказ от отмеченного билета
+  запрещён: `cancel` под замком Event берёт строку регистрации `FOR UPDATE`, поэтому чекин и
+  отказ одной строки идут по очереди (`docs/features/checkin/spec.md`).
+- **Тесты гонок** — для лимита мест, чекина и чекина против отказа, так же, как в фазах 1–2.
 
 ## API
 
@@ -150,9 +153,15 @@
 **План — организатор (фазы 3, 4, 5):**
 
 - `GET/PATCH /api/org/events/{id}/` (перенос → письма; лимит → повышение из листа)
+- `GET /api/org/events/{id}/` (фаза 3) — событие и счётчики `confirmed` / `waitlisted` /
+  `checked_in`; событие другого организатора — 403, несуществующее — 404 (и для остальных
+  `/api/org/events/{id}/…`)
 - `GET /api/org/events/{id}/registrations/?status=`
-- `POST /api/org/events/{id}/checkin/` `{code}` → 200 / 404 / 409 (уже отмечен) / 422 (билет
-  не подтверждён)
+- `POST /api/org/events/{id}/checkin/` `{code}` → 200
+  `{result: "checked_in" | "already_checked_in", name, masked_email, checked_in_at}` / 404
+  (нет такого кода у события) / 409 (билет не подтверждён: лист ожидания или отменён)
+- фаза 3 меняет билет: `cancel` отмеченного → 409, в `GET /api/tickets/{manage_token}/` —
+  `checked_in_at`
 - `GET /api/org/events/{id}/stream/` — SSE: зарегистрировано / в листе ожидания / пришло
 
 ## Realtime
