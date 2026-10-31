@@ -33,7 +33,7 @@ docs/task.md          текст задания — не редактирует�
 docs/decisions.md     лог решений с временем
 docs/development.md   руководство разработчика: установка, команды, проверки, нюансы
 docs/architecture.md  устройство системы: модель, API, realtime, письма; статус разделов
-docs/roadmap.md       фазы, статусы, критерии, задачи небольших фаз
+docs/roadmap.md       фазы, статусы, критерии; spec и задачи фаз — docs/features/<slug>/
 docs/rules/           правила по темам: db-migrations.md, concurrency.md
 .claude/settings.json хуки Claude Code; скрипты — .claude/hooks/
 .claude/skills/       процедуры агента (skills)
@@ -50,8 +50,8 @@ docs/rules/           правила по темам: db-migrations.md, concurre
    пробовал и какая гипотеза.
 5. Новая команда, инструмент, проверка или нюанс окружения — в
    [docs/development.md](docs/development.md) в том же коммите.
-6. Этап крупной фазы (или фаза без spec) не готов, пока по нему не прошёл агент `reviewer` и
-   человек не разобрал его находки. Как передавать — skill `feature-workflow`, «Ревью».
+6. Этап фазы не готов, пока по нему не прошёл агент `reviewer` и человек не разобрал его
+   находки. Как передавать — skill `feature-workflow`, «Ревью».
 
 ## Лог решений — `docs/decisions.md`
 
@@ -85,7 +85,7 @@ docs/rules/           правила по темам: db-migrations.md, concurre
   `build`, `ci`, `chore`, `style`, `revert`. Scope — затронутая часть: `backend`, `frontend`,
   `e2e`, `infra` или модуль; для изменений на весь репозиторий scope опускается. Ломающее
   изменение — `!` после типа и `BREAKING CHANGE:` в теле. Формат проверяет commitlint.
-- Этап крупной фазы — своя ветка от `main` и один PR. Название PR — по-английски:
+- Этап фазы — своя ветка от `main` и один PR. Название PR — по-английски:
   `Phase <N>, stage <M>: <что сделано>` (несколько этапов — `stages 1–2`, фаза без этапов —
   `Phase <N>: …`); PR вне фаз — без префикса и без типа Conventional Commits.
 
