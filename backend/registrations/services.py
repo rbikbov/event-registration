@@ -6,7 +6,7 @@ from django.db.models import Q
 from django.utils import timezone
 
 from emails.models import OutboxEmail
-from emails.services import enqueue_email
+from emails.services import enqueue_email, enqueue_waitlisted
 from events.models import Event
 from registrations.models import Registration, new_ticket_code
 
@@ -86,10 +86,11 @@ def register(
             registration.ticket_code = new_ticket_code()
             registration.save()
         position = waitlist_position(registration)
-        if confirmed:
+        # No position is a seat: waitlist_position counts only the waitlisted.
+        if position is None:
             enqueue_email(OutboxEmail.Kind.TICKET, registration)
         else:
-            enqueue_email(OutboxEmail.Kind.WAITLISTED, registration, position=position)
+            enqueue_waitlisted(registration, position)
         return RegisterResult(registration, created=True, position=position)
 
 
