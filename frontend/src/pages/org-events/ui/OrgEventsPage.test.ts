@@ -10,8 +10,9 @@ import { server } from "@/shared/lib/test/msw";
 
 import OrgEventsPage from "./OrgEventsPage.vue";
 
-async function mountPage() {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+async function mountPage(
+  queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } }),
+) {
   const router = createRouter({
     history: createMemoryHistory(),
     routes: [{ path: routes.orgEvents, component: OrgEventsPage }],
@@ -107,5 +108,36 @@ describe("OrgEventsPage", () => {
 
     expect(wrapper.text()).toContain("Meetup");
     expect(wrapper.find('[role="alert"]').exists()).toBe(false);
+  });
+
+  it("keeps the list when a refetch fails, with the error above it", async () => {
+    let fail = false;
+    server.use(
+      http.get("*/api/org/events/", () =>
+        fail
+          ? HttpResponse.json({}, { status: 500 })
+          : HttpResponse.json([
+              {
+                id: 1,
+                title: "Meetup",
+                description: "",
+                starts_at: "2030-05-01T18:00:00Z",
+                capacity: 5,
+                confirmed: 0,
+                waitlisted: 0,
+              },
+            ]),
+      ),
+    );
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const wrapper = await mountPage(queryClient);
+    await flushPromises();
+
+    fail = true;
+    await queryClient.refetchQueries();
+    await flushPromises();
+
+    expect(wrapper.get('[role="alert"]').text()).toContain("Не удалось обновить события");
+    expect(wrapper.findAll("li")).toHaveLength(1);
   });
 });
