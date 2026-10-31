@@ -57,7 +57,11 @@ make dev-worker     # терминал 3, если нужны письма: outb
 `make dev-backend` — uvicorn (ASGI), как в Docker, а не `runserver`: `runserver` — WSGI, и
 поток SSE (асинхронный генератор) он отдаёт только целиком, то есть никогда. uvicorn — с
 `--timeout-graceful-shutdown 3` (и в Docker): иначе `--reload` и `docker compose restart`
-ждут открытые потоки SSE без конца.
+ждут открытые потоки SSE без конца. `--reload` следит только за папками кода
+(`RELOAD_DIRS` в `Makefile`): за всем `backend/` вместе с `.venv` наблюдатель uvicorn в
+простое занимает 30–40 % ядра и с `StatReload`, и с `watchfiles`, `--reload-exclude` не
+помогает. Новое приложение Django — дописать в `RELOAD_DIRS`, иначе его код не
+перезагружается.
 
 Фронтенд и API открываются с одного адреса (:5173): Vite проксирует `/api` на backend,
 поэтому cookie сессии и `EventSource` работают без CORS. Адрес backend для прокси —
