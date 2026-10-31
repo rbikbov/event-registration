@@ -12,9 +12,16 @@ import { createAppI18n } from "@/shared/lib/i18n";
 import { server } from "@/shared/lib/test/msw";
 
 const event = { id: 7, title: "Meetup", starts_at: "2030-05-01T15:00:00Z" };
-const confirmed = { status: "confirmed", ticket_code: "ABCD2345", name: "Ann", event };
-const waitlisted = { status: "waitlisted", position: 3, name: "Ann", event };
-const cancelled = { status: "cancelled", name: "Ann", event };
+const confirmed = {
+  status: "confirmed",
+  ticket_code: "ABCD2345",
+  name: "Ann",
+  checked_in_at: null,
+  event,
+};
+const checkedIn = { ...confirmed, checked_in_at: "2030-05-01T15:42:00Z" };
+const waitlisted = { status: "waitlisted", position: 3, name: "Ann", checked_in_at: null, event };
+const cancelled = { status: "cancelled", name: "Ann", checked_in_at: null, event };
 
 async function mountPage() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -68,6 +75,20 @@ describe("TicketPage", () => {
     expect(wrapper.get("h1").text()).toBe("Meetup");
     expect(text).toContain("Ann");
     expect(text).toContain("Отказаться");
+  });
+
+  it("says a checked-in ticket was let in, and offers no cancel", async () => {
+    ticketIs(checkedIn);
+
+    const { wrapper } = await mountPage();
+
+    // The time is shown in the browser's time zone, like the rest of the app.
+    const time = new Intl.DateTimeFormat("ru", { timeStyle: "short" }).format(
+      new Date(checkedIn.checked_in_at),
+    );
+    expect(wrapper.text()).toContain(`Вы отмечены на входе в ${time}`);
+    expect(wrapper.get("[data-ticket-code]").text()).toBe("ABCD2345");
+    expect(wrapper.text()).not.toContain("Отказаться");
   });
 
   it("shows the waitlist place without a code", async () => {
@@ -193,6 +214,20 @@ describe("TicketPage", () => {
 
     expect(button(wrapper, "Отменяем…").attributes("disabled")).toBeDefined();
     await vi.waitFor(() => expect(wrapper.text()).toContain("Регистрация отменена"));
+  });
+
+  it("rereads the ticket when it was checked in while the page was open", async () => {
+    ticketIs(confirmed, checkedIn);
+    server.use(
+      http.post("*/api/tickets/tok/cancel/", () => HttpResponse.json({}, { status: 409 })),
+    );
+    const { wrapper } = await mountPage();
+
+    await confirmCancel(wrapper);
+
+    await vi.waitFor(() => expect(wrapper.text()).toContain("Вы отмечены на входе в"));
+    expect(wrapper.find('[role="alert"]').exists()).toBe(false);
+    expect(wrapper.text()).not.toContain("Отказаться");
   });
 
   it("keeps the ticket and shows an error when the cancel fails", async () => {
