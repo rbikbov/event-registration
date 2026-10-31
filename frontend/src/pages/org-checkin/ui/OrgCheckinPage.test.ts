@@ -122,10 +122,18 @@ describe("OrgCheckinPage", () => {
   });
 
   it("does not send an empty code", async () => {
+    let requests = 0;
+    server.use(
+      http.post(CHECKIN, () => {
+        requests += 1;
+        return HttpResponse.json(checkedIn);
+      }),
+    );
     const wrapper = await mountPage();
 
     await enter(wrapper, "   ");
 
+    expect(requests).toBe(0);
     expect(wrapper.get('button[type="submit"]').attributes("disabled")).toBeDefined();
   });
 });
