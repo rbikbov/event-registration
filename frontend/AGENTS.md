@@ -10,7 +10,7 @@ src/main.ts          точка входа: mountApp("#app")
 src/app/             приложение: App.vue, router.ts, query-client.ts
 src/pages/<page>/    экраны: ui/, api/ (запросы, нужные только странице), index.ts
 src/entities/session/ кто вошёл: meQuery (null — гость)
-src/entities/event/  события: orgEventsQuery (организатор), publicEventsQuery / publicEventQuery(id) (публичные)
+src/entities/event/  события: orgEventsQuery / orgEventQuery(id) (организатор), publicEventsQuery / publicEventQuery(id) (публичные)
 src/shared/api/      клиент API, AppError, unwrap, сгенерированный schema.d.ts. Правила: src/shared/api/AGENTS.md
 src/shared/ui/       самописные компоненты; ui/shadcn/ — сгенерированные shadcn-vue, руками не правятся
 src/shared/config/   routes — все пути приложения

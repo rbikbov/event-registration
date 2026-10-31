@@ -4,13 +4,25 @@ import { http, HttpResponse } from "msw";
 import { afterEach, describe, expect, it } from "vitest";
 import { createMemoryHistory, createRouter } from "vue-router";
 
-import { checkinPath, routes } from "@/shared/config";
+import { checkinPath, orgEventPath, routes } from "@/shared/config";
 import { createAppI18n } from "@/shared/lib/i18n";
 import { server } from "@/shared/lib/test/msw";
 
 import OrgCheckinPage from "./OrgCheckinPage.vue";
 
 const CHECKIN = "*/api/org/events/7/checkin/";
+const EVENT = "*/api/org/events/7/";
+const event = {
+  id: 7,
+  title: "Meetup",
+  description: "",
+  starts_at: "2030-05-01T18:00:00Z",
+  capacity: 10,
+  confirmed: 3,
+  waitlisted: 0,
+  checked_in: 1,
+  free_seats: 7,
+};
 const checkedIn = {
   result: "checked_in",
   name: "Ivan",
@@ -26,7 +38,9 @@ afterEach(() => {
   mounted = undefined;
 });
 
-async function mountPage() {
+// The screen loads its event for the title; a test about the event passes its own answer.
+async function mountPage(eventResponse: () => Response = () => HttpResponse.json(event)) {
+  server.use(http.get(EVENT, eventResponse));
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const router = createRouter({
     history: createMemoryHistory(),
@@ -236,5 +250,41 @@ describe("OrgCheckinPage", () => {
 
     expect(requests).toBe(0);
     expect(wrapper.get('button[type="submit"]').attributes("disabled")).toBeDefined();
+  });
+
+  it("names the event in the title and links back to its panel", async () => {
+    const wrapper = await mountPage();
+    await flushPromises();
+
+    expect(wrapper.get("h1").text()).toBe("Чекин: Meetup");
+    expect(wrapper.get(`a[href="${orgEventPath(7)}"]`).text()).toBe("Панель события");
+  });
+
+  it("says a missing event is not found instead of taking codes", async () => {
+    const wrapper = await mountPage(() => HttpResponse.json({}, { status: 404 }));
+    await flushPromises();
+
+    expect(wrapper.get('[role="alert"]').text()).toBe("Событие не найдено");
+    expect(wrapper.find("form").exists()).toBe(false);
+  });
+
+  it("says someone else's event is foreign instead of taking codes", async () => {
+    const wrapper = await mountPage(() => HttpResponse.json({}, { status: 403 }));
+    await flushPromises();
+
+    expect(wrapper.get('[role="alert"]').text()).toBe("Это событие другого организатора");
+    expect(wrapper.find("form").exists()).toBe(false);
+  });
+
+  it("keeps checking codes in when the event title fails to load", async () => {
+    server.use(http.post(CHECKIN, () => HttpResponse.json(checkedIn)));
+    const wrapper = await mountPage(() => HttpResponse.json({}, { status: 500 }));
+    await flushPromises();
+
+    expect(wrapper.get('[role="alert"]').text()).toContain("Не удалось загрузить событие");
+    expect(wrapper.get("h1").text()).toBe("Чекин");
+    await enter(wrapper, "abcd2345");
+
+    expect(wrapper.find('[data-answer="checked_in"]').exists()).toBe(true);
   });
 });
