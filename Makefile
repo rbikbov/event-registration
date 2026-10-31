@@ -143,7 +143,8 @@ stack-up: stack-slot ## Stack of slot SLOT: frontend on 5173+SLOT, Mailpit on 80
 
 .PHONY: stack-e2e
 stack-e2e: stack-up ## Start the stack of slot SLOT and run Playwright tests against it
-	cd e2e && E2E_BASE_URL=http://localhost:$(STACK_FRONTEND_PORT) pnpm test
+	cd e2e && E2E_BASE_URL=http://localhost:$(STACK_FRONTEND_PORT) \
+		E2E_MAILPIT_URL=http://localhost:$(call slot_port,8025) pnpm test
 
 .PHONY: stack-down
 stack-down: stack-slot ## Remove the stack of slot SLOT with its volumes
