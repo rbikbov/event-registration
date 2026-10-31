@@ -85,6 +85,9 @@ docs/rules/           правила по темам: db-migrations.md, concurre
   `build`, `ci`, `chore`, `style`, `revert`. Scope — затронутая часть: `backend`, `frontend`,
   `e2e`, `infra` или модуль; для изменений на весь репозиторий scope опускается. Ломающее
   изменение — `!` после типа и `BREAKING CHANGE:` в теле. Формат проверяет commitlint.
+- Этап крупной фазы — своя ветка от `main` и один PR. Название PR — по-английски:
+  `Phase <N>, stage <M>: <что сделано>` (несколько этапов — `stages 1–2`, фаза без этапов —
+  `Phase <N>: …`); PR вне фаз — без префикса и без типа Conventional Commits.
 
 ## Язык
 
