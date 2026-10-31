@@ -16,8 +16,8 @@
 
 - **Реализовано:** `frontend`, `backend`, `postgres` в docker compose; фронтенд и `/api` на
   одном адресе (прокси Vite), поэтому cookie сессии и `EventSource` работают без CORS.
-- **План (фаза 2):** `worker` — тот же образ, что `backend`, другая `command`; `mailpit` —
-  SMTP-ловушка с веб-интерфейсом на :8025.
+- **Реализовано (фаза 2):** `worker` — тот же образ, что `backend`, другая `command`;
+  `mailpit` — SMTP-ловушка с веб-интерфейсом и API на :8025.
 - **План (фаза 4):** nginx-шлюз в compose — единственная точка входа `make up`: отдаёт
   собранный фронтенд, проксирует `/api`, `/admin`, `/static` на backend (статику Django
   по-прежнему раздаёт WhiteNoise). Для SSE — `proxy_buffering off` и учёт
@@ -69,13 +69,20 @@
   выдаётся новый, `manage_token` остаётся прежним: ссылка из старого письма управляет и
   новой регистрацией.
 
-**OutboxEmail** — очередь писем в Postgres, план (фаза 2):
+**OutboxEmail** — очередь писем в Postgres, реализовано (фаза 2; приложение `emails`):
 
-- `kind`: `ticket` / `waitlisted` / `promoted` / `reminder` / `rescheduled`
-- `registration` (FK), `dedup_key UNIQUE`, `status` (`pending` / `sent` / `failed`),
-  `attempts`, `next_attempt_at`, `sent_at`, `last_error`
-- Создаётся в той же транзакции, что и бизнес-изменение, через
-  `enqueue_email(kind, registration, dedup_key)`, вставка `ON CONFLICT DO NOTHING`.
+- `kind`: `ticket` / `waitlisted` / `promoted` (`CHECK`); `reminder` и `rescheduled` —
+  **план, фаза 5**
+- `registration` (FK, `CASCADE`), `dedup_key UNIQUE`, `to`, `subject`, `body`, `status`
+  (`pending` / `sent` / `failed`; `CHECK`), `attempts`, `next_attempt_at`, `created_at`,
+  `sent_at`, `last_error`; индекс `(status, next_attempt_at)` — выборка воркера
+- Создаётся в той же транзакции, что и бизнес-изменение: `enqueue_email(kind, registration)`
+  для `ticket` и `promoted`, `enqueue_waitlisted(registration, position)` — номер обязателен
+  на уровне типов. Вставка `ON CONFLICT DO NOTHING`.
+- Тема и текст — снимок на момент изменения: отправка не перечитывает регистрацию.
+- `dedup_key = "{kind}:{registration_id}:{ticket_code}"`: повтор того же изменения письма не
+  даёт, оживление после отказа (новый `ticket_code`) — даёт.
+- В админке — только чтение: видно `attempts` и `last_error`.
 
 ## Инварианты и конкурентность
 
@@ -87,8 +94,12 @@
   блокировки, поэтому порядок листа — порядок блокировок. `UNIQUE(event, email)` — страховка
   на случай пути без блокировки; `IntegrityError` код не перехватывает.
 - **Отказ:** та же блокировка; отмена и повышение первого из листа
-  (`ORDER BY queued_at, id`) — в одной транзакции. Письмо `promoted` в той же транзакции —
-  с фазы 2.
+  (`ORDER BY queued_at, id`) — в одной транзакции.
+
+**Реализовано (фаза 2):** письма ставятся в outbox в транзакции и под замком Event:
+`register` — `ticket` или `waitlisted` с номером, посчитанным под замком; `cancel` —
+`promoted` повышенному. SMTP внутри замка нет — отправляет только воркер
+(`concurrency.md`, «Код», п. 5). Два воркера не берут одно письмо: `SKIP LOCKED` (п. 6).
 
 **План (фазы 3, 5):**
 
@@ -97,7 +108,8 @@
   `UPDATE … WHERE ticket_code = ? AND event = ? AND status = 'confirmed' AND checked_in_at IS NULL`;
   при 0 строк — выяснение причины (уже отмечен / не найден / отменён / в листе ожидания).
 - **Тесты гонок** — на настоящем Postgres, N потоков с `threading.Barrier`; фаза 1 —
-  `registrations/tests/test_concurrency.py`.
+  `registrations/tests/test_concurrency.py`, фаза 2 — `emails/tests/test_concurrency.py`
+  (реализовано).
 
 ## API
 
@@ -116,8 +128,8 @@
   чужой email. Мест нет → `waitlisted` и `position` (номер в листе; только для `waitlisted`)
 
 - `POST /api/tickets/{manage_token}/cancel/` → 200 `{status: "cancelled"}` / 404 (неизвестный
-  токен); повтор — тот же 200 без повышения. Токен в тестах берётся из БД — пользователю он
-  приходит только письмом в фазе 2
+  токен); повтор — тот же 200 без повышения; повышенному ставится письмо `promoted`. Токен приходит
+  участнику только письмом, в тестах берётся из БД
 
 - `GET /api/tickets/{manage_token}/` → 200
   `{status, ticket_code?, position?, name, event: {id, title, starts_at}}` / 404 (неизвестный токен); `ticket_code` — только у `confirmed`,
@@ -157,16 +169,24 @@
 
 ## Фоновые задачи и письма
 
-План (фазы 2 и 5). Отдельный процесс `manage.py run_worker`, цикл:
+Отдельный процесс `manage.py run_worker`, цикл:
 
-1. **Рассылка:** `SELECT … FOR UPDATE SKIP LOCKED LIMIT 20` из outbox → SMTP → `sent`;
-   ошибки — повтор с нарастающей паузой, после N попыток — `failed`. `SKIP LOCKED` позволяет
-   запустить несколько воркеров без дублей.
-2. **Напоминания** раз в ~30 с: события с `starts_at − 24h ≤ now < starts_at` → письмо
+1. **Рассылка — реализовано (фаза 2):** `emails.services.process_batch()` — в одной
+   транзакции `SELECT … FOR UPDATE SKIP LOCKED` до 20 писем `pending` с
+   `next_attempt_at ≤ now` (по `next_attempt_at, id`) → SMTP по одному, каждое письмо — своё
+   соединение, таймаут `EMAIL_TIMEOUT = 10` с → `sent` + `sent_at`. Любое исключение при
+   отправке — неудачная попытка: `attempts += 1`, `last_error`,
+   `next_attempt_at = now + 30 с · 2^(attempts−1)`, на 5-й — `failed`; остальные письма пачки
+   уходят. В лог — `id` письма и класс ошибки (ошибка не из `OSError` — `ERROR` со стеком),
+   без текста: в нём бывает адрес. `SKIP LOCKED` позволяет запустить несколько воркеров без
+   дублей. Команда (`Command.poll()`): пачка пуста — пауза 1 с; `DatabaseError` — запись в
+   лог, `close_old_connections()` и пауза 5 с, процесс не завершается.
+2. **Напоминания — план (фаза 5)** раз в ~30 с: события с `starts_at − 24h ≤ now < starts_at` → письмо
    `reminder` каждому `confirmed` с `confirmed_at < starts_at − 24h`; ключ
    `reminder:{reg_id}:{schedule_version}`. Ничего не планируется заранее, поэтому перезапуск
    и перенос события ничего не ломают.
-3. **Чистка** отправленных писем старше N дней.
+3. **Чистка** отправленных писем старше N дней — не запланирована: Non-Goal фазы 2, в
+   «на потом» `docs/features/emails/tasks.md`.
 
 | kind          | Кому                                                                | Когда                         |
 | ------------- | ------------------------------------------------------------------- | ----------------------------- |
@@ -176,10 +196,14 @@
 | `reminder`    | `confirmed`, место получено до начала 24-часового окна              | раз на каждую дату события    |
 | `rescheduled` | `confirmed` и `waitlisted`                                          | раз на каждый перенос         |
 
+Письма `ticket`, `waitlisted`, `promoted` — реализовано (фаза 2): простой текст по-русски,
+шаблоны `emails/templates/emails/<kind>.txt`, во всех — название и дата события (UTC) и
+ссылка `{FRONTEND_URL}/tickets/{manage_token}`.
+
 - Повторная регистрация на тот же email писем не шлёт.
 - Почта: Mailpit в compose, `locmem` в unit-тестах; e2e читает письма через API Mailpit.
 - Создание письма — ровно один раз (`UNIQUE dedup_key`); доставка — «хотя бы один раз»:
-  падение воркера между SMTP и записью `sent` даёт повтор. Указать в README.
+  падение воркера между SMTP и записью `sent` даёт повтор (сказано в README).
 
 ## Фронтенд: экраны
 
@@ -197,8 +221,8 @@
 
 ## Окружение и демо-данные
 
-- **Реализовано:** `make up` поднимает `postgres`, `backend`, `frontend` с healthcheck.
-- **План (фаза 2):** сервисы `mailpit` и `worker`.
+- **Реализовано:** `make up` поднимает `postgres`, `backend`, `frontend` с healthcheck,
+  `mailpit` и `worker` (фаза 2; воркер ждёт healthy `backend` и `mailpit`).
 - **Реализовано:** демо-учётки — идемпотентная команда `create_demo_users`, вызывается при
   старте `backend` в compose. Две отдельные учётки, роли не совмещаются:
   - организатор `demo@example.com` / `demo` — экраны организатора; им входят проверяющий и
