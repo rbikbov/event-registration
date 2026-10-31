@@ -101,15 +101,17 @@
 `promoted` повышенному. SMTP внутри замка нет — отправляет только воркер
 (`concurrency.md`, «Код», п. 5). Два воркера не берут одно письмо: `SKIP LOCKED` (п. 6).
 
+**Тесты гонок — реализовано (фазы 1, 2):** на настоящем Postgres, N потоков с
+`threading.Barrier` — `registrations/tests/test_concurrency.py`,
+`emails/tests/test_concurrency.py`.
+
 **План (фазы 3, 5):**
 
 - **Лимит мест:** увеличение повышает людей из листа; уменьшение ниже числа `confirmed` → 400.
 - **Чекин:** один атомарный
   `UPDATE … WHERE ticket_code = ? AND event = ? AND status = 'confirmed' AND checked_in_at IS NULL`;
   при 0 строк — выяснение причины (уже отмечен / не найден / отменён / в листе ожидания).
-- **Тесты гонок** — на настоящем Postgres, N потоков с `threading.Barrier`; фаза 1 —
-  `registrations/tests/test_concurrency.py`, фаза 2 — `emails/tests/test_concurrency.py`
-  (реализовано).
+- **Тесты гонок** — для лимита мест и чекина, так же, как в фазах 1–2.
 
 ## API
 
