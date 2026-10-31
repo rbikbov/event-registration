@@ -174,11 +174,15 @@ review-worktree-remove: ## Remove the reviewer's worktree
 dev-frontend: ## Frontend dev server on :5173, proxies /api to localhost:8000
 	$(FRONTEND) pnpm dev
 
+# The reloader watches only the code: watching all of backend/ (.venv included) costs it
+# 30-40% of a CPU core while idle. A new Django app is added here.
+RELOAD_DIRS := $(foreach dir,config accounts events registrations emails,--reload-dir $(dir))
+
 .PHONY: dev-backend
 dev-backend: ## Backend dev server on :8000 (needs `make dev-deps`)
 	$(BACKEND) uv run python manage.py migrate
 	$(BACKEND) uv run uvicorn config.asgi:application --reload --port 8000 \
-		--timeout-graceful-shutdown 3
+		--timeout-graceful-shutdown 3 $(RELOAD_DIRS)
 
 .PHONY: dev-worker
 dev-worker: ## Email worker: sends the outbox to Mailpit, http://localhost:8025 (needs `make dev-deps`)
