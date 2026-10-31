@@ -64,7 +64,8 @@ function startsAt(iso: string): string {
     <Alert v-else-if="notFound" role="alert">
       <AlertDescription>{{ t("notFound") }}</AlertDescription>
     </Alert>
-    <Alert v-else-if="isError" variant="destructive" role="alert">
+    <!-- A failed reread keeps the data: the code must stay on screen at the entrance. -->
+    <Alert v-else-if="isError && !ticket" variant="destructive" role="alert">
       <AlertDescription class="flex items-center justify-between gap-4">
         {{ t("error") }}
         <Button variant="outline" size="sm" @click="refetch()">{{ t("retry") }}</Button>
@@ -76,6 +77,12 @@ function startsAt(iso: string): string {
         <p class="text-muted-foreground text-sm">{{ startsAt(ticket.event.starts_at) }}</p>
       </CardHeader>
       <CardContent class="grid gap-4">
+        <Alert v-if="isError" variant="destructive" role="alert">
+          <AlertDescription class="flex items-center justify-between gap-4">
+            {{ t("refreshFailed") }}
+            <Button variant="outline" size="sm" @click="refetch()">{{ t("retry") }}</Button>
+          </AlertDescription>
+        </Alert>
         <p>{{ ticket.name }}</p>
 
         <template v-if="ticket.status === 'confirmed'">
@@ -85,11 +92,7 @@ function startsAt(iso: string): string {
           </p>
         </template>
         <p v-else-if="ticket.status === 'waitlisted'" class="font-medium">
-          {{
-            ticket.position === undefined
-              ? t("waitlistedNoPosition")
-              : t("waitlisted", { position: ticket.position })
-          }}
+          {{ t("waitlisted", { position: ticket.position ?? "" }) }}
         </p>
         <template v-else>
           <p class="font-medium">{{ t("cancelled") }}</p>
@@ -126,11 +129,11 @@ function startsAt(iso: string): string {
 {
   "loading": "Загружаем…",
   "error": "Не удалось загрузить билет",
+  "refreshFailed": "Не удалось обновить билет",
   "retry": "Повторить",
   "notFound": "Билет не найден",
   "code": "Код билета",
   "waitlisted": "Вы в листе ожидания, №{position}",
-  "waitlistedNoPosition": "Вы в листе ожидания",
   "cancelled": "Регистрация отменена",
   "registerAgain": "Зарегистрироваться снова",
   "cancel": "Отказаться",
