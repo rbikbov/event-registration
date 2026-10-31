@@ -1,1 +1,1 @@
-export { eventPath, routes } from "./routes";
+export { eventPath, routes, ticketPath } from "./routes";
