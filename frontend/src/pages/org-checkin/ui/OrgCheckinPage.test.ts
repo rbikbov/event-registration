@@ -30,7 +30,10 @@ async function mountPage() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const router = createRouter({
     history: createMemoryHistory(),
-    routes: [{ path: routes.orgCheckin, component: OrgCheckinPage }],
+    routes: [
+      { path: routes.orgCheckin, component: OrgCheckinPage },
+      { path: routes.login, component: { template: "<div />" } },
+    ],
   });
   await router.push(checkinPath(7));
   const wrapper = mount(OrgCheckinPage, {
@@ -96,6 +99,26 @@ describe("OrgCheckinPage", () => {
     await enter(wrapper, "ABCD2345");
 
     expect(wrapper.get('[role="alert"]').text()).toContain("Не удалось отметить");
+  });
+
+  it("asks to sign in again when the session has ended", async () => {
+    server.use(http.post(CHECKIN, () => HttpResponse.json({}, { status: 401 })));
+    const wrapper = await mountPage();
+
+    await enter(wrapper, "ABCD2345");
+
+    const alert = wrapper.get('[role="alert"]');
+    expect(alert.text()).toContain("Сессия истекла");
+    expect(alert.get(`a[href="${routes.login}"]`).text()).toBe("Войти");
+  });
+
+  it("says the event belongs to another organizer", async () => {
+    server.use(http.post(CHECKIN, () => HttpResponse.json({}, { status: 403 })));
+    const wrapper = await mountPage();
+
+    await enter(wrapper, "ABCD2345");
+
+    expect(wrapper.get('[role="alert"]').text()).toBe("Это событие другого организатора");
   });
 
   it("does not send an empty code", async () => {
