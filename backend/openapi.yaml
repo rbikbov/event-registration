@@ -225,6 +225,50 @@ paths:
               schema:
                 $ref: '#/components/schemas/ValidationError'
           description: ''
+  /api/org/events/{event_id}/checkin/:
+    post:
+      operationId: org_events_checkin_create
+      description: The organizer checks a ticket in by the code the participant shows
+        at the entrance.
+      parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - org
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckInRequestRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/CheckInRequestRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/CheckInRequestRequest'
+        required: true
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckInResult'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+          description: ''
+        '403':
+          description: Another organizer's event
+        '404':
+          description: No such event, or no such ticket at it
   /api/tickets/{manage_token}/:
     get:
       operationId: tickets_retrieve
@@ -275,6 +319,34 @@ paths:
           description: Unknown token
 components:
   schemas:
+    CheckInRequestRequest:
+      type: object
+      properties:
+        code:
+          type: string
+          minLength: 1
+          maxLength: 32
+      required:
+      - code
+    CheckInResult:
+      type: object
+      description: 'What the entrance screen shows: no full email, the queue can see
+        the screen.'
+      properties:
+        result:
+          $ref: '#/components/schemas/ResultEnum'
+        name:
+          type: string
+        masked_email:
+          type: string
+        checked_in_at:
+          type: string
+          format: date-time
+      required:
+      - checked_in_at
+      - masked_email
+      - name
+      - result
     Event:
       type: object
       properties:
@@ -455,6 +527,11 @@ components:
         * `confirmed` - Confirmed
         * `waitlisted` - Waitlisted
         * `cancelled` - Cancelled
+    ResultEnum:
+      enum:
+      - checked_in
+      type: string
+      description: '* `checked_in` - checked_in'
     Ticket:
       type: object
       description: |-

@@ -10,13 +10,16 @@ from rest_framework.views import APIView
 
 from config.exceptions import ValidationErrorSerializer
 from events.models import Event
+from events.services import get_org_event
 from registrations.models import Registration
 from registrations.serializers import (
+    CheckInRequestSerializer,
+    CheckInResultSerializer,
     RegisterRequestSerializer,
     RegistrationResultSerializer,
     TicketSerializer,
 )
-from registrations.services import cancel, get_ticket, register
+from registrations.services import cancel, check_in, get_ticket, mask_email, register
 
 
 class RegisterView(APIView):
@@ -99,3 +102,32 @@ class CancelView(APIView):
         except Registration.DoesNotExist:
             raise NotFound from None
         return Response(RegistrationResultSerializer({"status": registration.status}).data)
+
+
+class CheckInView(APIView):
+    """The organizer checks a ticket in by the code the participant shows at the entrance."""
+
+    @extend_schema(
+        request=CheckInRequestSerializer,
+        responses={
+            200: CheckInResultSerializer,
+            400: ValidationErrorSerializer,
+            403: OpenApiResponse(description="Another organizer's event"),
+            404: OpenApiResponse(description="No such event, or no such ticket at it"),
+        },
+    )
+    def post(self, request: Request, event_id: int) -> Response:
+        event = get_org_event(request.user, event_id)  # type: ignore[arg-type]  # IsAuthenticated: never AnonymousUser here
+        serializer = CheckInRequestSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            registration = check_in(event.id, serializer.validated_data["code"])
+        except Registration.DoesNotExist:
+            raise NotFound from None
+        payload = {
+            "result": "checked_in",
+            "name": registration.name,
+            "masked_email": mask_email(registration.email),
+            "checked_in_at": registration.checked_in_at,
+        }
+        return Response(CheckInResultSerializer(payload).data)

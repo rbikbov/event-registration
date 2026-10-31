@@ -21,6 +21,19 @@ class RegistrationResultSerializer(serializers.Serializer[dict[str, Any]]):
     position = serializers.IntegerField(min_value=1, required=False)
 
 
+class CheckInRequestSerializer(serializers.Serializer[None]):
+    code = serializers.CharField(max_length=32)
+
+
+class CheckInResultSerializer(serializers.Serializer[dict[str, Any]]):
+    """What the entrance screen shows: no full email, the queue can see the screen."""
+
+    result = serializers.ChoiceField(choices=["checked_in"])
+    name = serializers.CharField()
+    masked_email = serializers.CharField()
+    checked_in_at = serializers.DateTimeField()
+
+
 class TicketEventSerializer(serializers.ModelSerializer[Event]):
     class Meta:
         model = Event

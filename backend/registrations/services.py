@@ -121,6 +121,32 @@ def cancel(manage_token: str, *, now: datetime | None = None) -> Registration:
         return registration
 
 
+def check_in(event_id: int, code: str, *, now: datetime | None = None) -> Registration:
+    """Mark the confirmed ticket with `code` at the event as checked in.
+
+    One conditional UPDATE: it locks the row, so of concurrent requests with one code only the
+    first passes the WHERE. The code is taken as typed at the entrance: any case, spaces and
+    dashes. Raises Registration.DoesNotExist when the event has no such ticket to mark.
+    """
+    code = "".join(code.split()).replace("-", "").upper()
+    now = now or timezone.now()
+    tickets = Registration.objects.filter(event_id=event_id, ticket_code=code)
+    with transaction.atomic():
+        marked = tickets.filter(
+            status=Registration.Status.CONFIRMED, checked_in_at__isnull=True
+        ).update(checked_in_at=now)
+        if not marked:
+            raise Registration.DoesNotExist
+        return tickets.get()
+
+
+def mask_email(email: str) -> str:
+    """`iv***@gmail.com`: enough to tell two people of one name apart at the entrance."""
+    mailbox, _, domain = email.partition("@")
+    shown = 2 if len(mailbox) > 2 else 1
+    return f"{mailbox[:shown]}***@{domain}"
+
+
 def get_ticket(manage_token: str) -> Ticket:
     """The registration behind a manage token, with its event and waitlist place.
 
