@@ -3,6 +3,7 @@ from typing import Any
 
 from django.db.models import QuerySet
 from django.http import StreamingHttpResponse
+from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework.generics import ListAPIView, ListCreateAPIView, RetrieveAPIView
 from rest_framework.negotiation import BaseContentNegotiation
@@ -16,7 +17,7 @@ from rest_framework.views import APIView
 
 from config.exceptions import ValidationErrorSerializer
 from events.models import Event
-from events.realtime import snapshot_stream
+from events.realtime import Snapshot, snapshot_stream
 from events.serializers import (
     EventSerializer,
     OrgEventSerializer,
@@ -78,8 +79,19 @@ class IgnoreAccept(BaseContentNegotiation):
         return renderer, renderer.media_type
 
 
-# At module level: streams share a snapshot read by this function, a closure per request would
-# make each stream read its own.
+def snapshot_response(event_id: int, snapshot: Snapshot) -> StreamingHttpResponse:
+    response = StreamingHttpResponse(
+        snapshot_stream(event_id, snapshot), content_type="text/event-stream"
+    )
+    response["Cache-Control"] = "no-cache"
+    # Turns nginx proxy buffering off for the stream: buffering alone does not hold it back,
+    # buffering with gzip does (measured behind nginx 1.30).
+    response["X-Accel-Buffering"] = "no"
+    return response
+
+
+# Snapshots at module level: streams share a snapshot read by one function, a closure per
+# request would make each stream read its own.
 def org_event_snapshot(event_id: int) -> dict[str, Any]:
     event = Event.objects.with_registration_counts().get(pk=event_id)
     return OrgEventSerializer(event).data
@@ -106,14 +118,7 @@ class OrgEventStreamView(APIView):
         # Rights are checked once, on connecting.
         get_org_event(request.user, event_id)  # type: ignore[arg-type]  # IsAuthenticated: never AnonymousUser here
 
-        response = StreamingHttpResponse(
-            snapshot_stream(event_id, org_event_snapshot), content_type="text/event-stream"
-        )
-        response["Cache-Control"] = "no-cache"
-        # Turns nginx proxy buffering off for the stream: buffering alone does not hold it
-        # back, buffering with gzip does (measured behind nginx 1.30).
-        response["X-Accel-Buffering"] = "no"
-        return response
+        return snapshot_response(event_id, org_event_snapshot)
 
 
 class PublicEventListView(ListAPIView[Event]):
@@ -135,3 +140,31 @@ class PublicEventDetailView(RetrieveAPIView[Event]):
 
     def get_queryset(self) -> QuerySet[Event]:
         return Event.objects.with_registration_counts()
+
+
+def public_event_snapshot(event_id: int) -> dict[str, Any]:
+    event = Event.objects.with_registration_counts().get(pk=event_id)
+    return PublicEventSerializer(event).data
+
+
+class PublicEventStreamView(APIView):
+    """The event page live: the event with its free seats, as server-sent events."""
+
+    authentication_classes = ()
+    permission_classes = (AllowAny,)
+    content_negotiation_class = IgnoreAccept
+
+    @extend_schema(
+        description=(
+            "`text/event-stream`. Each message is `event: snapshot` with the event as JSON in"
+            " `data`, as GET of the event has it: the first one right after connecting, then"
+            " one after each change of its counts."
+        ),
+        responses={
+            (200, "text/event-stream"): PublicEventSerializer,
+            404: OpenApiResponse(description="No such event"),
+        },
+    )
+    def get(self, request: Request, event_id: int) -> StreamingHttpResponse:
+        get_object_or_404(Event, pk=event_id)
+        return snapshot_response(event_id, public_event_snapshot)

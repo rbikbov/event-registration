@@ -10,7 +10,7 @@ from accounts.models import User
 from events.models import Event
 from events.realtime import CHANNEL, connection_params
 from registrations.models import Registration
-from registrations.services import check_in
+from registrations.services import cancel, check_in, register
 
 # Postgres delivers a notification only on commit: the data must really be committed.
 pytestmark = pytest.mark.django_db(transaction=True)
@@ -76,5 +76,86 @@ def test_repeat_check_in_does_not_notify(
     notifications()
 
     check_in(event.id, ticket.ticket_code)
+
+    assert notifications() == []
+
+
+def test_registration_notifies_after_commit(
+    event: Event, notifications: Callable[[], list[str]]
+) -> None:
+    register(event.id, "bob@x.io", "Bob")
+
+    assert notifications() == [str(event.id)]
+
+
+def test_rolled_back_registration_does_not_notify(
+    event: Event, notifications: Callable[[], list[str]]
+) -> None:
+    with pytest.raises(Rollback), transaction.atomic():
+        register(event.id, "bob@x.io", "Bob")
+        raise Rollback
+
+    assert notifications() == []
+
+
+def test_repeat_registration_does_not_notify(
+    event: Event, notifications: Callable[[], list[str]]
+) -> None:
+    register(event.id, "bob@x.io", "Bob")
+    notifications()
+
+    register(event.id, "bob@x.io", "Bob")
+
+    assert notifications() == []
+
+
+def test_revived_registration_notifies(
+    event: Event, notifications: Callable[[], list[str]]
+) -> None:
+    cancel(register(event.id, "bob@x.io", "Bob").registration.manage_token)
+    notifications()
+
+    register(event.id, "bob@x.io", "Bob")
+
+    assert notifications() == [str(event.id)]
+
+
+def test_cancel_with_a_promotion_notifies_once(
+    event: Event, notifications: Callable[[], list[str]]
+) -> None:
+    event.capacity = 1
+    event.save()
+    seat = register(event.id, "bob@x.io", "Bob").registration
+    register(event.id, "eve@x.io", "Eve")
+    notifications()
+
+    cancel(seat.manage_token)
+
+    # The cancellation and the promotion are one change of the counts.
+    assert notifications() == [str(event.id)]
+
+
+def test_cancel_from_the_waitlist_notifies(
+    event: Event, notifications: Callable[[], list[str]]
+) -> None:
+    event.capacity = 1
+    event.save()
+    register(event.id, "ann@x.io", "Ann")
+    waiting = register(event.id, "bob@x.io", "Bob").registration
+    notifications()
+
+    cancel(waiting.manage_token)
+
+    assert notifications() == [str(event.id)]
+
+
+def test_repeat_cancel_does_not_notify(
+    event: Event, notifications: Callable[[], list[str]]
+) -> None:
+    seat = register(event.id, "bob@x.io", "Bob").registration
+    cancel(seat.manage_token)
+    notifications()
+
+    cancel(seat.manage_token)
 
     assert notifications() == []

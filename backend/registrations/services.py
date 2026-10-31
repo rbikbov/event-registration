@@ -64,7 +64,8 @@ def register(
     A seat comes with a ticket email, the waitlist with one that has the position; it is queued
     in the same transaction, the worker sends it.
     A cancelled registration is revived: seat or waitlist is decided anew, the ticket code is
-    reissued and the place in the queue is the end of it.
+    reissued and the place in the queue is the end of it. A new or revived registration
+    notifies the event's stats stream, a repeat does not.
 
     The event row is locked for the whole transaction, so registrations for one event run one
     after another: two requests cannot take the same last seat or insert the same email twice.
@@ -102,6 +103,7 @@ def register(
             registration.cancelled_at = None
             registration.ticket_code = new_ticket_code()
             registration.save()
+        notify_stats_changed(event.id)
         position = waitlist_position(registration)
         # No position is a seat: waitlist_position counts only the waitlisted.
         if position is None:
@@ -129,7 +131,8 @@ def cancel(manage_token: str, *, now: datetime | None = None) -> Registration:
     """Cancel a registration by its manage token; a cancelled seat goes to the waitlist head.
 
     The promoted one gets an email with the ticket code, queued in the same transaction.
-    Cancelling twice, or cancelling from the waitlist, promotes nobody. Raises
+    Cancelling twice, or cancelling from the waitlist, promotes nobody. A cancellation notifies
+    the event's stats stream, a repeat does not. Raises
     Registration.DoesNotExist for an unknown token and TicketCheckedIn for a checked-in ticket.
     """
     with transaction.atomic():
@@ -153,6 +156,8 @@ def cancel(manage_token: str, *, now: datetime | None = None) -> Registration:
         registration.save()
         if was_confirmed:
             _promote_first_waitlisted(event_id, now)
+        # One notification with the promotion: the subscribers read the counts after both.
+        notify_stats_changed(event_id)
         return registration
 
 

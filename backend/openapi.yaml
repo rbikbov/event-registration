@@ -132,6 +132,31 @@ paths:
           description: ''
         '404':
           description: No such event
+  /api/events/{event_id}/stream/:
+    get:
+      operationId: events_stream_retrieve
+      description: '`text/event-stream`. Each message is `event: snapshot` with the
+        event as JSON in `data`, as GET of the event has it: the first one right after
+        connecting, then one after each change of its counts.'
+      parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - events
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            text/event-stream:
+              schema:
+                $ref: '#/components/schemas/PublicEvent'
+          description: ''
+        '404':
+          description: No such event
   /api/events/{id}/:
     get:
       operationId: events_retrieve
