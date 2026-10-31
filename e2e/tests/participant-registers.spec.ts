@@ -1,27 +1,12 @@
 import { expect, test } from "@playwright/test";
 
-// Created by `create_demo_users` when the backend starts (docs/architecture.md, "Окружение").
-const ORGANIZER = { email: "demo@example.com", password: "demo" };
+import { createEvent } from "./helpers";
 
 test("participants get the only seat, then a place on the waitlist", async ({ browser }) => {
   const title = `Meetup ${Date.now()}`;
-  const startsAt = `${new Date().getFullYear() + 1}-05-01T18:00`;
+  await createEvent(browser, { title, capacity: 1 });
 
   // Two people, two contexts: separate cookies and storage.
-  const organizerContext = await browser.newContext();
-  const organizer = await organizerContext.newPage();
-  await organizer.goto("/login");
-  await organizer.getByLabel("Email").fill(ORGANIZER.email);
-  await organizer.getByLabel("Пароль").fill(ORGANIZER.password);
-  await organizer.getByRole("button", { name: "Войти" }).click();
-  await organizer.getByRole("link", { name: "Создать событие" }).click();
-  await organizer.getByLabel("Название", { exact: true }).fill(title);
-  await organizer.getByLabel("Начало", { exact: true }).fill(startsAt);
-  await organizer.getByLabel("Мест", { exact: true }).fill("1");
-  await organizer.getByRole("button", { name: "Создать", exact: true }).click();
-  await expect(organizer.getByRole("heading", { name: title })).toBeVisible();
-  await organizerContext.close();
-
   const participantContext = await browser.newContext();
   const participant = await participantContext.newPage();
   const consoleErrors: string[] = [];
