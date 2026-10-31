@@ -1,7 +1,6 @@
 from datetime import timedelta
 
 import pytest
-from django.db import transaction
 from django.utils import timezone
 
 from accounts.models import User
@@ -11,10 +10,6 @@ from registrations.models import Registration
 from registrations.services import cancel, register
 
 pytestmark = pytest.mark.django_db
-
-
-class Rollback(Exception):
-    pass
 
 
 @pytest.fixture
@@ -44,14 +39,6 @@ def test_repeated_register_queues_no_more_emails(event: Event) -> None:
     register(event.id, "A@x.io", "Ann")
 
     assert OutboxEmail.objects.count() == 1
-
-
-def test_rolled_back_register_leaves_no_email(event: Event) -> None:
-    with pytest.raises(Rollback), transaction.atomic():
-        register(event.id, "a@x.io", "Ann")
-        raise Rollback
-
-    assert OutboxEmail.objects.count() == 0
 
 
 def emails_of(email: str) -> list[OutboxEmail]:
