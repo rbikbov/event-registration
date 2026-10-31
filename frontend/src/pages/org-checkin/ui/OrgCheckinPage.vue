@@ -7,6 +7,7 @@ import { useRoute } from "vue-router";
 import { orgEventQuery } from "@/entities/event";
 import { AppError } from "@/shared/api";
 import { orgEventPath } from "@/shared/config";
+import { RetryAlert } from "@/shared/ui/query-state";
 import { Alert, AlertDescription } from "@/shared/ui/shadcn/alert";
 import { Button } from "@/shared/ui/shadcn/button";
 import { Input } from "@/shared/ui/shadcn/input";
@@ -28,11 +29,13 @@ const {
   data: event,
   error: loadError,
   isError: loadFailed,
+  isFetching,
   refetch,
 } = useQuery(computed(() => orgEventQuery(eventId.value)));
 
 // A missing or someone else's event takes the place of the form: every code would be "not
-// found" or "foreign". Any other load failure leaves the form working, the title is only a label.
+// found" or "foreign". Any other load failure leaves the form working, the title is only a label,
+// so the screen keeps its own markup instead of QueryState, which hides content until data.
 const eventAnswer = computed(() => {
   if (!(loadError.value instanceof AppError)) return null;
   if (loadError.value.kind === "not_found") return "eventNotFound";
@@ -124,12 +127,13 @@ function submit(): void {
       <AlertDescription>{{ t(eventAnswer) }}</AlertDescription>
     </Alert>
     <template v-else>
-      <Alert v-if="loadFailed" variant="destructive" class="mt-6" role="alert">
-        <AlertDescription class="flex items-center justify-between gap-4">
-          {{ t("eventError") }}
-          <Button variant="outline" size="sm" @click="refetch()">{{ t("retry") }}</Button>
-        </AlertDescription>
-      </Alert>
+      <RetryAlert
+        v-if="loadFailed"
+        class="mt-6"
+        :text="event ? t('eventRefreshError') : t('eventError')"
+        :fetching="isFetching"
+        @retry="refetch()"
+      />
 
       <div v-if="answer" ref="answer-panel" aria-live="polite" class="mt-6 grid gap-4">
         <div
@@ -189,8 +193,8 @@ function submit(): void {
   "titleOf": "Чекин: {title}",
   "back": "Панель события",
   "eventNotFound": "Событие не найдено",
-  "eventError": "Не удалось загрузить событие, чекин работает",
-  "retry": "Повторить",
+  "eventError": "Не удалось загрузить название события, чекин работает",
+  "eventRefreshError": "Не удалось обновить событие, чекин работает",
   "code": "Код билета",
   "submit": "Отметить",
   "checking": "Проверяем…",
