@@ -47,7 +47,7 @@ def test_a_token_in_an_already_formatted_message_is_replaced() -> None:
     assert TOKEN not in rec.getMessage()
 
 
-@pytest.mark.parametrize("name", ["uvicorn.access", "django.request"])
+@pytest.mark.parametrize("name", ["uvicorn.access", "django.request", "django.server"])
 def test_the_loggers_that_print_request_paths_redact_tokens(name: str) -> None:
     rec = record("%s", f"/api/tickets/{TOKEN}/")
 

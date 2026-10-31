@@ -70,9 +70,10 @@ make down   # остановить; данные БД остаются в том
 - `backend/Dockerfile`: Python 3.12 + uv, зависимости из `uv.lock` без dev-группы; при старте
   `migrate`, затем uvicorn (ASGI — понадобится для SSE).
   Токен из ссылки билета в логи backend не попадает: фильтр `config.log_redaction` заменяет
-  его на `<token>` в access-логе uvicorn и в предупреждениях `django.request` («Not Found»).
-  Access-лог uvicorn поэтому описан заново в `LOGGING` (`config/settings.py`): Django применяет
-  его после uvicorn, и описание логгера заменяет его обработчики.
+  его на `<token>` в access-логах uvicorn и `runserver` (`django.server`, `make dev-backend`) и
+  в предупреждениях `django.request` («Not Found»). Оба access-лога поэтому описаны заново в
+  `LOGGING` (`config/settings.py`) со своими форматами: Django применяет его после uvicorn и
+  после своих настроек по умолчанию, а описание логгера заменяет его обработчики.
 - `worker` — тот же образ `backend` с командой `python manage.py run_worker`: берёт из outbox
   пачки до 20 писем подряд и отправляет их в Mailpit; если писем нет — ждёт 1 с. Стартует
   после healthy `backend` (миграции применены) и Mailpit, после падения перезапускается
