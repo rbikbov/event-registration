@@ -1,8 +1,10 @@
 from typing import Any
 
+from django.db.models import QuerySet
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
 from rest_framework.exceptions import NotFound
+from rest_framework.generics import ListAPIView
 from rest_framework.permissions import AllowAny
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -15,7 +17,9 @@ from registrations.models import Registration
 from registrations.serializers import (
     CheckInRequestSerializer,
     CheckInResultSerializer,
+    OrgRegistrationSerializer,
     RegisterRequestSerializer,
+    RegistrationFilterSerializer,
     RegistrationResultSerializer,
     TicketSerializer,
 )
@@ -24,6 +28,7 @@ from registrations.services import (
     TicketNotConfirmed,
     cancel,
     check_in,
+    event_registrations,
     get_ticket,
     mask_email,
     register,
@@ -150,3 +155,27 @@ class CheckInView(APIView):
             "checked_in_at": registration.checked_in_at,
         }
         return Response(CheckInResultSerializer(payload).data)
+
+
+class OrgRegistrationListView(ListAPIView[Registration]):
+    """The event's participants for the organizer, in queue order, optionally of one status."""
+
+    serializer_class = OrgRegistrationSerializer
+
+    @extend_schema(
+        parameters=[RegistrationFilterSerializer],
+        responses={
+            200: OrgRegistrationSerializer(many=True),
+            400: ValidationErrorSerializer,
+            403: OpenApiResponse(description="Another organizer's event"),
+            404: OpenApiResponse(description="No such event"),
+        },
+    )
+    def get(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        return super().get(request, *args, **kwargs)
+
+    def get_queryset(self) -> QuerySet[Registration]:
+        event = get_org_event(self.request.user, self.kwargs["event_id"])  # type: ignore[arg-type]  # IsAuthenticated: never AnonymousUser here
+        query = RegistrationFilterSerializer(data=self.request.query_params)
+        query.is_valid(raise_exception=True)
+        return event_registrations(event.id, query.validated_data.get("status"))

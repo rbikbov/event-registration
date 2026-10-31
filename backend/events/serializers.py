@@ -22,6 +22,30 @@ class EventSerializer(serializers.ModelSerializer[Event]):
         return value
 
 
+class OrgEventSerializer(serializers.ModelSerializer[Event]):
+    """The organizer's event panel: the event and its counts, annotated by the queryset."""
+
+    confirmed = serializers.IntegerField(read_only=True)
+    waitlisted = serializers.IntegerField(read_only=True)
+    checked_in = serializers.IntegerField(read_only=True)
+    free_seats = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = Event
+        fields = (
+            "id",
+            "title",
+            "description",
+            "starts_at",
+            "capacity",
+            "confirmed",
+            "waitlisted",
+            "checked_in",
+            "free_seats",
+        )
+        read_only_fields = fields
+
+
 class PublicEventListSerializer(serializers.ModelSerializer[Event]):
     free_seats = serializers.IntegerField(read_only=True)
 

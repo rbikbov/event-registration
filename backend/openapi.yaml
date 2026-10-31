@@ -225,6 +225,32 @@ paths:
               schema:
                 $ref: '#/components/schemas/ValidationError'
           description: ''
+  /api/org/events/{event_id}/:
+    get:
+      operationId: org_events_retrieve
+      description: 'The organizer''s event panel: the event with its registration
+        counts.'
+      parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - org
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrgEvent'
+          description: ''
+        '403':
+          description: Another organizer's event
+        '404':
+          description: No such event
   /api/org/events/{event_id}/checkin/:
     post:
       operationId: org_events_checkin_create
@@ -271,6 +297,53 @@ paths:
           description: No such event, or no such ticket at it
         '409':
           description: The ticket is waitlisted or cancelled
+  /api/org/events/{event_id}/registrations/:
+    get:
+      operationId: org_events_registrations_list
+      description: The event's participants for the organizer, in queue order, optionally
+        of one status.
+      parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: integer
+        required: true
+      - in: query
+        name: status
+        schema:
+          enum:
+          - confirmed
+          - waitlisted
+          - cancelled
+          type: string
+          minLength: 1
+        description: |-
+          * `confirmed` - Confirmed
+          * `waitlisted` - Waitlisted
+          * `cancelled` - Cancelled
+      tags:
+      - org
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OrgRegistration'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+          description: ''
+        '403':
+          description: Another organizer's event
+        '404':
+          description: No such event
   /api/tickets/{manage_token}/:
     get:
       operationId: tickets_retrieve
@@ -442,6 +515,78 @@ components:
       required:
       - email
       - password
+    OrgEvent:
+      type: object
+      description: 'The organizer''s event panel: the event and its counts, annotated
+        by the queryset.'
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        description:
+          type: string
+          readOnly: true
+        starts_at:
+          type: string
+          format: date-time
+          readOnly: true
+        capacity:
+          type: integer
+          readOnly: true
+        confirmed:
+          type: integer
+          readOnly: true
+        waitlisted:
+          type: integer
+          readOnly: true
+        checked_in:
+          type: integer
+          readOnly: true
+        free_seats:
+          type: integer
+          readOnly: true
+      required:
+      - capacity
+      - checked_in
+      - confirmed
+      - description
+      - free_seats
+      - id
+      - starts_at
+      - title
+      - waitlisted
+    OrgRegistration:
+      type: object
+      description: |-
+        A row of the organizer's participant table: the full email, unlike the entrance screen.
+
+        `position` is present only for a waitlisted registration.
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        status:
+          $ref: '#/components/schemas/RegistrationStatusEnum'
+        position:
+          type: integer
+          minimum: 1
+        checked_in_at:
+          type: string
+          format: date-time
+          nullable: true
+      required:
+      - checked_in_at
+      - email
+      - id
+      - name
+      - status
     PublicEvent:
       type: object
       properties:

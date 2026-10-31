@@ -2,7 +2,8 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 
 from django.db import transaction
-from django.db.models import Max, Q
+from django.db.models import Case, F, Max, Q, QuerySet, When, Window
+from django.db.models.functions import RowNumber
 from django.utils import timezone
 
 from emails.models import OutboxEmail
@@ -177,6 +178,27 @@ def check_in(event_id: int, code: str, *, now: datetime | None = None) -> CheckI
         if not marked and registration.checked_in_at is None:
             raise TicketNotConfirmed
         return CheckInResult(registration, already_checked_in=not marked)
+
+
+def event_registrations(event_id: int, status: str | None = None) -> QuerySet[Registration]:
+    """The event's registrations in queue order, all or of one `status`, for the organizer.
+
+    A waitlisted one has its `position`, the others None: numbered in the same query by a
+    window over the waitlist, in the order waitlist_position counts. The status filter is
+    applied before the window, and filtering by waitlisted keeps the whole waitlist.
+    """
+    queue_order = (F("queued_at").asc(), F("id").asc())
+    registrations = Registration.objects.filter(event_id=event_id)
+    if status is not None:
+        registrations = registrations.filter(status=status)
+    return registrations.annotate(
+        position=Case(
+            When(
+                status=Registration.Status.WAITLISTED,
+                then=Window(RowNumber(), partition_by=F("status"), order_by=queue_order),
+            )
+        )
+    ).order_by(*queue_order)
 
 
 def mask_email(email: str) -> str:

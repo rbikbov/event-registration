@@ -37,6 +37,30 @@ class CheckInResultSerializer(serializers.Serializer[dict[str, Any]]):
     checked_in_at = serializers.DateTimeField()
 
 
+class RegistrationFilterSerializer(serializers.Serializer[None]):
+    status = serializers.ChoiceField(choices=Registration.Status.choices, required=False)
+
+
+class OrgRegistrationSerializer(serializers.Serializer[Registration]):
+    """A row of the organizer's participant table: the full email, unlike the entrance screen.
+
+    `position` is present only for a waitlisted registration.
+    """
+
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+    email = serializers.EmailField()
+    status = serializers.ChoiceField(choices=Registration.Status.choices)
+    position = serializers.IntegerField(min_value=1, required=False)
+    checked_in_at = serializers.DateTimeField(allow_null=True)
+
+    def to_representation(self, instance: Registration) -> dict[str, Any]:
+        data = super().to_representation(instance)
+        if data["position"] is None:
+            del data["position"]
+        return data
+
+
 class TicketEventSerializer(serializers.ModelSerializer[Event]):
     class Meta:
         model = Event

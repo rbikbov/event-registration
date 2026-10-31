@@ -30,7 +30,7 @@ backend → frontend → e2e/доки. Логика — тест вперёд; �
 
 ## Этап 3. Панель события
 
-- [ ] 3.1 backend: `GET /api/org/events/{id}/` со счётчиками (`checked_in` в
+- [x] 3.1 backend: `GET /api/org/events/{id}/` со счётчиками (`checked_in` в
       `with_registration_counts`), `GET /api/org/events/{id}/registrations/?status=`. Готово,
       когда: тесты счётчиков, фильтра, 400 на неизвестный статус, 404 на чужое зелёные.
 - [ ] 3.2 frontend: панель `/org/events/:id` — счётчики, таблица с фильтром, ссылка на чекин;
@@ -63,6 +63,9 @@ backend → frontend → e2e/доки. Логика — тест вперёд; �
   `get_org_event` отложен в фазе 1 до первого эндпоинта по id — он появляется здесь. Счётчики —
   `EventQuerySet.with_registration_counts`; потоки гонки — `config/tests/concurrency.py`
   (`run_together`); `PermissionDenied` и `Http404` Django DRF сам отдаёт как 403 и 404.
+
+- База этапа 3 — `f953669` (`main` после слияния исправления нестабильных тестов), ветка
+  `feat/checkin-dashboard`.
 
 ## На потом
 
