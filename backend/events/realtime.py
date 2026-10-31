@@ -1,6 +1,6 @@
-"""Live event stats: `pg_notify` from the transaction that changes them, SSE to subscribers.
+"""Live events: `pg_notify` from the transaction that changes the counts, SSE to subscribers.
 
-A notification carries only the event id; a subscriber reads a full snapshot from the database
+A notification carries only the event id; a subscriber reads the whole event from the database
 on each one. So a lost or merged notification cannot leave wrong counts, only a later snapshot.
 """
 
@@ -109,11 +109,11 @@ class StatsListener:
 listener = StatsListener()
 
 
-async def stats_stream(event_id: int, snapshot: Callable[[], Any]) -> AsyncIterator[bytes]:
-    """SSE messages `stats`: a snapshot right away, then one after each change of the event.
+async def snapshot_stream(event_id: int, snapshot: Callable[[], Any]) -> AsyncIterator[bytes]:
+    """SSE messages `snapshot`: one right away, then one after each change of the event.
 
-    `snapshot` is a synchronous read of the counts; its database connection is closed after
-    each read, so an open stream holds none between changes.
+    `snapshot` is a synchronous read of the event as its GET has it; its database connection is
+    closed after each read, so an open stream holds none between changes.
     """
 
     def read() -> Any:
@@ -125,5 +125,5 @@ async def stats_stream(event_id: int, snapshot: Callable[[], Any]) -> AsyncItera
     async with listener.subscription(event_id) as changed:
         while True:
             data = await sync_to_async(read)()
-            yield f"event: stats\ndata: {json.dumps(data)}\n\n".encode()
+            yield f"event: snapshot\ndata: {json.dumps(data)}\n\n".encode()
             await changed.get()

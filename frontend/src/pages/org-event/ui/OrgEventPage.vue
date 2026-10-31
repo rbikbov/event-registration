@@ -4,7 +4,7 @@ import { computed } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
 
-import { orgEventQuery, orgEventLive, type OrgEvent, type OrgEventStats } from "@/entities/event";
+import { orgEventQuery, orgEventLive, type OrgEvent } from "@/entities/event";
 import { AppError } from "@/shared/api";
 import { checkinPath, orgEventPath, routes } from "@/shared/config";
 import { useLive } from "@/shared/lib/use-live";
@@ -22,29 +22,25 @@ const route = useRoute();
 const eventId = computed(() => Number(route.params.id));
 const status = computed(() => statusFilter(route.query.status));
 
-const event = useQuery(computed(() => orgEventQuery(eventId.value)));
+// Read once, then kept by the stream: a GET of its own (window focus, a remount of stale data)
+// could have read the event before a snapshot and answer after it with older counts.
+const event = useQuery(
+  computed(() => ({
+    ...orgEventQuery(eventId.value),
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  })),
+);
 const registrations = useQuery(computed(() => orgRegistrationsQuery(eventId.value, status.value)));
 
-// Live counts: a snapshot replaces the counts of the cached event. A GET of the event in flight
-// may have read them before the snapshot and would overwrite it on answering, and before the
-// event has loaded there is nothing to write into: then that GET is cancelled and the event is
-// read again, after the snapshot. Invalidation alone would not do: it joins a first load in
-// flight instead of cancelling it.
+// The stream opens once the event is there, so its first snapshot is read after that GET.
+// Before it, 403 and 404 come from the GET, which says which one it is; EventSource does not.
+const eventLoaded = computed(() => event.data.value !== undefined);
 const queryClient = useQueryClient();
-useLive<OrgEventStats>(
-  () => orgEventLive(eventId.value),
-  (stats) => {
-    const { queryKey } = orgEventQuery(eventId.value);
-    const cached = queryClient.getQueryData(queryKey);
-    if (!cached || queryClient.isFetching({ queryKey, exact: true }) > 0) {
-      // Errors of the refetch are the query's own: the page shows them through QueryState.
-      void queryClient
-        .cancelQueries({ queryKey, exact: true })
-        .then(() => queryClient.invalidateQueries({ queryKey, exact: true }));
-      return;
-    }
-    queryClient.setQueryData(queryKey, { ...cached, ...stats });
-  },
+useLive(
+  () => (eventLoaded.value ? orgEventLive(eventId.value) : null),
+  (snapshot) => queryClient.setQueryData(orgEventQuery(eventId.value).queryKey, snapshot),
 );
 
 // Not found and someone else's event are answers, not failures: retrying changes nothing.

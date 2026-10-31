@@ -46,4 +46,17 @@ describe("useLive", () => {
 
     expect(log).toEqual(["open a", "close a", "open b"]);
   });
+
+  it("subscribes only once there is a source", async () => {
+    const log: string[] = [];
+    const current = ref<LiveSource<string> | null>(null);
+    effectScope().run(() => useLive(current, () => {}));
+    await nextTick();
+
+    expect(log).toEqual([]);
+    current.value = fakeSource("a", log).source;
+    await nextTick();
+
+    expect(log).toEqual(["open a"]);
+  });
 });

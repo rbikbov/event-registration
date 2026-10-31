@@ -203,7 +203,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description `text/event-stream`. Each message is `event: stats` with the counts as JSON in `data`: the first one right after connecting, then one after each change. */
+        /** @description `text/event-stream`. Each message is `event: snapshot` with the event as JSON in `data`, as GET of the event has it: the first one right after connecting, then one after each change of its counts. */
         get: operations["org_events_stream_retrieve"];
         put?: never;
         post?: never;
@@ -312,13 +312,6 @@ export interface components {
             /** Format: date-time */
             readonly starts_at: string;
             readonly capacity: number;
-            readonly confirmed: number;
-            readonly waitlisted: number;
-            readonly checked_in: number;
-            readonly free_seats: number;
-        };
-        /** @description The counts of the organizer's panel, as in OrgEventSerializer: one message of its stream. */
-        OrgEventStats: {
             readonly confirmed: number;
             readonly waitlisted: number;
             readonly checked_in: number;
@@ -819,7 +812,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "text/event-stream": components["schemas"]["OrgEventStats"];
+                    "text/event-stream": components["schemas"]["OrgEvent"];
                 };
             };
             /** @description Another organizer's event */
