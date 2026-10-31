@@ -30,8 +30,14 @@ const {
   reset,
 } = useMutation({
   mutationFn: () => cancelTicket(token.value),
-  onSuccess: async () => {
+  onSuccess: async (result) => {
     confirming.value = false;
+    // The cancel answer is already the new status: if the reread below fails, the page must not
+    // keep showing the code of a cancelled ticket.
+    queryClient.setQueryData(
+      query.value.queryKey,
+      (old) => old && { status: result.status, name: old.name, event: old.event },
+    );
     await queryClient.invalidateQueries({ queryKey: query.value.queryKey });
     // A freed seat changes the free seats of the event and of the list.
     await queryClient.invalidateQueries({ queryKey: publicEventsQuery.queryKey });
