@@ -40,7 +40,13 @@ const eventLoaded = computed(() => event.data.value !== undefined);
 const queryClient = useQueryClient();
 useLive(
   () => (eventLoaded.value ? orgEventLive(eventId.value) : null),
-  (snapshot) => queryClient.setQueryData(orgEventQuery(eventId.value).queryKey, snapshot),
+  (snapshot) => {
+    const { queryKey } = orgEventQuery(eventId.value);
+    // The panel never reads the event itself, but the check-in screen shares its cache: a GET
+    // it started may have read the event before this snapshot. Cancelled, it cannot answer.
+    void queryClient.cancelQueries({ queryKey, exact: true });
+    queryClient.setQueryData(queryKey, snapshot);
+  },
 );
 
 // Not found and someone else's event are answers, not failures: retrying changes nothing.
