@@ -7,8 +7,13 @@ export const routes = {
   login: "/login",
   orgEvents: "/org/events",
   orgEventsNew: "/org/events/new",
+  ticket: "/tickets/:token",
 } as const;
 
 export function eventPath(id: number): string {
   return `/events/${id}`;
+}
+
+export function ticketPath(token: string): string {
+  return `/tickets/${token}`;
 }
