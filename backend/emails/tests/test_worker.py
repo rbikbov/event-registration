@@ -1,10 +1,12 @@
 import smtplib
+import socket
 from collections.abc import Callable, Iterator, Sequence
 from datetime import timedelta
 
 import pytest
 from django.core import mail
 from django.core.mail import EmailMessage
+from django.core.mail.backends import smtp
 from django.core.mail.backends.locmem import EmailBackend
 from django.test import override_settings
 from django.utils import timezone
@@ -205,3 +207,27 @@ def test_failure_is_logged_with_the_email_id_and_error_class_only(
     assert str(queued.id) in caplog.text
     assert "SMTPRecipientsRefused" in caplog.text
     assert "secret@x.io" not in caplog.text
+
+
+def test_smtp_backend_does_not_wait_forever() -> None:
+    # Without a timeout a server that accepts and stays silent holds the batch and its row locks.
+    assert smtp.EmailBackend().timeout is not None
+
+
+def test_silent_smtp_server_is_retried_like_a_refusal(event: Event) -> None:
+    # The kernel accepts the connection into the backlog; nobody ever sends the greeting.
+    with socket.create_server(("127.0.0.1", 0)) as server:
+        port = server.getsockname()[1]
+        queued = queue_ticket(event, "a@x.io")
+        with override_settings(
+            EMAIL_BACKEND="django.core.mail.backends.smtp.EmailBackend",
+            EMAIL_HOST="127.0.0.1",
+            EMAIL_PORT=port,
+            EMAIL_TIMEOUT=0.2,
+        ):
+            assert process_batch() == []
+
+    queued.refresh_from_db()
+    assert queued.status == OutboxEmail.Status.PENDING
+    assert queued.attempts == 1
+    assert queued.last_error.endswith("timed out")
