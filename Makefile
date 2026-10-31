@@ -174,7 +174,7 @@ dev-frontend: ## Frontend dev server on :5173, proxies /api to localhost:8000
 .PHONY: dev-backend
 dev-backend: ## Backend dev server on :8000 (needs `make dev-deps`)
 	$(BACKEND) uv run python manage.py migrate
-	$(BACKEND) uv run python manage.py runserver 8000
+	$(BACKEND) uv run uvicorn config.asgi:application --reload --port 8000
 
 .PHONY: dev-worker
 dev-worker: ## Email worker: sends the outbox to Mailpit, http://localhost:8025 (needs `make dev-deps`)

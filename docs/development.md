@@ -49,10 +49,13 @@ make check      # всё должно пройти
 
 ```sh
 make dev-deps       # Postgres и Mailpit
-make dev-backend    # терминал 1: миграции + backend на :8000
+make dev-backend    # терминал 1: миграции + uvicorn с перезагрузкой на :8000
 make dev-frontend   # терминал 2: http://localhost:5173
 make dev-worker     # терминал 3, если нужны письма: outbox → Mailpit, http://localhost:8025
 ```
+
+`make dev-backend` — uvicorn (ASGI), как в Docker, а не `runserver`: `runserver` — WSGI, и
+поток SSE (асинхронный генератор) он отдаёт только целиком, то есть никогда.
 
 Фронтенд и API открываются с одного адреса (:5173): Vite проксирует `/api` на backend,
 поэтому cookie сессии и `EventSource` работают без CORS. Адрес backend для прокси —
@@ -68,9 +71,9 @@ make down   # остановить; данные БД остаются в том
 
 - `make up` = `docker compose up -d --build --wait`: ждёт healthcheck всех сервисов.
 - `backend/Dockerfile`: Python 3.12 + uv, зависимости из `uv.lock` без dev-группы; при старте
-  `migrate`, затем uvicorn (ASGI — понадобится для SSE).
+  `migrate`, затем uvicorn (ASGI — для потоков SSE).
   Токен из ссылки билета в логи backend не попадает: фильтр `config.log_redaction` заменяет
-  его на `<token>` в access-логах uvicorn и `runserver` (`django.server`, `make dev-backend`) и
+  его на `<token>` в access-логах uvicorn и `runserver` (`django.server`) и
   в предупреждениях `django.request` («Not Found»). Оба access-лога поэтому описаны заново в
   `LOGGING` (`config/settings.py`) со своими форматами: Django применяет его после uvicorn и
   после своих настроек по умолчанию, а описание логгера заменяет его обработчики.
