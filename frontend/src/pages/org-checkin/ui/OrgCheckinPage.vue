@@ -44,7 +44,8 @@ const { mutate, isPending, error, reset } = useMutation({
   },
 });
 
-// The next participant is already in front of the desk: the field is ready for their code.
+// The next participant is already in front of the desk: the field is ready for their code. It is
+// read-only while a code is checked, so nothing typed meanwhile is cleared here.
 function show(next: Answer): void {
   answer.value = next;
   code.value = "";
@@ -75,6 +76,7 @@ function submit(): void {
         <Input
           id="code"
           v-model="code"
+          :readonly="isPending"
           autocomplete="off"
           autocapitalize="characters"
           class="font-mono text-lg tracking-widest uppercase"
