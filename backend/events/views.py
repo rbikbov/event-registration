@@ -107,7 +107,8 @@ class OrgEventStreamView(APIView):
             snapshot_stream(event_id, snapshot), content_type="text/event-stream"
         )
         response["Cache-Control"] = "no-cache"
-        # nginx buffers proxied responses by default; this header turns it off for the stream.
+        # Turns nginx proxy buffering off for the stream: buffering alone does not hold it
+        # back, buffering with gzip does (measured behind nginx 1.30).
         response["X-Accel-Buffering"] = "no"
         return response
 

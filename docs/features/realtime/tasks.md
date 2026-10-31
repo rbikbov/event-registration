@@ -18,13 +18,14 @@ backend → frontend → e2e/доки. Логика — тест вперёд; �
 
 ## Этап 2. Шлюз nginx
 
-- [ ] 2.1 infra: стадия `gateway` в `frontend/Dockerfile` — `vite build` и nginx на 5173,
+- [x] 2.1 infra: стадия `gateway` в `frontend/Dockerfile` — `vite build` и nginx на 5173,
       прокси `/api`, `/admin`, `/static`, fallback на `index.html`; `FRONTEND_TARGET` в
       compose, `make e2e`, `stack-e2e` и CI — через `gateway`; uvicorn с
       `--timeout-graceful-shutdown` — в Docker и в `make dev-backend` (`--reload` иначе ждёт
       открытые потоки без конца); `development.md`. Готово, когда: `make stack-e2e`
       зелёный через шлюз; `curl -N` потока через шлюз получает снимок сразу, а без
-      `X-Accel-Buffering: no` — нет (проверено и записано в лог).
+      `X-Accel-Buffering: no` — нет (проверено и записано в лог). Замер: без заголовка
+      снимки тоже идут сразу, задерживает только буферизация с gzip — spec, п. 3.
 - [ ] 2.2 e2e: два контекста организатора — чекин в одном, «Пришло» меняется в другом без
       перезагрузки. Готово, когда: тест зелёный и падает, если поток не подключён.
 
@@ -86,6 +87,8 @@ backend → frontend → e2e/доки. Логика — тест вперёд; �
   Задача 1.2 сделана шире плана: контракт `LiveSource`, снимок — событие целиком, панель без
   фонового `GET`. Браузер (слот 1, Vite, два контекста): чекин в одном меняет «Пришло» в
   другом без перезагрузки. Дальше — PR этапа 1, затем этап 2.
+- База этапа 2 — `9502cca` (`main` после слияния PR #17 и план bfcache), ветка
+  `feat/realtime-gateway`.
 
 ## На потом
 
