@@ -21,7 +21,8 @@ backend → frontend → e2e/доки. Логика — тест вперёд; �
 - [ ] 2.1 infra: стадия `gateway` в `frontend/Dockerfile` — `vite build` и nginx на 5173,
       прокси `/api`, `/admin`, `/static`, fallback на `index.html`; `FRONTEND_TARGET` в
       compose, `make e2e`, `stack-e2e` и CI — через `gateway`; uvicorn с
-      `--timeout-graceful-shutdown`; `development.md`. Готово, когда: `make stack-e2e`
+      `--timeout-graceful-shutdown` — в Docker и в `make dev-backend` (`--reload` иначе ждёт
+      открытые потоки без конца); `development.md`. Готово, когда: `make stack-e2e`
       зелёный через шлюз; `curl -N` потока через шлюз получает снимок сразу, а без
       `X-Accel-Buffering: no` — нет (проверено и записано в лог).
 - [ ] 2.2 e2e: два контекста организатора — чекин в одном, «Пришло» меняется в другом без
