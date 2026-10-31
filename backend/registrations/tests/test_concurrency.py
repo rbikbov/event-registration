@@ -9,7 +9,14 @@ from accounts.models import User
 from config.tests.concurrency import run_together
 from events.models import Event
 from registrations.models import Registration
-from registrations.services import cancel, check_in, register, waitlist_position
+from registrations.services import (
+    TicketCheckedIn,
+    TicketNotConfirmed,
+    cancel,
+    check_in,
+    register,
+    waitlist_position,
+)
 
 # Threads open their own connections, so the data must be committed, not rolled back at the end.
 pytestmark = pytest.mark.django_db(transaction=True)
@@ -132,3 +139,36 @@ def test_parallel_check_ins_of_one_code_mark_it_once(event: Event) -> None:
     registration.refresh_from_db()
     # Every repeat reports the time of the one check-in that passed.
     assert {r.registration.checked_in_at for r in results} == {registration.checked_in_at}
+
+
+def test_check_in_in_parallel_with_a_cancel_lets_exactly_one_pass(event: Event) -> None:
+    event.capacity = 8
+    event.save()
+    tickets = [register(event.id, f"u{i}@x.io", "Name").registration for i in range(8)]
+
+    def try_check_in(code: str) -> bool:
+        try:
+            check_in(event.id, code)
+        except TicketNotConfirmed:
+            return False
+        return True
+
+    def try_cancel(token: str) -> bool:
+        try:
+            cancel(token)
+        except TicketCheckedIn:
+            return False
+        return True
+
+    # Cancels queue on the event lock, check-ins do not: each pair can interleave.
+    calls: list[Callable[[], bool]] = []
+    for t in tickets:
+        calls += [partial(try_check_in, t.ticket_code), partial(try_cancel, t.manage_token)]
+    results = run_together(calls)
+
+    for t, checked_in, cancelled in zip(tickets, results[::2], results[1::2], strict=True):
+        assert checked_in != cancelled
+        t.refresh_from_db()
+        # The outcome the caller was told is the one stored.
+        assert t.status == ("confirmed" if checked_in else "cancelled")
+        assert (t.checked_in_at is not None) == checked_in

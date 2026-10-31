@@ -188,7 +188,11 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** @description Cancels a registration by the secret manage token. Repeating it changes nothing. */
+        /**
+         * @description Cancels a registration by the secret manage token. Repeating it changes nothing.
+         *
+         *     A checked-in ticket cannot be cancelled: its holder has already taken the seat.
+         */
         post: operations["tickets_cancel_create"];
         delete?: never;
         options?: never;
@@ -297,13 +301,15 @@ export interface components {
          * @description The ticket page behind the manage token from the email.
          *
          *     `ticket_code` is present only for a confirmed registration, `position` only for a
-         *     waitlisted one.
+         *     waitlisted one. `checked_in_at` is null until the ticket is checked in at the entrance.
          */
         Ticket: {
             status: components["schemas"]["RegistrationStatusEnum"];
             ticket_code?: string;
             position?: number;
             name: string;
+            /** Format: date-time */
+            checked_in_at: string | null;
             event: components["schemas"]["TicketEvent"];
         };
         TicketEvent: {
@@ -675,6 +681,13 @@ export interface operations {
             };
             /** @description Unknown token */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The ticket is checked in at the entrance */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

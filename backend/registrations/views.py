@@ -20,6 +20,7 @@ from registrations.serializers import (
     TicketSerializer,
 )
 from registrations.services import (
+    TicketCheckedIn,
     TicketNotConfirmed,
     cancel,
     check_in,
@@ -81,6 +82,7 @@ class TicketView(APIView):
         payload: dict[str, Any] = {
             "status": registration.status,
             "name": registration.name,
+            "checked_in_at": registration.checked_in_at,
             "event": registration.event,
         }
         if registration.status == Registration.Status.CONFIRMED:
@@ -91,7 +93,10 @@ class TicketView(APIView):
 
 
 class CancelView(APIView):
-    """Cancels a registration by the secret manage token. Repeating it changes nothing."""
+    """Cancels a registration by the secret manage token. Repeating it changes nothing.
+
+    A checked-in ticket cannot be cancelled: its holder has already taken the seat.
+    """
 
     authentication_classes = ()
     permission_classes = (AllowAny,)
@@ -101,6 +106,7 @@ class CancelView(APIView):
         responses={
             200: RegistrationResultSerializer,
             404: OpenApiResponse(description="Unknown token"),
+            409: OpenApiResponse(description="The ticket is checked in at the entrance"),
         },
     )
     def post(self, request: Request, manage_token: str) -> Response:
@@ -108,6 +114,8 @@ class CancelView(APIView):
             registration = cancel(manage_token)
         except Registration.DoesNotExist:
             raise NotFound from None
+        except TicketCheckedIn:
+            raise Conflict from None
         return Response(RegistrationResultSerializer({"status": registration.status}).data)
 
 

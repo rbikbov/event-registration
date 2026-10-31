@@ -36,7 +36,9 @@ const {
     // keep showing the code of a cancelled ticket.
     queryClient.setQueryData(
       query.value.queryKey,
-      (old) => old && { status: result.status, name: old.name, event: old.event },
+      // A cancelled ticket is never checked in: the backend refuses to cancel one that is.
+      (old) =>
+        old && { status: result.status, name: old.name, checked_in_at: null, event: old.event },
     );
     await queryClient.invalidateQueries({ queryKey: query.value.queryKey });
     // A freed seat changes the free seats of the event and of the list.

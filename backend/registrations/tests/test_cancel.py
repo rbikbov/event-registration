@@ -7,7 +7,7 @@ from rest_framework.test import APIClient
 from accounts.models import User
 from events.models import Event
 from registrations.models import Registration
-from registrations.services import cancel, register
+from registrations.services import TicketCheckedIn, cancel, check_in, register
 
 pytestmark = pytest.mark.django_db
 
@@ -106,6 +106,17 @@ def test_promotion_breaks_a_queued_at_tie_by_id(event: Event) -> None:
     assert statuses(event) == {"a@x.io": "cancelled", "b@x.io": "confirmed", "c@x.io": "waitlisted"}
 
 
+def test_cancel_of_a_checked_in_ticket_raises_and_changes_nothing(event: Event) -> None:
+    first = register(event.id, "a@x.io", "Ann").registration
+    register(event.id, "b@x.io", "Bob")
+    check_in(event.id, first.ticket_code)
+
+    with pytest.raises(TicketCheckedIn):
+        cancel(first.manage_token)
+
+    assert statuses(event) == {"a@x.io": "confirmed", "b@x.io": "waitlisted"}
+
+
 def test_cancel_with_an_unknown_token_raises() -> None:
     with pytest.raises(Registration.DoesNotExist):
         cancel("nope")
@@ -188,6 +199,16 @@ def test_cancel_api_is_idempotent(event: Event) -> None:
 
     assert response.status_code == 200
     assert response.json() == {"status": "cancelled"}
+
+
+def test_cancel_api_of_a_checked_in_ticket_is_409(event: Event) -> None:
+    first = register(event.id, "a@x.io", "Ann").registration
+    check_in(event.id, first.ticket_code)
+
+    response = APIClient().post(url(first.manage_token))
+
+    assert response.status_code == 409
+    assert Registration.objects.get(id=first.id).status == "confirmed"
 
 
 def test_cancel_api_unknown_token_is_404() -> None:

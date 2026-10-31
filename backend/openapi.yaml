@@ -298,8 +298,10 @@ paths:
   /api/tickets/{manage_token}/cancel/:
     post:
       operationId: tickets_cancel_create
-      description: Cancels a registration by the secret manage token. Repeating it
-        changes nothing.
+      description: |-
+        Cancels a registration by the secret manage token. Repeating it changes nothing.
+
+        A checked-in ticket cannot be cancelled: its holder has already taken the seat.
       parameters:
       - in: path
         name: manage_token
@@ -319,6 +321,8 @@ paths:
           description: ''
         '404':
           description: Unknown token
+        '409':
+          description: The ticket is checked in at the entrance
 components:
   schemas:
     CheckInRequestRequest:
@@ -545,7 +549,7 @@ components:
         The ticket page behind the manage token from the email.
 
         `ticket_code` is present only for a confirmed registration, `position` only for a
-        waitlisted one.
+        waitlisted one. `checked_in_at` is null until the ticket is checked in at the entrance.
       properties:
         status:
           $ref: '#/components/schemas/RegistrationStatusEnum'
@@ -556,9 +560,14 @@ components:
           minimum: 1
         name:
           type: string
+        checked_in_at:
+          type: string
+          format: date-time
+          nullable: true
         event:
           $ref: '#/components/schemas/TicketEvent'
       required:
+      - checked_in_at
       - event
       - name
       - status

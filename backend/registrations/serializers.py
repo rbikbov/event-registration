@@ -48,11 +48,12 @@ class TicketSerializer(serializers.Serializer[dict[str, Any]]):
     """The ticket page behind the manage token from the email.
 
     `ticket_code` is present only for a confirmed registration, `position` only for a
-    waitlisted one.
+    waitlisted one. `checked_in_at` is null until the ticket is checked in at the entrance.
     """
 
     status = serializers.ChoiceField(choices=Registration.Status.choices)
     ticket_code = serializers.CharField(required=False)
     position = serializers.IntegerField(min_value=1, required=False)
     name = serializers.CharField()
+    checked_in_at = serializers.DateTimeField(allow_null=True)
     event = TicketEventSerializer()
