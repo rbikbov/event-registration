@@ -138,3 +138,33 @@ SPECTACULAR_SETTINGS = {
         "RegistrationStatusEnum": "registrations.models.Registration.Status",
     },
 }
+
+# Applied by Django after uvicorn configured its own logging, so the access logger is described
+# again here, with uvicorn's format plus the filter: defining a logger replaces its handlers.
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "filters": {"redact_ticket_tokens": {"()": "config.log_redaction.RedactTicketTokens"}},
+    "formatters": {
+        "access": {
+            "()": "uvicorn.logging.AccessFormatter",
+            "fmt": '%(levelprefix)s %(client_addr)s - "%(request_line)s" %(status_code)s',
+        },
+    },
+    "handlers": {
+        "access": {
+            "class": "logging.StreamHandler",
+            "formatter": "access",
+            "stream": "ext://sys.stdout",
+        },
+    },
+    "loggers": {
+        "uvicorn.access": {
+            "handlers": ["access"],
+            "filters": ["redact_ticket_tokens"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "django.request": {"filters": ["redact_ticket_tokens"]},
+    },
+}
