@@ -149,7 +149,11 @@ def test_positions_on_the_second_page_go_on_from_the_first(
     assert [row["position"] for row in rows] == ([50, 51] if not query else [51])
 
 
-@pytest.mark.parametrize(("page", "code"), [("0", "min_value"), ("x", "invalid")])
+@pytest.mark.parametrize(
+    ("page", "code"),
+    # Past the bound the OFFSET would overflow bigint: a 500 instead of a 400.
+    [("0", "min_value"), ("x", "invalid"), ("1000001", "max_value")],
+)
 def test_bad_page_is_400(client: APIClient, event: Event, page: str, code: str) -> None:
     response = client.get(url(event.id), {"page": page})
 

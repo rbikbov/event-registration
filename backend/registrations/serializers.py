@@ -39,7 +39,8 @@ class CheckInResultSerializer(serializers.Serializer[dict[str, Any]]):
 
 class RegistrationFilterSerializer(serializers.Serializer[None]):
     status = serializers.ChoiceField(choices=Registration.Status.choices, required=False)
-    page = serializers.IntegerField(min_value=1, default=1)
+    # The upper bound keeps the OFFSET of a page within bigint.
+    page = serializers.IntegerField(min_value=1, max_value=10**6, default=1)
 
 
 class OrgRegistrationSerializer(serializers.Serializer[Registration]):
