@@ -20,16 +20,21 @@ from registrations.models import Registration
 pytestmark = pytest.mark.django_db
 
 
+def smtp_refusal(address: str) -> Exception:
+    return smtplib.SMTPRecipientsRefused({address: (550, b"No such user")})
+
+
 class RefusingBackend(EmailBackend):
     """The locmem backend that refuses the addresses in `refused`, as an SMTP server would."""
 
     refused: frozenset[str] = frozenset()
+    error: Callable[[str], Exception] = staticmethod(smtp_refusal)
 
     def send_messages(self, messages: Sequence[EmailMessage]) -> int:
         for message in messages:
             for address in message.to:
                 if address in self.refused:
-                    raise smtplib.SMTPRecipientsRefused({address: (550, b"No such user")})
+                    raise self.error(address)
         return super().send_messages(messages)
 
 
@@ -38,10 +43,14 @@ Refuse = Callable[..., None]
 
 @pytest.fixture
 def refuse(monkeypatch: pytest.MonkeyPatch) -> Iterator[Refuse]:
-    """Make the mail backend refuse the given addresses: `refuse("a@x.io")`; `refuse()` stops."""
+    """Make the mail backend refuse the given addresses: `refuse("a@x.io")`; `refuse()` stops.
 
-    def refuse_addresses(*addresses: str) -> None:
+    `error=` makes the refusal another exception than the SMTP one.
+    """
+
+    def refuse_addresses(*addresses: str, error: Callable[[str], Exception] = smtp_refusal) -> None:
         monkeypatch.setattr(RefusingBackend, "refused", frozenset(addresses))
+        monkeypatch.setattr(RefusingBackend, "error", staticmethod(error))
 
     with override_settings(EMAIL_BACKEND=f"{__name__}.RefusingBackend"):
         yield refuse_addresses
@@ -177,8 +186,16 @@ def test_email_is_sent_when_the_server_accepts_it_again(event: Event, refuse: Re
     assert len(mail.outbox) == 1
 
 
-def test_failed_email_does_not_stop_the_batch(event: Event, refuse: Refuse) -> None:
-    refuse("bad@x.io")
+def invalid_address(address: str) -> Exception:
+    return ValueError(f'Invalid address "{address}"')
+
+
+# Not only SMTP errors: a bug that rolled the batch back would resend the emails already sent.
+@pytest.mark.parametrize("error", [smtp_refusal, invalid_address])
+def test_failed_email_does_not_stop_the_batch(
+    event: Event, refuse: Refuse, error: Callable[[str], Exception]
+) -> None:
+    refuse("bad@x.io", error=error)
     first = queue_ticket(event, "a@x.io")
     bad = queue_ticket(event, "bad@x.io")
     last = queue_ticket(event, "b@x.io")
