@@ -1,4 +1,10 @@
-import { expect, type APIRequestContext, type Browser, type Page } from "@playwright/test";
+import {
+  expect,
+  type APIRequestContext,
+  type Browser,
+  type Locator,
+  type Page,
+} from "@playwright/test";
 
 // Created by `create_demo_users` when the backend starts (docs/architecture.md, "Окружение").
 export const ORGANIZER = { email: "demo@example.com", password: "demo" };
@@ -13,6 +19,14 @@ export async function organizerPage(browser: Browser): Promise<Page> {
   await page.getByRole("button", { name: "Войти" }).click();
   await expect(page.getByRole("heading", { name: "Мои события" })).toBeVisible();
   return page;
+}
+
+// A counter on the event panel, such as "Пришло": the value next to its term.
+export function panelStat(page: Page, term: string): Locator {
+  return page
+    .locator("dl > div")
+    .filter({ has: page.getByRole("term").getByText(term, { exact: true }) })
+    .getByRole("definition");
 }
 
 export async function createEvent(

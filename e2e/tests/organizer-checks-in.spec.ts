@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { createEvent, emailTo, extract, organizerPage } from "./helpers";
+import { createEvent, emailTo, extract, organizerPage, panelStat } from "./helpers";
 
 test("the code from the email passes check-in once, and the panel counts the arrival", async ({
   browser,
@@ -42,10 +42,7 @@ test("the code from the email passes check-in once, and the panel counts the arr
   await expect(organizer.getByText("Пропущен", { exact: true })).toBeHidden();
 
   await organizer.getByRole("link", { name: "Панель события" }).click();
-  const arrived = organizer
-    .locator("dl > div")
-    .filter({ has: organizer.getByRole("term").getByText("Пришло", { exact: true }) });
-  await expect(arrived.getByRole("definition")).toHaveText("1");
+  await expect(panelStat(organizer, "Пришло")).toHaveText("1");
   await expect(organizer.getByRole("row", { name: /Анна/ })).toContainText(email);
   expect(consoleErrors).toEqual([]);
   await organizer.context().close();
