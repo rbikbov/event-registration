@@ -160,6 +160,25 @@ describe("TicketPage", () => {
     expect(queryClient.getQueryState(publicEventsQuery.queryKey)?.isInvalidated).toBe(true);
   });
 
+  it("shows the cancellation even when rereading the ticket after it fails", async () => {
+    let reads = 0;
+    server.use(
+      http.get("*/api/tickets/tok/", () => {
+        reads += 1;
+        return reads === 1 ? HttpResponse.json(confirmed) : HttpResponse.error();
+      }),
+      http.post("*/api/tickets/tok/cancel/", () => HttpResponse.json({ status: "cancelled" })),
+    );
+    const { wrapper } = await mountPage();
+
+    await confirmCancel(wrapper);
+
+    await vi.waitFor(() => expect(reads).toBe(2));
+    await vi.waitFor(() => expect(wrapper.text()).toContain("Не удалось обновить билет"));
+    expect(wrapper.text()).toContain("Регистрация отменена");
+    expect(wrapper.find("[data-ticket-code]").exists()).toBe(false);
+  });
+
   it("disables the confirm button while the cancel is in flight", async () => {
     ticketIs(confirmed, cancelled);
     server.use(
