@@ -45,7 +45,8 @@ def register(
     """Register an email for an event; a repeat returns the existing registration.
 
     A new registration is confirmed while seats remain, otherwise it joins the waitlist.
-    A seat comes with a ticket email, queued in the same transaction; the worker sends it.
+    A seat comes with a ticket email, the waitlist with one that has the position; it is queued
+    in the same transaction, the worker sends it.
     A cancelled registration is revived: seat or waitlist is decided anew, the ticket code is
     reissued and the place in the queue is the end of it.
 
@@ -84,14 +85,18 @@ def register(
             registration.cancelled_at = None
             registration.ticket_code = new_ticket_code()
             registration.save()
+        position = waitlist_position(registration)
         if confirmed:
             enqueue_email(OutboxEmail.Kind.TICKET, registration)
-        return RegisterResult(registration, created=True, position=waitlist_position(registration))
+        else:
+            enqueue_email(OutboxEmail.Kind.WAITLISTED, registration, position=position)
+        return RegisterResult(registration, created=True, position=position)
 
 
 def cancel(manage_token: str, *, now: datetime | None = None) -> Registration:
     """Cancel a registration by its manage token; a cancelled seat goes to the waitlist head.
 
+    The promoted one gets an email with the ticket code, queued in the same transaction.
     Cancelling twice, or cancelling from the waitlist, promotes nobody. Raises
     Registration.DoesNotExist for an unknown token.
     """
@@ -141,3 +146,4 @@ def _promote_first_waitlisted(event_id: int, now: datetime) -> None:
         first.status = Registration.Status.CONFIRMED
         first.confirmed_at = now
         first.save()
+        enqueue_email(OutboxEmail.Kind.PROMOTED, first)
