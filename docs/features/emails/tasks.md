@@ -53,7 +53,7 @@ Spec — `spec.md`. Одна задача — один коммит; отмет�
       а не завершение процесса. Готово, когда: тесты с падающим backend почты зелёные; в браузере:
       `docker compose stop mailpit` → регистрация → в админке `attempts > 0` →
       `docker compose start mailpit` → письмо пришло.
-- [ ] 4.2 backend: тест гонки двух воркеров (`threading.Barrier`, Postgres) — каждое письмо
+- [x] 4.2 backend: тест гонки двух воркеров (`threading.Barrier`, Postgres) — каждое письмо
       отправлено один раз; правило в `docs/rules/concurrency.md`. Готово, когда: тест падает
       без `select_for_update`, 20 прогонов подряд зелёные.
 

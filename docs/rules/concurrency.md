@@ -1,7 +1,8 @@
 # Блокировки и тесты гонок
 
 Правила для кода, который меняет места, очередь или другие общие счётчики, и для тестов этого
-кода. Пример — `backend/registrations/services.py` и `backend/registrations/tests/test_concurrency.py`.
+кода. Пример — `backend/registrations/services.py` и `backend/registrations/tests/test_concurrency.py`;
+очередь писем — `backend/emails/services.py` и `backend/emails/tests/test_concurrency.py`.
 
 ## Код
 
@@ -20,6 +21,11 @@
    замка.
 5. **Внутри замка нет сетевых вызовов и отправки писем:** замок держится на время
    транзакции. Письма — через outbox в той же транзакции (фаза 2).
+6. **Очередь, которую разбирают несколько процессов, — `select_for_update(skip_locked=True)`.**
+   Воркер берёт пачку строк outbox с замком и держит его до коммита, в котором пишет `sent`;
+   второй воркер пропускает заблокированные строки и берёт другие, а не ждёт и не отправляет то
+   же письмо. Замок Event при этом не держится. Падение между отправкой и коммитом даёт повтор:
+   доставка «хотя бы один раз».
 
 ## Тесты
 
@@ -28,7 +34,7 @@
 2. Потоки стартуют одновременно через `threading.Barrier`; каждый поток закрывает своё
    соединение (`connection.close()`) в `finally`, иначе тест оставит открытые соединения и
    БД не удалится. Ошибка потока пробрасывается в тест — `run_together` в
-   `test_concurrency.py`.
+   `backend/config/tests/concurrency.py`.
 3. Проверяется итоговое состояние и инвариант, а не порядок: «занято ровно столько мест,
    сколько вместимость», «одна строка на email», «повышен ровно один». Порядок, в котором
    потоки получили замок, не определён.
@@ -37,7 +43,7 @@
    Гонка вероятностная, поэтому перед закрытием задачи тест гоняется 20 раз подряд:
 
    ```sh
-   cd backend && for i in $(seq 20); do uv run pytest registrations/tests/test_concurrency.py -q || break; done
+   cd backend && for i in $(seq 20); do uv run pytest registrations/tests/test_concurrency.py emails/tests/test_concurrency.py -q || break; done
    ```
 
 5. Не каждый замок виден одним тестом: отказ параллельно с регистрацией проходит и без замка в
