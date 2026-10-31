@@ -12,7 +12,7 @@ src/pages/<page>/    экраны: ui/, api/ (запросы, нужные то�
 src/entities/session/ кто вошёл: meQuery (null — гость)
 src/entities/event/  события: orgEventsQuery / orgEventQuery(id) (организатор), publicEventsQuery / publicEventQuery(id) (публичные)
 src/shared/api/      клиент API, AppError, unwrap, сгенерированный schema.d.ts. Правила: src/shared/api/AGENTS.md
-src/shared/ui/       самописные компоненты; ui/shadcn/ — сгенерированные shadcn-vue, руками не правятся
+src/shared/ui/       самописные компоненты (query-state — загрузка и ошибки запроса); ui/shadcn/ — сгенерированные shadcn-vue, руками не правятся
 src/shared/config/   routes — все пути приложения
 src/shared/lib/      утилиты; lib/test/ — MSW и setup для Vitest
 src/widgets|features/            появляются с первым срезом, пустыми не создаются
@@ -28,6 +28,13 @@ src/widgets|features/            появляются с первым срезо
    `components["schemas"]["<Имя>"]`.
 4. Каждое асинхронное действие в UI показывает загрузку, ошибку и пустое состояние и
    блокирует повторную отправку.
+   Данные запроса на странице выводятся через `QueryState` (`shared/ui/query-state`), а не
+   цепочкой `v-if="isPending"` / `v-else-if="isError"` / `v-else-if="data"`. TanStack Query
+   при неудачном фоновом обновлении (фокус окна, `invalidateQueries`) ставит `isError`, но
+   оставляет `data`: ветка ошибки перед веткой данных прячет уже загруженное. Ошибка — на
+   месте данных, только если данных нет; иначе — алерт над прежними данными. Ответы, которые
+   повтор не меняет (`not_found`, `forbidden`), страница показывает до `QueryState`. Тест
+   страницы с запросом проверяет и неудачный `refetchQueries()` после загрузки.
 5. Тексты интерфейса — по-русски, в блоке `<i18n lang="json" locale="ru">` того же
    компонента, достаются через `useI18n({ useScope: "local" })`; в store и чистых функциях
    текстов нет (они возвращают коды, компонент подбирает текст). Глобальных сообщений нет.

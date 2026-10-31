@@ -1,6 +1,9 @@
 import { queryOptions } from "@tanstack/vue-query";
 
 import { api, unwrap } from "@/shared/api";
+import type { components } from "@/shared/api";
+
+export type OrgEvent = components["schemas"]["OrgEvent"];
 
 export const orgEventsQuery = queryOptions({
   queryKey: ["org", "events"],

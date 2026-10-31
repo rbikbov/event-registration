@@ -60,7 +60,7 @@ async function mountPage(query: Record<string, string> = {}) {
   const wrapper = mount(OrgEventPage, {
     global: { plugins: [router, [VueQueryPlugin, { queryClient }], createAppI18n()] },
   });
-  return { wrapper, router };
+  return { wrapper, router, queryClient };
 }
 
 function counter(wrapper: Awaited<ReturnType<typeof mountPage>>["wrapper"], key: string) {
@@ -231,5 +231,45 @@ describe("OrgEventPage", () => {
     await flushPromises();
 
     expect(wrapper.findAll("tbody tr")).toHaveLength(1);
+  });
+
+  it("keeps the counters and the table when a refetch of the event fails", async () => {
+    let fail = false;
+    server.use(
+      http.get(EVENT, () =>
+        fail ? HttpResponse.json({}, { status: 500 }) : HttpResponse.json(event),
+      ),
+      http.get(REGISTRATIONS, () => HttpResponse.json([ann])),
+    );
+    const { wrapper, queryClient } = await mountPage();
+    await flushPromises();
+
+    fail = true;
+    await queryClient.refetchQueries();
+    await flushPromises();
+
+    expect(wrapper.get('[role="alert"]').text()).toContain("Не удалось обновить событие");
+    expect(wrapper.get("h1").text()).toBe("Meetup");
+    expect(counter(wrapper, "checkedIn")).toBe("1");
+    expect(wrapper.findAll("tbody tr")).toHaveLength(1);
+  });
+
+  it("keeps the table when a refetch of the participants fails", async () => {
+    let fail = false;
+    server.use(
+      http.get(EVENT, () => HttpResponse.json(event)),
+      http.get(REGISTRATIONS, () =>
+        fail ? HttpResponse.json({}, { status: 500 }) : HttpResponse.json([ann, bob]),
+      ),
+    );
+    const { wrapper, queryClient } = await mountPage();
+    await flushPromises();
+
+    fail = true;
+    await queryClient.refetchQueries();
+    await flushPromises();
+
+    expect(wrapper.get('[role="alert"]').text()).toContain("Не удалось обновить участников");
+    expect(wrapper.findAll("tbody tr")).toHaveLength(2);
   });
 });
