@@ -82,24 +82,24 @@ def test_repeated_cancel_does_not_promote_a_second_person(event: Event) -> None:
     assert statuses(event) == {"a@x.io": "cancelled", "b@x.io": "confirmed", "c@x.io": "waitlisted"}
 
 
-def test_promotion_follows_queued_at_then_id(event: Event) -> None:
+def test_promotion_follows_the_lock_order_when_the_clock_steps_back(event: Event) -> None:
     now = timezone.now()
     first = register(event.id, "a@x.io", "Ann", now=now).registration
-    register(event.id, "late@x.io", "Late", now=now + timedelta(minutes=5))
-    register(event.id, "early@x.io", "Early", now=now + timedelta(minutes=1))
+    register(event.id, "next@x.io", "Next", now=now + timedelta(minutes=5))
+    register(event.id, "after@x.io", "After", now=now + timedelta(minutes=1))
 
     cancel(first.manage_token)
 
-    assert statuses(event)["early@x.io"] == "confirmed"
-    assert statuses(event)["late@x.io"] == "waitlisted"
+    assert statuses(event)["next@x.io"] == "confirmed"
+    assert statuses(event)["after@x.io"] == "waitlisted"
 
 
 def test_promotion_breaks_a_queued_at_tie_by_id(event: Event) -> None:
-    now = timezone.now()
-    first = register(event.id, "a@x.io", "Ann", now=now).registration
-    second = register(event.id, "b@x.io", "Bob", now=now)
-    register(event.id, "c@x.io", "Cid", now=now)
-    assert second.position == 1
+    first = register(event.id, "a@x.io", "Ann").registration
+    second = register(event.id, "b@x.io", "Bob").registration
+    third = register(event.id, "c@x.io", "Cid").registration
+    # `register` never queues two at one time; a tie is made by hand.
+    Registration.objects.filter(id__in=[second.id, third.id]).update(queued_at=second.queued_at)
 
     cancel(first.manage_token)
 
@@ -126,7 +126,7 @@ def test_register_after_cancel_revives_the_row_with_a_new_ticket_code(event: Eve
     first = register(event.id, "a@x.io", "Ann").registration
     old_code, old_token = first.ticket_code, first.manage_token
     cancel(first.manage_token)
-    now = timezone.now()
+    now = first.queued_at + timedelta(minutes=1)
 
     result = register(event.id, "a@x.io", "Ann again", now=now)
 

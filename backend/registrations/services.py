@@ -1,8 +1,8 @@
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Max, Q
 from django.utils import timezone
 
 from emails.models import OutboxEmail
@@ -78,6 +78,7 @@ def register(
         existing = Registration.objects.filter(event=event, email=email).first()
         if existing is not None and existing.status != Registration.Status.CANCELLED:
             return RegisterResult(existing, created=False, position=waitlist_position(existing))
+        queued_at = _queue_time(event, now)
         confirmed = _confirmed_count(event) < event.capacity
         status = Registration.Status.CONFIRMED if confirmed else Registration.Status.WAITLISTED
         confirmed_at = now if confirmed else None
@@ -87,14 +88,14 @@ def register(
                 email=email,
                 name=name,
                 status=status,
-                queued_at=now,
+                queued_at=queued_at,
                 confirmed_at=confirmed_at,
             )
         else:
             registration = existing
             registration.name = name
             registration.status = status
-            registration.queued_at = now
+            registration.queued_at = queued_at
             registration.confirmed_at = confirmed_at
             registration.cancelled_at = None
             registration.ticket_code = new_ticket_code()
@@ -106,6 +107,20 @@ def register(
         else:
             enqueue_waitlisted(registration, position)
         return RegisterResult(registration, created=True, position=position)
+
+
+def _queue_time(event: Event, now: datetime) -> datetime:
+    """`now`, or just after the event's latest queue time if `now` is not later than it.
+
+    Call it under the event lock. The wall clock may step back between two requests (NTP, a VM
+    clock sync); a later request would then queue ahead of an earlier one.
+    """
+    latest: datetime | None = Registration.objects.filter(event=event).aggregate(
+        latest=Max("queued_at")
+    )["latest"]
+    if latest is None or now > latest:
+        return now
+    return latest + timedelta(microseconds=1)
 
 
 def cancel(manage_token: str, *, now: datetime | None = None) -> Registration:
