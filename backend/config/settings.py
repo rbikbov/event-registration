@@ -132,5 +132,9 @@ SPECTACULAR_SETTINGS = {
     "SERVE_INCLUDE_SCHEMA": False,
     # Read-only fields (id) stay out of request bodies: the frontend sends Event without an id.
     "COMPONENT_SPLIT_REQUEST": True,
-    "ENUM_NAME_OVERRIDES": {"HealthStateEnum": "config.health.HEALTH_STATES"},
+    "ENUM_NAME_OVERRIDES": {
+        "HealthStateEnum": "config.health.HEALTH_STATES",
+        # Shared by the registration result and the ticket, so it needs a name of its own.
+        "RegistrationStatusEnum": "registrations.models.Registration.Status",
+    },
 }

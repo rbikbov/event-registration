@@ -2,6 +2,7 @@ from typing import Any
 
 from rest_framework import serializers
 
+from events.models import Event
 from registrations.models import Registration
 
 
@@ -18,3 +19,24 @@ class RegistrationResultSerializer(serializers.Serializer[dict[str, Any]]):
 
     status = serializers.ChoiceField(choices=Registration.Status.choices)
     position = serializers.IntegerField(min_value=1, required=False)
+
+
+class TicketEventSerializer(serializers.ModelSerializer[Event]):
+    class Meta:
+        model = Event
+        fields = ("id", "title", "starts_at")
+        read_only_fields = fields
+
+
+class TicketSerializer(serializers.Serializer[dict[str, Any]]):
+    """The ticket page behind the manage token from the email.
+
+    `ticket_code` is present only for a confirmed registration, `position` only for a
+    waitlisted one.
+    """
+
+    status = serializers.ChoiceField(choices=Registration.Status.choices)
+    ticket_code = serializers.CharField(required=False)
+    position = serializers.IntegerField(min_value=1, required=False)
+    name = serializers.CharField()
+    event = TicketEventSerializer()

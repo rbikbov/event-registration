@@ -145,6 +145,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/tickets/{manage_token}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The ticket by the secret manage token from the email: status, code or waitlist place. */
+        get: operations["tickets_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/tickets/{manage_token}/cancel/": {
         parameters: {
             query?: never;
@@ -228,7 +245,7 @@ export interface components {
          *     `position` is present only for a waitlisted registration.
          */
         RegistrationResult: {
-            status: components["schemas"]["RegistrationResultStatusEnum"];
+            status: components["schemas"]["RegistrationStatusEnum"];
             position?: number;
         };
         /**
@@ -237,7 +254,26 @@ export interface components {
          *     * `cancelled` - Cancelled
          * @enum {string}
          */
-        RegistrationResultStatusEnum: "confirmed" | "waitlisted" | "cancelled";
+        RegistrationStatusEnum: "confirmed" | "waitlisted" | "cancelled";
+        /**
+         * @description The ticket page behind the manage token from the email.
+         *
+         *     `ticket_code` is present only for a confirmed registration, `position` only for a
+         *     waitlisted one.
+         */
+        Ticket: {
+            status: components["schemas"]["RegistrationStatusEnum"];
+            ticket_code?: string;
+            position?: number;
+            name: string;
+            event: components["schemas"]["TicketEvent"];
+        };
+        TicketEvent: {
+            readonly id: number;
+            readonly title: string;
+            /** Format: date-time */
+            readonly starts_at: string;
+        };
         User: {
             readonly id: number;
             /** Format: email */
@@ -493,6 +529,34 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["ValidationError"];
                 };
+            };
+        };
+    };
+    tickets_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                manage_token: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Ticket"];
+                };
+            };
+            /** @description Unknown token */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

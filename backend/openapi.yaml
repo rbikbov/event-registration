@@ -225,6 +225,30 @@ paths:
               schema:
                 $ref: '#/components/schemas/ValidationError'
           description: ''
+  /api/tickets/{manage_token}/:
+    get:
+      operationId: tickets_retrieve
+      description: 'The ticket by the secret manage token from the email: status,
+        code or waitlist place.'
+      parameters:
+      - in: path
+        name: manage_token
+        schema:
+          type: string
+        required: true
+      tags:
+      - tickets
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ticket'
+          description: ''
+        '404':
+          description: Unknown token
   /api/tickets/{manage_token}/cancel/:
     post:
       operationId: tickets_cancel_create
@@ -415,13 +439,13 @@ components:
         `position` is present only for a waitlisted registration.
       properties:
         status:
-          $ref: '#/components/schemas/RegistrationResultStatusEnum'
+          $ref: '#/components/schemas/RegistrationStatusEnum'
         position:
           type: integer
           minimum: 1
       required:
       - status
-    RegistrationResultStatusEnum:
+    RegistrationStatusEnum:
       enum:
       - confirmed
       - waitlisted
@@ -431,6 +455,46 @@ components:
         * `confirmed` - Confirmed
         * `waitlisted` - Waitlisted
         * `cancelled` - Cancelled
+    Ticket:
+      type: object
+      description: |-
+        The ticket page behind the manage token from the email.
+
+        `ticket_code` is present only for a confirmed registration, `position` only for a
+        waitlisted one.
+      properties:
+        status:
+          $ref: '#/components/schemas/RegistrationStatusEnum'
+        ticket_code:
+          type: string
+        position:
+          type: integer
+          minimum: 1
+        name:
+          type: string
+        event:
+          $ref: '#/components/schemas/TicketEvent'
+      required:
+      - event
+      - name
+      - status
+    TicketEvent:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        title:
+          type: string
+          readOnly: true
+        starts_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - id
+      - starts_at
+      - title
     User:
       type: object
       properties:

@@ -18,6 +18,12 @@ class RegisterResult:
     position: int | None
 
 
+@dataclass(frozen=True)
+class Ticket:
+    registration: Registration
+    position: int | None
+
+
 def waitlist_position(registration: Registration) -> int | None:
     """1-based place in the event's waitlist; None unless the registration is waitlisted.
 
@@ -107,6 +113,18 @@ def cancel(manage_token: str, *, now: datetime | None = None) -> Registration:
         if was_confirmed:
             _promote_first_waitlisted(event_id, now)
         return registration
+
+
+def get_ticket(manage_token: str) -> Ticket:
+    """The registration behind a manage token, with its event and waitlist place.
+
+    A plain read without the event lock: nothing is decided from it, and the lock would queue
+    it behind registrations. A promotion between the two queries leaves a stale position
+    (0 for the promoted one itself) until the next read.
+    Raises Registration.DoesNotExist for an unknown token.
+    """
+    registration = Registration.objects.select_related("event").get(manage_token=manage_token)
+    return Ticket(registration, position=waitlist_position(registration))
 
 
 def _confirmed_count(event: Event) -> int:
