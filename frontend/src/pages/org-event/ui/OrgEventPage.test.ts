@@ -4,6 +4,7 @@ import { http, HttpResponse } from "msw";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createMemoryHistory, createRouter } from "vue-router";
 
+import { orgEventQuery } from "@/entities/event";
 import { checkinPath, orgEventPath, routes } from "@/shared/config";
 import { createAppI18n } from "@/shared/lib/i18n";
 import { fakeEventSource } from "@/shared/lib/test/fake-event-source";
@@ -402,6 +403,29 @@ describe("OrgEventPage", () => {
     expect(wrapper.get("h1").text()).toBe("Meetup");
     expect(backend.gets()).toBe(0);
     expect(streams.opened).toHaveLength(1);
+  });
+
+  // The check-in screen reads the same event with default options: its GET, started before the
+  // panel opened, may answer on the panel after a snapshot.
+  it("keeps a snapshot over a GET of the event that another page started before it", async () => {
+    const backend = countedEvent();
+    server.use(
+      backend.handler,
+      http.get(REGISTRATIONS, () => HttpResponse.json([])),
+    );
+    const queryClient = newQueryClient();
+    queryClient.setQueryData(["org", "events", 7], event);
+    backend.hold();
+    void queryClient.prefetchQuery({ ...orgEventQuery(7), staleTime: 0 });
+    await vi.waitFor(() => expect(backend.gets()).toBe(1));
+
+    const { wrapper } = await mountPage({}, queryClient);
+    streams.opened[0]?.emit("snapshot", { ...event, checked_in: 2 });
+    backend.release();
+    await vi.waitFor(() => expect(queryClient.isFetching()).toBe(0));
+    await flushPromises();
+
+    expect(counter(wrapper, "checkedIn")).toBe("2");
   });
 
   it("closes the stream when the page is left", async () => {
