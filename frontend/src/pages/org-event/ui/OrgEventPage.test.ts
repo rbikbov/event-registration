@@ -1,4 +1,4 @@
-import { focusManager, QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
+import { focusManager, onlineManager, QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
 import { flushPromises, mount } from "@vue/test-utils";
 import { http, HttpResponse } from "msw";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -366,6 +366,22 @@ describe("OrgEventPage", () => {
     focusManager.setFocused(true);
     await flushPromises();
     focusManager.setFocused(undefined);
+
+    expect(backend.gets()).toBe(1);
+  });
+
+  it("does not read the event again when the network comes back", async () => {
+    const backend = countedEvent();
+    server.use(
+      backend.handler,
+      http.get(REGISTRATIONS, () => HttpResponse.json([])),
+    );
+    await mountPage();
+    await flushPromises();
+
+    onlineManager.setOnline(false);
+    onlineManager.setOnline(true);
+    await flushPromises();
 
     expect(backend.gets()).toBe(1);
   });
