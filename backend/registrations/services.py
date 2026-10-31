@@ -28,6 +28,10 @@ class TicketNotConfirmed(Exception):
     """The ticket is on the waitlist or cancelled: it lets nobody in."""
 
 
+class TicketCheckedIn(Exception):
+    """The ticket has let its holder in: the seat is taken and cannot be given up."""
+
+
 @dataclass(frozen=True)
 class Ticket:
     registration: Registration
@@ -109,7 +113,7 @@ def cancel(manage_token: str, *, now: datetime | None = None) -> Registration:
 
     The promoted one gets an email with the ticket code, queued in the same transaction.
     Cancelling twice, or cancelling from the waitlist, promotes nobody. Raises
-    Registration.DoesNotExist for an unknown token.
+    Registration.DoesNotExist for an unknown token and TicketCheckedIn for a checked-in ticket.
     """
     with transaction.atomic():
         event_id = Registration.objects.values_list("event_id", flat=True).get(
@@ -119,9 +123,13 @@ def cancel(manage_token: str, *, now: datetime | None = None) -> Registration:
         Event.objects.select_for_update().get(pk=event_id)
         # After the lock, like in `register`: the promotion time is when it really happened.
         now = now or timezone.now()
-        registration = Registration.objects.get(manage_token=manage_token)
+        # The row lock too: `check_in` takes no event lock, only the row, so without it a check-in
+        # committed between this read and the save would be overwritten by the cancellation.
+        registration = Registration.objects.select_for_update().get(manage_token=manage_token)
         if registration.status == Registration.Status.CANCELLED:
             return registration
+        if registration.checked_in_at is not None:
+            raise TicketCheckedIn
         was_confirmed = registration.status == Registration.Status.CONFIRMED
         registration.status = Registration.Status.CANCELLED
         registration.cancelled_at = now

@@ -7,7 +7,7 @@ from rest_framework.test import APIClient
 from accounts.models import User
 from events.models import Event
 from registrations.models import Registration
-from registrations.services import cancel, get_ticket, register
+from registrations.services import cancel, check_in, get_ticket, register
 
 pytestmark = pytest.mark.django_db
 
@@ -67,8 +67,21 @@ def test_ticket_api_confirmed_shows_the_code(event: Event) -> None:
         "status": "confirmed",
         "ticket_code": first.ticket_code,
         "name": "Ann",
+        "checked_in_at": None,
         "event": event_payload(event),
     }
+
+
+def test_ticket_api_checked_in_shows_the_time_of_the_check_in(event: Event) -> None:
+    first = register(event.id, "a@x.io", "Ann").registration
+    result = check_in(event.id, first.ticket_code)
+    checked_in_at = result.registration.checked_in_at
+    assert checked_in_at is not None
+
+    response = APIClient().get(url(first.manage_token))
+
+    assert response.status_code == 200
+    assert response.json()["checked_in_at"] == checked_in_at.isoformat().replace("+00:00", "Z")
 
 
 def test_ticket_api_waitlisted_shows_the_position_and_no_code(event: Event) -> None:
@@ -82,6 +95,7 @@ def test_ticket_api_waitlisted_shows_the_position_and_no_code(event: Event) -> N
         "status": "waitlisted",
         "position": 1,
         "name": "Bob",
+        "checked_in_at": None,
         "event": event_payload(event),
     }
 
@@ -93,7 +107,12 @@ def test_ticket_api_cancelled_shows_neither_code_nor_position(event: Event) -> N
     response = APIClient().get(url(first.manage_token))
 
     assert response.status_code == 200
-    assert response.json() == {"status": "cancelled", "name": "Ann", "event": event_payload(event)}
+    assert response.json() == {
+        "status": "cancelled",
+        "name": "Ann",
+        "checked_in_at": None,
+        "event": event_payload(event),
+    }
 
 
 def test_ticket_api_unknown_token_is_404() -> None:
