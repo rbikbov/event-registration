@@ -64,11 +64,19 @@ class StatsListener:
         queue: asyncio.Queue[None] = asyncio.Queue(maxsize=1)
         async with self._lock:
             if self._connection is None:
-                self._connection = await psycopg.AsyncConnection.connect(
+                listening = await psycopg.AsyncConnection.connect(
                     **connection_params(), autocommit=True
                 )
-                await self._connection.execute(f"LISTEN {CHANNEL}")
-                self._dispatch = asyncio.create_task(self._deliver(self._connection))
+                # Kept only once LISTEN is in effect: a connection kept after a failed or
+                # cancelled LISTEN (a client disconnects meanwhile) would look started to the
+                # next subscribers, and nothing would deliver to them.
+                try:
+                    await listening.execute(f"LISTEN {CHANNEL}")
+                except BaseException:
+                    await listening.close()
+                    raise
+                self._connection = listening
+                self._dispatch = asyncio.create_task(self._deliver(listening))
             self._subscribers.setdefault(event_id, set()).add(queue)
         try:
             yield queue
