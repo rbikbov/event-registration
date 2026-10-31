@@ -145,6 +145,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/org/events/{event_id}/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The organizer's event panel: the event with its registration counts. */
+        get: operations["org_events_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/org/events/{event_id}/checkin/": {
         parameters: {
             query?: never;
@@ -156,6 +173,23 @@ export interface paths {
         put?: never;
         /** @description The organizer checks a ticket in by the code the participant shows at the entrance. */
         post: operations["org_events_checkin_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/org/events/{event_id}/registrations/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description The event's participants for the organizer, in queue order, optionally of one status. */
+        get: operations["org_events_registrations_list"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -252,6 +286,34 @@ export interface components {
             /** Format: email */
             email: string;
             password: string;
+        };
+        /** @description The organizer's event panel: the event and its counts, annotated by the queryset. */
+        OrgEvent: {
+            readonly id: number;
+            readonly title: string;
+            readonly description: string;
+            /** Format: date-time */
+            readonly starts_at: string;
+            readonly capacity: number;
+            readonly confirmed: number;
+            readonly waitlisted: number;
+            readonly checked_in: number;
+            readonly free_seats: number;
+        };
+        /**
+         * @description A row of the organizer's participant table: the full email, unlike the entrance screen.
+         *
+         *     `position` is present only for a waitlisted registration.
+         */
+        OrgRegistration: {
+            id: number;
+            name: string;
+            /** Format: email */
+            email: string;
+            status: components["schemas"]["RegistrationStatusEnum"];
+            position?: number;
+            /** Format: date-time */
+            checked_in_at: string | null;
         };
         PublicEvent: {
             readonly id: number;
@@ -576,6 +638,41 @@ export interface operations {
             };
         };
     };
+    org_events_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrgEvent"];
+                };
+            };
+            /** @description Another organizer's event */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such event */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     org_events_checkin_create: {
         parameters: {
             query?: never;
@@ -625,6 +722,56 @@ export interface operations {
             };
             /** @description The ticket is waitlisted or cancelled */
             409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    org_events_registrations_list: {
+        parameters: {
+            query?: {
+                /**
+                 * @description * `confirmed` - Confirmed
+                 *     * `waitlisted` - Waitlisted
+                 *     * `cancelled` - Cancelled
+                 */
+                status?: "confirmed" | "waitlisted" | "cancelled";
+            };
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrgRegistration"][];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidationError"];
+                };
+            };
+            /** @description Another organizer's event */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such event */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };

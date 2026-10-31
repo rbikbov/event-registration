@@ -8,7 +8,7 @@ from django.utils import timezone
 from accounts.models import User
 from events.models import Event
 from registrations.models import Registration
-from registrations.services import register, waitlist_position
+from registrations.services import event_registrations, register, waitlist_position
 
 pytestmark = pytest.mark.django_db
 
@@ -188,3 +188,27 @@ def test_database_rejects_a_second_registration_with_the_same_email(event: Event
 def test_database_rejects_an_unknown_status(event: Event) -> None:
     with pytest.raises(IntegrityError), transaction.atomic():
         Registration.objects.create(**registration_fields(event, status="gone"))
+
+
+def test_event_registrations_number_the_waitlist_like_waitlist_position(event: Event) -> None:
+    event.capacity = 1
+    event.save()
+    register(event.id, "a@x.io", "Ann")
+    first = register(event.id, "b@x.io", "Bob").registration
+    second = register(event.id, "c@x.io", "Cid").registration
+    third = register(event.id, "d@x.io", "Dan").registration
+    Registration.objects.filter(id__in=[first.id, second.id]).update(queued_at=first.queued_at)
+    for registration in (first, second, third):
+        registration.refresh_from_db()
+
+    positions = {
+        r.id: r.position  # type: ignore[attr-defined]  # annotated by event_registrations
+        for r in event_registrations(event.id)
+    }
+
+    assert (
+        [positions[r.id] for r in (first, second, third)]
+        == [waitlist_position(r) for r in (first, second, third)]
+        == [1, 2, 3]
+    )
+    assert positions[Registration.objects.get(email="a@x.io").id] is None
