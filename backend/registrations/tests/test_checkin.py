@@ -2,7 +2,7 @@ from collections.abc import Callable
 from datetime import timedelta
 
 import pytest
-from django.db import IntegrityError
+from django.db import IntegrityError, connection
 from django.utils import timezone
 
 from accounts.models import User
@@ -95,6 +95,32 @@ def test_check_in_of_a_ticket_that_is_not_confirmed_raises_and_marks_nothing(
     with pytest.raises(TicketNotConfirmed):
         check_in(event.id, registration.ticket_code)
 
+    registration.refresh_from_db()
+    assert registration.checked_in_at is None
+
+
+def test_a_promotion_right_after_the_update_is_not_reported_as_a_repeat(event: Event) -> None:
+    registration = Registration.objects.create(
+        event=event, email="a@x.io", name="Ann", status=Registration.Status.WAITLISTED
+    )
+    promoted = False
+
+    # A cancel with a promotion may commit between the UPDATE and the read that follows it:
+    # `check_in` takes no event lock. Replay that moment right after the UPDATE.
+    def promote_after_the_update(execute, sql, params, many, context):  # type: ignore[no-untyped-def]  # Django's execute_wrapper signature
+        nonlocal promoted
+        result = execute(sql, params, many, context)
+        if not promoted and sql.startswith("UPDATE"):
+            promoted = True
+            Registration.objects.filter(id=registration.id).update(
+                status=Registration.Status.CONFIRMED
+            )
+        return result
+
+    with connection.execute_wrapper(promote_after_the_update), pytest.raises(TicketNotConfirmed):
+        check_in(event.id, registration.ticket_code)
+
+    assert promoted
     registration.refresh_from_db()
     assert registration.checked_in_at is None
 

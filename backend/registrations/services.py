@@ -156,7 +156,10 @@ def check_in(event_id: int, code: str, *, now: datetime | None = None) -> CheckI
             status=Registration.Status.CONFIRMED, checked_in_at__isnull=True
         ).update(checked_in_at=now)
         registration = tickets.get()
-        if not marked and registration.status != Registration.Status.CONFIRMED:
+        # Decided by the field the UPDATE checked, not by the status: a promotion committed
+        # between the two queries shows a confirmed ticket that is still not checked in.
+        # A checked-in ticket is always confirmed (CHECK in the database).
+        if not marked and registration.checked_in_at is None:
             raise TicketNotConfirmed
         return CheckInResult(registration, already_checked_in=not marked)
 
