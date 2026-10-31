@@ -13,13 +13,18 @@ BATCH_SIZE = 20
 
 SUBJECTS = {
     OutboxEmail.Kind.TICKET: "Билет: {title}",
+    OutboxEmail.Kind.WAITLISTED: "Лист ожидания: {title}",
+    OutboxEmail.Kind.PROMOTED: "Освободилось место: {title}",
 }
 
 
-def enqueue_email(kind: OutboxEmail.Kind, registration: Registration) -> None:
+def enqueue_email(
+    kind: OutboxEmail.Kind, registration: Registration, *, position: int | None = None
+) -> None:
     """Queue an email about a registration change; call it in the transaction of that change.
 
-    The text is rendered now, so it shows the state at the change. The key includes the ticket
+    The text is rendered now, so it shows the state at the change: the ticket code, or the
+    waitlist position the caller has just counted. The key includes the ticket
     code: a repeat of the same change queues nothing, a revival after cancelling (new code)
     queues a new email.
     """
@@ -30,6 +35,7 @@ def enqueue_email(kind: OutboxEmail.Kind, registration: Registration) -> None:
         # Events have no time zone of their own; the ticket page shows the browser's local time.
         "starts_at": event.starts_at.astimezone(UTC).strftime("%d.%m.%Y %H:%M UTC"),
         "ticket_code": registration.ticket_code,
+        "position": position,
         "manage_url": f"{settings.FRONTEND_URL}/tickets/{registration.manage_token}",
     }
     email = OutboxEmail(
