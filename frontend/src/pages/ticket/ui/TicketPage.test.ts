@@ -109,6 +109,26 @@ describe("TicketPage", () => {
     await vi.waitFor(() => expect(wrapper.find("[data-ticket-code]").exists()).toBe(true));
   });
 
+  it("keeps the loaded ticket when a later read fails", async () => {
+    let reads = 0;
+    server.use(
+      http.get("*/api/tickets/tok/", () => {
+        reads += 1;
+        return reads === 1 ? HttpResponse.json(confirmed) : HttpResponse.error();
+      }),
+    );
+    const { wrapper, queryClient } = await mountPage();
+
+    await queryClient.invalidateQueries({ queryKey: ["tickets", "tok"] });
+
+    await vi.waitFor(() => expect(reads).toBe(2));
+    await vi.waitFor(() =>
+      expect(queryClient.getQueryState(["tickets", "tok"])?.status).toBe("error"),
+    );
+    expect(wrapper.get("[data-ticket-code]").text()).toBe("ABCD2345");
+    expect(wrapper.get('[role="alert"]').text()).toContain("Не удалось обновить билет");
+  });
+
   it("asks before cancelling and keeps the ticket on 'no'", async () => {
     ticketIs(confirmed);
     const { wrapper } = await mountPage();
