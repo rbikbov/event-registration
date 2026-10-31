@@ -34,7 +34,6 @@ const { t } = useI18n({ useScope: "local" });
 // A retry of the first load shows the loading state (the query goes back to pending); a retry
 // after a failed refetch keeps the error and the data, so the button itself shows the request.
 function retry(): void {
-  if (props.query.isFetching.value) return;
   void props.query.refetch();
 }
 </script>
