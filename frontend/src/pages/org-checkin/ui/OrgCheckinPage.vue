@@ -5,7 +5,6 @@ import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
 
 import { AppError } from "@/shared/api";
-import { routes } from "@/shared/config";
 import { Alert, AlertDescription } from "@/shared/ui/shadcn/alert";
 import { Button } from "@/shared/ui/shadcn/button";
 import { Input } from "@/shared/ui/shadcn/input";
@@ -52,10 +51,10 @@ function show(next: Answer): void {
   void nextTick(focusCode);
 }
 
-// Retrying helps only a failure of the request itself, not an ended session or a foreign event.
+// Retrying cannot help with a foreign event. An ended session (401) never shows here: the app
+// sends the organizer to sign in (app/session-expiry.ts).
 const failure = computed(() => {
   if (error.value === null) return null;
-  if (error.value instanceof AppError && error.value.kind === "unauthorized") return "signedOut";
   if (error.value instanceof AppError && error.value.kind === "forbidden") return "foreign";
   return "failed";
 });
@@ -88,11 +87,7 @@ function submit(): void {
     </form>
 
     <Alert v-if="failure" variant="destructive" class="mt-6" role="alert">
-      <AlertDescription v-if="failure === 'signedOut'" class="flex items-center gap-4">
-        {{ t("signedOut") }}
-        <RouterLink class="underline" :to="routes.login">{{ t("signIn") }}</RouterLink>
-      </AlertDescription>
-      <AlertDescription v-else>{{ t(failure) }}</AlertDescription>
+      <AlertDescription>{{ t(failure) }}</AlertDescription>
     </Alert>
 
     <div aria-live="polite" class="mt-6">
@@ -123,8 +118,6 @@ function submit(): void {
   "submit": "Отметить",
   "checking": "Проверяем…",
   "failed": "Не удалось отметить, повторите",
-  "signedOut": "Сессия истекла — войдите снова",
-  "signIn": "Войти",
   "foreign": "Это событие другого организатора",
   "checkedIn": "Пропущен",
   "notFound": "Билет не найден"
