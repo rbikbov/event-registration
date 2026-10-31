@@ -57,6 +57,8 @@ async def test_a_listen_that_does_not_complete_closes_its_connection_and_lets_th
     assert [w for w in caught if issubclass(w.category, ResourceWarning)] == []
 
     async with listener.subscription(1, lambda event_id: event_id) as snapshots:
+        # The snapshot of joining, then the one the notification brings.
+        await asyncio.wait_for(snapshots.get(), timeout=5)
         await sync_to_async(notify)(1)
 
         assert await asyncio.wait_for(snapshots.get(), timeout=5) == 1
