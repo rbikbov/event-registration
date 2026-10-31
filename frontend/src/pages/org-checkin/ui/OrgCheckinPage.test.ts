@@ -1,7 +1,7 @@
 import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
 import { flushPromises, mount } from "@vue/test-utils";
 import { http, HttpResponse } from "msw";
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import { createMemoryHistory, createRouter } from "vue-router";
 
 import { checkinPath, routes } from "@/shared/config";
@@ -18,6 +18,14 @@ const checkedIn = {
   checked_in_at: "2030-05-01T15:42:00Z",
 };
 
+let mounted: { unmount(): void } | undefined;
+
+// Mounted into the document for focus checks: a failed test must not leave its field behind.
+afterEach(() => {
+  mounted?.unmount();
+  mounted = undefined;
+});
+
 async function mountPage() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const router = createRouter({
@@ -25,10 +33,12 @@ async function mountPage() {
     routes: [{ path: routes.orgCheckin, component: OrgCheckinPage }],
   });
   await router.push(checkinPath(7));
-  return mount(OrgCheckinPage, {
+  const wrapper = mount(OrgCheckinPage, {
     attachTo: document.body,
     global: { plugins: [router, [VueQueryPlugin, { queryClient }], createAppI18n()] },
   });
+  mounted = wrapper;
+  return wrapper;
 }
 
 type Wrapper = Awaited<ReturnType<typeof mountPage>>;
@@ -40,6 +50,13 @@ async function enter(wrapper: Wrapper, code: string): Promise<void> {
 }
 
 describe("OrgCheckinPage", () => {
+  it("puts the cursor into the code field when the screen opens", async () => {
+    const wrapper = await mountPage();
+    await flushPromises();
+
+    expect(document.activeElement).toBe(wrapper.get("#code").element);
+  });
+
   it("lets a confirmed ticket in, shows who it is and is ready for the next code", async () => {
     let sent: unknown;
     server.use(
@@ -60,7 +77,6 @@ describe("OrgCheckinPage", () => {
     const field = wrapper.get<HTMLInputElement>("#code");
     expect(field.element.value).toBe("");
     expect(document.activeElement).toBe(field.element);
-    wrapper.unmount();
   });
 
   it("says the ticket is not found", async () => {
@@ -71,7 +87,6 @@ describe("OrgCheckinPage", () => {
 
     expect(wrapper.get('[data-answer="not_found"]').text()).toBe("Билет не найден");
     expect(wrapper.find('[role="alert"]').exists()).toBe(false);
-    wrapper.unmount();
   });
 
   it("shows an error when the check-in fails", async () => {
@@ -81,7 +96,6 @@ describe("OrgCheckinPage", () => {
     await enter(wrapper, "ABCD2345");
 
     expect(wrapper.get('[role="alert"]').text()).toContain("Не удалось отметить");
-    wrapper.unmount();
   });
 
   it("does not send an empty code", async () => {
@@ -90,6 +104,5 @@ describe("OrgCheckinPage", () => {
     await enter(wrapper, "   ");
 
     expect(wrapper.get('button[type="submit"]').attributes("disabled")).toBeDefined();
-    wrapper.unmount();
   });
 });

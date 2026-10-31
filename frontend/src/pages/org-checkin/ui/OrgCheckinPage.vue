@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useMutation } from "@tanstack/vue-query";
-import { computed, nextTick, ref } from "vue";
+import { computed, nextTick, onMounted, ref, useTemplateRef } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
 
@@ -20,6 +20,15 @@ const route = useRoute();
 const eventId = computed(() => Number(route.params.id));
 const code = ref("");
 const answer = ref<Answer | null>(null);
+// The shadcn Input exposes no element, so the field is found inside its own wrapper.
+const codeField = useTemplateRef<HTMLDivElement>("code-field");
+
+// `autofocus` works once per document: on a second visit in the SPA it is ignored.
+function focusCode(): void {
+  codeField.value?.querySelector("input")?.focus();
+}
+
+onMounted(focusCode);
 
 const { mutate, isPending, isError, reset } = useMutation({
   mutationFn: (typed: string) => checkIn(eventId.value, typed),
@@ -38,7 +47,7 @@ const { mutate, isPending, isError, reset } = useMutation({
 function show(next: Answer): void {
   answer.value = next;
   code.value = "";
-  void nextTick(() => document.getElementById("code")?.focus());
+  void nextTick(focusCode);
 }
 
 function submit(): void {
@@ -53,11 +62,10 @@ function submit(): void {
 
     <form class="mt-6 grid gap-2" novalidate @submit.prevent="submit">
       <Label for="code">{{ t("code") }}</Label>
-      <div class="flex gap-2">
+      <div ref="code-field" class="flex gap-2">
         <Input
           id="code"
           v-model="code"
-          autofocus
           autocomplete="off"
           autocapitalize="characters"
           class="font-mono text-lg tracking-widest uppercase"
