@@ -4,7 +4,7 @@ from django.urls import path
 from accounts.views import LoginView, LogoutView, MeView
 from config.health import HealthView
 from events.views import OrgEventListView, PublicEventDetailView, PublicEventListView
-from registrations.views import CancelView, RegisterView, TicketView
+from registrations.views import CancelView, CheckInView, RegisterView, TicketView
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -12,6 +12,7 @@ urlpatterns = [
     path("api/auth/logout/", LogoutView.as_view(), name="logout"),
     path("api/auth/me/", MeView.as_view(), name="me"),
     path("api/org/events/", OrgEventListView.as_view(), name="org-events"),
+    path("api/org/events/<int:event_id>/checkin/", CheckInView.as_view(), name="checkin"),
     path("api/events/", PublicEventListView.as_view(), name="events"),
     path("api/events/<int:pk>/", PublicEventDetailView.as_view(), name="event"),
     path("api/events/<int:event_id>/registrations/", RegisterView.as_view(), name="register"),

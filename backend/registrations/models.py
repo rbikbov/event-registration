@@ -36,6 +36,7 @@ class Registration(models.Model):
         max_length=TICKET_CODE_LENGTH, unique=True, default=new_ticket_code
     )
     manage_token = models.CharField(max_length=64, unique=True, default=new_manage_token)
+    checked_in_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         constraints: ClassVar[list[models.BaseConstraint]] = [
@@ -45,6 +46,11 @@ class Registration(models.Model):
             models.CheckConstraint(
                 condition=models.Q(status__in=["confirmed", "waitlisted", "cancelled"]),
                 name="registration_status_valid",
+            ),
+            # A ticket that let someone in is neither cancelled nor back on the waitlist.
+            models.CheckConstraint(
+                condition=models.Q(checked_in_at__isnull=True) | models.Q(status="confirmed"),
+                name="registration_checked_in_is_confirmed",
             ),
         ]
 

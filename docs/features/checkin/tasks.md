@@ -7,7 +7,7 @@ backend → frontend → e2e/доки. Логика — тест вперёд; �
 
 ## Этап 1. Чекин кода насквозь (tracer bullet)
 
-- [ ] 1.1 backend: `checked_in_at` и `CHECK` (миграция), сервис `check_in` — атомарный
+- [x] 1.1 backend: `checked_in_at` и `CHECK` (миграция), сервис `check_in` — атомарный
       `UPDATE`, `POST /api/org/events/{id}/checkin/` → 200 `checked_in` / 404 по пути
       api-change, нормализация кода. Готово, когда: тесты «отмечен», «неизвестный код»,
       «код чужого события», «чужое событие», «нормализация» зелёные, схема актуальна.
@@ -48,6 +48,10 @@ backend → frontend → e2e/доки. Логика — тест вперёд; �
 ## Лог
 
 - База этапа 1 — `d4a390c` (`main` после слияния PR #11).
+- Исследование: чужое событие → 403, несуществующее → 404 — решение уже было (2026-10-29 01:17),
+  `get_org_event` отложен в фазе 1 до первого эндпоинта по id — он появляется здесь. Счётчики —
+  `EventQuerySet.with_registration_counts`; потоки гонки — `config/tests/concurrency.py`
+  (`run_together`); `PermissionDenied` и `Http404` Django DRF сам отдаёт как 403 и 404.
 
 ## На потом
 
