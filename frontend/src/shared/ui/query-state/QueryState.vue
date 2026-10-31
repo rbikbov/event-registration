@@ -14,8 +14,7 @@ export interface QueryStateSource<T> {
 <script setup lang="ts" generic="T">
 import { useI18n } from "vue-i18n";
 
-import { Alert, AlertDescription } from "@/shared/ui/shadcn/alert";
-import { Button } from "@/shared/ui/shadcn/button";
+import RetryAlert from "./RetryAlert.vue";
 
 // A failed refetch (window focus, invalidation) keeps the data in TanStack Query and sets
 // isError: the error goes above the data, which stays on screen, instead of replacing it.
@@ -32,7 +31,7 @@ defineSlots<{ default(props: { data: T }): unknown }>();
 const { t } = useI18n({ useScope: "local" });
 
 // A retry of the first load shows the loading state (the query goes back to pending); a retry
-// after a failed refetch keeps the error and the data, so the button itself shows the request.
+// after a failed refetch keeps the error and the data, so RetryAlert shows the request.
 function retry(): void {
   void props.query.refetch();
 }
@@ -44,28 +43,26 @@ function retry(): void {
       {{ t("loading") }}
     </p>
     <template v-else-if="query.data.value !== undefined">
-      <Alert v-if="query.isError.value" variant="destructive" class="mb-4" role="alert">
-        <AlertDescription class="flex items-center justify-between gap-4">
-          {{ refreshErrorText }}
-          <Button variant="outline" size="sm" :disabled="query.isFetching.value" @click="retry">
-            {{ query.isFetching.value ? t("loading") : t("retry") }}
-          </Button>
-        </AlertDescription>
-      </Alert>
+      <RetryAlert
+        v-if="query.isError.value"
+        class="mb-4"
+        :text="refreshErrorText"
+        :fetching="query.isFetching.value"
+        @retry="retry"
+      />
       <slot :data="query.data.value" />
     </template>
-    <Alert v-else-if="query.isError.value" variant="destructive" role="alert">
-      <AlertDescription class="flex items-center justify-between gap-4">
-        {{ errorText }}
-        <Button variant="outline" size="sm" @click="retry">{{ t("retry") }}</Button>
-      </AlertDescription>
-    </Alert>
+    <RetryAlert
+      v-else-if="query.isError.value"
+      :text="errorText"
+      :fetching="query.isFetching.value"
+      @retry="retry"
+    />
   </div>
 </template>
 
 <i18n lang="json" locale="ru">
 {
-  "loading": "Загружаем…",
-  "retry": "Повторить"
+  "loading": "Загружаем…"
 }
 </i18n>
