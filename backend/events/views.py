@@ -16,11 +16,10 @@ from rest_framework.views import APIView
 
 from config.exceptions import ValidationErrorSerializer
 from events.models import Event
-from events.realtime import stats_stream
+from events.realtime import snapshot_stream
 from events.serializers import (
     EventSerializer,
     OrgEventSerializer,
-    OrgEventStatsSerializer,
     PublicEventListSerializer,
     PublicEventSerializer,
 )
@@ -80,17 +79,18 @@ class IgnoreAccept(BaseContentNegotiation):
 
 
 class OrgEventStreamView(APIView):
-    """Live counts of the organizer's event panel, as server-sent events."""
+    """The organizer's event panel live: the event with its counts, as server-sent events."""
 
     content_negotiation_class = IgnoreAccept
 
     @extend_schema(
         description=(
-            "`text/event-stream`. Each message is `event: stats` with the counts as JSON in"
-            " `data`: the first one right after connecting, then one after each change."
+            "`text/event-stream`. Each message is `event: snapshot` with the event as JSON in"
+            " `data`, as GET of the event has it: the first one right after connecting, then"
+            " one after each change of its counts."
         ),
         responses={
-            (200, "text/event-stream"): OrgEventStatsSerializer,
+            (200, "text/event-stream"): OrgEventSerializer,
             403: OpenApiResponse(description="Another organizer's event"),
             404: OpenApiResponse(description="No such event"),
         },
@@ -99,12 +99,12 @@ class OrgEventStreamView(APIView):
         # Rights are checked once, on connecting.
         get_org_event(request.user, event_id)  # type: ignore[arg-type]  # IsAuthenticated: never AnonymousUser here
 
-        def snapshot() -> dict[str, int]:
+        def snapshot() -> dict[str, Any]:
             event = Event.objects.with_registration_counts().get(pk=event_id)
-            return OrgEventStatsSerializer(event).data
+            return OrgEventSerializer(event).data
 
         response = StreamingHttpResponse(
-            stats_stream(event_id, snapshot), content_type="text/event-stream"
+            snapshot_stream(event_id, snapshot), content_type="text/event-stream"
         )
         response["Cache-Control"] = "no-cache"
         # nginx buffers proxied responses by default; this header turns it off for the stream.

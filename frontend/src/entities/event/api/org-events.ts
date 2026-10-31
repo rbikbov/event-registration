@@ -5,7 +5,6 @@ import type { components, paths } from "@/shared/api";
 import { sseSource, type LiveSource } from "@/shared/lib/live-source";
 
 export type OrgEvent = components["schemas"]["OrgEvent"];
-export type OrgEventStats = components["schemas"]["OrgEventStats"];
 
 export const orgEventsQuery = queryOptions({
   queryKey: ["org", "events"],
@@ -24,7 +23,7 @@ export function orgEventQuery(id: number) {
 // EventSource is not openapi-fetch: the path is checked against the contract here instead.
 const ORG_EVENT_STREAM = "/api/org/events/{event_id}/stream/" satisfies keyof paths;
 
-// Live counts of the event panel.
-export function orgEventLive(id: number): LiveSource<OrgEventStats> {
-  return sseSource(ORG_EVENT_STREAM.replace("{event_id}", String(id)), "stats");
+// The event of the panel, live: the whole event, as orgEventQuery has it, after each change.
+export function orgEventLive(id: number): LiveSource<OrgEvent> {
+  return sseSource(ORG_EVENT_STREAM.replace("{event_id}", String(id)), "snapshot");
 }

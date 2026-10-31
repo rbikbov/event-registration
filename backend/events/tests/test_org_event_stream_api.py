@@ -84,9 +84,20 @@ async def test_stream_starts_with_a_snapshot(client: AsyncClient, event: Event) 
         assert response["Content-Type"] == "text/event-stream"
         assert response["Cache-Control"] == "no-cache"
         assert response["X-Accel-Buffering"] == "no"
+        # The event as GET /api/org/events/{id}/ has it: the panel takes it whole.
         assert await next_message(response) == (
-            "stats",
-            {"confirmed": 1, "waitlisted": 1, "checked_in": 0, "free_seats": 4},
+            "snapshot",
+            {
+                "id": event.id,
+                "title": "Meetup",
+                "description": "",
+                "starts_at": event.starts_at.isoformat().replace("+00:00", "Z"),
+                "capacity": 5,
+                "confirmed": 1,
+                "waitlisted": 1,
+                "checked_in": 0,
+                "free_seats": 4,
+            },
         )
 
 
@@ -97,8 +108,8 @@ async def test_check_in_sends_a_new_snapshot(client: AsyncClient, event: Event) 
         await next_message(response)
         await sync_to_async(check_in)(event.id, ticket.ticket_code)
 
-        _, stats = await next_message(response)
-        assert stats["checked_in"] == 1
+        _, snapshot = await next_message(response)
+        assert snapshot["checked_in"] == 1
 
 
 async def test_changes_not_yet_read_give_the_latest_snapshot(
@@ -112,8 +123,8 @@ async def test_changes_not_yet_read_give_the_latest_snapshot(
         await sync_to_async(check_in)(event.id, first.ticket_code)
         await sync_to_async(check_in)(event.id, second.ticket_code)
 
-        _, stats = await next_message(response)
-        assert stats["checked_in"] == 2
+        _, snapshot = await next_message(response)
+        assert snapshot["checked_in"] == 2
 
 
 # Errors are plain JSON responses, so the synchronous client: AsyncClient leaves the connection of

@@ -46,20 +46,6 @@ class OrgEventSerializer(serializers.ModelSerializer[Event]):
         read_only_fields = fields
 
 
-class OrgEventStatsSerializer(serializers.ModelSerializer[Event]):
-    """The counts of the organizer's panel, as in OrgEventSerializer: one message of its stream."""
-
-    confirmed = serializers.IntegerField(read_only=True)
-    waitlisted = serializers.IntegerField(read_only=True)
-    checked_in = serializers.IntegerField(read_only=True)
-    free_seats = serializers.IntegerField(read_only=True)
-
-    class Meta:
-        model = Event
-        fields = ("confirmed", "waitlisted", "checked_in", "free_seats")
-        read_only_fields = fields
-
-
 class PublicEventListSerializer(serializers.ModelSerializer[Event]):
     free_seats = serializers.IntegerField(read_only=True)
 

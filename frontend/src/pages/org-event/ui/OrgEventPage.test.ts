@@ -1,4 +1,4 @@
-import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
+import { focusManager, QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
 import { flushPromises, mount } from "@vue/test-utils";
 import { http, HttpResponse } from "msw";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -47,8 +47,11 @@ const cid = {
   checked_in_at: null,
 };
 
-async function mountPage(query: Record<string, string> = {}) {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+function newQueryClient() {
+  return new QueryClient({ defaultOptions: { queries: { retry: false } } });
+}
+
+async function mountPage(query: Record<string, string> = {}, queryClient = newQueryClient()) {
   const router = createRouter({
     history: createMemoryHistory(),
     routes: [
@@ -286,7 +289,44 @@ describe("OrgEventPage", () => {
     expect(wrapper.findAll("tbody tr")).toHaveLength(2);
   });
 
-  it("updates the counters from a snapshot of the stream", async () => {
+  // Counts each GET of the event; while held, an answer waits for `release`.
+  function countedEvent() {
+    let gets = 0;
+    let open = () => {};
+    let gate = Promise.resolve();
+    const handler = http.get(EVENT, async () => {
+      gets += 1;
+      await gate;
+      return HttpResponse.json(event);
+    });
+    return {
+      handler,
+      gets: () => gets,
+      hold() {
+        gate = new Promise((resolve) => (open = resolve));
+      },
+      release: () => open(),
+    };
+  }
+
+  it("opens the stream once the event has loaded", async () => {
+    const backend = countedEvent();
+    backend.hold();
+    server.use(
+      backend.handler,
+      http.get(REGISTRATIONS, () => HttpResponse.json([])),
+    );
+    await mountPage();
+    await vi.waitFor(() => expect(backend.gets()).toBe(1));
+
+    expect(streams.opened).toEqual([]);
+    backend.release();
+    await vi.waitFor(() => expect(streams.opened).toHaveLength(1));
+
+    expect(streams.opened[0]?.url).toBe("/api/org/events/7/stream/");
+  });
+
+  it("takes the whole event from a snapshot of the stream", async () => {
     server.use(
       http.get(EVENT, () => HttpResponse.json(event)),
       http.get(REGISTRATIONS, () => HttpResponse.json([ann])),
@@ -294,16 +334,58 @@ describe("OrgEventPage", () => {
     const { wrapper } = await mountPage();
     await flushPromises();
 
-    expect(streams.opened.map((stream) => stream.url)).toEqual([`/api/org/events/7/stream/`]);
-    streams.opened[0]?.emit("stats", { confirmed: 2, waitlisted: 0, checked_in: 2, free_seats: 0 });
+    streams.opened[0]?.emit("snapshot", {
+      ...event,
+      title: "Meetup, room 2",
+      confirmed: 2,
+      waitlisted: 0,
+      checked_in: 2,
+    });
     await flushPromises();
 
+    expect(wrapper.get("h1").text()).toBe("Meetup, room 2");
     expect(
       ["capacity", "confirmed", "waitlisted", "checkedIn", "freeSeats"].map((key) =>
         counter(wrapper, key),
       ),
     ).toEqual(["2", "2", "0", "2", "0"]);
+  });
+
+  // A GET that read the event before a snapshot could answer after it and put older counts
+  // back: while the stream is open, the panel does not read the event itself.
+  it("does not read the event again when the window regains focus", async () => {
+    const backend = countedEvent();
+    server.use(
+      backend.handler,
+      http.get(REGISTRATIONS, () => HttpResponse.json([])),
+    );
+    await mountPage();
+    await flushPromises();
+
+    focusManager.setFocused(false);
+    focusManager.setFocused(true);
+    await flushPromises();
+    focusManager.setFocused(undefined);
+
+    expect(backend.gets()).toBe(1);
+  });
+
+  it("shows a cached event at once and leaves its refresh to the stream", async () => {
+    const backend = countedEvent();
+    server.use(
+      backend.handler,
+      http.get(REGISTRATIONS, () => HttpResponse.json([])),
+    );
+    const queryClient = newQueryClient();
+    queryClient.setQueryData(["org", "events", 7], event);
+    await queryClient.invalidateQueries();
+
+    const { wrapper } = await mountPage({}, queryClient);
+    await flushPromises();
+
     expect(wrapper.get("h1").text()).toBe("Meetup");
+    expect(backend.gets()).toBe(0);
+    expect(streams.opened).toHaveLength(1);
   });
 
   it("closes the stream when the page is left", async () => {
@@ -317,82 +399,5 @@ describe("OrgEventPage", () => {
     wrapper.unmount();
 
     expect(streams.opened[0]?.closed).toBe(true);
-  });
-
-  // The server's counts at the moment it reads them. A held answer waits for `release`, so a
-  // GET can answer after a snapshot it read before; `read` resolves once the held GET has read.
-  function heldEvent() {
-    let current = event;
-    let held: { read: () => void; gate: Promise<void> } | null = null;
-    let open = () => {};
-    const handler = http.get(EVENT, async () => {
-      const counts = current;
-      if (held) {
-        held.read();
-        await held.gate;
-      }
-      return HttpResponse.json(counts);
-    });
-    return {
-      handler,
-      hold(): Promise<void> {
-        return new Promise((read) => {
-          held = { read, gate: new Promise((resolve) => (open = resolve)) };
-        });
-      },
-      change(counts: Partial<typeof event>) {
-        current = { ...current, ...counts };
-      },
-      release() {
-        held = null;
-        open();
-      },
-    };
-  }
-
-  // A refetch started by the snapshot goes through MSW in more than one tick.
-  async function settled(queryClient: QueryClient) {
-    await vi.waitFor(() => expect(queryClient.isFetching()).toBe(0));
-    await flushPromises();
-  }
-
-  const snapshot = { confirmed: 2, waitlisted: 1, checked_in: 2, free_seats: 0 };
-
-  it("keeps a snapshot that came while an older GET of the event was in flight", async () => {
-    const backend = heldEvent();
-    server.use(
-      backend.handler,
-      http.get(REGISTRATIONS, () => HttpResponse.json([])),
-    );
-    const { wrapper, queryClient } = await mountPage();
-    await flushPromises();
-
-    const read = backend.hold();
-    void queryClient.refetchQueries({ queryKey: ["org", "events", 7] });
-    await read;
-    backend.change(snapshot);
-    streams.opened[0]?.emit("stats", snapshot);
-    backend.release();
-    await settled(queryClient);
-
-    expect(counter(wrapper, "checkedIn")).toBe("2");
-  });
-
-  it("keeps a snapshot that came before the event loaded", async () => {
-    const backend = heldEvent();
-    const read = backend.hold();
-    server.use(
-      backend.handler,
-      http.get(REGISTRATIONS, () => HttpResponse.json([])),
-    );
-    const { wrapper, queryClient } = await mountPage();
-    await read;
-
-    backend.change(snapshot);
-    streams.opened[0]?.emit("stats", snapshot);
-    backend.release();
-    await settled(queryClient);
-
-    expect(counter(wrapper, "checkedIn")).toBe("2");
   });
 });
