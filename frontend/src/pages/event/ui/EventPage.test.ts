@@ -37,18 +37,24 @@ async function mountPage() {
   return { wrapper, queryClient, router };
 }
 
-type Wrapper = Awaited<ReturnType<typeof mountPage>>["wrapper"];
+type Page = Awaited<ReturnType<typeof mountPage>>;
 
-async function fill(wrapper: Wrapper, values: Record<string, string>) {
-  for (const [id, value] of Object.entries(values)) await wrapper.get(`#${id}`).setValue(value);
-  await wrapper.get("form").trigger("submit");
-  await settled(wrapper);
+async function fill(page: Page, values: Record<string, string>) {
+  for (const [id, value] of Object.entries(values)) {
+    await page.wrapper.get(`#${id}`).setValue(value);
+  }
+  await page.wrapper.get("form").trigger("submit");
+  await settled(page);
 }
 
-// The request goes through the network layer, so it takes more than one flush: wait until the
-// submit button is no longer disabled (or the form gave way to the result).
-async function settled(wrapper: Wrapper) {
-  await vi.waitFor(() => expect(wrapper.find("button[disabled]").exists()).toBe(false));
+// The request goes through the network layer, so it takes more than one flush. The mutation is
+// in the client from the submit on, while the disabled button shows up only after a render:
+// waiting for the button alone may pass before the request has started.
+async function settled({ wrapper, queryClient }: Page) {
+  await vi.waitFor(() => {
+    expect(queryClient.isMutating()).toBe(0);
+    expect(wrapper.find("button[disabled]").exists()).toBe(false);
+  });
 }
 
 function eventLoaded(): void {
@@ -59,7 +65,8 @@ describe("EventPage", () => {
   it("shows the event with its free seats and the form", async () => {
     eventLoaded();
 
-    const { wrapper } = await mountPage();
+    const page = await mountPage();
+    const { wrapper } = page;
 
     const text = wrapper.text();
     expect(text).toContain("Meetup");
@@ -71,7 +78,8 @@ describe("EventPage", () => {
   it("says there are no seats at 0", async () => {
     server.use(http.get("*/api/events/7/", () => HttpResponse.json({ ...event, free_seats: 0 })));
 
-    const { wrapper } = await mountPage();
+    const page = await mountPage();
+    const { wrapper } = page;
 
     expect(wrapper.text()).toContain("Свободных мест нет");
   });
@@ -79,7 +87,8 @@ describe("EventPage", () => {
   it("shows 'not found' for an unknown event", async () => {
     server.use(http.get("*/api/events/7/", () => HttpResponse.json({}, { status: 404 })));
 
-    const { wrapper } = await mountPage();
+    const page = await mountPage();
+    const { wrapper } = page;
 
     expect(wrapper.get('[role="alert"]').text()).toBe("Такого события нет");
     expect(wrapper.find("form").exists()).toBe(false);
@@ -87,7 +96,8 @@ describe("EventPage", () => {
 
   it("shows a load error with a retry", async () => {
     server.use(http.get("*/api/events/7/", () => HttpResponse.json({}, { status: 500 })));
-    const { wrapper } = await mountPage();
+    const page = await mountPage();
+    const { wrapper } = page;
     expect(wrapper.get('[role="alert"]').text()).toContain("Не удалось загрузить событие");
 
     eventLoaded();
@@ -105,10 +115,11 @@ describe("EventPage", () => {
         return HttpResponse.json({ status: "confirmed" }, { status: 201 });
       }),
     );
-    const { wrapper, queryClient } = await mountPage();
+    const page = await mountPage();
+    const { wrapper, queryClient } = page;
     queryClient.setQueryData(publicEventsQuery.queryKey, []);
 
-    await fill(wrapper, { email: " a@x.io ", name: "Ann" });
+    await fill(page, { email: " a@x.io ", name: "Ann" });
 
     expect(body).toEqual({ email: "a@x.io", name: "Ann" });
     expect(wrapper.get('[role="status"]').text()).toBe("Место подтверждено");
@@ -124,8 +135,9 @@ describe("EventPage", () => {
         HttpResponse.json({ status: "confirmed" }, { status: 201 }),
       ),
     );
-    const { wrapper, router } = await mountPage();
-    await fill(wrapper, { email: "a@x.io", name: "Ann" });
+    const page = await mountPage();
+    const { wrapper, router } = page;
+    await fill(page, { email: "a@x.io", name: "Ann" });
     expect(wrapper.get('[role="status"]').text()).toBe("Место подтверждено");
 
     await router.push(eventPath(8));
@@ -140,18 +152,20 @@ describe("EventPage", () => {
     server.use(
       http.post("*/api/events/7/registrations/", () => HttpResponse.json({ status: "confirmed" })),
     );
-    const { wrapper } = await mountPage();
+    const page = await mountPage();
+    const { wrapper } = page;
 
-    await fill(wrapper, { email: "a@x.io", name: "Ann" });
+    await fill(page, { email: "a@x.io", name: "Ann" });
 
     expect(wrapper.get('[role="status"]').text()).toBe("Место подтверждено");
   });
 
   it("flags empty fields without sending a request", async () => {
     eventLoaded();
-    const { wrapper } = await mountPage();
+    const page = await mountPage();
+    const { wrapper } = page;
 
-    await fill(wrapper, { email: "", name: "" });
+    await fill(page, { email: "", name: "" });
 
     expect(wrapper.text()).toContain("Обязательное поле");
     expect(wrapper.get("#email").attributes("aria-invalid")).toBe("true");
@@ -160,9 +174,10 @@ describe("EventPage", () => {
 
   it("flags a malformed email", async () => {
     eventLoaded();
-    const { wrapper } = await mountPage();
+    const page = await mountPage();
+    const { wrapper } = page;
 
-    await fill(wrapper, { email: "nope", name: "Ann" });
+    await fill(page, { email: "nope", name: "Ann" });
 
     expect(wrapper.text()).toContain("Некорректное значение");
     expect(wrapper.get("#name").attributes("aria-invalid")).toBe("false");
@@ -175,9 +190,10 @@ describe("EventPage", () => {
         HttpResponse.json({ errors: { email: ["invalid"] } }, { status: 400 }),
       ),
     );
-    const { wrapper } = await mountPage();
+    const page = await mountPage();
+    const { wrapper } = page;
 
-    await fill(wrapper, { email: "a@x.io", name: "Ann" });
+    await fill(page, { email: "a@x.io", name: "Ann" });
 
     expect(wrapper.text()).toContain("Некорректное значение");
     expect(wrapper.find('[role="alert"]').exists()).toBe(false);
@@ -190,9 +206,10 @@ describe("EventPage", () => {
         HttpResponse.json({ status: "waitlisted", position: 3 }, { status: 201 }),
       ),
     );
-    const { wrapper } = await mountPage();
+    const page = await mountPage();
+    const { wrapper } = page;
 
-    await fill(wrapper, { email: "a@x.io", name: "Ann" });
+    await fill(page, { email: "a@x.io", name: "Ann" });
 
     expect(wrapper.get('[role="status"]').text()).toBe("Вы в листе ожидания, №3");
     expect(wrapper.find("form").exists()).toBe(false);
@@ -205,16 +222,18 @@ describe("EventPage", () => {
         HttpResponse.json({ status: "waitlisted" }, { status: 201 }),
       ),
     );
-    const { wrapper } = await mountPage();
+    const page = await mountPage();
+    const { wrapper } = page;
 
-    await fill(wrapper, { email: "a@x.io", name: "Ann" });
+    await fill(page, { email: "a@x.io", name: "Ann" });
 
     expect(wrapper.get('[role="status"]').text()).toBe("Вы в листе ожидания");
   });
 
   it("offers the waitlist when no seats are left", async () => {
     server.use(http.get("*/api/events/7/", () => HttpResponse.json({ ...event, free_seats: 0 })));
-    const { wrapper } = await mountPage();
+    const page = await mountPage();
+    const { wrapper } = page;
 
     expect(wrapper.text()).toContain("Свободных мест нет, можно встать в лист ожидания");
     expect(wrapper.find("form").exists()).toBe(true);
@@ -225,9 +244,10 @@ describe("EventPage", () => {
     server.use(
       http.post("*/api/events/7/registrations/", () => HttpResponse.json({}, { status: 500 })),
     );
-    const { wrapper } = await mountPage();
+    const page = await mountPage();
+    const { wrapper } = page;
 
-    await fill(wrapper, { email: "a@x.io", name: "Ann" });
+    await fill(page, { email: "a@x.io", name: "Ann" });
 
     expect(wrapper.get('[role="alert"]').text()).toBe(
       "Не удалось зарегистрироваться, попробуйте позже",
@@ -239,14 +259,15 @@ describe("EventPage", () => {
     server.use(
       http.get("*/api/events/7/", () => {
         loads += 1;
-        // Only the first load works: a reload after the failure would replace the page.
+        // Only the first load works: a reload after the failure must not be what keeps the form.
         return loads === 1 ? HttpResponse.json(event) : HttpResponse.error();
       }),
       http.post("*/api/events/7/registrations/", () => HttpResponse.error()),
     );
-    const { wrapper } = await mountPage();
+    const page = await mountPage();
+    const { wrapper } = page;
 
-    await fill(wrapper, { email: "a@x.io", name: "Ann" });
+    await fill(page, { email: "a@x.io", name: "Ann" });
 
     expect(loads).toBe(1);
     expect(wrapper.get('[role="alert"]').text()).toBe(
@@ -263,13 +284,32 @@ describe("EventPage", () => {
         return HttpResponse.json({ status: "confirmed" }, { status: 201 });
       }),
     );
-    const { wrapper } = await mountPage();
+    const page = await mountPage();
+    const { wrapper } = page;
     await wrapper.get("#email").setValue("a@x.io");
     await wrapper.get("#name").setValue("Ann");
 
     await wrapper.get("form").trigger("submit");
 
     expect(wrapper.get('button[type="submit"]').attributes("disabled")).toBeDefined();
-    await settled(wrapper);
+    await settled(page);
+  });
+
+  it("keeps the event and the typed values when a refetch fails", async () => {
+    let fail = false;
+    server.use(
+      http.get("*/api/events/7/", () => (fail ? HttpResponse.error() : HttpResponse.json(event))),
+    );
+    const { wrapper, queryClient } = await mountPage();
+    await wrapper.get("#email").setValue("a@x.io");
+
+    fail = true;
+    await queryClient.refetchQueries();
+    await vi.waitFor(() =>
+      expect(wrapper.find('[role="alert"]').text()).toContain("Не удалось обновить событие"),
+    );
+
+    expect(wrapper.get("h1").text()).toBe("Meetup");
+    expect(wrapper.get("#email").element).toHaveProperty("value", "a@x.io");
   });
 });

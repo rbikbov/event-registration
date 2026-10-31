@@ -10,8 +10,9 @@ import { eventPath, routes } from "@/shared/config";
 import { createAppI18n } from "@/shared/lib/i18n";
 import { server } from "@/shared/lib/test/msw";
 
-async function mountPage() {
-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+async function mountPage(
+  queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } }),
+) {
   const router = createRouter({ history: createMemoryHistory(), routes: [] });
   const wrapper = mount(HomePage, {
     global: { plugins: [router, [VueQueryPlugin, { queryClient }], createAppI18n()] },
@@ -75,5 +76,24 @@ describe("HomePage", () => {
     });
 
     expect(wrapper.get('[role="status"]').text()).toBe("Загружаем…");
+  });
+
+  it("keeps the list when a refetch fails, with the error above it", async () => {
+    let fail = false;
+    server.use(
+      http.get("*/api/events/", () =>
+        fail ? HttpResponse.json({}, { status: 500 }) : HttpResponse.json([item(1, 3)]),
+      ),
+    );
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const wrapper = await mountPage(queryClient);
+
+    fail = true;
+    await queryClient.refetchQueries();
+    await vi.waitFor(() =>
+      expect(wrapper.find('[role="alert"]').text()).toContain("Не удалось обновить события"),
+    );
+
+    expect(wrapper.text()).toContain("Meetup 1");
   });
 });
