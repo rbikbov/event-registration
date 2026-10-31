@@ -8,7 +8,7 @@ from django.utils import timezone
 from accounts.models import User
 from events.models import Event
 from registrations.models import Registration
-from registrations.services import check_in, mask_email
+from registrations.services import TicketNotConfirmed, check_in, mask_email
 
 pytestmark = pytest.mark.django_db
 
@@ -44,8 +44,9 @@ def test_check_in_marks_a_confirmed_ticket(event: Event) -> None:
 
     result = check_in(event.id, registration.ticket_code, now=now)
 
-    assert result.id == registration.id
-    assert result.checked_in_at == now
+    assert not result.already_checked_in
+    assert result.registration.id == registration.id
+    assert result.registration.checked_in_at == now
     registration.refresh_from_db()
     assert registration.checked_in_at == now
 
@@ -68,6 +69,34 @@ def test_check_in_accepts_the_code_as_typed_at_the_entrance(
 
     registration.refresh_from_db()
     assert registration.checked_in_at is not None
+
+
+def test_a_repeat_check_in_reports_the_first_time_and_changes_nothing(event: Event) -> None:
+    registration = confirmed(event)
+    first = timezone.now()
+    check_in(event.id, registration.ticket_code, now=first)
+
+    result = check_in(event.id, registration.ticket_code, now=first + timedelta(minutes=5))
+
+    assert result.already_checked_in
+    assert result.registration.checked_in_at == first
+    registration.refresh_from_db()
+    assert registration.checked_in_at == first
+
+
+@pytest.mark.parametrize("status", [Registration.Status.WAITLISTED, Registration.Status.CANCELLED])
+def test_check_in_of_a_ticket_that_is_not_confirmed_raises_and_marks_nothing(
+    event: Event, status: str
+) -> None:
+    registration = Registration.objects.create(
+        event=event, email="a@x.io", name="Ann", status=status
+    )
+
+    with pytest.raises(TicketNotConfirmed):
+        check_in(event.id, registration.ticket_code)
+
+    registration.refresh_from_db()
+    assert registration.checked_in_at is None
 
 
 def test_check_in_of_an_unknown_code_raises(event: Event) -> None:

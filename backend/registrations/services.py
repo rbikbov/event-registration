@@ -19,6 +19,16 @@ class RegisterResult:
 
 
 @dataclass(frozen=True)
+class CheckInResult:
+    registration: Registration
+    already_checked_in: bool
+
+
+class TicketNotConfirmed(Exception):
+    """The ticket is on the waitlist or cancelled: it lets nobody in."""
+
+
+@dataclass(frozen=True)
 class Ticket:
     registration: Registration
     position: int | None
@@ -121,12 +131,14 @@ def cancel(manage_token: str, *, now: datetime | None = None) -> Registration:
         return registration
 
 
-def check_in(event_id: int, code: str, *, now: datetime | None = None) -> Registration:
+def check_in(event_id: int, code: str, *, now: datetime | None = None) -> CheckInResult:
     """Mark the confirmed ticket with `code` at the event as checked in.
 
     One conditional UPDATE: it locks the row, so of concurrent requests with one code only the
-    first passes the WHERE. The code is taken as typed at the entrance: any case, spaces and
-    dashes. Raises Registration.DoesNotExist when the event has no such ticket to mark.
+    first passes the WHERE; the others wait for its commit, read the row and report a repeat
+    with the time of the first check-in. The code is taken as typed at the entrance: any case,
+    spaces and dashes. Raises Registration.DoesNotExist when the event has no such ticket and
+    TicketNotConfirmed for a waitlisted or cancelled one.
     """
     code = "".join(code.split()).replace("-", "").upper()
     now = now or timezone.now()
@@ -135,9 +147,10 @@ def check_in(event_id: int, code: str, *, now: datetime | None = None) -> Regist
         marked = tickets.filter(
             status=Registration.Status.CONFIRMED, checked_in_at__isnull=True
         ).update(checked_in_at=now)
-        if not marked:
-            raise Registration.DoesNotExist
-        return tickets.get()
+        registration = tickets.get()
+        if not marked and registration.status != Registration.Status.CONFIRMED:
+            raise TicketNotConfirmed
+        return CheckInResult(registration, already_checked_in=not marked)
 
 
 def mask_email(email: str) -> str:

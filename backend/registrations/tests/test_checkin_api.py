@@ -64,6 +64,38 @@ def test_checkin_returns_the_name_and_a_masked_email(
     }
 
 
+def test_a_repeat_checkin_is_200_with_the_first_time(
+    client: APIClient, event: Event, registration: Registration
+) -> None:
+    client.post(url(event.id), {"code": registration.ticket_code}, format="json")
+    registration.refresh_from_db()
+    assert registration.checked_in_at is not None
+
+    response = client.post(url(event.id), {"code": registration.ticket_code}, format="json")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "result": "already_checked_in",
+        "name": "Ivan",
+        "masked_email": "iv***@gmail.com",
+        "checked_in_at": registration.checked_in_at.isoformat().replace("+00:00", "Z"),
+    }
+
+
+@pytest.mark.parametrize("status", [Registration.Status.WAITLISTED, Registration.Status.CANCELLED])
+def test_checkin_of_a_ticket_that_is_not_confirmed_is_409(
+    client: APIClient, event: Event, registration: Registration, status: str
+) -> None:
+    registration.status = status
+    registration.save()
+
+    response = client.post(url(event.id), {"code": registration.ticket_code}, format="json")
+
+    assert response.status_code == 409
+    registration.refresh_from_db()
+    assert registration.checked_in_at is None
+
+
 def test_checkin_of_an_unknown_code_is_404(client: APIClient, event: Event) -> None:
     response = client.post(url(event.id), {"code": "ZZZZZZZZ"}, format="json")
 

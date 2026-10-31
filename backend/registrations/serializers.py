@@ -26,9 +26,12 @@ class CheckInRequestSerializer(serializers.Serializer[None]):
 
 
 class CheckInResultSerializer(serializers.Serializer[dict[str, Any]]):
-    """What the entrance screen shows: no full email, the queue can see the screen."""
+    """What the entrance screen shows: no full email, the queue can see the screen.
 
-    result = serializers.ChoiceField(choices=["checked_in"])
+    A repeat is `already_checked_in` with the time of the first check-in.
+    """
+
+    result = serializers.ChoiceField(choices=["checked_in", "already_checked_in"])
     name = serializers.CharField()
     masked_email = serializers.CharField()
     checked_in_at = serializers.DateTimeField()

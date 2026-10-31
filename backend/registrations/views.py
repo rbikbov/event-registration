@@ -8,7 +8,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from config.exceptions import ValidationErrorSerializer
+from config.exceptions import Conflict, ValidationErrorSerializer
 from events.models import Event
 from events.services import get_org_event
 from registrations.models import Registration
@@ -19,7 +19,14 @@ from registrations.serializers import (
     RegistrationResultSerializer,
     TicketSerializer,
 )
-from registrations.services import cancel, check_in, get_ticket, mask_email, register
+from registrations.services import (
+    TicketNotConfirmed,
+    cancel,
+    check_in,
+    get_ticket,
+    mask_email,
+    register,
+)
 
 
 class RegisterView(APIView):
@@ -114,6 +121,7 @@ class CheckInView(APIView):
             400: ValidationErrorSerializer,
             403: OpenApiResponse(description="Another organizer's event"),
             404: OpenApiResponse(description="No such event, or no such ticket at it"),
+            409: OpenApiResponse(description="The ticket is waitlisted or cancelled"),
         },
     )
     def post(self, request: Request, event_id: int) -> Response:
@@ -121,11 +129,14 @@ class CheckInView(APIView):
         serializer = CheckInRequestSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         try:
-            registration = check_in(event.id, serializer.validated_data["code"])
+            result = check_in(event.id, serializer.validated_data["code"])
         except Registration.DoesNotExist:
             raise NotFound from None
+        except TicketNotConfirmed:
+            raise Conflict from None
+        registration = result.registration
         payload = {
-            "result": "checked_in",
+            "result": "already_checked_in" if result.already_checked_in else "checked_in",
             "name": registration.name,
             "masked_email": mask_email(registration.email),
             "checked_in_at": registration.checked_in_at,

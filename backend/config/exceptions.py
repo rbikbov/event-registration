@@ -1,10 +1,18 @@
 from typing import Any
 
 from drf_spectacular.utils import inline_serializer
-from rest_framework import serializers
-from rest_framework.exceptions import ValidationError
+from rest_framework import serializers, status
+from rest_framework.exceptions import APIException, ValidationError
 from rest_framework.response import Response
 from rest_framework.views import exception_handler
+
+
+class Conflict(APIException):
+    """The request is valid, but the state of the object does not allow it."""
+
+    status_code = status.HTTP_409_CONFLICT
+    default_detail = "Conflict with the current state."
+    default_code = "conflict"
 
 
 def api_exception_handler(exc: Exception, context: dict[str, Any]) -> Response | None:
