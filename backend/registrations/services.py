@@ -9,6 +9,7 @@ from django.utils import timezone
 from emails.models import OutboxEmail
 from emails.services import enqueue_email, enqueue_waitlisted
 from events.models import Event
+from events.realtime import notify_stats_changed
 from registrations.models import Registration, new_ticket_code
 
 
@@ -161,7 +162,8 @@ def check_in(event_id: int, code: str, *, now: datetime | None = None) -> CheckI
     One conditional UPDATE: it locks the row, so of concurrent requests with one code only the
     first passes the WHERE; the others wait for its commit, read the row and report a repeat
     with the time of the first check-in. The code is taken as typed at the entrance: any case,
-    spaces and dashes. Raises Registration.DoesNotExist when the event has no such ticket and
+    spaces and dashes. The first check-in notifies the event's stats stream, a repeat does not:
+    the counts are the same. Raises Registration.DoesNotExist when the event has no such ticket and
     TicketNotConfirmed for a waitlisted or cancelled one.
     """
     code = "".join(code.split()).replace("-", "").upper()
@@ -177,6 +179,8 @@ def check_in(event_id: int, code: str, *, now: datetime | None = None) -> CheckI
         # A checked-in ticket is always confirmed (CHECK in the database).
         if not marked and registration.checked_in_at is None:
             raise TicketNotConfirmed
+        if marked:
+            notify_stats_changed(event_id)
         return CheckInResult(registration, already_checked_in=not marked)
 
 

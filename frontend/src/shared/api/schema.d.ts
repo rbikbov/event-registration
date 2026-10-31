@@ -196,6 +196,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/org/events/{event_id}/stream/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description `text/event-stream`. Each message is `event: stats` with the counts as JSON in `data`: the first one right after connecting, then one after each change. */
+        get: operations["org_events_stream_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/tickets/{manage_token}/": {
         parameters: {
             query?: never;
@@ -295,6 +312,13 @@ export interface components {
             /** Format: date-time */
             readonly starts_at: string;
             readonly capacity: number;
+            readonly confirmed: number;
+            readonly waitlisted: number;
+            readonly checked_in: number;
+            readonly free_seats: number;
+        };
+        /** @description The counts of the organizer's panel, as in OrgEventSerializer: one message of its stream. */
+        OrgEventStats: {
             readonly confirmed: number;
             readonly waitlisted: number;
             readonly checked_in: number;
@@ -761,6 +785,41 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ValidationError"];
+                };
+            };
+            /** @description Another organizer's event */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such event */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    org_events_stream_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": components["schemas"]["OrgEventStats"];
                 };
             };
             /** @description Another organizer's event */

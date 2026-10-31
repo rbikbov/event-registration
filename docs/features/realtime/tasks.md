@@ -7,7 +7,7 @@ backend → frontend → e2e/доки. Логика — тест вперёд; �
 
 ## Этап 1. Живой счётчик «Пришло» на панели (tracer bullet)
 
-- [ ] 1.1 backend: `pg_notify` в `check_in` (первая отметка), слушатель на процесс,
+- [x] 1.1 backend: `pg_notify` в `check_in` (первая отметка), слушатель на процесс,
       `GET /api/org/events/{id}/stream/` (DRF-view, по пути api-change) — снимок при
       подключении и на уведомление; 403/404.
       Готово, когда: тесты «уведомление после коммита, нет после отката», «первое сообщение —
@@ -54,5 +54,9 @@ backend → frontend → e2e/доки. Логика — тест вперёд; �
 
 - База этапа 1 — `6cf95c4` (spec и задачи фазы на `main` после слияния PR #16), ветка
   `feat/realtime-org-stream`.
+- Исследование этапа 1: снимок — `Event.objects.with_registration_counts()` и поля
+  `OrgEventSerializer`; права — `get_org_event`; чекин — условный `UPDATE` в
+  `registrations.services.check_in` (уведомление — по числу отмеченных строк). Django 5.2 под
+  ASGI читает асинхронный поток через `aclosing` и отменяет его при `http.disconnect`.
 
 ## На потом

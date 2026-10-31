@@ -358,6 +358,13 @@ docs: describe pre-push hook
   `SKIP LOCKED` и `LISTEN/NOTIFY` на SQLite не проверить. pytest-django создаёт отдельную
   тестовую БД `test_<имя>` и удаляет её после прогона. Тест, которому нужна БД, помечается
   `pytest.mark.django_db`.
+- Асинхронные тесты (потоки SSE) — pytest-asyncio в режиме `auto`, без маркера: `async def
+test_…` и `django.test.AsyncClient`. Цикл событий — один на сессию, как один цикл процесса
+  uvicorn, в котором живёт слушатель `LISTEN` (`events/realtime.py`). Тест потока —
+  `django_db(transaction=True)`: поток читает снимок в другом потоке своим соединением и
+  видит только закоммиченное. Ответы с ошибкой (401/403/404) у потока проверяются синхронным
+  `APIClient`: `AsyncClient` не закрывает соединение у ответа без потока, и оно не даёт
+  удалить тестовую БД в конце прогона.
 - mypy в режиме `strict` с плагинами django-stubs и drf-stubs. Generic-классы Django
   (`UserAdmin[User]`) работают в runtime благодаря `django_stubs_ext.monkeypatch()` в
   настройках. `# type: ignore` — только с кодом ошибки и причиной в комментарии.
