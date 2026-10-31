@@ -86,9 +86,19 @@ def due() -> datetime:
     return latest
 
 
+def queue_in_order(event: Event, addresses: Sequence[str]) -> list[OutboxEmail]:
+    """Queue tickets a millisecond apart, in the order given: the test, not the clock, sets it."""
+    queued = [queue_ticket(event, address) for address in addresses]
+    start = due()
+    for i, email in enumerate(queued):
+        email.next_attempt_at = start + timedelta(milliseconds=i)
+        email.save(update_fields=["next_attempt_at"])
+    return queued
+
+
 def test_pending_email_is_sent_and_marked_sent(event: Event) -> None:
     queued = queue_ticket(event, "a@x.io")
-    now = timezone.now()
+    now = due()
 
     sent = process_batch(now=now)
 
@@ -120,7 +130,7 @@ def test_email_waits_for_its_next_attempt(event: Event) -> None:
 
 
 def test_batch_takes_the_oldest_due_emails_up_to_its_size(event: Event) -> None:
-    queued = [queue_ticket(event, f"u{i}@x.io") for i in range(BATCH_SIZE + 1)]
+    queued = queue_in_order(event, [f"u{i}@x.io" for i in range(BATCH_SIZE + 1)])
 
     sent = process_batch(now=due())
 
@@ -143,7 +153,7 @@ def test_event_title_with_line_breaks_is_sent_with_a_one_line_subject(event: Eve
 def test_failed_send_is_retried_later(event: Event, refuse: Refuse) -> None:
     refuse("a@x.io")
     queued = queue_ticket(event, "a@x.io")
-    now = timezone.now()
+    now = due()
 
     assert process_batch(now=now) == []
 
@@ -163,7 +173,7 @@ def test_pause_between_attempts_doubles_and_the_last_attempt_fails_the_email(
 ) -> None:
     refuse("a@x.io")
     queued = queue_ticket(event, "a@x.io")
-    now = timezone.now()
+    now = due()
     pauses = []
 
     for _ in range(MAX_ATTEMPTS - 1):
@@ -184,7 +194,7 @@ def test_pause_between_attempts_doubles_and_the_last_attempt_fails_the_email(
 def test_email_is_sent_when_the_server_accepts_it_again(event: Event, refuse: Refuse) -> None:
     refuse("a@x.io")
     queued = queue_ticket(event, "a@x.io")
-    now = timezone.now()
+    now = due()
     process_batch(now=now)
 
     refuse()
@@ -207,9 +217,7 @@ def test_failed_email_does_not_stop_the_batch(
     event: Event, refuse: Refuse, error: Callable[[str], Exception]
 ) -> None:
     refuse("bad@x.io", error=error)
-    first = queue_ticket(event, "a@x.io")
-    bad = queue_ticket(event, "bad@x.io")
-    last = queue_ticket(event, "b@x.io")
+    first, bad, last = queue_in_order(event, ["a@x.io", "bad@x.io", "b@x.io"])
 
     assert process_batch(now=due()) == [first.id, last.id]
 
