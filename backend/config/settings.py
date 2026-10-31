@@ -139,8 +139,9 @@ SPECTACULAR_SETTINGS = {
     },
 }
 
-# Applied by Django after uvicorn configured its own logging, so the access logger is described
-# again here, with uvicorn's format plus the filter: defining a logger replaces its handlers.
+# Applied by Django after uvicorn configured its own logging, and defining a logger replaces its
+# handlers: the access loggers of uvicorn and of runserver (`django.server`) are described again
+# here, with their own formats plus the filter.
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -150,6 +151,11 @@ LOGGING = {
             "()": "uvicorn.logging.AccessFormatter",
             "fmt": '%(levelprefix)s %(client_addr)s - "%(request_line)s" %(status_code)s',
         },
+        "django.server": {
+            "()": "django.utils.log.ServerFormatter",
+            "format": "[{server_time}] {message}",
+            "style": "{",
+        },
     },
     "handlers": {
         "access": {
@@ -157,10 +163,21 @@ LOGGING = {
             "formatter": "access",
             "stream": "ext://sys.stdout",
         },
+        "django.server": {
+            "class": "logging.StreamHandler",
+            "formatter": "django.server",
+            "level": "INFO",
+        },
     },
     "loggers": {
         "uvicorn.access": {
             "handlers": ["access"],
+            "filters": ["redact_ticket_tokens"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "django.server": {
+            "handlers": ["django.server"],
             "filters": ["redact_ticket_tokens"],
             "level": "INFO",
             "propagate": False,
