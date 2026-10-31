@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/vue-query";
 import { useI18n } from "vue-i18n";
 
 import { orgEventsQuery } from "@/entities/event";
-import { routes } from "@/shared/config";
+import { checkinPath, routes } from "@/shared/config";
 import { Alert, AlertDescription } from "@/shared/ui/shadcn/alert";
 import { Button } from "@/shared/ui/shadcn/button";
 import { CardHeading } from "@/shared/ui/card-heading";
@@ -42,10 +42,15 @@ function startsAt(iso: string): string {
           <CardHeader>
             <CardHeading :level="2">{{ event.title }}</CardHeading>
           </CardHeader>
-          <CardContent class="text-muted-foreground text-sm">
-            {{ startsAt(event.starts_at) }} ·
-            {{ t("seats", { confirmed: event.confirmed, capacity: event.capacity }) }} ·
-            {{ t("waitlist", { count: event.waitlisted }) }}
+          <CardContent class="flex items-center justify-between gap-4">
+            <span class="text-muted-foreground text-sm">
+              {{ startsAt(event.starts_at) }} ·
+              {{ t("seats", { confirmed: event.confirmed, capacity: event.capacity }) }} ·
+              {{ t("waitlist", { count: event.waitlisted }) }}
+            </span>
+            <Button variant="outline" size="sm" as-child>
+              <RouterLink :to="checkinPath(event.id)">{{ t("checkin") }}</RouterLink>
+            </Button>
           </CardContent>
         </Card>
       </li>
@@ -62,6 +67,7 @@ function startsAt(iso: string): string {
   "retry": "Повторить",
   "empty": "Событий пока нет",
   "seats": "Занято {confirmed} из {capacity}",
-  "waitlist": "в листе ожидания {count}"
+  "waitlist": "в листе ожидания {count}",
+  "checkin": "Чекин"
 }
 </i18n>
