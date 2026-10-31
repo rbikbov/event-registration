@@ -78,6 +78,13 @@ class IgnoreAccept(BaseContentNegotiation):
         return renderer, renderer.media_type
 
 
+# At module level: streams share a snapshot read by this function, a closure per request would
+# make each stream read its own.
+def org_event_snapshot(event_id: int) -> dict[str, Any]:
+    event = Event.objects.with_registration_counts().get(pk=event_id)
+    return OrgEventSerializer(event).data
+
+
 class OrgEventStreamView(APIView):
     """The organizer's event panel live: the event with its counts, as server-sent events."""
 
@@ -99,12 +106,8 @@ class OrgEventStreamView(APIView):
         # Rights are checked once, on connecting.
         get_org_event(request.user, event_id)  # type: ignore[arg-type]  # IsAuthenticated: never AnonymousUser here
 
-        def snapshot() -> dict[str, Any]:
-            event = Event.objects.with_registration_counts().get(pk=event_id)
-            return OrgEventSerializer(event).data
-
         response = StreamingHttpResponse(
-            snapshot_stream(event_id, snapshot), content_type="text/event-stream"
+            snapshot_stream(event_id, org_event_snapshot), content_type="text/event-stream"
         )
         response["Cache-Control"] = "no-cache"
         # Turns nginx proxy buffering off for the stream: buffering alone does not hold it

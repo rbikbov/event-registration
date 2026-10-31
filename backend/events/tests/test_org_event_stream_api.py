@@ -7,6 +7,7 @@ from typing import Any
 
 import pytest
 from asgiref.sync import sync_to_async
+from django.db import connection
 from django.http import StreamingHttpResponse
 from django.test import AsyncClient
 from django.utils import timezone
@@ -50,6 +51,14 @@ def confirmed(event: Event, email: str) -> Registration:
     return Registration.objects.create(
         event=event, email=email, name="N", status=Registration.Status.CONFIRMED
     )
+
+
+def checked_in(event_id: int, code: str) -> None:
+    try:
+        check_in(event_id, code)
+    finally:
+        # A connection left open in the worker thread keeps the test database from being dropped.
+        connection.close()
 
 
 def url(event_id: int) -> str:
@@ -106,13 +115,13 @@ async def test_check_in_sends_a_new_snapshot(client: AsyncClient, event: Event) 
 
     async with stream(client, event.id) as response:
         await next_message(response)
-        await sync_to_async(check_in)(event.id, ticket.ticket_code)
+        await sync_to_async(checked_in)(event.id, ticket.ticket_code)
 
         _, snapshot = await next_message(response)
         assert snapshot["checked_in"] == 1
 
 
-async def test_changes_not_yet_read_give_the_latest_snapshot(
+async def test_changes_in_a_row_end_with_the_latest_snapshot(
     client: AsyncClient, event: Event
 ) -> None:
     first = await sync_to_async(confirmed)(event, "a@x.io")
@@ -120,11 +129,15 @@ async def test_changes_not_yet_read_give_the_latest_snapshot(
 
     async with stream(client, event.id) as response:
         await next_message(response)
-        await sync_to_async(check_in)(event.id, first.ticket_code)
-        await sync_to_async(check_in)(event.id, second.ticket_code)
+        await sync_to_async(checked_in)(event.id, first.ticket_code)
+        await sync_to_async(checked_in)(event.id, second.ticket_code)
 
-        _, snapshot = await next_message(response)
-        assert snapshot["checked_in"] == 2
+        # The first change may already be read when the second commits: its snapshot can come
+        # first, the last one must have both. A stream stuck on 1 fails on the timeout.
+        counts = [(await next_message(response))[1]["checked_in"]]
+        while counts[-1] != 2:
+            counts.append((await next_message(response))[1]["checked_in"])
+        assert counts in ([2], [1, 2])
 
 
 # Errors are plain JSON responses, so the synchronous client: AsyncClient leaves the connection of
