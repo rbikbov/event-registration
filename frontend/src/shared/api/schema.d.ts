@@ -203,7 +203,11 @@ export interface components {
         CheckInRequestRequest: {
             code: string;
         };
-        /** @description What the entrance screen shows: no full email, the queue can see the screen. */
+        /**
+         * @description What the entrance screen shows: no full email, the queue can see the screen.
+         *
+         *     A repeat is `already_checked_in` with the time of the first check-in.
+         */
         CheckInResult: {
             result: components["schemas"]["ResultEnum"];
             name: string;
@@ -285,9 +289,10 @@ export interface components {
         RegistrationStatusEnum: "confirmed" | "waitlisted" | "cancelled";
         /**
          * @description * `checked_in` - checked_in
+         *     * `already_checked_in` - already_checked_in
          * @enum {string}
          */
-        ResultEnum: "checked_in";
+        ResultEnum: "checked_in" | "already_checked_in";
         /**
          * @description The ticket page behind the manage token from the email.
          *
@@ -607,6 +612,13 @@ export interface operations {
             };
             /** @description No such event, or no such ticket at it */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description The ticket is waitlisted or cancelled */
+            409: {
                 headers: {
                     [name: string]: unknown;
                 };

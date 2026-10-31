@@ -269,6 +269,8 @@ paths:
           description: Another organizer's event
         '404':
           description: No such event, or no such ticket at it
+        '409':
+          description: The ticket is waitlisted or cancelled
   /api/tickets/{manage_token}/:
     get:
       operationId: tickets_retrieve
@@ -330,8 +332,10 @@ components:
       - code
     CheckInResult:
       type: object
-      description: 'What the entrance screen shows: no full email, the queue can see
-        the screen.'
+      description: |-
+        What the entrance screen shows: no full email, the queue can see the screen.
+
+        A repeat is `already_checked_in` with the time of the first check-in.
       properties:
         result:
           $ref: '#/components/schemas/ResultEnum'
@@ -530,8 +534,11 @@ components:
     ResultEnum:
       enum:
       - checked_in
+      - already_checked_in
       type: string
-      description: '* `checked_in` - checked_in'
+      description: |-
+        * `checked_in` - checked_in
+        * `already_checked_in` - already_checked_in
     Ticket:
       type: object
       description: |-

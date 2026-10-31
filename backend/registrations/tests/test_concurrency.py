@@ -9,7 +9,7 @@ from accounts.models import User
 from config.tests.concurrency import run_together
 from events.models import Event
 from registrations.models import Registration
-from registrations.services import cancel, register, waitlist_position
+from registrations.services import cancel, check_in, register, waitlist_position
 
 # Threads open their own connections, so the data must be committed, not rolled back at the end.
 pytestmark = pytest.mark.django_db(transaction=True)
@@ -117,3 +117,18 @@ def test_parallel_cancels_of_different_tokens_fill_seats_from_the_queue_in_order
         "d@x.io": "confirmed",
         "e@x.io": "waitlisted",
     }
+
+
+def test_parallel_check_ins_of_one_code_mark_it_once(event: Event) -> None:
+    registration = Registration.objects.create(
+        event=event, email="a@x.io", name="Ann", status=Registration.Status.CONFIRMED
+    )
+
+    results = run_together(
+        [partial(check_in, event.id, registration.ticket_code) for _ in range(8)]
+    )
+
+    assert sorted(r.already_checked_in for r in results) == [False] + [True] * 7
+    registration.refresh_from_db()
+    # Every repeat reports the time of the one check-in that passed.
+    assert {r.registration.checked_in_at for r in results} == {registration.checked_in_at}
