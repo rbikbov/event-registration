@@ -6,7 +6,8 @@ import { publicEventsQuery } from "@/entities/event";
 import { eventPath, routes } from "@/shared/config";
 import { Alert, AlertDescription } from "@/shared/ui/shadcn/alert";
 import { Button } from "@/shared/ui/shadcn/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/shadcn/card";
+import { CardHeading } from "@/shared/ui/card-heading";
+import { Card, CardContent, CardHeader } from "@/shared/ui/shadcn/card";
 
 const { t, d } = useI18n({ useScope: "local" });
 const { data: events, isPending, isError, refetch } = useQuery(publicEventsQuery);
@@ -39,9 +40,9 @@ function startsAt(iso: string): string {
       <li v-for="event in events" :key="event.id">
         <Card>
           <CardHeader>
-            <CardTitle as="h2">
+            <CardHeading :level="2">
               <RouterLink class="underline" :to="eventPath(event.id)">{{ event.title }}</RouterLink>
-            </CardTitle>
+            </CardHeading>
           </CardHeader>
           <CardContent class="text-muted-foreground text-sm">
             {{ startsAt(event.starts_at) }} ·

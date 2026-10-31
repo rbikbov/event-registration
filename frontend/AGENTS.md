@@ -41,5 +41,7 @@ src/widgets|features/            появляются с первым срезо
 9. Компонент из `shared/ui/shadcn/` не правится: нужен другой вид — обёртка в `shared/ui/`
    или токены в `app/styles.css`. Новый — `pnpm dlx shadcn-vue@latest add <имя>`, только
    с потребителем.
+   Заголовок карточки — `CardHeading` с `level` (`shared/ui/card-heading`), не `CardTitle`:
+   тот всегда `h3` и молча игнорирует `as`.
 10. Пути маршрутов — только из `routes` (`@/shared/config`): ни в роутере, ни в
     `router.push`/`RouterLink`, ни в тестах строкой `"/..."` не пишутся.

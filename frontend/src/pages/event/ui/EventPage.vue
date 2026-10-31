@@ -9,7 +9,8 @@ import { AppError } from "@/shared/api";
 import { routes } from "@/shared/config";
 import { Alert, AlertDescription } from "@/shared/ui/shadcn/alert";
 import { Button } from "@/shared/ui/shadcn/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/shadcn/card";
+import { CardHeading } from "@/shared/ui/card-heading";
+import { Card, CardContent, CardHeader } from "@/shared/ui/shadcn/card";
 import { Input } from "@/shared/ui/shadcn/input";
 import { Label } from "@/shared/ui/shadcn/label";
 
@@ -127,7 +128,7 @@ const fields: { name: "email" | "name"; type: string; autocomplete: string }[] =
 
       <Card class="mt-6">
         <CardHeader>
-          <CardTitle as="h2">{{ t("register") }}</CardTitle>
+          <CardHeading :level="2">{{ t("register") }}</CardHeading>
         </CardHeader>
         <CardContent>
           <Alert v-if="result" role="status">

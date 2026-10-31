@@ -9,6 +9,7 @@ import { AppError } from "@/shared/api";
 import { eventPath } from "@/shared/config";
 import { Alert, AlertDescription } from "@/shared/ui/shadcn/alert";
 import { Button } from "@/shared/ui/shadcn/button";
+import { CardHeading } from "@/shared/ui/card-heading";
 import { Card, CardContent, CardHeader } from "@/shared/ui/shadcn/card";
 
 import { cancelTicket, ticketQuery } from "../api/ticket";
@@ -71,8 +72,7 @@ function startsAt(iso: string): string {
     </Alert>
     <Card v-else-if="ticket">
       <CardHeader>
-        <!-- CardTitle is always an h3; the event title is the heading of the page. -->
-        <h1 class="text-2xl leading-none font-semibold">{{ ticket.event.title }}</h1>
+        <CardHeading :level="1" class="text-2xl">{{ ticket.event.title }}</CardHeading>
         <p class="text-muted-foreground text-sm">{{ startsAt(ticket.event.starts_at) }}</p>
       </CardHeader>
       <CardContent class="grid gap-4">
