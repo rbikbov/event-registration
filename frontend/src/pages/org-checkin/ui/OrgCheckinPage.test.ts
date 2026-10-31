@@ -121,6 +121,29 @@ describe("OrgCheckinPage", () => {
     expect(wrapper.get('[role="alert"]').text()).toBe("Это событие другого организатора");
   });
 
+  it("keeps the field read-only while the code is being checked", async () => {
+    let answer: () => void = () => undefined;
+    server.use(
+      http.post(
+        CHECKIN,
+        () =>
+          new Promise<Response>((resolve) => {
+            answer = () => resolve(HttpResponse.json(checkedIn));
+          }),
+      ),
+    );
+    const wrapper = await mountPage();
+
+    await wrapper.get("#code").setValue("ABCD2345");
+    await wrapper.get("form").trigger("submit");
+    await flushPromises();
+    expect(wrapper.get("#code").attributes("readonly")).toBeDefined();
+
+    answer();
+    await flushPromises();
+    expect(wrapper.get("#code").attributes("readonly")).toBeUndefined();
+  });
+
   it("does not send an empty code", async () => {
     let requests = 0;
     server.use(
