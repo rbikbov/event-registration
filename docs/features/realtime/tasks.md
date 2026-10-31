@@ -65,3 +65,8 @@ backend → frontend → e2e/доки. Логика — тест вперёд; �
 - Настройки под `runserver` (`whitenoise.runserver_nostatic`, логгер `django.server` в
   `LOGGING`) остались после перехода `make dev-backend` на uvicorn: убрать или оставить для
   ручного `manage.py runserver`.
+- Vitest под нагрузкой (параллельный прогон, load average ~8) один раз уронил тесты страниц,
+  которые этап не трогал: `LoginPage` (подсказка с `@`), `OrgEventNewPage` (создание и
+  возврат к списку), `OrgCheckinPage` (пустое поле после отметки), `TicketPage` (ошибка
+  загрузки с повтором); следующий прогон — зелёный. Похоже на ожидание одного
+  `flushPromises()` там, где запрос через MSW идёт дольше тика.

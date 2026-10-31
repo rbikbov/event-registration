@@ -30,16 +30,26 @@ const status = computed(() => statusFilter(route.query.status));
 const event = useQuery(computed(() => orgEventQuery(eventId.value)));
 const registrations = useQuery(computed(() => orgRegistrationsQuery(eventId.value, status.value)));
 
-// Live counts: each snapshot replaces those in the cached event. Before the event has loaded
-// there is nothing to update, and its GET reads counts at least as fresh.
+// Live counts: a snapshot replaces the counts of the cached event. A GET of the event in flight
+// may have read them before the snapshot and would overwrite it on answering, and before the
+// event has loaded there is nothing to write into: then that GET is cancelled and the event is
+// read again, after the snapshot. Invalidation alone would not do: it joins a first load in
+// flight instead of cancelling it.
 const queryClient = useQueryClient();
 useEventStream<OrgEventStats>(
   () => orgEventStreamUrl(eventId.value),
   "stats",
   (stats) => {
-    queryClient.setQueryData(orgEventQuery(eventId.value).queryKey, (cached) =>
-      cached ? { ...cached, ...stats } : cached,
-    );
+    const { queryKey } = orgEventQuery(eventId.value);
+    const cached = queryClient.getQueryData(queryKey);
+    if (!cached || queryClient.isFetching({ queryKey, exact: true }) > 0) {
+      // Errors of the refetch are the query's own: the page shows them through QueryState.
+      void queryClient
+        .cancelQueries({ queryKey, exact: true })
+        .then(() => queryClient.invalidateQueries({ queryKey, exact: true }));
+      return;
+    }
+    queryClient.setQueryData(queryKey, { ...cached, ...stats });
   },
 );
 
