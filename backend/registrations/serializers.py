@@ -39,6 +39,7 @@ class CheckInResultSerializer(serializers.Serializer[dict[str, Any]]):
 
 class RegistrationFilterSerializer(serializers.Serializer[None]):
     status = serializers.ChoiceField(choices=Registration.Status.choices, required=False)
+    page = serializers.IntegerField(min_value=1, default=1)
 
 
 class OrgRegistrationSerializer(serializers.Serializer[Registration]):

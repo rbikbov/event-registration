@@ -69,6 +69,7 @@ def test_detail_has_the_event_and_its_counts(client: APIClient, organizer: User)
         "waitlisted": 1,
         "checked_in": 2,
         "free_seats": 2,
+        "cancelled": 1,
     }
 
 
@@ -77,12 +78,13 @@ def test_detail_of_an_event_without_registrations_has_zero_counts(
 ) -> None:
     body = client.get(url(make_event(organizer).id)).json()
 
-    assert (body["confirmed"], body["waitlisted"], body["checked_in"], body["free_seats"]) == (
-        0,
-        0,
-        0,
-        5,
-    )
+    assert (
+        body["confirmed"],
+        body["waitlisted"],
+        body["checked_in"],
+        body["free_seats"],
+        body["cancelled"],
+    ) == (0, 0, 0, 5, 0)
 
 
 def test_detail_of_another_organizers_event_is_403(client: APIClient) -> None:

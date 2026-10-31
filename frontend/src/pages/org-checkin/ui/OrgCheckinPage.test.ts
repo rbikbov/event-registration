@@ -22,6 +22,7 @@ const event = {
   waitlisted: 0,
   checked_in: 1,
   free_seats: 7,
+  cancelled: 0,
 };
 const checkedIn = {
   result: "checked_in",

@@ -189,12 +189,18 @@ def check_in(event_id: int, code: str, *, now: datetime | None = None) -> CheckI
         return CheckInResult(registration, already_checked_in=not marked)
 
 
-def event_registrations(event_id: int, status: str | None = None) -> QuerySet[Registration]:
-    """The event's registrations in queue order, all or of one `status`, for the organizer.
+PAGE_SIZE = 50
 
-    A waitlisted one has its `position`, the others None: numbered in the same query by a
-    window over the waitlist, in the order waitlist_position counts. The status filter is
-    applied before the window, and filtering by waitlisted keeps the whole waitlist.
+
+def event_registrations(
+    event_id: int, status: str | None = None, page: int = 1
+) -> QuerySet[Registration]:
+    """A page of the event's registrations in queue order, all or of one `status`.
+
+    For the organizer, PAGE_SIZE a page from 1; past the end, an empty one. A waitlisted
+    registration has its `position`, the others None: numbered in the same query by a window
+    over the waitlist, in the order waitlist_position counts. The status filter is applied
+    before the window, and the page after it: the numbers on a page go on from the previous.
     """
     queue_order = (F("queued_at").asc(), F("id").asc())
     registrations = Registration.objects.filter(event_id=event_id)
@@ -207,7 +213,7 @@ def event_registrations(event_id: int, status: str | None = None) -> QuerySet[Re
                 then=Window(RowNumber(), partition_by=F("status"), order_by=queue_order),
             )
         )
-    ).order_by(*queue_order)
+    ).order_by(*queue_order)[(page - 1) * PAGE_SIZE : page * PAGE_SIZE]
 
 
 def mask_email(email: str) -> str:

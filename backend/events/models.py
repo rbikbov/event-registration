@@ -24,6 +24,7 @@ class EventQuerySet(models.QuerySet["Event"]):
         return self.annotate(
             confirmed=Count("registrations", filter=Q(registrations__status="confirmed")),
             waitlisted=Count("registrations", filter=Q(registrations__status="waitlisted")),
+            cancelled=Count("registrations", filter=Q(registrations__status="cancelled")),
             # A checked-in ticket is always confirmed (a CHECK on Registration).
             checked_in=Count("registrations", filter=Q(registrations__checked_in_at__isnull=False)),
             free_seats=F("capacity") - F("confirmed"),

@@ -203,7 +203,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description The event's participants for the organizer, in queue order, optionally of one status. */
+        /**
+         * @description A page of the event's participants for the organizer, in queue order, of one status or all.
+         *
+         *     The number of pages comes from the counts of the event, not from this response.
+         */
         get: operations["org_events_registrations_list"];
         put?: never;
         post?: never;
@@ -333,6 +337,7 @@ export interface components {
             readonly waitlisted: number;
             readonly checked_in: number;
             readonly free_seats: number;
+            readonly cancelled: number;
         };
         /**
          * @description A row of the organizer's participant table: the full email, unlike the entrance screen.
@@ -794,6 +799,7 @@ export interface operations {
     org_events_registrations_list: {
         parameters: {
             query?: {
+                page?: number;
                 /**
                  * @description * `confirmed` - Confirmed
                  *     * `waitlisted` - Waitlisted

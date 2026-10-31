@@ -70,6 +70,7 @@ async def test_stream_starts_with_a_snapshot(client: AsyncClient, event: Event) 
                 "waitlisted": 1,
                 "checked_in": 0,
                 "free_seats": 4,
+                "cancelled": 0,
             },
         )
 

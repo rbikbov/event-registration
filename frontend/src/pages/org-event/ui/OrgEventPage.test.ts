@@ -24,6 +24,7 @@ const event = {
   waitlisted: 1,
   checked_in: 1,
   free_seats: 0,
+  cancelled: 0,
 };
 const ann = {
   id: 1,
