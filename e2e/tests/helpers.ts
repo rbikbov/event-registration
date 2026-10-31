@@ -1,20 +1,25 @@
-import { expect, type APIRequestContext, type Browser } from "@playwright/test";
+import { expect, type APIRequestContext, type Browser, type Page } from "@playwright/test";
 
 // Created by `create_demo_users` when the backend starts (docs/architecture.md, "Окружение").
 export const ORGANIZER = { email: "demo@example.com", password: "demo" };
 const MAILPIT_URL = process.env.E2E_MAILPIT_URL ?? "http://localhost:8025";
 
-// The organizer works in a context of their own and closes it: participants never share it.
-export async function createEvent(
-  browser: Browser,
-  { title, capacity }: { title: string; capacity: number },
-): Promise<void> {
-  const context = await browser.newContext();
-  const page = await context.newPage();
+// The organizer works in a context of their own: participants never share it.
+export async function organizerPage(browser: Browser): Promise<Page> {
+  const page = await (await browser.newContext()).newPage();
   await page.goto("/login");
   await page.getByLabel("Email").fill(ORGANIZER.email);
   await page.getByLabel("Пароль").fill(ORGANIZER.password);
   await page.getByRole("button", { name: "Войти" }).click();
+  await expect(page.getByRole("heading", { name: "Мои события" })).toBeVisible();
+  return page;
+}
+
+export async function createEvent(
+  browser: Browser,
+  { title, capacity }: { title: string; capacity: number },
+): Promise<void> {
+  const page = await organizerPage(browser);
   await page.getByRole("link", { name: "Создать событие" }).click();
   await page.getByLabel("Название", { exact: true }).fill(title);
   await page
@@ -23,7 +28,7 @@ export async function createEvent(
   await page.getByLabel("Мест", { exact: true }).fill(String(capacity));
   await page.getByRole("button", { name: "Создать", exact: true }).click();
   await expect(page.getByRole("heading", { name: title })).toBeVisible();
-  await context.close();
+  await page.context().close();
 }
 
 // The worker sends the email after the change commits, so it is polled for. The mailbox is
