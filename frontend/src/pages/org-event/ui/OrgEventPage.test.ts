@@ -318,4 +318,81 @@ describe("OrgEventPage", () => {
 
     expect(streams.opened[0]?.closed).toBe(true);
   });
+
+  // The server's counts at the moment it reads them. A held answer waits for `release`, so a
+  // GET can answer after a snapshot it read before; `read` resolves once the held GET has read.
+  function heldEvent() {
+    let current = event;
+    let held: { read: () => void; gate: Promise<void> } | null = null;
+    let open = () => {};
+    const handler = http.get(EVENT, async () => {
+      const counts = current;
+      if (held) {
+        held.read();
+        await held.gate;
+      }
+      return HttpResponse.json(counts);
+    });
+    return {
+      handler,
+      hold(): Promise<void> {
+        return new Promise((read) => {
+          held = { read, gate: new Promise((resolve) => (open = resolve)) };
+        });
+      },
+      change(counts: Partial<typeof event>) {
+        current = { ...current, ...counts };
+      },
+      release() {
+        held = null;
+        open();
+      },
+    };
+  }
+
+  // A refetch started by the snapshot goes through MSW in more than one tick.
+  async function settled(queryClient: QueryClient) {
+    await vi.waitFor(() => expect(queryClient.isFetching()).toBe(0));
+    await flushPromises();
+  }
+
+  const snapshot = { confirmed: 2, waitlisted: 1, checked_in: 2, free_seats: 0 };
+
+  it("keeps a snapshot that came while an older GET of the event was in flight", async () => {
+    const backend = heldEvent();
+    server.use(
+      backend.handler,
+      http.get(REGISTRATIONS, () => HttpResponse.json([])),
+    );
+    const { wrapper, queryClient } = await mountPage();
+    await flushPromises();
+
+    const read = backend.hold();
+    void queryClient.refetchQueries({ queryKey: ["org", "events", 7] });
+    await read;
+    backend.change(snapshot);
+    streams.opened[0]?.emit("stats", snapshot);
+    backend.release();
+    await settled(queryClient);
+
+    expect(counter(wrapper, "checkedIn")).toBe("2");
+  });
+
+  it("keeps a snapshot that came before the event loaded", async () => {
+    const backend = heldEvent();
+    const read = backend.hold();
+    server.use(
+      backend.handler,
+      http.get(REGISTRATIONS, () => HttpResponse.json([])),
+    );
+    const { wrapper, queryClient } = await mountPage();
+    await read;
+
+    backend.change(snapshot);
+    streams.opened[0]?.emit("stats", snapshot);
+    backend.release();
+    await settled(queryClient);
+
+    expect(counter(wrapper, "checkedIn")).toBe("2");
+  });
 });
