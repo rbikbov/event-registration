@@ -91,7 +91,9 @@ def process_batch(*, now: datetime | None = None) -> list[int]:
             # A connection per email: after an SMTP error a shared one may be left broken.
             try:
                 EmailMessage(email.subject, email.body, to=[email.to]).send()
-            except OSError as error:  # SMTP and network errors; smtplib's are OSError too.
+            # Any error, not only SMTP and network ones (OSError): a bug that rolled the batch
+            # back would resend the emails already sent in it and never fail this one.
+            except Exception as error:
                 _record_failure(email, error, now)
                 continue
             email.status = OutboxEmail.Status.SENT
@@ -101,7 +103,7 @@ def process_batch(*, now: datetime | None = None) -> list[int]:
         return sent
 
 
-def _record_failure(email: OutboxEmail, error: OSError, now: datetime) -> None:
+def _record_failure(email: OutboxEmail, error: Exception, now: datetime) -> None:
     email.attempts += 1
     email.last_error = f"{type(error).__name__}: {error}"
     if email.attempts >= MAX_ATTEMPTS:
