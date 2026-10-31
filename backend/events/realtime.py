@@ -61,7 +61,11 @@ def put_latest(queue: asyncio.Queue[Any], item: Any) -> None:
 
 
 class Feed:
-    """The subscribers of one snapshot of one event: a change is read once for all of them."""
+    """The subscribers of one snapshot of one event: a change is read once for all of them.
+
+    Reads go one after another, and a read goes only to the subscribers that were there when it
+    began: a subscriber never gets a snapshot older than one it already has.
+    """
 
     def __init__(self, event_id: int, snapshot: Snapshot) -> None:
         self.event_id = event_id
@@ -76,12 +80,19 @@ class Feed:
         if self._reading is None:
             self._reading = asyncio.create_task(self._read())
 
+    def joined(self, queue: asyncio.Queue[Any]) -> None:
+        # Its first snapshot is read by the feed too: a read of its own could end before a read
+        # of the feed that began earlier, and that older one would come next.
+        self.queues.add(queue)
+        self.changed()
+
     async def _read(self) -> None:
-        # A change while a read is running may have been committed after the read began, so
-        # it is read again; the changes in between are all in that one read.
+        # A change or a subscriber while a read is running came after the read began, so it is
+        # read again; the changes in between are all in that one read.
         try:
             while self._stale:
                 self._stale = False
+                readers = set(self.queues)
                 try:
                     # Not thread-sensitive: the task outlives the request that started it, and
                     # that request's thread with it.
@@ -90,7 +101,8 @@ class Feed:
                     )
                 except Exception as error:
                     item = error
-                for queue in self.queues:
+                # Not to the ones that left meanwhile.
+                for queue in readers & self.queues:
                     put_latest(queue, item)
         finally:
             self._reading = None
@@ -119,11 +131,11 @@ class StatsListener:
     async def subscription(
         self, event_id: int, snapshot: Snapshot
     ) -> AsyncIterator[asyncio.Queue[Any]]:
-        """A queue of `snapshot`s of the event, read after each change of its stats.
+        """A queue of `snapshot`s of the event: the first one, then one after each change.
 
         An item is the snapshot or the exception that reading it raised. LISTEN is in effect
-        when the context is entered: a change committed after that is not missed, so a snapshot
-        read inside the context is never older than the next item.
+        before the first snapshot is read: a change committed after that read began is not
+        missed, it brings another snapshot.
         """
         queue: asyncio.Queue[Any] = asyncio.Queue(maxsize=1)
         async with self._lock:
@@ -143,7 +155,7 @@ class StatsListener:
                 self._dispatch = asyncio.create_task(self._deliver(listening))
             feeds = self._feeds.setdefault(event_id, {})
             feed = feeds.setdefault(snapshot, Feed(event_id, snapshot))
-            feed.queues.add(queue)
+            feed.joined(queue)
         try:
             yield queue
         finally:
@@ -179,13 +191,12 @@ listener = StatsListener()
 async def snapshot_stream(event_id: int, snapshot: Snapshot) -> AsyncGenerator[bytes]:
     """SSE messages `snapshot`: one right away, then one after each change of the event.
 
-    `snapshot` is a synchronous read of the event as its GET has it. After a change it is read
-    once for all the streams of the process that pass the same function for the event.
+    `snapshot` is a synchronous read of the event as its GET has it, read once for all the
+    streams of the process that pass the same function for the event.
     """
     async with listener.subscription(event_id, snapshot) as snapshots:
-        data = await sync_to_async(read_snapshot)(snapshot, event_id)
         while True:
-            yield f"event: snapshot\ndata: {json.dumps(data)}\n\n".encode()
             data = await snapshots.get()
             if isinstance(data, Exception):
                 raise data
+            yield f"event: snapshot\ndata: {json.dumps(data)}\n\n".encode()
