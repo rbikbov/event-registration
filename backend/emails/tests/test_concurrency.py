@@ -1,7 +1,9 @@
 from datetime import timedelta
+from functools import partial
 
 import pytest
 from django.core import mail
+from django.db.models import Max
 from django.utils import timezone
 
 from accounts.models import User
@@ -30,7 +32,12 @@ def test_two_workers_send_each_email_once() -> None:
         )
         enqueue_email(OutboxEmail.Kind.TICKET, registration)
 
-    sent = run_together([process_batch, process_batch])
+    # The latest queuing time, not the clock now: the wall clock may step back (WSL2 does by
+    # about 0.4 s every 30 s), and the emails queued before the step are then not due yet.
+    due = OutboxEmail.objects.aggregate(latest=Max("next_attempt_at"))["latest"]
+    batch = partial(process_batch, now=due)
+
+    sent = run_together([batch, batch])
 
     all_ids = sorted(OutboxEmail.objects.values_list("id", flat=True))
     assert sorted(sent[0] + sent[1]) == all_ids

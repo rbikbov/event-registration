@@ -510,6 +510,11 @@ Django + Vue. Шаблоны spec и задач фазы — `docs/features/_tem
 - Сгенерированные `backend/openapi.yaml` и `frontend/src/shared/api/schema.d.ts` исключены из
   Prettier и ESLint: `make schema-check` сравнивает их с генерацией байт в байт.
 - `docs/task.md` — текст задания как есть; Prettier его не трогает.
+- В WSL2 часы стены (`time.time()`, `timezone.now()`) отскакивают назад примерно на 0,4 с
+  каждые ~30 с, даже без нагрузки: так хост подводит часы виртуальной машины. Тест, который
+  ставит письмо и сразу вызывает `process_batch()` с текущим временем, может найти его
+  «из будущего» и не отправить. Момент «письма уже пора отправить» тест передаёт в `now`
+  (`emails/tests/test_concurrency.py`), а не берёт с часов.
 - pnpm запускает install-скрипты только у пакетов из `pnpm.onlyBuiltDependencies` в корневом
   `package.json` (`unrs-resolver` — резолвер импортов для ESLint, `vue-demi`).
 
