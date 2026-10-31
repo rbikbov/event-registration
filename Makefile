@@ -106,7 +106,9 @@ check-e2e: ## e2e: ESLint and tsc for the test code (does not run the tests)
 	cd e2e && pnpm typecheck
 
 .PHONY: e2e
-e2e: up ## Start the stack and run Playwright tests against it
+# Target-specific variables reach prerequisites: `up` builds the frontend for the gateway.
+e2e: export FRONTEND_TARGET := gateway
+e2e: up ## Start the stack with the nginx gateway and run Playwright tests against it
 	cd e2e && pnpm test
 
 # Slot stacks: separate compose projects with their own containers, volumes and ports, so
@@ -142,7 +144,8 @@ stack-up: stack-slot ## Stack of slot SLOT: frontend on 5173+SLOT, Mailpit on 80
 	$(STACK_COMPOSE) up -d --build --wait
 
 .PHONY: stack-e2e
-stack-e2e: stack-up ## Start the stack of slot SLOT and run Playwright tests against it
+stack-e2e: export FRONTEND_TARGET := gateway
+stack-e2e: stack-up ## Start the stack of slot SLOT with the gateway and run Playwright tests
 	cd e2e && E2E_BASE_URL=http://localhost:$(STACK_FRONTEND_PORT) \
 		E2E_MAILPIT_URL=http://localhost:$(call slot_port,8025) pnpm test
 
@@ -174,7 +177,8 @@ dev-frontend: ## Frontend dev server on :5173, proxies /api to localhost:8000
 .PHONY: dev-backend
 dev-backend: ## Backend dev server on :8000 (needs `make dev-deps`)
 	$(BACKEND) uv run python manage.py migrate
-	$(BACKEND) uv run uvicorn config.asgi:application --reload --port 8000
+	$(BACKEND) uv run uvicorn config.asgi:application --reload --port 8000 \
+		--timeout-graceful-shutdown 3
 
 .PHONY: dev-worker
 dev-worker: ## Email worker: sends the outbox to Mailpit, http://localhost:8025 (needs `make dev-deps`)

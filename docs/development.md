@@ -55,7 +55,9 @@ make dev-worker     # терминал 3, если нужны письма: outb
 ```
 
 `make dev-backend` — uvicorn (ASGI), как в Docker, а не `runserver`: `runserver` — WSGI, и
-поток SSE (асинхронный генератор) он отдаёт только целиком, то есть никогда.
+поток SSE (асинхронный генератор) он отдаёт только целиком, то есть никогда. uvicorn — с
+`--timeout-graceful-shutdown 3` (и в Docker): иначе `--reload` и `docker compose restart`
+ждут открытые потоки SSE без конца.
 
 Фронтенд и API открываются с одного адреса (:5173): Vite проксирует `/api` на backend,
 поэтому cookie сессии и `EventSource` работают без CORS. Адрес backend для прокси —
@@ -87,8 +89,17 @@ make down   # остановить; данные БД остаются в том
   `Outbox poll failed` и повторяет через 5 с, не завершаясь.
 - Mailpit — SMTP-ловушка: письма не уходят наружу, их видно в веб-интерфейсе
   http://localhost:8025 (он же API для e2e). SMTP опубликован на :1025 для `make dev-worker`.
-- `frontend/Dockerfile` собирается из корня репозитория (там pnpm workspace и lock-файл) и
-  запускает dev-сервер Vite с `API_PROXY_TARGET=http://backend:8000`.
+- `frontend/Dockerfile` собирается из корня репозитория (там pnpm workspace и lock-файл).
+  Стадия — переменная `FRONTEND_TARGET` (`build.target` в compose): `dev` (по умолчанию) —
+  dev-сервер Vite с `API_PROXY_TARGET=http://backend:8000`; `gateway` — `vite build` и nginx
+  (`frontend/nginx.conf`) на том же порту: отдаёт `dist/` (неизвестный путь — `index.html`) и
+  проксирует `/api`, `/admin`, `/static` на backend с `Host` клиента. `gateway` ставят
+  `make e2e` и `stack-e2e` (и CI через `make e2e`): e2e идут через прокси с буферизацией, как
+  в продакшене. На слоте 0 `make e2e` подменяет фронтенд `make up` сборкой, следующий
+  `make up` возвращает Vite. Типы сборка не проверяет — это делает `make check`.
+- Поток SSE за nginx: backend шлёт `X-Accel-Buffering: no`. Буферизация nginx сама поток не
+  задерживает, но вместе с gzip для `text/event-stream` — да, и без заголовка снимки не
+  доходят; заголовок нужен всегда, особенно если в прокси включают сжатие.
 - `make up` и `make dev-*` занимают одни и те же порты (5173, 8000): не запускать одновременно
   или поменять порты переменными `FRONTEND_PORT`, `BACKEND_PORT`, `POSTGRES_PORT`,
   `MAILPIT_PORT` (веб, 8025), `MAILPIT_SMTP_PORT` (1025). Ссылки в письмах ведут на
@@ -120,7 +131,7 @@ make down   # остановить; данные БД остаются в том
 | `make lint-frontend` / `typecheck-frontend` / `test-frontend` | по отдельности: ESLint / vue-tsc / Vitest                                                |
 | `make migrations-check`                                       | падает, если модели изменены, а миграция не создана                                      |
 | `make schema-check`                                           | падает, если `openapi.yaml` или `schema.d.ts` устарели или у view нет описания для схемы |
-| `make e2e`                                                    | поднять стек (`make up`) и прогнать Playwright против него                               |
+| `make e2e`                                                    | поднять стек (`make up`) со шлюзом nginx и прогнать Playwright против него               |
 | `make stack-up` / `stack-e2e` / `stack-down` `SLOT=<N>`       | стек слота (см. «E2E»): поднять / e2e против него / удалить с томами                     |
 | `make stack-check SLOT=<N>`                                   | `make check` на Postgres слота, а не на Postgres из `make dev-deps`                      |
 | `make stack-check-backend SLOT=<N>`                           | `make check-backend` на Postgres слота                                                   |
