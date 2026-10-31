@@ -18,6 +18,7 @@ dev = [
     "djangorestframework-stubs>=3.18.1",
     "mypy>=2.4.1",
     "pytest>=9.2.0",
+    "pytest-asyncio>=1.4.1",
     "pytest-django>=4.14.0",
     "ruff>=0.17.3",
 ]
@@ -55,3 +56,8 @@ django_settings_module = "config.settings"
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "config.settings"
 addopts = "--strict-markers"
+# Async tests (the SSE streams) without a marker on each. One loop for the session, like the one
+# loop of a uvicorn process: the stats listener lives in it.
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"

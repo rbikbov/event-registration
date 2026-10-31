@@ -6,6 +6,7 @@ from config.health import HealthView
 from events.views import (
     OrgEventDetailView,
     OrgEventListView,
+    OrgEventStreamView,
     PublicEventDetailView,
     PublicEventListView,
 )
@@ -24,6 +25,11 @@ urlpatterns = [
     path("api/auth/me/", MeView.as_view(), name="me"),
     path("api/org/events/", OrgEventListView.as_view(), name="org-events"),
     path("api/org/events/<int:event_id>/", OrgEventDetailView.as_view(), name="org-event"),
+    path(
+        "api/org/events/<int:event_id>/stream/",
+        OrgEventStreamView.as_view(),
+        name="org-event-stream",
+    ),
     path(
         "api/org/events/<int:event_id>/registrations/",
         OrgRegistrationListView.as_view(),

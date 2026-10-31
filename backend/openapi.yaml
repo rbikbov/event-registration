@@ -344,6 +344,33 @@ paths:
           description: Another organizer's event
         '404':
           description: No such event
+  /api/org/events/{event_id}/stream/:
+    get:
+      operationId: org_events_stream_retrieve
+      description: '`text/event-stream`. Each message is `event: stats` with the counts
+        as JSON in `data`: the first one right after connecting, then one after each
+        change.'
+      parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - org
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            text/event-stream:
+              schema:
+                $ref: '#/components/schemas/OrgEventStats'
+          description: ''
+        '403':
+          description: Another organizer's event
+        '404':
+          description: No such event
   /api/tickets/{manage_token}/:
     get:
       operationId: tickets_retrieve
@@ -557,6 +584,28 @@ components:
       - id
       - starts_at
       - title
+      - waitlisted
+    OrgEventStats:
+      type: object
+      description: 'The counts of the organizer''s panel, as in OrgEventSerializer:
+        one message of its stream.'
+      properties:
+        confirmed:
+          type: integer
+          readOnly: true
+        waitlisted:
+          type: integer
+          readOnly: true
+        checked_in:
+          type: integer
+          readOnly: true
+        free_seats:
+          type: integer
+          readOnly: true
+      required:
+      - checked_in
+      - confirmed
+      - free_seats
       - waitlisted
     OrgRegistration:
       type: object
