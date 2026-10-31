@@ -60,3 +60,7 @@ backend → frontend → e2e/доки. Логика — тест вперёд; �
   ASGI читает асинхронный поток через `aclosing` и отменяет его при `http.disconnect`.
 
 ## На потом
+
+- Настройки под `runserver` (`whitenoise.runserver_nostatic`, логгер `django.server` в
+  `LOGGING`) остались после перехода `make dev-backend` на uvicorn: убрать или оставить для
+  ручного `manage.py runserver`.
