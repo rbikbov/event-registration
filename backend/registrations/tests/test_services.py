@@ -124,25 +124,26 @@ def test_repeat_on_the_waitlist_keeps_the_position(event: Event) -> None:
 def test_waitlist_order_breaks_a_queued_at_tie_by_id(event: Event) -> None:
     event.capacity = 1
     event.save()
-    now = timezone.now()
-    register(event.id, "a@x.io", "Ann", now=now)
+    register(event.id, "a@x.io", "Ann")
+    first = register(event.id, "b@x.io", "Bob").registration
+    second = register(event.id, "c@x.io", "Cid").registration
+    # `register` never queues two at one time; a tie is made by hand.
+    Registration.objects.filter(id__in=[first.id, second.id]).update(queued_at=first.queued_at)
 
-    first = register(event.id, "b@x.io", "Bob", now=now)
-    second = register(event.id, "c@x.io", "Cid", now=now)
-
-    assert (first.position, second.position) == (1, 2)
+    assert (waitlist_position(first), waitlist_position(second)) == (1, 2)
 
 
-def test_earlier_queued_at_wins_over_a_smaller_id(event: Event) -> None:
+def test_clock_stepping_back_does_not_queue_a_later_registration_first(event: Event) -> None:
+    # The wall clock may step back between two requests; the queue is the order of the locks.
     event.capacity = 1
     event.save()
     now = timezone.now()
     register(event.id, "a@x.io", "Ann", now=now)
-    late = register(event.id, "late@x.io", "Late", now=now + timedelta(minutes=5))
-    early = register(event.id, "early@x.io", "Early", now=now + timedelta(minutes=1))
+    first = register(event.id, "first@x.io", "First", now=now + timedelta(minutes=5))
+    second = register(event.id, "second@x.io", "Second", now=now + timedelta(minutes=1))
 
-    assert late.registration.id < early.registration.id
-    assert (early.position, waitlist_position(late.registration)) == (1, 2)
+    assert (first.position, second.position) == (1, 2)
+    assert waitlist_position(first.registration) == 1
 
 
 def test_other_events_waitlist_does_not_shift_the_position(event: Event) -> None:
