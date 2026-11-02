@@ -106,13 +106,22 @@ afterEach(() => {
 });
 
 describe("OrgEventLayout", () => {
-  it("shows a loading state until the event arrives", async () => {
-    server.use(http.get(EVENT, () => HttpResponse.json(event)));
+  // Until the GET answers, the event may be someone else's: no tab, no form, not even the tabs.
+  it.each([
+    ["participants", orgEventPath(7)],
+    ["check-in", checkinPath(7)],
+  ])("shows only a loading state on the %s tab until the event arrives", async (_tab, path) => {
+    const backend = countedEvent();
+    backend.hold();
+    server.use(backend.handler);
 
-    const { wrapper } = await mountLayout();
+    const { wrapper } = await mountLayout(path);
+    await vi.waitFor(() => expect(backend.gets()).toBe(1));
 
     expect(wrapper.get('[role="status"]').text()).toBe("Загружаем…");
-    expect(wrapper.find('[data-tab="participants"]').exists()).toBe(false);
+    expect(wrapper.find("nav").exists()).toBe(false);
+    expect(wrapper.find("[data-tab]").exists()).toBe(false);
+    backend.release();
     await flushPromises();
   });
 
@@ -320,20 +329,6 @@ describe("OrgEventLayout", () => {
       await flushPromises();
 
       expect(counter(wrapper, "checkedIn")).toBe("2");
-    });
-
-    it("shows the form while the event is loading", async () => {
-      const backend = countedEvent();
-      backend.hold();
-      server.use(backend.handler);
-
-      const { wrapper } = await mountLayout(checkinPath(7));
-      await vi.waitFor(() => expect(backend.gets()).toBe(1));
-
-      expect(wrapper.get('[role="status"]').text()).toBe("Загружаем…");
-      expect(wrapper.find('[data-tab="checkin"]').exists()).toBe(true);
-      backend.release();
-      await flushPromises();
     });
 
     it("keeps the form when the event fails to load", async () => {

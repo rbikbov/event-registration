@@ -13,8 +13,9 @@ import { Alert, AlertDescription } from "@/shared/ui/shadcn/alert";
 import { Button } from "@/shared/ui/shadcn/button";
 
 // The event of the organizer: read and kept live here, once for every tab under it, so switching
-// tabs keeps the stream. The participants get the loaded event as the `event` prop; the check-in
-// form needs none and is shown before the event has loaded and when its load fails.
+// tabs keeps the stream. Nothing of the event is shown before its GET has answered: until then it
+// may be someone else's. The participants get the loaded event as the `event` prop; the check-in
+// form needs none and stays usable when the load fails for another reason.
 const { t, d } = useI18n({ useScope: "local" });
 const route = useRoute();
 
@@ -130,23 +131,26 @@ function startsAt(iso: string): string {
         </template>
       </QueryState>
 
-      <nav class="mt-6 flex gap-2 border-b pb-2" :aria-label="t('tabs')">
-        <Button
-          v-for="tab in tabs"
-          :key="tab.key"
-          :variant="tab.current ? 'default' : 'ghost'"
-          size="sm"
-          as-child
-        >
-          <RouterLink :to="tab.to" :aria-current="tab.current ? 'page' : undefined">
-            {{ t(`tab.${tab.key}`) }}
-          </RouterLink>
-        </Button>
-      </nav>
+      <template v-if="!event.isPending.value">
+        <nav class="mt-6 flex gap-2 border-b pb-2" :aria-label="t('tabs')">
+          <Button
+            v-for="tab in tabs"
+            :key="tab.key"
+            :variant="tab.current ? 'default' : 'ghost'"
+            size="sm"
+            as-child
+          >
+            <RouterLink :to="tab.to" :aria-current="tab.current ? 'page' : undefined">
+              {{ t(`tab.${tab.key}`) }}
+            </RouterLink>
+          </Button>
+        </nav>
 
-      <!-- The check-in form works without the event: the title above is only a label. -->
-      <RouterView v-if="onCheckin" />
-      <RouterView v-else-if="event.data.value" class="mt-6" :event="event.data.value" />
+        <!-- The check-in form works without the event once the GET has answered with something
+           other than 403/404: the title above is only a label. -->
+        <RouterView v-if="onCheckin" />
+        <RouterView v-else-if="event.data.value" class="mt-6" :event="event.data.value" />
+      </template>
     </template>
   </main>
 </template>
