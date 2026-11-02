@@ -54,3 +54,22 @@ def test_worker_queues_reminders_once_an_interval(monkeypatch: pytest.MonkeyPatc
     command.poll()
 
     assert passes == [1000.0, 1000.0 + REMINDER_INTERVAL]
+
+
+@pytest.mark.django_db
+def test_failed_reminder_pass_does_not_stop_the_outbox(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    # A variable, not a literal in the raise: the stack shows that code line.
+    message = "row data"
+
+    def broken() -> int:
+        raise RuntimeError(message)
+
+    monkeypatch.setattr(run_worker, "enqueue_reminders", broken)
+    monkeypatch.setattr(run_worker, "process_batch", lambda: [1])
+
+    assert Command().poll() == 0
+    assert "Reminder pass failed: RuntimeError" in caplog.text
+    # The class and the stack, not the message: the text may hold data from the rows.
+    assert "row data" not in caplog.text
