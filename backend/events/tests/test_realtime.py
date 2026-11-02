@@ -12,7 +12,13 @@ from asgiref.sync import sync_to_async
 from django.db import connection
 
 from events import realtime
-from events.realtime import StatsListener, notify_stats_changed, snapshot_stream
+from events.realtime import (
+    ListenerLost,
+    StatsListener,
+    notify_stats_changed,
+    put_latest,
+    snapshot_stream,
+)
 
 # The listener connects to the test database, which exists only with the db fixtures.
 pytestmark = pytest.mark.django_db(transaction=True)
@@ -173,3 +179,77 @@ async def test_a_new_subscriber_gets_no_snapshot_older_than_its_first() -> None:
         release.set()
         await first.aclose()
         await second.aclose()
+
+
+async def test_the_first_message_tells_the_client_to_reconnect_after_3_seconds() -> None:
+    stream = snapshot_stream(1, lambda event_id: event_id)
+    try:
+        chunk = await asyncio.wait_for(anext(stream), timeout=5)
+    finally:
+        await stream.aclose()
+
+    assert chunk.decode().splitlines()[0] == "retry: 3000"
+
+
+async def test_a_stream_without_changes_sends_a_ping(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(realtime, "PING_SECONDS", 0.1)
+    stream = snapshot_stream(1, lambda event_id: event_id)
+    try:
+        await data(stream)
+
+        # A comment: EventSource ignores it, a proxy sees bytes and keeps the stream open.
+        assert await asyncio.wait_for(anext(stream), timeout=5) == b": ping\n\n"
+        await sync_to_async(notify)(1)
+        while (chunk := await asyncio.wait_for(anext(stream), timeout=5)) == b": ping\n\n":
+            pass
+        assert chunk.decode().startswith("event: snapshot\n")
+    finally:
+        await stream.aclose()
+
+
+def terminate(pid: int) -> None:
+    try:
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT pg_terminate_backend(%s)", [pid])
+    finally:
+        connection.close()
+
+
+async def test_a_lost_listener_connection_ends_every_stream_and_the_next_one_listens_anew(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    listener = StatsListener()
+    monkeypatch.setattr(realtime, "listener", listener)
+    streams = [snapshot_stream(event_id, lambda event_id: event_id) for event_id in (1, 2)]
+    try:
+        for stream in streams:
+            await data(stream)
+        assert listener._connection is not None
+        await sync_to_async(terminate)(listener._connection.info.backend_pid)
+
+        # Ended, not failed: the client reconnects and its first snapshot is read anew.
+        for stream in streams:
+            with pytest.raises(StopAsyncIteration):
+                await asyncio.wait_for(anext(stream), timeout=5)
+    finally:
+        for stream in streams:
+            await stream.aclose()
+
+    stream = snapshot_stream(1, lambda event_id: event_id)
+    try:
+        await data(stream)
+        await sync_to_async(notify)(1)
+
+        assert await data(stream) == 1
+    finally:
+        await stream.aclose()
+
+
+async def test_a_snapshot_read_when_the_listener_was_lost_does_not_keep_the_stream_open() -> None:
+    queue: asyncio.Queue[Any] = asyncio.Queue(maxsize=1)
+    put_latest(queue, ListenerLost())
+    # A read that began before the loss ends after it: without the end, nothing would deliver
+    # to the stream any more.
+    put_latest(queue, {"event": 1})
+
+    assert isinstance(queue.get_nowait(), ListenerLost)

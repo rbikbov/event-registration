@@ -103,6 +103,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  vi.useRealTimers();
 });
 
 describe("OrgEventLayout", () => {
@@ -230,6 +231,117 @@ describe("OrgEventLayout", () => {
       ),
     ).toEqual(["2", "2", "0", "2", "0"]);
     expect(wrapper.get('[data-tab="participants"]').text()).toBe("Meetup, room 2");
+  });
+
+  // The counters may be stale from a lost connection until a snapshot reads them anew.
+  it.each([
+    ["a dropped connection", orgEventPath(7), false],
+    ["a 502 that closed the stream", checkinPath(7), true],
+  ])("says it is reconnecting after %s, until the next snapshot", async (_case, path, closed) => {
+    server.use(http.get(EVENT, () => HttpResponse.json(event)));
+    const { wrapper } = await mountLayout(path);
+    await flushPromises();
+    vi.useFakeTimers();
+    streams.opened[0]?.open();
+    streams.opened[0]?.emit("snapshot", event);
+    await flushPromises();
+    expect(wrapper.find('[data-live="reconnecting"]').exists()).toBe(false);
+
+    streams.opened[0]?.fail({ closed });
+    await flushPromises();
+    expect(wrapper.get('[data-live="reconnecting"]').text()).toBe(
+      "Соединение потеряно, переподключаюсь…",
+    );
+    // EventSource reconnects a dropped one by itself; a closed one is opened again after 3 s.
+    vi.advanceTimersByTime(3000);
+    const reconnected = streams.opened.at(-1);
+    expect(streams.opened).toHaveLength(closed ? 2 : 1);
+    reconnected?.open();
+    reconnected?.emit("snapshot", { ...event, checked_in: 2 });
+    await flushPromises();
+
+    expect(wrapper.find('[data-live="reconnecting"]').exists()).toBe(false);
+    expect(counter(wrapper, "checkedIn")).toBe("2");
+  });
+
+  // EventSource does not tell why a stream was refused: the event is read again for its status,
+  // without its answer replacing the counts. A 401 is the app's (app/session-expiry tests).
+  it.each([
+    ["404", 404, "Событие не найдено"],
+    ["403", 403, "Это событие другого организатора"],
+  ])("ends the stream when a probe after a refusal answers %s", async (_case, status, text) => {
+    server.use(http.get(EVENT, () => HttpResponse.json(event)));
+    const { wrapper } = await mountLayout();
+    await flushPromises();
+    server.use(http.get(EVENT, () => HttpResponse.json({}, { status })));
+    vi.useFakeTimers();
+
+    // Refused on its first connection: the event may have gone between the GET and the stream.
+    streams.opened[0]?.fail({ closed: true });
+    await vi.waitFor(() => expect(wrapper.get('[role="alert"]').text()).toBe(text));
+    vi.advanceTimersByTime(3000);
+
+    expect(streams.opened).toHaveLength(1);
+    expect(wrapper.find("nav").exists()).toBe(false);
+  });
+
+  it("keeps opening the stream when a probe finds the event still there", async () => {
+    let gets = 0;
+    server.use(
+      http.get(EVENT, () => {
+        gets += 1;
+        return HttpResponse.json({ ...event, checked_in: gets === 1 ? 1 : 0 });
+      }),
+    );
+    const { wrapper } = await mountLayout();
+    await flushPromises();
+    vi.useFakeTimers();
+
+    streams.opened[0]?.fail({ closed: true });
+    await vi.waitFor(() => expect(gets).toBe(2));
+    await vi.advanceTimersByTimeAsync(3000);
+
+    expect(streams.opened).toHaveLength(2);
+    expect(wrapper.find('[data-live="reconnecting"]').exists()).toBe(true);
+    // The probe's answer, read before a snapshot could come, does not replace the counters.
+    expect(counter(wrapper, "checkedIn")).toBe("1");
+  });
+
+  // The app retries failed reads; a probe is not retried: the stream is opened again in 3 s,
+  // and its refusal brings the next probe.
+  it("probes once per refusal while the backend is down", async () => {
+    let gets = 0;
+    server.use(
+      http.get(EVENT, () => {
+        gets += 1;
+        return gets === 1 ? HttpResponse.json(event) : HttpResponse.json({}, { status: 502 });
+      }),
+    );
+    const retrying = new QueryClient({
+      defaultOptions: { queries: { retry: 2, retryDelay: 0 } },
+    });
+    await mountLayout(orgEventPath(7), retrying);
+    await flushPromises();
+
+    streams.opened[0]?.fail({ closed: true });
+    await vi.waitFor(() => expect(gets).toBe(2));
+    await new Promise((resolve) => setTimeout(resolve, 30));
+
+    expect(gets).toBe(2);
+  });
+
+  it("does not probe when EventSource reconnects by itself", async () => {
+    const backend = countedEvent();
+    server.use(backend.handler);
+    await mountLayout();
+    await flushPromises();
+    streams.opened[0]?.open();
+
+    streams.opened[0]?.fail({ closed: false });
+    // A read that must not happen cannot be awaited: give a wrong one time to show up.
+    await new Promise((resolve) => setTimeout(resolve, 30));
+
+    expect(backend.gets()).toBe(1);
   });
 
   it("keeps the stream and the event when the organizer switches tabs", async () => {

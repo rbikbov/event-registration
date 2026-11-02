@@ -12,7 +12,7 @@ src/pages/<page>/    экраны: ui/, api/ (запросы, нужные то�
 src/pages/org-event/ макет события организатора: запрос, поток, шапка, вкладки —
                      org-event-participants и org-checkin (дочерние маршруты)
 src/entities/session/ кто вошёл: meQuery (null — гость)
-src/entities/event/  события: orgEventsQuery / orgEventQuery(id) / orgEventLive(id) (организатор), publicEventsQuery / publicEventQuery(id) / publicEventLive(id) (публичные)
+src/entities/event/  события: orgEventsQuery / orgEventQuery(id) / orgEventLive(id) / orgEventProbe(id) (организатор), publicEventsQuery / publicEventQuery(id) / publicEventLive(id) / publicEventProbe(id) (публичные); проба — статус события после отказа потока, без записи в его кэш
 src/shared/api/      клиент API, AppError, unwrap, сгенерированный schema.d.ts. Правила: src/shared/api/AGENTS.md
 src/shared/ui/       самописные компоненты (query-state — загрузка и ошибки запроса, `RetryAlert` — ошибка с повтором); ui/shadcn/ — сгенерированные shadcn-vue, руками не правятся
 src/shared/config/   routes — все пути приложения

@@ -71,6 +71,7 @@ make dev-worker     # терминал 3, если нужны письма: outb
 
 ```sh
 make up     # собрать и поднять postgres, backend, worker, mailpit, frontend; http://localhost:5173
+make demo-users  # демо-учётки (один раз на новую базу)
 make logs   # логи всех сервисов
 make down   # остановить; данные БД остаются в томе postgres-data
 ```
@@ -135,6 +136,7 @@ make down   # остановить; данные БД остаются в том
 | `make lint-frontend` / `typecheck-frontend` / `test-frontend` | по отдельности: ESLint / vue-tsc / Vitest                                                |
 | `make migrations-check`                                       | падает, если модели изменены, а миграция не создана                                      |
 | `make schema-check`                                           | падает, если `openapi.yaml` или `schema.d.ts` устарели или у view нет описания для схемы |
+| `make demo-users` / `make stack-demo-users SLOT=<N>`          | демо-учётки в запущенном стеке / в стеке слота (см. «Создать организатора»)              |
 | `make e2e`                                                    | поднять стек (`make up`) со шлюзом nginx и прогнать Playwright против него               |
 | `make stack-up` / `stack-e2e` / `stack-down` `SLOT=<N>`       | стек слота (см. «E2E»): поднять / e2e против него / удалить с томами                     |
 | `make stack-check SLOT=<N>`                                   | `make check` на Postgres слота, а не на Postgres из `make dev-deps`                      |
@@ -250,11 +252,12 @@ docs: close phase 1 (registration)
 **Создать организатора** (вход в админку и экраны организатора):
 `cd backend && uv run python manage.py createsuperuser`. Демо-учётки `demo@example.com` /
 `demo` и `admin@example.com` / `admin` создаёт `python manage.py create_demo_users` (идемпотентна,
-сбрасывает пароли); в compose она запускается при старте `backend`. При
+возвращает демо-пароли, если их меняли): в стеке — `make demo-users` после `make up`, в стеке
+слота — `make stack-demo-users`; `make e2e` и `stack-e2e` вызывают её сами, при старте
+`backend` она не запускается. Пароль, который подходит, команда не меняет: новый хеш даже того
+же пароля завершает все сессии учётки (Django привязывает сессию к хешу). При
 `DJANGO_DEBUG=false` команда ничего не создаёт и не меняет паролей, только пишет предупреждение:
-известные пароли и суперпользователь не должны попасть в развёртывание без DEBUG. При `DJANGO_DEBUG=false`
-команда ничего не создаёт и не меняет паролей, только пишет предупреждение: известные пароли и
-суперпользователь не должны попасть в развёртывание без DEBUG.
+известные пароли и суперпользователь не должны попасть в развёртывание без DEBUG.
 
 **Запустить один тест:**
 
@@ -453,7 +456,8 @@ test_…` и `django.test.AsyncClient`. Цикл событий — один н�
   Postgres слота: иначе тесты backend пересоздавали бы `test_event_registration` в чужом
   Postgres. `stack-down` удаляет тома только своего слота. Исходники в контейнеры слота не
   монтируются — код собирается в образ: после правки снова `make stack-up` (или
-  `stack-e2e`, он вызывает `stack-up`), иначе браузер покажет старую версию.
+  `stack-e2e`, он вызывает `stack-up`), иначе браузер покажет старую версию. Демо-учётки в
+  новом томе слота — `make stack-demo-users` (`stack-e2e` вызывает её сам).
 
   | Слот | Кто                            | Фронтенд | Backend | Postgres | Mailpit | SMTP |
   | ---- | ------------------------------ | -------- | ------- | -------- | ------- | ---- |

@@ -1,10 +1,13 @@
-import { QueryClient } from "@tanstack/vue-query";
+import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
+import { flushPromises, mount } from "@vue/test-utils";
 import { http, HttpResponse } from "msw";
-import { describe, expect, it } from "vitest";
-import { createMemoryHistory } from "vue-router";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { createMemoryHistory, RouterView } from "vue-router";
 
 import { AppError } from "@/shared/api";
-import { routes } from "@/shared/config";
+import { checkinPath, routes } from "@/shared/config";
+import { createAppI18n } from "@/shared/lib/i18n";
+import { fakeEventSource } from "@/shared/lib/test/fake-event-source";
 import { server } from "@/shared/lib/test/msw";
 
 import { createAppRouter } from "./router";
@@ -72,5 +75,70 @@ describe("expired session", () => {
 
     await settle();
     expect(router.currentRoute.value.path).toBe(routes.orgEvents);
+  });
+});
+
+// The whole way, with the app's router: EventSource does not tell a 401 from a 502, so the
+// event layout reads the event again for its status on each refusal, and a 401 leads to /login.
+const EVENT = {
+  id: 7,
+  title: "Meetup",
+  description: "",
+  starts_at: "2030-05-01T18:00:00Z",
+  capacity: 2,
+  confirmed: 0,
+  waitlisted: 0,
+  checked_in: 0,
+  free_seats: 2,
+  cancelled: 0,
+};
+
+describe("a refused live stream", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.useRealTimers();
+  });
+
+  async function openPanel() {
+    const streams = fakeEventSource();
+    vi.stubGlobal("EventSource", streams.EventSource);
+    server.use(http.get("*/api/org/events/7/", () => HttpResponse.json(EVENT)));
+    // The check-in tab: the layout is all there is to read.
+    const { queryClient, router } = await setup(checkinPath(7));
+    mount(RouterView, {
+      global: { plugins: [router, [VueQueryPlugin, { queryClient }], createAppI18n()] },
+    });
+    await vi.waitFor(() => expect(streams.opened).toHaveLength(1));
+    streams.opened[0]?.open();
+    return { router, streams };
+  }
+
+  it("sends the organizer to /login when the session has ended", async () => {
+    const { router, streams } = await openPanel();
+    server.use(http.get("*/api/org/events/7/", () => new HttpResponse(null, { status: 401 })));
+
+    streams.opened[0]?.fail({ closed: true });
+
+    await expect.poll(() => router.currentRoute.value.path).toBe(routes.login);
+  });
+
+  it("stays and opens the stream again while the event still answers", async () => {
+    const { router, streams } = await openPanel();
+    let probes = 0;
+    server.use(
+      http.get("*/api/org/events/7/", () => {
+        probes += 1;
+        return HttpResponse.json(EVENT);
+      }),
+    );
+    vi.useFakeTimers();
+
+    streams.opened[0]?.fail({ closed: true });
+    await vi.waitFor(() => expect(probes).toBe(1));
+    await vi.advanceTimersByTimeAsync(3000);
+    await flushPromises();
+
+    expect(streams.opened).toHaveLength(2);
+    expect(router.currentRoute.value.path).toBe(checkinPath(7));
   });
 });

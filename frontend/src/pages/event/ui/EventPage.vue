@@ -4,7 +4,12 @@ import { computed, reactive, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
 
-import { publicEventLive, publicEventQuery, publicEventsQuery } from "@/entities/event";
+import {
+  publicEventLive,
+  publicEventProbe,
+  publicEventQuery,
+  publicEventsQuery,
+} from "@/entities/event";
 import { AppError } from "@/shared/api";
 import { routes } from "@/shared/config";
 import { useLive } from "@/shared/lib/use-live";
@@ -42,13 +47,31 @@ const event = useQuery(
   })),
 );
 
+const isNotFound = (error: unknown) => error instanceof AppError && error.kind === "not_found";
+// A probe after a refused stream found the event gone since the GET.
+const goneSinceLoad = ref(false);
+watch(eventId, () => (goneSinceLoad.value = false));
+const notFound = computed(() => isNotFound(event.error.value) || goneSinceLoad.value);
+
 // The stream opens once the event is there, so its first snapshot is read after that GET.
 // Before it, 404 comes from the GET; EventSource does not tell it.
 const eventLoaded = computed(() => event.data.value !== undefined);
 useLive(
-  () => (eventLoaded.value ? publicEventLive(eventId.value) : null),
+  () => (eventLoaded.value && !notFound.value ? publicEventLive(eventId.value) : null),
   (snapshot) => queryClient.setQueryData(publicEventQuery(eventId.value).queryKey, snapshot),
+  { onRefused: () => void probe(eventId.value) },
 );
+
+// EventSource does not tell why it was refused, so the event is read again for its status: 404
+// ends the stream and shows as the GET's would; anything else (the backend is down) leaves the
+// stream to be opened again.
+async function probe(id: number) {
+  try {
+    await queryClient.fetchQuery(publicEventProbe(id));
+  } catch (error) {
+    if (id === eventId.value) goneSinceLoad.value = isNotFound(error);
+  }
+}
 
 const form = reactive<RegistrationFormInput>({ email: "", name: "" });
 const clientErrors = ref<RegistrationFormErrors>({});
@@ -95,10 +118,6 @@ const resultText = computed(() => {
     ? t("waitlistedNoPosition")
     : t("waitlisted", { position: result.value.position });
 });
-
-const notFound = computed(
-  () => event.error.value instanceof AppError && event.error.value.kind === "not_found",
-);
 
 function submit(): void {
   const parsed = parseRegistrationForm(form);
