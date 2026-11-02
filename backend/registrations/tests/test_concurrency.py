@@ -1,5 +1,6 @@
+import threading
 from collections.abc import Callable
-from datetime import timedelta
+from datetime import datetime, timedelta
 from functools import partial
 
 import pytest
@@ -9,6 +10,7 @@ from accounts.models import User
 from config.tests.concurrency import run_together
 from emails.models import OutboxEmail
 from events.models import Event
+from registrations import services
 from registrations.models import Registration
 from registrations.services import (
     CapacityBelowConfirmed,
@@ -16,6 +18,7 @@ from registrations.services import (
     TicketNotConfirmed,
     cancel,
     check_in,
+    enqueue_reminders,
     register,
     update_event,
     waitlist_position,
@@ -213,3 +216,44 @@ def test_parallel_reschedules_each_get_a_version_and_emails(event: Event) -> Non
     assert event.schedule_version == 5
     keys = OutboxEmail.objects.filter(kind="rescheduled").values_list("dedup_key", flat=True)
     assert sorted(keys) == [f"rescheduled:{seat.id}:{v}" for v in range(2, 6)]
+
+
+def test_reminders_during_a_reschedule_are_not_about_the_old_date(
+    event: Event, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    now = timezone.now()
+    event.starts_at = now + timedelta(hours=12)
+    event.save()
+    register(event.id, "seat@x.io", "Seat", now=now - timedelta(days=2))
+    new_start = event.starts_at + timedelta(hours=6)
+    # The reschedule stops with the new date saved, under the lock and not yet committed, until
+    # the reminder pass is over. Deterministic: the race window is held open, not hoped for.
+    locked, pass_over = threading.Event(), threading.Event()
+    email_reschedule = services._email_reschedule
+
+    def paused(locked_event: Event, old_starts_at: datetime) -> None:
+        locked.set()
+        # Not forever: a pass that waits for the lock instead of skipping it must not hang.
+        pass_over.wait(timeout=5)
+        email_reschedule(locked_event, old_starts_at)
+
+    monkeypatch.setattr(services, "_email_reschedule", paused)
+
+    def remind() -> int:
+        assert locked.wait(timeout=5)
+        try:
+            return enqueue_reminders(now=now)
+        finally:
+            pass_over.set()
+
+    calls: list[Callable[[], object]] = [
+        partial(update_event, event.id, {"starts_at": new_start}),
+        remind,
+    ]
+    _, during = run_together(calls)
+
+    # The locked event is skipped, not read with its old, committed date.
+    assert during == 0
+    assert enqueue_reminders(now=now) == 1
+    keys = OutboxEmail.objects.filter(kind="reminder").values_list("dedup_key", flat=True)
+    assert [key.rsplit(":", 1)[1] for key in keys] == ["2"]

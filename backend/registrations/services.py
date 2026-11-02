@@ -8,7 +8,13 @@ from django.db.models.functions import RowNumber
 from django.utils import timezone
 
 from emails.models import OutboxEmail
-from emails.services import enqueue_email, enqueue_rescheduled, enqueue_waitlisted
+from emails.services import (
+    enqueue_email,
+    enqueue_reminder,
+    enqueue_rescheduled,
+    enqueue_waitlisted,
+    reminder_key,
+)
 from events.models import Event
 from events.realtime import notify_stats_changed
 from registrations.models import Registration, new_ticket_code
@@ -227,6 +233,48 @@ def _email_reschedule(event: Event, old_starts_at: datetime) -> None:
         # The locked event, not a fresh read per row: its version is the one just saved.
         registration.event = event
         enqueue_rescheduled(registration, old_starts_at)
+
+
+# A reminder goes out this long before the start, to those who had a seat before then.
+REMINDER_LEAD = timedelta(hours=24)
+
+
+def enqueue_reminders(*, now: datetime | None = None) -> int:
+    """Queue a reminder for each seat of the events starting within REMINDER_LEAD; return how many.
+
+    Called by the worker over and over, nothing is scheduled ahead: a reschedule or a restart
+    breaks nothing, and a worker that was down catches up while the event has not started.
+    A seat taken inside the window gets none: its ticket or promotion email came just now. One
+    reminder per registration and schedule version: a repeat pass queues nothing new.
+
+    The events are locked, and a locked one is skipped till the next pass: a reschedule holding
+    it may have saved a new date not yet committed, and a reminder read past the lock would be
+    about the old one. Two workers split the events instead of waiting for each other.
+    """
+    queued = 0
+    with transaction.atomic():
+        now = now or timezone.now()
+        events = Event.objects.select_for_update(skip_locked=True).filter(
+            starts_at__gt=now, starts_at__lte=now + REMINDER_LEAD
+        )
+        for event in events:
+            seats = Registration.objects.filter(
+                event=event,
+                status=Registration.Status.CONFIRMED,
+                confirmed_at__lt=event.starts_at - REMINDER_LEAD,
+            ).order_by("id")
+            keys = {reminder_key(seat.id, event.schedule_version): seat for seat in seats}
+            sent = set(
+                OutboxEmail.objects.filter(dedup_key__in=keys).values_list("dedup_key", flat=True)
+            )
+            for key, seat in keys.items():
+                if key in sent:
+                    continue
+                # The locked event, not a fresh read per row: its date is the one reminded of.
+                seat.event = event
+                enqueue_reminder(seat)
+                queued += 1
+    return queued
 
 
 def check_in(event_id: int, code: str, *, now: datetime | None = None) -> CheckInResult:

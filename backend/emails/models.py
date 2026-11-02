@@ -18,6 +18,7 @@ class OutboxEmail(models.Model):
         WAITLISTED = "waitlisted"
         PROMOTED = "promoted"
         RESCHEDULED = "rescheduled"
+        REMINDER = "reminder"
 
     class Status(models.TextChoices):
         PENDING = "pending"
@@ -40,7 +41,15 @@ class OutboxEmail(models.Model):
     class Meta:
         constraints: ClassVar[list[models.BaseConstraint]] = [
             models.CheckConstraint(
-                condition=models.Q(kind__in=["ticket", "waitlisted", "promoted", "rescheduled"]),
+                condition=models.Q(
+                    kind__in=[
+                        "ticket",
+                        "waitlisted",
+                        "promoted",
+                        "rescheduled",
+                        "reminder",
+                    ]
+                ),
                 name="outboxemail_kind_valid",
             ),
             models.CheckConstraint(

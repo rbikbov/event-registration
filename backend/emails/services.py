@@ -24,6 +24,7 @@ SUBJECTS = {
     OutboxEmail.Kind.WAITLISTED: "Лист ожидания: {title}",
     OutboxEmail.Kind.PROMOTED: "Освободилось место: {title}",
     OutboxEmail.Kind.RESCHEDULED: "Событие перенесено: {title}",
+    OutboxEmail.Kind.REMINDER: "Напоминание: {title}",
 }
 
 
@@ -58,6 +59,23 @@ def enqueue_rescheduled(registration: Registration, old_starts_at: datetime) -> 
         },
         dedup_key=f"rescheduled:{registration.id}:{registration.event.schedule_version}",
     )
+
+
+def enqueue_reminder(registration: Registration) -> None:
+    """Queue the reminder about the event's current date; one per registration and version.
+
+    A reschedule bumps the version, so the new date gets a reminder of its own.
+    """
+    _enqueue(
+        OutboxEmail.Kind.REMINDER,
+        registration,
+        {},
+        dedup_key=reminder_key(registration.id, registration.event.schedule_version),
+    )
+
+
+def reminder_key(registration_id: int, schedule_version: int) -> str:
+    return f"reminder:{registration_id}:{schedule_version}"
 
 
 def _email_time(value: datetime) -> str:
