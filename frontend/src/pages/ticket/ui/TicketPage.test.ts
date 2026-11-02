@@ -86,7 +86,10 @@ describe("TicketPage", () => {
     const time = new Intl.DateTimeFormat("ru", { timeStyle: "short" }).format(
       new Date(checkedIn.checked_in_at),
     );
-    expect(wrapper.text()).toContain(`Вы отмечены на входе в ${time}`);
+    const notice = wrapper.get("[data-checked-in]").text();
+    expect(notice).toContain("Билет использован");
+    expect(notice).toContain(`Вы отмечены на входе в ${time}`);
+    expect(notice).toContain("Повторно пройти по этому коду нельзя");
     expect(wrapper.get("[data-ticket-code]").text()).toBe("ABCD2345");
     expect(wrapper.text()).not.toContain("Отказаться");
   });

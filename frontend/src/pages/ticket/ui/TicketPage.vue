@@ -8,7 +8,7 @@ import { publicEventsQuery } from "@/entities/event";
 import { AppError } from "@/shared/api";
 import { eventPath } from "@/shared/config";
 import { QueryState } from "@/shared/ui/query-state";
-import { Alert, AlertDescription } from "@/shared/ui/shadcn/alert";
+import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/shadcn/alert";
 import { Button } from "@/shared/ui/shadcn/button";
 import { CardHeading } from "@/shared/ui/card-heading";
 import { Card, CardContent, CardHeader } from "@/shared/ui/shadcn/card";
@@ -106,9 +106,13 @@ function time(iso: string): string {
             <p class="font-mono text-4xl font-semibold tracking-widest" data-ticket-code>
               {{ loaded.ticket_code }}
             </p>
-            <p v-if="loaded.checked_in_at" class="font-medium">
-              {{ t("checkedIn", { time: time(loaded.checked_in_at) }) }}
-            </p>
+            <!-- A repeated check-in of this code is answered "already checked in" at the entrance. -->
+            <Alert v-if="loaded.checked_in_at" role="note" data-checked-in>
+              <AlertTitle>{{ t("checkedInTitle") }}</AlertTitle>
+              <AlertDescription>
+                {{ t("checkedIn", { time: time(loaded.checked_in_at) }) }}
+              </AlertDescription>
+            </Alert>
           </template>
           <p v-else-if="loaded.status === 'waitlisted'" class="font-medium">
             {{ t("waitlisted", { position: loaded.position ?? "" }) }}
@@ -152,7 +156,8 @@ function time(iso: string): string {
   "refreshFailed": "Не удалось обновить билет",
   "notFound": "Билет не найден",
   "code": "Код билета",
-  "checkedIn": "Вы отмечены на входе в {time}",
+  "checkedInTitle": "Билет использован",
+  "checkedIn": "Вы отмечены на входе в {time}. Повторно пройти по этому коду нельзя, отказаться от регистрации — тоже.",
   "waitlisted": "Вы в листе ожидания, №{position}",
   "cancelled": "Регистрация отменена",
   "registerAgain": "Зарегистрироваться снова",
