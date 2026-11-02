@@ -2,7 +2,12 @@ import pytest
 from django.db import connection
 
 from emails.management.commands import run_worker
-from emails.management.commands.run_worker import DB_ERROR_PAUSE, POLL_INTERVAL, Command
+from emails.management.commands.run_worker import (
+    DB_ERROR_PAUSE,
+    POLL_INTERVAL,
+    REMINDER_INTERVAL,
+    Command,
+)
 
 
 # transaction=True: recovering from the error closes the connection, which a test transaction
@@ -27,3 +32,70 @@ def test_worker_polls_again_at_once_after_sending(monkeypatch: pytest.MonkeyPatc
     monkeypatch.setattr(run_worker, "process_batch", lambda: [1])
 
     assert Command().poll() == 0
+
+
+@pytest.mark.django_db
+def test_worker_queues_reminders_once_an_interval(monkeypatch: pytest.MonkeyPatch) -> None:
+    passes: list[float] = []
+    clock = [1000.0]
+    monkeypatch.setattr("time.monotonic", lambda: clock[0])
+
+    def enqueue_reminders() -> int:
+        passes.append(clock[0])
+        return 0
+
+    monkeypatch.setattr(run_worker, "enqueue_reminders", enqueue_reminders)
+    command = Command()
+
+    command.poll()
+    clock[0] += REMINDER_INTERVAL - 1
+    command.poll()
+    clock[0] += 1
+    command.poll()
+
+    assert passes == [1000.0, 1000.0 + REMINDER_INTERVAL]
+
+
+@pytest.mark.django_db
+def test_failed_reminder_pass_does_not_stop_the_outbox(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    passes: list[float] = []
+    clock = [1000.0]
+    monkeypatch.setattr("time.monotonic", lambda: clock[0])
+    # A variable, not a literal in the raise: the stack shows that code line.
+    message = "row data"
+
+    def broken() -> int:
+        passes.append(clock[0])
+        raise RuntimeError(message)
+
+    monkeypatch.setattr(run_worker, "enqueue_reminders", broken)
+    monkeypatch.setattr(run_worker, "process_batch", lambda: [1])
+    command = Command()
+
+    assert command.poll() == 0
+    assert "Reminder pass failed: RuntimeError" in caplog.text
+    # The class and the stack, not the message: the text may hold data from the rows.
+    assert "row data" not in caplog.text
+
+    # Tried again in an interval, not at every poll: the stack would flood the log.
+    clock[0] += REMINDER_INTERVAL - 1
+    command.poll()
+    clock[0] += 1
+    command.poll()
+    assert passes == [1000.0, 1000.0 + REMINDER_INTERVAL]
+
+
+# transaction=True, as for the outbox: recovering closes the connection.
+@pytest.mark.django_db(transaction=True)
+def test_lost_connection_in_the_reminder_pass_reconnects_for_the_outbox(
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    connection.ensure_connection()
+    # The database drops the connection before the first poll, whose reminder pass is due.
+    connection.connection.close()
+
+    assert Command().poll() == POLL_INTERVAL
+    assert "Reminder pass failed: OperationalError" in caplog.text
+    assert "Outbox poll failed" not in caplog.text

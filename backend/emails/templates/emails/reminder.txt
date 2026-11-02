@@ -1,0 +1,8 @@
+{% autoescape off %}Здравствуйте, {{ name }}!
+
+Напоминаем: «{{ title }}» состоится {{ starts_at }}.
+
+Код билета: {{ ticket_code }}
+Назовите его на входе.
+
+Мой билет и отказ от участия: {{ manage_url }}{% endautoescape %}
