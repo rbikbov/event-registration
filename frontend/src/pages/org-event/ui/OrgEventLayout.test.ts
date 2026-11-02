@@ -103,6 +103,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  vi.useRealTimers();
 });
 
 describe("OrgEventLayout", () => {
@@ -230,6 +231,37 @@ describe("OrgEventLayout", () => {
       ),
     ).toEqual(["2", "2", "0", "2", "0"]);
     expect(wrapper.get('[data-tab="participants"]').text()).toBe("Meetup, room 2");
+  });
+
+  // The counters may be stale from a lost connection until a snapshot reads them anew.
+  it.each([
+    ["a dropped connection", orgEventPath(7), false],
+    ["a 502 that closed the stream", checkinPath(7), true],
+  ])("says it is reconnecting after %s, until the next snapshot", async (_case, path, closed) => {
+    server.use(http.get(EVENT, () => HttpResponse.json(event)));
+    const { wrapper } = await mountLayout(path);
+    await flushPromises();
+    vi.useFakeTimers();
+    streams.opened[0]?.open();
+    streams.opened[0]?.emit("snapshot", event);
+    await flushPromises();
+    expect(wrapper.find('[data-live="reconnecting"]').exists()).toBe(false);
+
+    streams.opened[0]?.fail({ closed });
+    await flushPromises();
+    expect(wrapper.get('[data-live="reconnecting"]').text()).toBe(
+      "Соединение потеряно, переподключаюсь…",
+    );
+    // EventSource reconnects a dropped one by itself; a closed one is opened again after 3 s.
+    vi.advanceTimersByTime(3000);
+    const reconnected = streams.opened.at(-1);
+    expect(streams.opened).toHaveLength(closed ? 2 : 1);
+    reconnected?.open();
+    reconnected?.emit("snapshot", { ...event, checked_in: 2 });
+    await flushPromises();
+
+    expect(wrapper.find('[data-live="reconnecting"]').exists()).toBe(false);
+    expect(counter(wrapper, "checkedIn")).toBe("2");
   });
 
   it("keeps the stream and the event when the organizer switches tabs", async () => {
