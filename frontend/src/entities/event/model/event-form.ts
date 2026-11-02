@@ -2,11 +2,14 @@ import { z } from "zod";
 
 import type { FieldErrors } from "@/shared/api";
 
+import { localInputValue } from "./local-input";
+
 export const EVENT_FIELDS = ["title", "description", "starts_at", "capacity"] as const;
 export type EventField = (typeof EVENT_FIELDS)[number];
 
 // The codes are the ones the server answers with (backend/events), so a client-side and a
-// server-side error of the same kind show the same text.
+// server-side error of the same kind show the same text. `below_confirmed` is the server's only:
+// the count of confirmed seats changes under the form.
 const ERROR_CODES = [
   "required",
   "blank",
@@ -15,6 +18,7 @@ const ERROR_CODES = [
   "max_value",
   "invalid",
   "past",
+  "below_confirmed",
 ] as const;
 export type EventFieldError = (typeof ERROR_CODES)[number];
 export type EventFormErrors = Partial<Record<EventField, EventFieldError>>;
@@ -38,7 +42,11 @@ export interface EventFormValues {
 export type EventFormResult =
   { ok: true; values: EventFormValues } | { ok: false; errors: EventFormErrors };
 
-function eventSchema(now: Date) {
+export type EventChangesResult =
+  { ok: true; changes: Partial<EventFormValues> } | { ok: false; errors: EventFormErrors };
+
+// `checkPast: false` keeps a start that is already past: an event under way keeps its start.
+function eventSchema(now: Date, checkPast = true) {
   return z.object({
     title: z.string().trim().min(1, "blank").max(200, "max_length"),
     description: z.string().max(2000, "max_length"),
@@ -51,7 +59,7 @@ function eventSchema(now: Date) {
           ctx.addIssue({ code: "custom", message: "invalid" });
           return z.NEVER;
         }
-        if (date <= now) {
+        if (checkPast && date <= now) {
           ctx.addIssue({ code: "custom", message: "past" });
           return z.NEVER;
         }
@@ -68,12 +76,54 @@ function eventSchema(now: Date) {
 export function parseEventForm(input: EventFormInput, now: Date): EventFormResult {
   const parsed = eventSchema(now).safeParse(input);
   if (parsed.success) return { ok: true, values: parsed.data };
+  return { ok: false, errors: issueErrors(parsed.error.issues) };
+}
+
+// The form of an existing event, filled with its values.
+export function eventFormInput(event: EventFormValues): EventFormInput {
+  return { ...event, starts_at: localInputValue(event.starts_at) };
+}
+
+// The fields the organizer has changed against `initial`, in form order. The title is compared
+// as it is sent, trimmed.
+export function changedFields(input: EventFormInput, initial: EventFormInput): EventField[] {
+  return EVENT_FIELDS.filter((field) =>
+    field === "title"
+      ? input.title.trim() !== initial.title.trim()
+      : input[field] !== initial[field],
+  );
+}
+
+// The changed fields ready to send, each checked as on creation; the start is checked for the
+// past only when it changes.
+export function parseEventChanges(
+  input: EventFormInput,
+  initial: EventFormInput,
+  now: Date,
+): EventChangesResult {
+  const changed = changedFields(input, initial);
+  const parsed = eventSchema(now, changed.includes("starts_at")).safeParse(input);
+  if (!parsed.success) return { ok: false, errors: issueErrors(parsed.error.issues) };
+  const changes: Partial<EventFormValues> = {};
+  for (const field of changed) copyField(changes, parsed.data, field);
+  return { ok: true, changes };
+}
+
+function copyField<K extends EventField>(
+  to: Partial<EventFormValues>,
+  from: EventFormValues,
+  field: K,
+): void {
+  to[field] = from[field];
+}
+
+function issueErrors(issues: z.core.$ZodIssue[]): EventFormErrors {
   const errors: EventFormErrors = {};
-  for (const issue of parsed.error.issues) {
+  for (const issue of issues) {
     const field = issue.path[0];
     if (isEventField(field)) errors[field] ??= toErrorCode(issue.message);
   }
-  return { ok: false, errors };
+  return errors;
 }
 
 // First code per known field; a code this client has no text for reads as "invalid".
