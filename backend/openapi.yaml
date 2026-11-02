@@ -132,6 +132,31 @@ paths:
           description: ''
         '404':
           description: No such event
+  /api/events/{event_id}/stream/:
+    get:
+      operationId: events_stream_retrieve
+      description: '`text/event-stream`. Each message is `event: snapshot` with the
+        event as JSON in `data`, as GET of the event has it: the first one right after
+        connecting, then one after each change of its counts.'
+      parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - events
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            text/event-stream:
+              schema:
+                $ref: '#/components/schemas/PublicEvent'
+          description: ''
+        '404':
+          description: No such event
   /api/events/{id}/:
     get:
       operationId: events_retrieve
@@ -300,14 +325,23 @@ paths:
   /api/org/events/{event_id}/registrations/:
     get:
       operationId: org_events_registrations_list
-      description: The event's participants for the organizer, in queue order, optionally
-        of one status.
+      description: |-
+        A page of the event's participants for the organizer, in queue order, of one status or all.
+
+        The number of pages comes from the counts of the event, not from this response.
       parameters:
       - in: path
         name: event_id
         schema:
           type: integer
         required: true
+      - in: query
+        name: page
+        schema:
+          type: integer
+          maximum: 1000000
+          minimum: 1
+          default: 1
       - in: query
         name: status
         schema:
@@ -575,7 +609,11 @@ components:
         free_seats:
           type: integer
           readOnly: true
+        cancelled:
+          type: integer
+          readOnly: true
       required:
+      - cancelled
       - capacity
       - checked_in
       - confirmed

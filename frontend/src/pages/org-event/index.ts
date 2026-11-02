@@ -1,1 +1,1 @@
-export { default as OrgEventPage } from "./ui/OrgEventPage.vue";
+export { default as OrgEventLayout } from "./ui/OrgEventLayout.vue";

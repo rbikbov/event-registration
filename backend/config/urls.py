@@ -9,6 +9,7 @@ from events.views import (
     OrgEventStreamView,
     PublicEventDetailView,
     PublicEventListView,
+    PublicEventStreamView,
 )
 from registrations.views import (
     CancelView,
@@ -38,6 +39,7 @@ urlpatterns = [
     path("api/org/events/<int:event_id>/checkin/", CheckInView.as_view(), name="checkin"),
     path("api/events/", PublicEventListView.as_view(), name="events"),
     path("api/events/<int:pk>/", PublicEventDetailView.as_view(), name="event"),
+    path("api/events/<int:event_id>/stream/", PublicEventStreamView.as_view(), name="event-stream"),
     path("api/events/<int:event_id>/registrations/", RegisterView.as_view(), name="register"),
     path("api/tickets/<str:manage_token>/", TicketView.as_view(), name="ticket"),
     path("api/tickets/<str:manage_token>/cancel/", CancelView.as_view(), name="cancel"),

@@ -93,7 +93,9 @@ function time(iso: string): string {
     >
       <Card>
         <CardHeader>
-          <CardHeading :level="1" class="text-2xl">{{ loaded.event.title }}</CardHeading>
+          <CardHeading :level="1" class="text-2xl leading-tight wrap-anywhere">{{
+            loaded.event.title
+          }}</CardHeading>
           <p class="text-muted-foreground text-sm">{{ startsAt(loaded.event.starts_at) }}</p>
         </CardHeader>
         <CardContent class="grid gap-4">

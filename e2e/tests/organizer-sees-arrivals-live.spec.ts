@@ -40,3 +40,42 @@ test("a check-in at the entrance updates the arrivals on a panel open elsewhere"
   expect(await panel.evaluate(() => "notReloaded" in window)).toBe(true);
   await panel.context().close();
 });
+
+test("a check-in at one entrance updates the arrivals on another check-in screen", async ({
+  browser,
+  request,
+}) => {
+  const title = `Entrances ${Date.now()}`;
+  await createEvent(browser, { title, capacity: 5 });
+
+  const participant = await (await browser.newContext()).newPage();
+  const email = `entrances-${Date.now()}@example.com`;
+  await participant.goto("/");
+  await participant.getByRole("link", { name: title }).click();
+  await participant.getByLabel("Email").fill(email);
+  await participant.getByLabel("Имя").fill("Глеб");
+  await participant.getByRole("button", { name: "Зарегистрироваться" }).click();
+  await expect(participant.getByRole("status")).toHaveText("Место подтверждено");
+  await participant.context().close();
+  const code = extract(await emailTo(request, email, "Билет"), /Код билета: (\S+)/);
+
+  const second = await organizerPage(browser);
+  await second.getByRole("link", { name: title }).click();
+  await second.getByRole("link", { name: "Чекин" }).click();
+  await expect(panelStat(second, "Пришло")).toHaveText("0");
+  await second.evaluate(() => {
+    Object.assign(window, { notReloaded: true });
+  });
+
+  const first = await organizerPage(browser);
+  await first.getByRole("link", { name: title }).click();
+  await first.getByRole("link", { name: "Чекин" }).click();
+  await first.getByLabel("Код билета").fill(code);
+  await first.getByRole("button", { name: "Отметить" }).click();
+  await expect(first.getByText("Пропущен", { exact: true })).toBeVisible();
+  await first.context().close();
+
+  await expect(panelStat(second, "Пришло")).toHaveText("1");
+  expect(await second.evaluate(() => "notReloaded" in window)).toBe(true);
+  await second.context().close();
+});

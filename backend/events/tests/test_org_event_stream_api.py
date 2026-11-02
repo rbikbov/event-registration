@@ -1,27 +1,18 @@
-import asyncio
-import json
-from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
 from datetime import timedelta
-from typing import Any
 
 import pytest
 from asgiref.sync import sync_to_async
-from django.http import StreamingHttpResponse
 from django.test import AsyncClient
 from django.utils import timezone
 from rest_framework.test import APIClient
 
 from accounts.models import User
 from events.models import Event
+from events.tests.sse import SSE, checked_in, next_message, stream
 from registrations.models import Registration
-from registrations.services import check_in
 
 # The stream runs in other threads with their own connections: the data must be committed.
 pytestmark = pytest.mark.django_db(transaction=True)
-
-# What EventSource sends; DRF would answer it with 406 without the view's own negotiation.
-SSE = {"accept": "text/event-stream"}
 
 
 @pytest.fixture
@@ -56,31 +47,13 @@ def url(event_id: int) -> str:
     return f"/api/org/events/{event_id}/stream/"
 
 
-@asynccontextmanager
-async def stream(client: AsyncClient, event_id: int) -> AsyncIterator[StreamingHttpResponse]:
-    response = await client.get(url(event_id), headers=SSE)
-    assert response.status_code == 200
-    assert isinstance(response, StreamingHttpResponse)
-    try:
-        yield response
-    finally:
-        # What a disconnect does: the subscription and the listener are released.
-        await response.streaming_content.aclose()
-
-
-async def next_message(response: StreamingHttpResponse) -> tuple[str, Any]:
-    chunk = await asyncio.wait_for(anext(aiter(response.streaming_content)), timeout=5)  # type: ignore[arg-type]  # async content under AsyncClient
-    fields = dict(line.split(": ", 1) for line in bytes(chunk).decode().splitlines() if line)
-    return fields["event"], json.loads(fields["data"])
-
-
 async def test_stream_starts_with_a_snapshot(client: AsyncClient, event: Event) -> None:
     await sync_to_async(confirmed)(event, "a@x.io")
     await sync_to_async(Registration.objects.create)(
         event=event, email="b@x.io", name="N", status=Registration.Status.WAITLISTED
     )
 
-    async with stream(client, event.id) as response:
+    async with stream(client, url(event.id)) as response:
         assert response["Content-Type"] == "text/event-stream"
         assert response["Cache-Control"] == "no-cache"
         assert response["X-Accel-Buffering"] == "no"
@@ -97,6 +70,7 @@ async def test_stream_starts_with_a_snapshot(client: AsyncClient, event: Event) 
                 "waitlisted": 1,
                 "checked_in": 0,
                 "free_seats": 4,
+                "cancelled": 0,
             },
         )
 
@@ -104,27 +78,31 @@ async def test_stream_starts_with_a_snapshot(client: AsyncClient, event: Event) 
 async def test_check_in_sends_a_new_snapshot(client: AsyncClient, event: Event) -> None:
     ticket = await sync_to_async(confirmed)(event, "a@x.io")
 
-    async with stream(client, event.id) as response:
+    async with stream(client, url(event.id)) as response:
         await next_message(response)
-        await sync_to_async(check_in)(event.id, ticket.ticket_code)
+        await sync_to_async(checked_in)(event.id, ticket.ticket_code)
 
         _, snapshot = await next_message(response)
         assert snapshot["checked_in"] == 1
 
 
-async def test_changes_not_yet_read_give_the_latest_snapshot(
+async def test_changes_in_a_row_end_with_the_latest_snapshot(
     client: AsyncClient, event: Event
 ) -> None:
     first = await sync_to_async(confirmed)(event, "a@x.io")
     second = await sync_to_async(confirmed)(event, "b@x.io")
 
-    async with stream(client, event.id) as response:
+    async with stream(client, url(event.id)) as response:
         await next_message(response)
-        await sync_to_async(check_in)(event.id, first.ticket_code)
-        await sync_to_async(check_in)(event.id, second.ticket_code)
+        await sync_to_async(checked_in)(event.id, first.ticket_code)
+        await sync_to_async(checked_in)(event.id, second.ticket_code)
 
-        _, snapshot = await next_message(response)
-        assert snapshot["checked_in"] == 2
+        # The first change may already be read when the second commits: its snapshot can come
+        # first, the last one must have both. A stream stuck on 1 fails on the timeout.
+        counts = [(await next_message(response))[1]["checked_in"]]
+        while counts[-1] != 2:
+            counts.append((await next_message(response))[1]["checked_in"])
+        assert counts in ([2], [1, 2])
 
 
 # Errors are plain JSON responses, so the synchronous client: AsyncClient leaves the connection of

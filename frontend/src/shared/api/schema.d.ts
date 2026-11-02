@@ -94,6 +94,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/events/{event_id}/stream/": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description `text/event-stream`. Each message is `event: snapshot` with the event as JSON in `data`, as GET of the event has it: the first one right after connecting, then one after each change of its counts. */
+        get: operations["events_stream_retrieve"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/events/{id}/": {
         parameters: {
             query?: never;
@@ -186,7 +203,11 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description The event's participants for the organizer, in queue order, optionally of one status. */
+        /**
+         * @description A page of the event's participants for the organizer, in queue order, of one status or all.
+         *
+         *     The number of pages comes from the counts of the event, not from this response.
+         */
         get: operations["org_events_registrations_list"];
         put?: never;
         post?: never;
@@ -316,6 +337,7 @@ export interface components {
             readonly waitlisted: number;
             readonly checked_in: number;
             readonly free_seats: number;
+            readonly cancelled: number;
         };
         /**
          * @description A row of the organizer's participant table: the full email, unlike the entrance screen.
@@ -555,6 +577,34 @@ export interface operations {
             };
         };
     };
+    events_stream_retrieve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": components["schemas"]["PublicEvent"];
+                };
+            };
+            /** @description No such event */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
     events_retrieve: {
         parameters: {
             query?: never;
@@ -749,6 +799,7 @@ export interface operations {
     org_events_registrations_list: {
         parameters: {
             query?: {
+                page?: number;
                 /**
                  * @description * `confirmed` - Confirmed
                  *     * `waitlisted` - Waitlisted

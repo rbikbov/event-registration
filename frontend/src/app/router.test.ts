@@ -3,7 +3,7 @@ import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 import { createMemoryHistory } from "vue-router";
 
-import { eventPath, orgEventPath, routes } from "@/shared/config";
+import { checkinPath, eventPath, orgEventPath, routes } from "@/shared/config";
 import { server } from "@/shared/lib/test/msw";
 
 import { createAppRouter } from "./router";
@@ -37,6 +37,16 @@ describe("route guard", () => {
     const router = setup();
 
     await router.push(orgEventPath(7));
+
+    expect(router.currentRoute.value.path).toBe(routes.login);
+  });
+
+  // The check-in is a tab of the event layout: it is guarded by the layout's route.
+  it("sends a guest from the check-in to /login", async () => {
+    guest();
+    const router = setup();
+
+    await router.push(checkinPath(7));
 
     expect(router.currentRoute.value.path).toBe(routes.login);
   });

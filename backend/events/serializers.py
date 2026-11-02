@@ -29,6 +29,8 @@ class OrgEventSerializer(serializers.ModelSerializer[Event]):
     waitlisted = serializers.IntegerField(read_only=True)
     checked_in = serializers.IntegerField(read_only=True)
     free_seats = serializers.IntegerField(read_only=True)
+    # With the other counts, the number of pages of the participant list for any filter.
+    cancelled = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Event
@@ -42,6 +44,7 @@ class OrgEventSerializer(serializers.ModelSerializer[Event]):
             "waitlisted",
             "checked_in",
             "free_seats",
+            "cancelled",
         )
         read_only_fields = fields
 

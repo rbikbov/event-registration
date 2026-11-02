@@ -1,7 +1,7 @@
-import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
-import { mount } from "@vue/test-utils";
+import { focusManager, QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
+import { flushPromises, mount } from "@vue/test-utils";
 import { http, HttpResponse } from "msw";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createMemoryHistory, createRouter } from "vue-router";
 
 import EventPage from "./EventPage.vue";
@@ -9,6 +9,7 @@ import EventPage from "./EventPage.vue";
 import { publicEventsQuery } from "@/entities/event";
 import { eventPath, routes } from "@/shared/config";
 import { createAppI18n } from "@/shared/lib/i18n";
+import { fakeEventSource } from "@/shared/lib/test/fake-event-source";
 import { server } from "@/shared/lib/test/msw";
 
 const event = {
@@ -57,9 +58,30 @@ async function settled({ wrapper, queryClient }: Page) {
   });
 }
 
+// Counts the GETs of the event: after the first one the page takes it from the stream.
+let eventGets = 0;
+
 function eventLoaded(): void {
-  server.use(http.get("*/api/events/7/", () => HttpResponse.json(event)));
+  server.use(
+    http.get("*/api/events/7/", () => {
+      eventGets += 1;
+      return HttpResponse.json(event);
+    }),
+  );
 }
+
+// jsdom has no EventSource; every test sees the page's stream through the fake.
+let streams: ReturnType<typeof fakeEventSource>;
+
+beforeEach(() => {
+  eventGets = 0;
+  streams = fakeEventSource();
+  vi.stubGlobal("EventSource", streams.EventSource);
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 describe("EventPage", () => {
   it("shows the event with its free seats and the form", async () => {
@@ -106,7 +128,7 @@ describe("EventPage", () => {
     await vi.waitFor(() => expect(wrapper.text()).toContain("Talks and pizza"));
   });
 
-  it("registers, shows the result and refreshes the lists", async () => {
+  it("registers, shows the result and refreshes the list, not the event", async () => {
     eventLoaded();
     let body: unknown;
     server.use(
@@ -125,6 +147,9 @@ describe("EventPage", () => {
     expect(wrapper.get('[role="status"]').text()).toBe("Место подтверждено");
     expect(wrapper.find("form").exists()).toBe(false);
     expect(queryClient.getQueryState(publicEventsQuery.queryKey)?.isInvalidated).toBe(true);
+    // The free seats come with the snapshot of this registration.
+    await flushPromises();
+    expect(eventGets).toBe(1);
   });
 
   it("forgets the result when the route moves to another event", async () => {
@@ -311,5 +336,66 @@ describe("EventPage", () => {
 
     expect(wrapper.get("h1").text()).toBe("Meetup");
     expect(wrapper.get("#email").element).toHaveProperty("value", "a@x.io");
+  });
+
+  it("opens the stream of the event once it has loaded", async () => {
+    eventLoaded();
+
+    await mountPage();
+    await flushPromises();
+
+    expect(streams.opened.map((stream) => stream.url)).toEqual(["/api/events/7/stream/"]);
+  });
+
+  it("opens no stream for an unknown event", async () => {
+    server.use(http.get("*/api/events/7/", () => HttpResponse.json({}, { status: 404 })));
+
+    await mountPage();
+    await flushPromises();
+
+    expect(streams.opened).toEqual([]);
+  });
+
+  it("takes the free seats from a snapshot of the stream", async () => {
+    eventLoaded();
+    const { wrapper } = await mountPage();
+    await flushPromises();
+
+    streams.opened[0]?.emit("snapshot", { ...event, free_seats: 0 });
+    await flushPromises();
+
+    expect(wrapper.text()).toContain("Свободных мест нет");
+  });
+
+  // A GET that read the event before a snapshot could answer after it with older free seats.
+  it("does not read the event again when the window regains focus", async () => {
+    eventLoaded();
+    await mountPage();
+    await flushPromises();
+
+    focusManager.setFocused(false);
+    focusManager.setFocused(true);
+    await flushPromises();
+    focusManager.setFocused(undefined);
+
+    expect(eventGets).toBe(1);
+  });
+
+  it("moves the stream to another event with the route and closes it when left", async () => {
+    eventLoaded();
+    server.use(
+      http.get("*/api/events/8/", () => HttpResponse.json({ ...event, id: 8, title: "Other" })),
+    );
+    const { wrapper, router } = await mountPage();
+    await flushPromises();
+
+    await router.push(eventPath(8));
+    await vi.waitFor(() => expect(streams.opened).toHaveLength(2));
+    wrapper.unmount();
+
+    expect(streams.opened.map((stream) => [stream.url, stream.closed])).toEqual([
+      ["/api/events/7/stream/", true],
+      ["/api/events/8/stream/", true],
+    ]);
   });
 });

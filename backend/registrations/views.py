@@ -158,7 +158,10 @@ class CheckInView(APIView):
 
 
 class OrgRegistrationListView(ListAPIView[Registration]):
-    """The event's participants for the organizer, in queue order, optionally of one status."""
+    """A page of the event's participants for the organizer, in queue order, of one status or all.
+
+    The number of pages comes from the counts of the event, not from this response.
+    """
 
     serializer_class = OrgRegistrationSerializer
 
@@ -178,4 +181,6 @@ class OrgRegistrationListView(ListAPIView[Registration]):
         event = get_org_event(self.request.user, self.kwargs["event_id"])  # type: ignore[arg-type]  # IsAuthenticated: never AnonymousUser here
         query = RegistrationFilterSerializer(data=self.request.query_params)
         query.is_valid(raise_exception=True)
-        return event_registrations(event.id, query.validated_data.get("status"))
+        return event_registrations(
+            event.id, query.validated_data.get("status"), query.validated_data["page"]
+        )
