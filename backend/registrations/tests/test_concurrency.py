@@ -7,14 +7,17 @@ from django.utils import timezone
 
 from accounts.models import User
 from config.tests.concurrency import run_together
+from emails.models import OutboxEmail
 from events.models import Event
 from registrations.models import Registration
 from registrations.services import (
+    CapacityBelowConfirmed,
     TicketCheckedIn,
     TicketNotConfirmed,
     cancel,
     check_in,
     register,
+    update_event,
     waitlist_position,
 )
 
@@ -172,3 +175,41 @@ def test_check_in_in_parallel_with_a_cancel_lets_exactly_one_pass(event: Event) 
         # The outcome the caller was told is the one stored.
         assert t.status == ("confirmed" if checked_in else "cancelled")
         assert (t.checked_in_at is not None) == checked_in
+
+
+def lower_capacity(event_id: int, capacity: int) -> bool:
+    try:
+        update_event(event_id, {"capacity": capacity})
+    except CapacityBelowConfirmed:
+        return False
+    return True
+
+
+def test_lower_capacity_with_parallel_registrations_never_leaves_seats_over(event: Event) -> None:
+    event.capacity = 5
+    event.save()
+    for i in range(3):
+        register(event.id, f"seat{i}@x.io", "Seat")
+
+    calls: list[Callable[[], object]] = [
+        partial(lower_capacity, event.id, 3),
+        *(partial(register, event.id, f"new{i}@x.io", "New") for i in range(2)),
+    ]
+
+    run_together(calls)
+
+    event.refresh_from_db()
+    confirmed = Registration.objects.filter(event=event, status="confirmed").count()
+    assert confirmed <= event.capacity
+
+
+def test_parallel_reschedules_each_get_a_version_and_emails(event: Event) -> None:
+    seat = register(event.id, "seat@x.io", "Seat").registration
+    starts = [event.starts_at + timedelta(days=d) for d in range(1, 5)]
+
+    run_together([partial(update_event, event.id, {"starts_at": s}) for s in starts])
+
+    event.refresh_from_db()
+    assert event.schedule_version == 5
+    keys = OutboxEmail.objects.filter(kind="rescheduled").values_list("dedup_key", flat=True)
+    assert sorted(keys) == [f"rescheduled:{seat.id}:{v}" for v in range(2, 6)]

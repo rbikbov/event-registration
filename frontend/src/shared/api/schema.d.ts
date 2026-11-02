@@ -361,10 +361,13 @@ export interface components {
             /** Format: date-time */
             checked_in_at: string | null;
         };
-        /** @description The fields of the event the organizer changes; any subset of them. */
+        /** @description The fields of the event the organizer changes; any subset of them, checked as on creation. */
         PatchedEventUpdateRequest: {
+            title?: string;
+            description?: string;
             /** Format: date-time */
             starts_at?: string;
+            capacity?: number;
         };
         PublicEvent: {
             readonly id: number;

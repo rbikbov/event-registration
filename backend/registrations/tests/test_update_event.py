@@ -7,7 +7,7 @@ from accounts.models import User
 from emails.models import OutboxEmail
 from events.models import Event
 from registrations.models import Registration
-from registrations.services import cancel, register, update_event
+from registrations.services import CapacityBelowConfirmed, cancel, register, update_event
 
 pytestmark = pytest.mark.django_db
 
@@ -79,3 +79,87 @@ def test_each_reschedule_emails_again(event: Event) -> None:
 def test_unknown_event_raises(event: Event) -> None:
     with pytest.raises(Event.DoesNotExist):
         update_event(event.id + 1, {"starts_at": event.starts_at})
+
+
+def statuses(event: Event) -> dict[str, str]:
+    return dict(Registration.objects.filter(event=event).values_list("email", "status"))
+
+
+def promoted() -> list[str]:
+    return list(
+        OutboxEmail.objects.filter(kind=OutboxEmail.Kind.PROMOTED)
+        .order_by("id")
+        .values_list("to", flat=True)
+    )
+
+
+def test_title_and_description_change_without_emails(event: Event) -> None:
+    register(event.id, "a@x.io", "Ann")
+
+    updated = update_event(event.id, {"title": "Renamed", "description": "New room"})
+
+    assert (updated.title, updated.description, updated.schedule_version) == (
+        "Renamed",
+        "New room",
+        1,
+    )
+    event.refresh_from_db()
+    assert (event.title, event.description) == ("Renamed", "New room")
+    assert OutboxEmail.objects.exclude(kind=OutboxEmail.Kind.TICKET).count() == 0
+
+
+def test_larger_capacity_promotes_the_waitlist_head_in_order(event: Event) -> None:
+    register(event.id, "a@x.io", "Ann")
+    for email in ("b@x.io", "c@x.io", "d@x.io"):
+        register(event.id, email, "W")
+
+    update_event(event.id, {"capacity": 3})
+
+    assert statuses(event) == {
+        "a@x.io": "confirmed",
+        "b@x.io": "confirmed",
+        "c@x.io": "confirmed",
+        "d@x.io": "waitlisted",
+    }
+    assert promoted() == ["b@x.io", "c@x.io"]
+    head = Registration.objects.get(email="b@x.io")
+    assert head.confirmed_at is not None
+    assert head.ticket_code in OutboxEmail.objects.get(to="b@x.io", kind="promoted").body
+
+
+def test_capacity_beyond_the_waitlist_promotes_everyone_waiting(event: Event) -> None:
+    register(event.id, "a@x.io", "Ann")
+    register(event.id, "b@x.io", "Bob")
+
+    update_event(event.id, {"capacity": 10})
+
+    assert set(statuses(event).values()) == {"confirmed"}
+    assert promoted() == ["b@x.io"]
+
+
+def test_capacity_below_confirmed_changes_nothing(event: Event) -> None:
+    event.capacity = 3
+    event.save()
+    for email in ("a@x.io", "b@x.io"):
+        register(event.id, email, "N")
+    new_start = event.starts_at + timedelta(days=1)
+
+    with pytest.raises(CapacityBelowConfirmed) as raised:
+        update_event(event.id, {"capacity": 1, "title": "Renamed", "starts_at": new_start})
+
+    assert raised.value.confirmed == 2
+    event.refresh_from_db()
+    assert (event.capacity, event.title, event.schedule_version) == (3, "Meetup", 1)
+    assert rescheduled() == []
+
+
+def test_capacity_down_to_confirmed_is_allowed_and_promotes_nobody(event: Event) -> None:
+    event.capacity = 3
+    event.save()
+    register(event.id, "a@x.io", "Ann")
+    register(event.id, "b@x.io", "Bob")
+
+    updated = update_event(event.id, {"capacity": 2})
+
+    assert updated.capacity == 2
+    assert promoted() == []

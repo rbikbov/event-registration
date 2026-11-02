@@ -17,9 +17,13 @@ class EventSerializer(serializers.ModelSerializer[Event]):
         read_only_fields = ("id",)
 
     def validate_starts_at(self, value: datetime) -> datetime:
-        if value <= timezone.now():
-            raise serializers.ValidationError("Start must be in the future.", code="past")
-        return value
+        return future_start(value)
+
+
+def future_start(value: datetime) -> datetime:
+    if value <= timezone.now():
+        raise serializers.ValidationError("Start must be in the future.", code="past")
+    return value
 
 
 class OrgEventSerializer(serializers.ModelSerializer[Event]):
@@ -49,10 +53,20 @@ class OrgEventSerializer(serializers.ModelSerializer[Event]):
         read_only_fields = fields
 
 
-class EventUpdateSerializer(serializers.Serializer[None]):
-    """The fields of the event the organizer changes; any subset of them."""
+# Validates against the event as `instance` with `partial=True`; `save()` is not used: the change
+# has side effects (emails, promotion), the service makes it under the event lock.
+class EventUpdateSerializer(serializers.ModelSerializer[Event]):
+    """The fields of the event the organizer changes; any subset of them, checked as on creation."""
 
-    starts_at = serializers.DateTimeField(required=False)
+    class Meta:
+        model = Event
+        fields = ("title", "description", "starts_at", "capacity")
+
+    def validate_starts_at(self, value: datetime) -> datetime:
+        # A start sent unchanged is no reschedule: an event under way keeps its past start.
+        if self.instance is not None and value == self.instance.starts_at:
+            return value
+        return future_start(value)
 
 
 class PublicEventListSerializer(serializers.ModelSerializer[Event]):

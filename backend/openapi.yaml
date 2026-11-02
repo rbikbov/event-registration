@@ -698,11 +698,23 @@ components:
       - status
     PatchedEventUpdateRequest:
       type: object
-      description: The fields of the event the organizer changes; any subset of them.
+      description: The fields of the event the organizer changes; any subset of them,
+        checked as on creation.
       properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 200
+        description:
+          type: string
+          maxLength: 2000
         starts_at:
           type: string
           format: date-time
+        capacity:
+          type: integer
+          maximum: 10000
+          minimum: 1
     PublicEvent:
       type: object
       properties:

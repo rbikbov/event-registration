@@ -3,7 +3,7 @@ from typing import Any
 from django.db.models import QuerySet
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status
-from rest_framework.exceptions import NotFound
+from rest_framework.exceptions import ErrorDetail, NotFound, ValidationError
 from rest_framework.generics import ListAPIView
 from rest_framework.permissions import AllowAny
 from rest_framework.request import Request
@@ -26,6 +26,7 @@ from registrations.serializers import (
     TicketSerializer,
 )
 from registrations.services import (
+    CapacityBelowConfirmed,
     TicketCheckedIn,
     TicketNotConfirmed,
     cancel,
@@ -205,12 +206,17 @@ class OrgEventView(OrgEventDetailView):
         },
     )
     def patch(self, request: Request, event_id: int) -> Response:
-        get_org_event(request.user, event_id)  # type: ignore[arg-type]  # IsAuthenticated: never AnonymousUser here
-        serializer = EventUpdateSerializer(data=request.data)
+        event = get_org_event(request.user, event_id)  # type: ignore[arg-type]  # IsAuthenticated: never AnonymousUser here
+        serializer = EventUpdateSerializer(event, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         try:
             update_event(event_id, serializer.validated_data)
         except Event.DoesNotExist:  # deleted since the check above
             raise NotFound from None
+        except CapacityBelowConfirmed:
+            # Checked under the lock, not here: a registration may take a seat meanwhile.
+            raise ValidationError(
+                {"capacity": [ErrorDetail("Below the confirmed count.", code="below_confirmed")]}
+            ) from None
         event = Event.objects.with_registration_counts().get(pk=event_id)
         return Response(OrgEventSerializer(event).data)
