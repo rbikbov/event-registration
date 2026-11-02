@@ -45,6 +45,11 @@ const clientErrors = ref<EventFormErrors>({});
 const confirming = ref(false);
 
 const changed = computed(() => changedFields(form, initial.value));
+// The number field applies a typed value on blur, and a press on the save button blurs it only
+// after meeting the button: disabled until then, the first click would be lost. While a value is
+// typed and not applied yet, the button is on; the submit after the blur sees the applied value.
+const capacityTyped = ref(false);
+const canSave = computed(() => changed.value.length > 0 || capacityTyped.value);
 
 const { mutate, isPending, isSuccess, error, reset } = useMutation({
   mutationFn: (changes: Parameters<typeof updateEvent>[1]) => updateEvent(props.event.id, changes),
@@ -134,7 +139,11 @@ const textFields: { name: "title" | "description" | "starts_at"; type: string }[
       <NumberField id="capacity" v-model="form.capacity">
         <NumberFieldContent>
           <NumberFieldDecrement />
-          <NumberFieldInput :aria-invalid="fieldErrors.capacity !== undefined" />
+          <NumberFieldInput
+            :aria-invalid="fieldErrors.capacity !== undefined"
+            @input="capacityTyped = true"
+            @blur="capacityTyped = false"
+          />
           <NumberFieldIncrement />
         </NumberFieldContent>
       </NumberField>
@@ -157,7 +166,7 @@ const textFields: { name: "title" | "description" | "starts_at"; type: string }[
       </AlertDescription>
     </Alert>
     <div v-else class="flex items-center gap-3">
-      <Button type="submit" :disabled="isPending || changed.length === 0">
+      <Button type="submit" :disabled="isPending || !canSave">
         {{ isPending ? t("submitting") : t("submit") }}
       </Button>
       <p v-if="isSuccess" class="text-muted-foreground text-sm" role="status">{{ t("saved") }}</p>

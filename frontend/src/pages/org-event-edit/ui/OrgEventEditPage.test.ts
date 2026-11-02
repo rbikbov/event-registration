@@ -87,6 +87,16 @@ describe("OrgEventEditPage", () => {
     expect(saveButton(wrapper).attributes("disabled")).toBeDefined();
   });
 
+  // The number field applies what was typed on blur, and a press on the button blurs it only
+  // after the press has met a disabled button: one click must still save.
+  it("lets the button be pressed while a typed capacity is not applied yet", async () => {
+    const { wrapper } = mountPage();
+
+    await wrapper.get("#capacity").setValue("5");
+
+    expect(saveButton(wrapper).attributes("disabled")).toBeUndefined();
+  });
+
   it("sends only the changed fields and puts the answer into the event cache", async () => {
     const bodies = patched();
     const { wrapper, queryClient } = mountPage();

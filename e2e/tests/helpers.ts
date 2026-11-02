@@ -45,6 +45,29 @@ export async function createEvent(
   await page.context().close();
 }
 
+// A participant registers on the event page, reached from the public list.
+export async function registerOn(
+  page: Page,
+  title: string,
+  email: string,
+  name: string,
+): Promise<void> {
+  await page.goto("/");
+  await page.getByRole("link", { name: title }).click();
+  await page.getByLabel("Email").fill(email);
+  await page.getByLabel("Имя").fill(name);
+  await page.getByRole("button", { name: "Зарегистрироваться" }).click();
+}
+
+// The organizer opens the edit tab of their event from the list of their events.
+export async function openEventEdit(browser: Browser, title: string): Promise<Page> {
+  const page = await organizerPage(browser);
+  await page.getByRole("link", { name: title }).click();
+  await page.getByRole("link", { name: "Редактирование" }).click();
+  await expect(page.getByLabel("Название", { exact: true })).toHaveValue(title);
+  return page;
+}
+
 // The worker sends the email after the change commits, so it is polled for. The mailbox is
 // shared and never cleared: the unique address is what finds this test's email, the subject
 // tells apart the emails sent to one address.
