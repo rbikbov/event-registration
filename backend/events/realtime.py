@@ -7,6 +7,7 @@ counts, only a later snapshot.
 
 import asyncio
 import json
+import logging
 from collections.abc import AsyncGenerator, AsyncIterator, Callable
 from contextlib import asynccontextmanager, suppress
 from typing import Any
@@ -15,7 +16,17 @@ import psycopg
 from asgiref.sync import sync_to_async
 from django.db import connection, connections
 
+logger = logging.getLogger(__name__)
+
 CHANNEL = "event_stats"
+# Well under nginx's default proxy_read_timeout of 60 s: an idle stream is not cut by the proxy.
+PING_SECONDS = 15.0
+# How long EventSource waits before reconnecting a stream that ended.
+RETRY_MILLISECONDS = 3000
+
+
+class ListenerLost(Exception):
+    """The LISTEN connection is gone: the notifications in between are lost to the streams."""
 
 
 def notify_stats_changed(event_id: int) -> None:
@@ -55,8 +66,11 @@ def read_snapshot(snapshot: Snapshot, event_id: int) -> Any:
 
 
 def put_latest(queue: asyncio.Queue[Any], item: Any) -> None:
+    """Put `item` in place of the one waiting, unless that one ends the stream."""
     if queue.full():
-        queue.get_nowait()
+        waiting = queue.get_nowait()
+        if isinstance(waiting, ListenerLost):
+            item = waiting
     queue.put_nowait(item)
 
 
@@ -170,9 +184,27 @@ class StatsListener:
                     await self._close()
 
     async def _deliver(self, listener: psycopg.AsyncConnection[Any]) -> None:
-        async for notify in listener.notifies():
-            for feed in self._feeds.get(int(notify.payload), {}).values():
-                feed.changed()
+        try:
+            async for notify in listener.notifies():
+                for feed in self._feeds.get(int(notify.payload), {}).values():
+                    feed.changed()
+        except psycopg.OperationalError:
+            logger.warning("Lost the LISTEN connection, ending the streams", exc_info=True)
+            await self._lost(listener)
+
+    async def _lost(self, listener: psycopg.AsyncConnection[Any]) -> None:
+        # Under the lock: a subscriber that joins after this sees no connection and listens
+        # anew, one that joined before is ended with the rest.
+        async with self._lock:
+            self._connection = None
+            self._dispatch = None
+            await listener.close()
+            # Every stream ends: a notification may have been lost to any of them, and the
+            # snapshot of reconnecting is what makes the counts right again.
+            for feeds in self._feeds.values():
+                for feed in feeds.values():
+                    for queue in feed.queues:
+                        put_latest(queue, ListenerLost())
 
     async def _close(self) -> None:
         if self._dispatch is not None:
@@ -192,11 +224,22 @@ async def snapshot_stream(event_id: int, snapshot: Snapshot) -> AsyncGenerator[b
     """SSE messages `snapshot`: one right away, then one after each change of the event.
 
     `snapshot` is a synchronous read of the event as its GET has it, read once for all the
-    streams of the process that pass the same function for the event.
+    streams of the process that pass the same function for the event. A `: ping` comment goes
+    after `PING_SECONDS` without a snapshot; a lost LISTEN connection ends the stream, and the
+    client reconnects after `retry`.
     """
+    retry = f"retry: {RETRY_MILLISECONDS}\n"
     async with listener.subscription(event_id, snapshot) as snapshots:
         while True:
-            data = await snapshots.get()
+            try:
+                data = await asyncio.wait_for(snapshots.get(), timeout=PING_SECONDS)
+            except TimeoutError:
+                yield b": ping\n\n"
+                continue
+            if isinstance(data, ListenerLost):
+                # Ended, not failed: the stream is fine, it only has to be opened again.
+                return
             if isinstance(data, Exception):
                 raise data
-            yield f"event: snapshot\ndata: {json.dumps(data)}\n\n".encode()
+            yield f"{retry}event: snapshot\ndata: {json.dumps(data)}\n\n".encode()
+            retry = ""
