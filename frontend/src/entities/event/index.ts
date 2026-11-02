@@ -1,6 +1,13 @@
-export { orgEventQuery, orgEventsQuery, orgEventLive, type OrgEvent } from "./api/org-events";
+export {
+  orgEventLive,
+  orgEventProbe,
+  orgEventQuery,
+  orgEventsQuery,
+  type OrgEvent,
+} from "./api/org-events";
 export {
   publicEventLive,
+  publicEventProbe,
   publicEventQuery,
   publicEventsQuery,
   type PublicEvent,

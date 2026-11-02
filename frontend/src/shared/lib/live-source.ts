@@ -16,15 +16,14 @@ const REOPEN_MS = 3000;
 
 // Server-sent events of `url`: the JSON data of each `event` message.
 //
-// A dropped connection EventSource reconnects by itself. A response other than 200 (a 502 of the
-// gateway while the backend restarts) closes it for good, so the stream is opened again after
-// 3 s — once it has opened at least once: one that never did is 403 or 404, which the page's GET
-// tells, and a retry changes nothing.
+// A dropped connection EventSource reconnects by itself. A response other than 200 closes it for
+// good, and EventSource does not tell which one: a 502 of the gateway while the backend restarts,
+// or a 401, 403, 404 a retry cannot change. So each refusal is told as "refused", and the stream
+// is opened again after 3 s, until the subscriber, having asked the server why, unsubscribes.
 export function sseSource<Data>(url: string, event: string): LiveSource<Data> {
   return {
     subscribe(onData, onState = () => {}) {
       let source: EventSource;
-      let everOpened = false;
       let reconnecting = false;
       let reopening: ReturnType<typeof setTimeout> | undefined;
 
@@ -36,9 +35,6 @@ export function sseSource<Data>(url: string, event: string): LiveSource<Data> {
 
       function open() {
         source = new EventSource(url);
-        source.addEventListener("open", () => {
-          everOpened = true;
-        });
         // The server's contract: the data of a message is the JSON of the schema type.
         source.addEventListener(event, (message: MessageEvent<string>) => {
           onData(JSON.parse(message.data) as Data);
@@ -49,10 +45,8 @@ export function sseSource<Data>(url: string, event: string): LiveSource<Data> {
           }
         });
         source.addEventListener("error", () => {
-          if (source.readyState !== EventSource.CLOSED) {
-            lost();
-          } else if (everOpened) {
-            lost();
+          lost();
+          if (source.readyState === EventSource.CLOSED) {
             onState("refused");
             reopening = setTimeout(open, REOPEN_MS);
           }

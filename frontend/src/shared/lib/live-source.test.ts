@@ -84,7 +84,9 @@ describe("sseSource", () => {
     expect(received).toEqual([{ checked_in: 3 }]);
   });
 
-  it("does not open again a stream that never opened", () => {
+  // The first connection too: the page opens the stream after its GET, so a refusal then is a
+  // backend restarting or an ended session as often as a gone event. The page asks which.
+  it("opens again a stream refused on its first connection", () => {
     vi.useFakeTimers();
     const states: LiveState[] = [];
     sseSource("/api/stream/", "stats").subscribe(
@@ -92,12 +94,11 @@ describe("sseSource", () => {
       (state) => states.push(state),
     );
 
-    // 403 or 404: the page's GET tells which, a retry changes nothing.
     streams.opened[0]?.fail({ closed: true });
-    vi.advanceTimersByTime(10_000);
+    vi.advanceTimersByTime(3000);
 
-    expect(streams.opened).toHaveLength(1);
-    expect(states).toEqual([]);
+    expect(streams.opened).toHaveLength(2);
+    expect(states).toEqual(["reconnecting", "refused"]);
   });
 
   it("does not open again after unsubscribing", () => {

@@ -12,10 +12,21 @@ export const publicEventsQuery = queryOptions({
   queryFn: () => unwrap(api.GET("/api/events/")),
 });
 
+function readPublicEvent(id: number) {
+  return unwrap(api.GET("/api/events/{id}/", { params: { path: { id } } }));
+}
+
 export function publicEventQuery(id: number) {
+  return queryOptions({ queryKey: ["events", id], queryFn: () => readPublicEvent(id) });
+}
+
+// As orgEventProbe: what the server answers for the event now, without touching its data.
+export function publicEventProbe(id: number) {
   return queryOptions({
-    queryKey: ["events", id],
-    queryFn: () => unwrap(api.GET("/api/events/{id}/", { params: { path: { id } } })),
+    queryKey: ["event-probe", id],
+    queryFn: () => readPublicEvent(id),
+    staleTime: 0,
+    gcTime: 0,
   });
 }
 

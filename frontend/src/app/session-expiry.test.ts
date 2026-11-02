@@ -4,7 +4,6 @@ import { http, HttpResponse } from "msw";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createMemoryHistory, RouterView } from "vue-router";
 
-import { meQuery } from "@/entities/session";
 import { AppError } from "@/shared/api";
 import { checkinPath, routes } from "@/shared/config";
 import { createAppI18n } from "@/shared/lib/i18n";
@@ -77,29 +76,23 @@ describe("expired session", () => {
     await settle();
     expect(router.currentRoute.value.path).toBe(routes.orgEvents);
   });
-
-  // What a page does when it cannot tell a 401 from other refusals, as with a live stream.
-  it("sends the organizer to /login when a reread of me finds nobody signed in", async () => {
-    const { queryClient, router } = await setup(routes.orgEvents);
-    server.use(http.get("*/api/auth/me/", () => new HttpResponse(null, { status: 401 })));
-
-    await queryClient.prefetchQuery({ ...meQuery, staleTime: 0 });
-
-    await expect.poll(() => router.currentRoute.value.path).toBe(routes.login);
-  });
-
-  it("stays when a reread of me finds the organizer still signed in", async () => {
-    const { queryClient, router } = await setup(routes.orgEvents);
-
-    await queryClient.prefetchQuery({ ...meQuery, staleTime: 0 });
-
-    await settle();
-    expect(router.currentRoute.value.path).toBe(routes.orgEvents);
-  });
 });
 
 // The whole way, with the app's router: EventSource does not tell a 401 from a 502, so the
-// event layout reads the session again on each refusal, and an ended one leads to /login.
+// event layout reads the event again for its status on each refusal, and a 401 leads to /login.
+const EVENT = {
+  id: 7,
+  title: "Meetup",
+  description: "",
+  starts_at: "2030-05-01T18:00:00Z",
+  capacity: 2,
+  confirmed: 0,
+  waitlisted: 0,
+  checked_in: 0,
+  free_seats: 2,
+  cancelled: 0,
+};
+
 describe("a refused live stream", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
@@ -109,22 +102,7 @@ describe("a refused live stream", () => {
   async function openPanel() {
     const streams = fakeEventSource();
     vi.stubGlobal("EventSource", streams.EventSource);
-    server.use(
-      http.get("*/api/org/events/7/", () =>
-        HttpResponse.json({
-          id: 7,
-          title: "Meetup",
-          description: "",
-          starts_at: "2030-05-01T18:00:00Z",
-          capacity: 2,
-          confirmed: 0,
-          waitlisted: 0,
-          checked_in: 0,
-          free_seats: 2,
-          cancelled: 0,
-        }),
-      ),
-    );
+    server.use(http.get("*/api/org/events/7/", () => HttpResponse.json(EVENT)));
     // The check-in tab: the layout is all there is to read.
     const { queryClient, router } = await setup(checkinPath(7));
     mount(RouterView, {
@@ -137,26 +115,26 @@ describe("a refused live stream", () => {
 
   it("sends the organizer to /login when the session has ended", async () => {
     const { router, streams } = await openPanel();
-    server.use(http.get("*/api/auth/me/", () => new HttpResponse(null, { status: 401 })));
+    server.use(http.get("*/api/org/events/7/", () => new HttpResponse(null, { status: 401 })));
 
     streams.opened[0]?.fail({ closed: true });
 
     await expect.poll(() => router.currentRoute.value.path).toBe(routes.login);
   });
 
-  it("stays and opens the stream again while the organizer is signed in", async () => {
+  it("stays and opens the stream again while the event still answers", async () => {
     const { router, streams } = await openPanel();
-    let meReads = 0;
+    let probes = 0;
     server.use(
-      http.get("*/api/auth/me/", () => {
-        meReads += 1;
-        return HttpResponse.json({ id: 1, email: "demo@example.com" });
+      http.get("*/api/org/events/7/", () => {
+        probes += 1;
+        return HttpResponse.json(EVENT);
       }),
     );
     vi.useFakeTimers();
 
     streams.opened[0]?.fail({ closed: true });
-    await vi.waitFor(() => expect(meReads).toBe(1));
+    await vi.waitFor(() => expect(probes).toBe(1));
     await vi.advanceTimersByTimeAsync(3000);
     await flushPromises();
 

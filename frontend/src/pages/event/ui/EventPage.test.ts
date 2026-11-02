@@ -81,6 +81,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.unstubAllGlobals();
+  vi.useRealTimers();
 });
 
 describe("EventPage", () => {
@@ -365,6 +366,42 @@ describe("EventPage", () => {
     await flushPromises();
 
     expect(wrapper.text()).toContain("Свободных мест нет");
+  });
+
+  // EventSource does not tell why a stream was refused: the event is read again for its status,
+  // without its answer replacing the free seats.
+  it("ends the stream and says so when a probe after a refusal finds the event gone", async () => {
+    eventLoaded();
+    const { wrapper } = await mountPage();
+    await flushPromises();
+    server.use(http.get("*/api/events/7/", () => HttpResponse.json({}, { status: 404 })));
+    vi.useFakeTimers();
+
+    streams.opened[0]?.fail({ closed: true });
+    await vi.waitFor(() => expect(wrapper.get('[role="alert"]').text()).toBe("Такого события нет"));
+    vi.advanceTimersByTime(3000);
+
+    expect(streams.opened).toHaveLength(1);
+    expect(streams.opened[0]?.closed).toBe(true);
+  });
+
+  it("keeps opening the stream when a probe finds the event still there", async () => {
+    server.use(
+      http.get("*/api/events/7/", () => {
+        eventGets += 1;
+        return HttpResponse.json({ ...event, free_seats: eventGets === 1 ? 2 : 0 });
+      }),
+    );
+    const { wrapper } = await mountPage();
+    await flushPromises();
+    vi.useFakeTimers();
+
+    streams.opened[0]?.fail({ closed: true });
+    await vi.waitFor(() => expect(eventGets).toBe(2));
+    await vi.advanceTimersByTimeAsync(3000);
+
+    expect(streams.opened).toHaveLength(2);
+    expect(wrapper.text()).toContain("Свободно 2 места");
   });
 
   // A GET that read the event before a snapshot could answer after it with older free seats.

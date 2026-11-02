@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { useQuery, useQueryClient } from "@tanstack/vue-query";
-import { computed } from "vue";
+import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
 
-import { orgEventQuery, orgEventLive, type OrgEvent } from "@/entities/event";
-import { meQuery } from "@/entities/session";
+import { orgEventLive, orgEventProbe, orgEventQuery, type OrgEvent } from "@/entities/event";
 import { AppError } from "@/shared/api";
 import { checkinPath, orgEventPath, routes } from "@/shared/config";
 import { useLive } from "@/shared/lib/use-live";
@@ -36,27 +35,39 @@ const event = useQuery(
   })),
 );
 
+// Not found and someone else's event are answers, not failures: retrying changes nothing.
+function answerOf(error: unknown) {
+  if (!(error instanceof AppError)) return null;
+  if (error.kind === "not_found") return "notFound";
+  if (error.kind === "forbidden") return "foreign";
+  return null;
+}
+
+// The answer of a probe after a refused stream: the event may have gone since the GET.
+const streamAnswer = ref<ReturnType<typeof answerOf>>(null);
+watch(eventId, () => (streamAnswer.value = null));
+const loadAnswer = computed(() => answerOf(event.error.value) ?? streamAnswer.value);
+
 // The stream opens once the event is there, so its first snapshot is read after that GET.
 // Before it, 403 and 404 come from the GET, which says which one it is; EventSource does not.
 const eventLoaded = computed(() => event.data.value !== undefined);
 const queryClient = useQueryClient();
 const { reconnecting } = useLive(
-  () => (eventLoaded.value ? orgEventLive(eventId.value) : null),
+  () => (eventLoaded.value && !loadAnswer.value ? orgEventLive(eventId.value) : null),
   (snapshot) => queryClient.setQueryData(orgEventQuery(eventId.value).queryKey, snapshot),
-  // A refusal may be a 401 of an ended session, which EventSource does not tell: `me` read
-  // again says so, and the app sends the organizer to /login. Prefetch: a failed read (the
-  // backend is down) only leaves the stream reopening.
-  { onRefused: () => void queryClient.prefetchQuery({ ...meQuery, staleTime: 0 }) },
+  { onRefused: () => void probe(eventId.value) },
 );
 
-// Not found and someone else's event are answers, not failures: retrying changes nothing.
-const loadAnswer = computed(() => {
-  const error = event.error.value;
-  if (!(error instanceof AppError)) return null;
-  if (error.kind === "not_found") return "notFound";
-  if (error.kind === "forbidden") return "foreign";
-  return null;
-});
+// EventSource does not tell why it was refused, so the event is read again for its status: 401
+// is the app's to handle (an ended session goes to /login), 403 and 404 end the stream and show
+// as the GET's would. Anything else (the backend is down) leaves the stream to be opened again.
+async function probe(id: number) {
+  try {
+    await queryClient.fetchQuery(orgEventProbe(id));
+  } catch (error) {
+    if (id === eventId.value) streamAnswer.value = answerOf(error);
+  }
+}
 
 const tabs = computed(() => [
   { key: "participants", to: orgEventPath(eventId.value), current: !onCheckin.value },
