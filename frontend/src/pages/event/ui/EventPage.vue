@@ -119,9 +119,11 @@ const fields: { name: "email" | "name"; type: string; autocomplete: string }[] =
       :error-text="t('error')"
       :refresh-error-text="t('refreshError')"
     >
-      <h1 class="text-2xl font-semibold">{{ loaded.title }}</h1>
+      <h1 class="text-2xl font-semibold wrap-anywhere">{{ loaded.title }}</h1>
       <p class="text-muted-foreground mt-1 text-sm">{{ startsAt(loaded.starts_at) }}</p>
-      <p v-if="loaded.description" class="mt-4 whitespace-pre-line">{{ loaded.description }}</p>
+      <p v-if="loaded.description" class="mt-4 whitespace-pre-line wrap-anywhere">
+        {{ loaded.description }}
+      </p>
       <p class="mt-4 font-medium">
         {{ loaded.free_seats > 0 ? t("freeSeats", loaded.free_seats) : t("noSeats") }}
       </p>

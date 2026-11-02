@@ -38,7 +38,7 @@ function startsAt(iso: string): string {
         <li v-for="event in loaded" :key="event.id">
           <Card>
             <CardHeader>
-              <CardHeading :level="2">
+              <CardHeading :level="2" class="leading-snug wrap-anywhere">
                 <RouterLink class="hover:underline" :to="orgEventPath(event.id)">
                   {{ event.title }}
                 </RouterLink>

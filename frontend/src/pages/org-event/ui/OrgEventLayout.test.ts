@@ -137,7 +137,6 @@ describe("OrgEventLayout", () => {
         counter(wrapper, key),
       ),
     ).toEqual(["2", "2", "1", "1", "0"]);
-    expect(wrapper.find('[data-counters="cards"]').exists()).toBe(true);
     expect(currentTab(wrapper)).toBe("Участники");
     expect(wrapper.get(`nav a[href="${checkinPath(7)}"]`).text()).toBe("Чекин");
     expect(wrapper.get('[data-tab="participants"]').text()).toBe("Meetup");
@@ -307,7 +306,7 @@ describe("OrgEventLayout", () => {
   });
 
   describe("on the check-in tab", () => {
-    it("shows the same event header with the counters as text", async () => {
+    it("shows the same event header and counters", async () => {
       server.use(http.get(EVENT, () => HttpResponse.json(event)));
 
       const { wrapper } = await mountLayout(checkinPath(7));
@@ -319,13 +318,11 @@ describe("OrgEventLayout", () => {
           new Date(event.starts_at),
         ),
       );
-      expect(wrapper.find('[data-counters="cards"]').exists()).toBe(false);
       expect(
         ["capacity", "confirmed", "waitlisted", "checkedIn", "freeSeats"].map((key) =>
           counter(wrapper, key),
         ),
       ).toEqual(["2", "2", "1", "1", "0"]);
-      expect(wrapper.find('[data-counters="text"]').exists()).toBe(true);
       expect(currentTab(wrapper)).toBe("Чекин");
     });
 

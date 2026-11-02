@@ -126,7 +126,7 @@ function submit(): void {
 
     <form v-else class="mt-6 grid gap-2" novalidate @submit.prevent="submit">
       <Label for="code">{{ t("code") }}</Label>
-      <div ref="code-field" class="flex gap-2">
+      <div ref="code-field" class="flex flex-col gap-2 sm:flex-row">
         <Input
           id="code"
           v-model="code"

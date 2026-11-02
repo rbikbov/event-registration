@@ -89,30 +89,18 @@ function startsAt(iso: string): string {
         :error-text="onCheckin ? t('checkinError') : t('error')"
         :refresh-error-text="onCheckin ? t('checkinRefreshError') : t('refreshError')"
       >
-        <h1 class="text-2xl font-semibold">{{ loaded.title }}</h1>
+        <h1 class="text-2xl font-semibold wrap-anywhere">{{ loaded.title }}</h1>
         <p class="text-muted-foreground mt-1 text-sm">{{ startsAt(loaded.starts_at) }}</p>
-        <!-- At the entrance the counters are plain text, one per line: the form below them is
-             what the organizer looks at. -->
-        <dl v-if="onCheckin" class="mt-4 grid gap-1 text-sm" data-counters="text">
+        <!-- Narrow screens get the counters as text, one per line; wider ones get cards. -->
+        <dl class="mt-6 grid sm:grid-cols-5 sm:gap-3">
           <div
             v-for="counter in counters(loaded)"
             :key="counter.key"
-            class="flex gap-2"
-            :data-counter="counter.key"
-          >
-            <dt class="text-muted-foreground">{{ t(`counters.${counter.key}`) }}</dt>
-            <dd class="font-semibold">{{ counter.value }}</dd>
-          </div>
-        </dl>
-        <dl v-else class="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-5" data-counters="cards">
-          <div
-            v-for="counter in counters(loaded)"
-            :key="counter.key"
-            class="rounded-lg border p-4"
+            class="flex items-baseline gap-x-2 sm:flex-col sm:rounded-lg sm:border sm:p-2 md:p-3 xl:p-4"
             :data-counter="counter.key"
           >
             <dt class="text-muted-foreground text-sm">{{ t(`counters.${counter.key}`) }}</dt>
-            <dd class="mt-1 text-2xl font-semibold">{{ counter.value }}</dd>
+            <dd class="font-semibold sm:mt-auto sm:text-2xl">{{ counter.value }}</dd>
           </div>
         </dl>
       </QueryState>
