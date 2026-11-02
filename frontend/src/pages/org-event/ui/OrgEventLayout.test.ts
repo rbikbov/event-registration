@@ -326,6 +326,18 @@ describe("OrgEventLayout", () => {
       expect(currentTab(wrapper)).toBe("Чекин");
     });
 
+    // The router matches the address with a trailing slash too; the tab must not tell it apart.
+    it("is the check-in tab at an address with a trailing slash", async () => {
+      server.use(http.get(EVENT, () => HttpResponse.json({}, { status: 500 })));
+
+      const { wrapper } = await mountLayout(`${checkinPath(7)}/`);
+      await flushPromises();
+
+      expect(currentTab(wrapper)).toBe("Чекин");
+      expect(wrapper.get('[role="alert"]').text()).toContain("чекин работает");
+      expect(wrapper.find('[data-tab="checkin"]').exists()).toBe(true);
+    });
+
     it("updates the arrivals from a snapshot", async () => {
       server.use(http.get(EVENT, () => HttpResponse.json(event)));
       const { wrapper } = await mountLayout(checkinPath(7));

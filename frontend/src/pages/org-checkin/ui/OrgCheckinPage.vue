@@ -18,9 +18,8 @@ type Answer =
   | { kind: "not_found" }
   | { kind: "not_confirmed" };
 
-// A tab of the event layout (pages/org-event): it reads the event, shows its title and arrivals,
-// and answers for a missing or foreign one. The form needs only the id from the route, so it
-// works before the event has loaded and when its load fails.
+// A tab of the event layout (pages/org-event), which reads the event and answers 403/404. The
+// form needs only the id from the route, so it stays usable when the event's load fails otherwise.
 
 const { t, d } = useI18n({ useScope: "local" });
 const route = useRoute();

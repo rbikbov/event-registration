@@ -21,7 +21,8 @@ const route = useRoute();
 
 // The route pattern admits digits only.
 const eventId = computed(() => Number(route.params.id));
-const onCheckin = computed(() => route.path === checkinPath(eventId.value));
+// By the matched record, not the path: the router also matches an address with a trailing slash.
+const onCheckin = computed(() => route.matched.at(-1)?.path === routes.orgCheckin);
 
 // Read once, then kept by the stream: a GET of its own (window focus, a remount of stale data)
 // could have read the event before a snapshot and answer after it with older counts.
