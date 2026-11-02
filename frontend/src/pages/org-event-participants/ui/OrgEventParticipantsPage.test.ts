@@ -4,6 +4,7 @@ import { http, HttpResponse } from "msw";
 import { describe, expect, it, vi } from "vitest";
 import { createMemoryHistory, createRouter } from "vue-router";
 
+import type { OrgEvent } from "@/entities/event";
 import { orgEventPath, routes } from "@/shared/config";
 import { createAppI18n } from "@/shared/lib/i18n";
 import { server } from "@/shared/lib/test/msw";
@@ -11,7 +12,7 @@ import { server } from "@/shared/lib/test/msw";
 import OrgEventParticipantsPage from "./OrgEventParticipantsPage.vue";
 
 const REGISTRATIONS = "*/api/org/events/7/registrations/";
-const event = {
+const event: OrgEvent = {
   id: 7,
   title: "Meetup",
   description: "",
@@ -47,7 +48,8 @@ const cid = {
 };
 
 // The event comes from the layout (pages/org-event), which reads it and keeps it live.
-async function mountPage(query: Record<string, string> = {}) {
+// A snapshot of the stream reaches the page as a new `event` prop.
+async function mountPage(query: Record<string, string> = {}, shown: OrgEvent = event) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const router = createRouter({
     history: createMemoryHistory(),
@@ -55,7 +57,7 @@ async function mountPage(query: Record<string, string> = {}) {
   });
   await router.push({ path: orgEventPath(7), query });
   const wrapper = mount(OrgEventParticipantsPage, {
-    props: { event },
+    props: { event: shown },
     global: { plugins: [router, [VueQueryPlugin, { queryClient }], createAppI18n()] },
   });
   return { wrapper, router, queryClient };
@@ -169,5 +171,146 @@ describe("OrgEventParticipantsPage", () => {
 
     expect(wrapper.get('[role="alert"]').text()).toContain("Не удалось обновить участников");
     expect(wrapper.findAll("tbody tr")).toHaveLength(2);
+  });
+
+  // 120 registrations in all: three pages of 50.
+  const crowded: OrgEvent = {
+    ...event,
+    capacity: 100,
+    confirmed: 100,
+    waitlisted: 15,
+    cancelled: 5,
+  };
+
+  function pageNav(wrapper: Awaited<ReturnType<typeof mountPage>>["wrapper"]) {
+    return wrapper.get('nav[aria-label="Страницы участников"]');
+  }
+
+  it("asks the server for the page from the URL and links its neighbours", async () => {
+    const asked: (string | null)[] = [];
+    server.use(
+      http.get(REGISTRATIONS, ({ request }) => {
+        asked.push(new URL(request.url).searchParams.get("page"));
+        return HttpResponse.json([ann]);
+      }),
+    );
+
+    const { wrapper } = await mountPage({ page: "2" }, crowded);
+    await flushPromises();
+
+    expect(asked).toEqual(["2"]);
+    const nav = pageNav(wrapper);
+    expect(nav.text()).toContain("Страница 2 из 3");
+    expect(nav.get("a:first-child").attributes("href")).toBe(orgEventPath(7));
+    expect(nav.findAll("a").map((a) => a.text())).toEqual(["Назад", "Вперёд"]);
+    expect(nav.findAll("a")[1]?.attributes("href")).toBe(`${orgEventPath(7)}?page=3`);
+  });
+
+  it("counts the pages of the filter and keeps it in the page links", async () => {
+    server.use(http.get(REGISTRATIONS, () => HttpResponse.json([ann])));
+
+    const { wrapper } = await mountPage({ status: "confirmed" }, crowded);
+    await flushPromises();
+
+    const nav = pageNav(wrapper);
+    expect(nav.text()).toContain("Страница 1 из 2");
+    expect(nav.findAll("a").map((a) => a.attributes("href"))).toEqual([
+      `${orgEventPath(7)}?status=confirmed&page=2`,
+    ]);
+  });
+
+  it("has no page links when everything fits on one page", async () => {
+    server.use(http.get(REGISTRATIONS, () => HttpResponse.json([ann, bob, cid])));
+
+    const { wrapper } = await mountPage();
+    await flushPromises();
+
+    expect(wrapper.find('nav[aria-label="Страницы участников"]').exists()).toBe(false);
+  });
+
+  it("starts a filter from its first page", async () => {
+    server.use(http.get(REGISTRATIONS, () => HttpResponse.json([ann])));
+
+    const { wrapper } = await mountPage({ page: "3" }, crowded);
+    await flushPromises();
+
+    const filter = wrapper.findAll("nav a").find((a) => a.text() === "Лист ожидания");
+    expect(filter?.attributes("href")).toBe(`${orgEventPath(7)}?status=waitlisted`);
+  });
+
+  it("says a page past the end is empty and links the last one", async () => {
+    server.use(http.get(REGISTRATIONS, () => HttpResponse.json([])));
+
+    const { wrapper } = await mountPage({ page: "9" }, crowded);
+    await flushPromises();
+
+    expect(wrapper.text()).toContain("На этой странице никого нет.");
+    const last = wrapper.findAll("a").find((a) => a.text() === "К последней странице");
+    expect(last?.attributes("href")).toBe(`${orgEventPath(7)}?page=3`);
+  });
+
+  it("offers a refresh when a snapshot brings other counts, and reads the page again", async () => {
+    let rows = [ann, bob];
+    server.use(http.get(REGISTRATIONS, () => HttpResponse.json(rows)));
+    const { wrapper } = await mountPage();
+    await flushPromises();
+    expect(wrapper.find('[role="status"]').exists()).toBe(false);
+
+    await wrapper.setProps({ event: { ...event, checked_in: 2 } });
+    rows = [ann, { ...bob, checked_in_at: "2030-05-01T18:05:00Z" }];
+
+    expect(wrapper.get('[role="status"]').text()).toContain("Есть обновления");
+    expect(wrapper.findAll("tbody tr")[1]?.text()).toContain("—");
+    await wrapper.get('[role="status"] button').trigger("click");
+    await flushPromises();
+
+    expect(wrapper.find('[role="status"]').exists()).toBe(false);
+    expect(wrapper.findAll("tbody tr")[1]?.text()).not.toContain("—");
+  });
+
+  it("does not offer a refresh for a snapshot with the same counts", async () => {
+    server.use(http.get(REGISTRATIONS, () => HttpResponse.json([ann])));
+    const { wrapper } = await mountPage();
+    await flushPromises();
+
+    await wrapper.setProps({ event: { ...event, title: "Meetup, room 2" } });
+
+    expect(wrapper.find('[role="status"]').exists()).toBe(false);
+  });
+
+  // The page may have been read before that change: only a new read can say.
+  it("offers a refresh for a snapshot that came while the page was read", async () => {
+    let answer = () => {};
+    server.use(
+      http.get(
+        REGISTRATIONS,
+        () =>
+          new Promise<Response>((resolve) => (answer = () => resolve(HttpResponse.json([ann])))),
+      ),
+    );
+    const { wrapper } = await mountPage();
+    await flushPromises();
+
+    await wrapper.setProps({ event: { ...event, confirmed: 3 } });
+    answer();
+    await flushPromises();
+
+    expect(wrapper.findAll("tbody tr")).toHaveLength(1);
+    expect(wrapper.get('[role="status"]').text()).toContain("Есть обновления");
+  });
+
+  it("blocks the refresh while the page is being read", async () => {
+    server.use(http.get(REGISTRATIONS, () => HttpResponse.json([ann])));
+    const { wrapper } = await mountPage();
+    await flushPromises();
+    await wrapper.setProps({ event: { ...event, waitlisted: 2 } });
+    server.use(http.get(REGISTRATIONS, () => new Promise<Response>(() => {})));
+
+    await wrapper.get('[role="status"] button').trigger("click");
+    await flushPromises();
+
+    const button = wrapper.get('[role="status"] button');
+    expect(button.text()).toBe("Обновляем…");
+    expect(button.attributes("disabled")).toBeDefined();
   });
 });

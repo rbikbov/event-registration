@@ -4,9 +4,10 @@ import { computed, reactive, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
 
-import { publicEventQuery, publicEventsQuery } from "@/entities/event";
+import { publicEventLive, publicEventQuery, publicEventsQuery } from "@/entities/event";
 import { AppError } from "@/shared/api";
 import { routes } from "@/shared/config";
+import { useLive } from "@/shared/lib/use-live";
 import { QueryState } from "@/shared/ui/query-state";
 import { Alert, AlertDescription } from "@/shared/ui/shadcn/alert";
 import { Button } from "@/shared/ui/shadcn/button";
@@ -29,8 +30,25 @@ const queryClient = useQueryClient();
 
 // The route pattern admits digits only.
 const eventId = computed(() => Number(route.params.id));
-const eventQuery = computed(() => publicEventQuery(eventId.value));
-const event = useQuery(eventQuery);
+// Read once, then kept by the stream: a GET of its own (window focus, a remount of stale data, a
+// refresh after the registration) could have read the event before a snapshot and answer after
+// it with older free seats.
+const event = useQuery(
+  computed(() => ({
+    ...publicEventQuery(eventId.value),
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+  })),
+);
+
+// The stream opens once the event is there, so its first snapshot is read after that GET.
+// Before it, 404 comes from the GET; EventSource does not tell it.
+const eventLoaded = computed(() => event.data.value !== undefined);
+useLive(
+  () => (eventLoaded.value ? publicEventLive(eventId.value) : null),
+  (snapshot) => queryClient.setQueryData(publicEventQuery(eventId.value).queryKey, snapshot),
+);
 
 const form = reactive<RegistrationFormInput>({ email: "", name: "" });
 const clientErrors = ref<RegistrationFormErrors>({});
@@ -43,11 +61,11 @@ const {
   reset,
 } = useMutation({
   mutationFn: (values: RegistrationFormInput) => registerForEvent(eventId.value, values),
-  // Only on success: a failed registration changed nothing.
-  onSuccess: async () => {
-    await queryClient.invalidateQueries({ queryKey: eventQuery.value.queryKey });
-    await queryClient.invalidateQueries({ queryKey: publicEventsQuery.queryKey });
-  },
+  // Only on success: a failed registration changed nothing. The free seats of this event come
+  // with the snapshot of the registration; `exact` keeps the list from refreshing the event too,
+  // which lives under its key.
+  onSuccess: () =>
+    queryClient.invalidateQueries({ queryKey: publicEventsQuery.queryKey, exact: true }),
 });
 
 // The router reuses this component when the id changes (history between two events): the
