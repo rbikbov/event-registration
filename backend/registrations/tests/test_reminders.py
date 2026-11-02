@@ -43,6 +43,9 @@ def test_open_window_reminds_each_seat_once(event: Event) -> None:
     assert to_ann.dedup_key == f"reminder:{ann.id}:1"
     assert to_ann.subject == "Напоминание: Meetup"
     assert "17.05.2030 18:00 UTC" in to_ann.body
+    # Not "in a day": the pass also runs late in the window (a reschedule into it, a worker
+    # catching up), so the email states the date only.
+    assert "сутки" not in to_ann.body
     assert ann.ticket_code in to_ann.body
     assert f"https://events.example/tickets/{ann.manage_token}" in to_ann.body
     assert bob.ticket_code in to_bob.body
