@@ -79,7 +79,8 @@ describe("sseSource", () => {
     streams.opened[2]?.emit("stats", { checked_in: 3 });
 
     expect(streams.opened).toHaveLength(3);
-    expect(states).toEqual(["reconnecting", "open"]);
+    // Each refusal is told: what refuses it may have changed (a session that ended).
+    expect(states).toEqual(["reconnecting", "refused", "refused", "open"]);
     expect(received).toEqual([{ checked_in: 3 }]);
   });
 

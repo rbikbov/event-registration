@@ -84,6 +84,21 @@ describe("useLive", () => {
     expect(live?.reconnecting.value).toBe(false);
   });
 
+  it("tells each refusal of the source, as reconnecting", () => {
+    const a = fakeSource("a", []);
+    let refusals = 0;
+    const live = effectScope().run(() =>
+      useLive(a.source, () => {}, { onRefused: () => (refusals += 1) }),
+    );
+
+    a.state("reconnecting");
+    a.state("refused");
+    a.state("refused");
+
+    expect(refusals).toBe(2);
+    expect(live?.reconnecting.value).toBe(true);
+  });
+
   it("does not keep the reconnecting of a source it left", async () => {
     const log: string[] = [];
     const a = fakeSource("a", log);

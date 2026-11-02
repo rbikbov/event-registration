@@ -1,6 +1,7 @@
 // Whether the data delivered is current: "reconnecting" from a lost connection until the first
-// data after it.
-export type LiveState = "open" | "reconnecting";
+// data after it. "refused" — the server declined a reconnection, which is tried again later; it
+// comes on each refusal, while reconnecting.
+export type LiveState = "open" | "reconnecting" | "refused";
 
 // Data the server pushes, whatever carries it: pages and entities depend on this, not on SSE,
 // so the transport can change (WebSocket, long polling) behind it.
@@ -52,6 +53,7 @@ export function sseSource<Data>(url: string, event: string): LiveSource<Data> {
             lost();
           } else if (everOpened) {
             lost();
+            onState("refused");
             reopening = setTimeout(open, REOPEN_MS);
           }
         });

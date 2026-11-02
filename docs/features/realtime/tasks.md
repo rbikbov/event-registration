@@ -74,7 +74,7 @@ backend → frontend → e2e/доки. Логика — тест вперёд; �
       `make e2e` и `stack-e2e` — сами); пароль меняется, только если не подходит. Готово,
       когда: тест «повторный вызов не меняет хеш» зелёный; `docker restart` backend не
       разлогинивает демо-организатора; README и `development.md` описывают шаг.
-- [ ] 4.5 frontend: поток, закрытый ответом не 200 после открытия, — макет перечитывает
+- [x] 4.5 frontend: поток, закрытый ответом не 200 после открытия, — макет перечитывает
       `meQuery`; `me` стал `null` на странице с `requiresAuth` → `/login`
       (`app/session-expiry`). Готово, когда: Vitest «закрытый поток, `me` — 401 → `/login`»
       и «закрытый поток, `me` — 200 → остаёмся, переоткрытие» зелёный.
@@ -126,6 +126,8 @@ backend → frontend → e2e/доки. Логика — тест вперёд; �
   bfcache: headless shell Playwright его не включает (`BackForwardCacheDisabledForDelegate`),
   полный Chromium (`channel: "chromium"` без `--disable-back-forward-cache`) — включает;
   `goBack` ждать с `waitUntil: "commit"` — `load` при восстановлении нет.
+- Браузер задачи 4.5 (слот 1, шлюз): выход через API в контексте панели, затем `docker restart`
+  backend — переподключение 401, `GET me` 401, `/login` через ~6 с после выхода.
 
 ## На потом
 

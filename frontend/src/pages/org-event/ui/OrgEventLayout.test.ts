@@ -264,6 +264,38 @@ describe("OrgEventLayout", () => {
     expect(counter(wrapper, "checkedIn")).toBe("2");
   });
 
+  // A stream refused after it had opened may be a 401 of an ended session, which EventSource
+  // does not tell: the session is read again, and an ended one is the app's to handle.
+  async function sessionReads(closed: boolean) {
+    let reads = 0;
+    server.use(
+      http.get(EVENT, () => HttpResponse.json(event)),
+      http.get("*/api/auth/me/", () => {
+        reads += 1;
+        return HttpResponse.json({ id: 1, email: "demo@example.com" });
+      }),
+    );
+    await mountLayout();
+    await flushPromises();
+    streams.opened[0]?.open();
+    streams.opened[0]?.fail({ closed });
+    return () => reads;
+  }
+
+  it("reads the session again when the stream is refused", async () => {
+    const reads = await sessionReads(true);
+
+    await vi.waitFor(() => expect(reads()).toBe(1));
+  });
+
+  it("does not read the session when EventSource reconnects by itself", async () => {
+    const reads = await sessionReads(false);
+
+    // A read that must not happen cannot be awaited: give a wrong one time to show up.
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    expect(reads()).toBe(0);
+  });
+
   it("keeps the stream and the event when the organizer switches tabs", async () => {
     const backend = countedEvent();
     server.use(backend.handler);

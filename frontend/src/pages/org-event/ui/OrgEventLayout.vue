@@ -5,6 +5,7 @@ import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
 
 import { orgEventQuery, orgEventLive, type OrgEvent } from "@/entities/event";
+import { meQuery } from "@/entities/session";
 import { AppError } from "@/shared/api";
 import { checkinPath, orgEventPath, routes } from "@/shared/config";
 import { useLive } from "@/shared/lib/use-live";
@@ -42,6 +43,10 @@ const queryClient = useQueryClient();
 const { reconnecting } = useLive(
   () => (eventLoaded.value ? orgEventLive(eventId.value) : null),
   (snapshot) => queryClient.setQueryData(orgEventQuery(eventId.value).queryKey, snapshot),
+  // A refusal may be a 401 of an ended session, which EventSource does not tell: `me` read
+  // again says so, and the app sends the organizer to /login. Prefetch: a failed read (the
+  // backend is down) only leaves the stream reopening.
+  { onRefused: () => void queryClient.prefetchQuery({ ...meQuery, staleTime: 0 }) },
 );
 
 // Not found and someone else's event are answers, not failures: retrying changes nothing.

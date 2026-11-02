@@ -3,6 +3,7 @@ import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 import { createMemoryHistory } from "vue-router";
 
+import { meQuery } from "@/entities/session";
 import { AppError } from "@/shared/api";
 import { routes } from "@/shared/config";
 import { server } from "@/shared/lib/test/msw";
@@ -69,6 +70,25 @@ describe("expired session", () => {
         queryFn: () => Promise.reject(new AppError("server", { status: 500 })),
       })
       .catch(() => undefined);
+
+    await settle();
+    expect(router.currentRoute.value.path).toBe(routes.orgEvents);
+  });
+
+  // What a page does when it cannot tell a 401 from other refusals, as with a live stream.
+  it("sends the organizer to /login when a reread of me finds nobody signed in", async () => {
+    const { queryClient, router } = await setup(routes.orgEvents);
+    server.use(http.get("*/api/auth/me/", () => new HttpResponse(null, { status: 401 })));
+
+    await queryClient.prefetchQuery({ ...meQuery, staleTime: 0 });
+
+    await expect.poll(() => router.currentRoute.value.path).toBe(routes.login);
+  });
+
+  it("stays when a reread of me finds the organizer still signed in", async () => {
+    const { queryClient, router } = await setup(routes.orgEvents);
+
+    await queryClient.prefetchQuery({ ...meQuery, staleTime: 0 });
 
     await settle();
     expect(router.currentRoute.value.path).toBe(routes.orgEvents);
