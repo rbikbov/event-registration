@@ -306,7 +306,7 @@ describe("OrgEventLayout", () => {
   });
 
   describe("on the check-in tab", () => {
-    it("shows the title and the arrivals in one line", async () => {
+    it("shows the title and every counter in a short header", async () => {
       server.use(http.get(EVENT, () => HttpResponse.json(event)));
 
       const { wrapper } = await mountLayout(checkinPath(7));
@@ -314,9 +314,12 @@ describe("OrgEventLayout", () => {
 
       const header = wrapper.get('[data-header="compact"]');
       expect(header.get("h1").text()).toBe("Meetup");
-      expect(counter(wrapper, "checkedIn")).toBe("1");
-      expect(counter(wrapper, "confirmed")).toBe("2");
-      expect(wrapper.find('[data-counter="capacity"]').exists()).toBe(false);
+      expect(
+        ["capacity", "confirmed", "waitlisted", "checkedIn", "freeSeats"].map((key) =>
+          counter(wrapper, key),
+        ),
+      ).toEqual(["2", "2", "1", "1", "0"]);
+      expect(header.find("p").exists()).toBe(false);
       expect(currentTab(wrapper)).toBe("Чекин");
     });
 

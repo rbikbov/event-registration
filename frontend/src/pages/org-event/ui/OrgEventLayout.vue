@@ -57,14 +57,7 @@ const tabs = computed(() => [
   { key: "checkin", to: checkinPath(eventId.value), current: onCheckin.value },
 ]);
 
-// At the entrance the header is one line: the form below it is what the organizer looks at.
 function counters(loaded: OrgEvent) {
-  if (onCheckin.value) {
-    return [
-      { key: "checkedIn", value: loaded.checked_in },
-      { key: "confirmed", value: loaded.confirmed },
-    ];
-  }
   return [
     { key: "capacity", value: loaded.capacity },
     { key: "confirmed", value: loaded.confirmed },
@@ -96,13 +89,11 @@ function startsAt(iso: string): string {
         :error-text="onCheckin ? t('checkinError') : t('error')"
         :refresh-error-text="onCheckin ? t('checkinRefreshError') : t('refreshError')"
       >
-        <div
-          v-if="onCheckin"
-          class="flex flex-wrap items-baseline gap-x-6 gap-y-2"
-          data-header="compact"
-        >
+        <!-- At the entrance the header is short: the form below it is what the organizer looks
+             at. A long title takes its own line. -->
+        <div v-if="onCheckin" data-header="compact">
           <h1 class="text-xl font-semibold">{{ loaded.title }}</h1>
-          <dl class="flex gap-4 text-sm">
+          <dl class="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm">
             <div
               v-for="counter in counters(loaded)"
               :key="counter.key"
