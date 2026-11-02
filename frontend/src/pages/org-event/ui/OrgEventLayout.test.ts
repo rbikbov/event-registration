@@ -307,6 +307,29 @@ describe("OrgEventLayout", () => {
     expect(counter(wrapper, "checkedIn")).toBe("1");
   });
 
+  // The app retries failed reads; a probe is not retried: the stream is opened again in 3 s,
+  // and its refusal brings the next probe.
+  it("probes once per refusal while the backend is down", async () => {
+    let gets = 0;
+    server.use(
+      http.get(EVENT, () => {
+        gets += 1;
+        return gets === 1 ? HttpResponse.json(event) : HttpResponse.json({}, { status: 502 });
+      }),
+    );
+    const retrying = new QueryClient({
+      defaultOptions: { queries: { retry: 2, retryDelay: 0 } },
+    });
+    await mountLayout(orgEventPath(7), retrying);
+    await flushPromises();
+
+    streams.opened[0]?.fail({ closed: true });
+    await vi.waitFor(() => expect(gets).toBe(2));
+    await new Promise((resolve) => setTimeout(resolve, 30));
+
+    expect(gets).toBe(2);
+  });
+
   it("does not probe when EventSource reconnects by itself", async () => {
     const backend = countedEvent();
     server.use(backend.handler);

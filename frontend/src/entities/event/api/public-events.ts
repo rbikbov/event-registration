@@ -27,6 +27,7 @@ export function publicEventProbe(id: number) {
     queryFn: () => readPublicEvent(id),
     staleTime: 0,
     gcTime: 0,
+    retry: false,
   });
 }
 

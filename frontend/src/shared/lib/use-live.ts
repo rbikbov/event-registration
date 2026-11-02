@@ -5,7 +5,8 @@ import type { LiveSource } from "./live-source";
 
 // Subscribes to `source` for as long as the calling component lives; a new source (another
 // event) replaces the subscription, and null means none yet. `reconnecting` is true from a lost
-// connection until data comes again; `onRefused` is called on each refusal of a reconnection.
+// connection until data comes again; `onRefused` is called on each refusal of a connection, the
+// first one included.
 //
 // A page put into the back/forward cache has its stream closed by the browser and comes back
 // with the data it had, which nothing reads again but the stream: so the subscription ends on

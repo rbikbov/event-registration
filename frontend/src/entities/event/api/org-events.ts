@@ -22,12 +22,14 @@ export function orgEventQuery(id: number) {
 
 // The event read only for what the server answers now, to tell why its stream was refused: under
 // a key of its own, so the answer never replaces the counts of a fresher snapshot, and not kept.
+// Not retried: the stream is opened again in 3 s, and its next refusal brings the next probe.
 export function orgEventProbe(id: number) {
   return queryOptions({
     queryKey: ["org", "event-probe", id],
     queryFn: () => readOrgEvent(id),
     staleTime: 0,
     gcTime: 0,
+    retry: false,
   });
 }
 

@@ -1,6 +1,6 @@
 // Whether the data delivered is current: "reconnecting" from a lost connection until the first
-// data after it. "refused" — the server declined a reconnection, which is tried again later; it
-// comes on each refusal, while reconnecting.
+// data after it. "refused" — the server declined a connection, the first one included, which is
+// tried again later; it comes on each refusal.
 export type LiveState = "open" | "reconnecting" | "refused";
 
 // Data the server pushes, whatever carries it: pages and entities depend on this, not on SSE,
