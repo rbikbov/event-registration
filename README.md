@@ -79,10 +79,12 @@
 Нужен только Docker с Compose (и `make` — или те же команды через `docker compose`).
 
 ```sh
-make up      # или: docker compose up -d --build --wait
+make up          # или: docker compose up -d --build --wait
+make demo-users  # демо-учётки; или: docker compose exec backend python manage.py create_demo_users
 ```
 
-Открыть <http://localhost:5173>. Остановить — `make down`.
+Открыть <http://localhost:5173>. Остановить — `make down`. `make demo-users` нужна один раз на
+новую базу; повторный вызов вернёт демо-пароли, если их меняли, и не завершит открытые сессии.
 
 | Сервис   | Адрес                   | Что это                                                   |
 | -------- | ----------------------- | --------------------------------------------------------- |

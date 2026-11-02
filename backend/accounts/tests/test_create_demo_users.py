@@ -52,3 +52,14 @@ def test_creates_nothing_and_keeps_passwords_when_debug_is_off(existing: bool) -
     assert User.objects.count() == (1 if existing else 0)
     if existing:
         assert User.objects.get().check_password("own-password")
+
+
+def test_a_second_run_keeps_the_password_hash() -> None:
+    call_command("create_demo_users")
+    hashes = dict(User.objects.values_list("email", "password"))
+
+    call_command("create_demo_users")
+
+    # A new hash, even of the same password, ends every session of the user: Django ties a
+    # session to the hash.
+    assert dict(User.objects.values_list("email", "password")) == hashes

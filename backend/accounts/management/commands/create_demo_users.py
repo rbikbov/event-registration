@@ -16,13 +16,16 @@ class Command(BaseCommand):
 
     def handle(self, *args: Any, **options: Any) -> None:
         # Known passwords and a superuser must never reach a deployment that runs without DEBUG.
-        # Skipping, not failing: the compose `backend` runs this on every start.
+        # Skipping with a warning, not failing: running it on any stack is safe.
         if not settings.DEBUG:
             self.stderr.write("DEBUG is off: demo users are not created.")
             return
         for (email, password), is_admin in ((DEMO_ORGANIZER, False), (DEMO_ADMIN, True)):
             user, _ = User.objects.get_or_create(email=email)
-            user.set_password(password)
+            # Only a password that does not match: a new hash, even of the same password, ends
+            # every session of the user, since Django ties a session to the hash.
+            if not user.check_password(password):
+                user.set_password(password)
             user.is_active = True
             user.is_staff = is_admin
             user.is_superuser = is_admin

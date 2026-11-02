@@ -11,6 +11,11 @@ help: ## List targets
 up: ## Build and start the whole stack; open http://localhost:5173
 	docker compose up -d --build --wait
 
+.PHONY: demo-users
+# Not on every start of the backend: run by hand after `make up`, by the e2e targets themselves.
+demo-users: ## Create the demo organizer and admin in the running stack (DEBUG only)
+	docker compose exec backend python manage.py create_demo_users
+
 .PHONY: down
 down: ## Stop the stack (data in the postgres-data volume is kept)
 	docker compose down
@@ -109,6 +114,7 @@ check-e2e: ## e2e: ESLint and tsc for the test code (does not run the tests)
 # Target-specific variables reach prerequisites: `up` builds the frontend for the gateway.
 e2e: export FRONTEND_TARGET := gateway
 e2e: up ## Start the stack with the nginx gateway and run Playwright tests against it
+	$(MAKE) demo-users
 	cd e2e && pnpm test
 
 # Slot stacks: separate compose projects with their own containers, volumes and ports, so
@@ -143,9 +149,14 @@ stack-check-backend: stack-postgres ## make check-backend against the Postgres o
 stack-up: stack-slot ## Stack of slot SLOT: frontend on 5173+SLOT, Mailpit on 8025+SLOT
 	$(STACK_COMPOSE) up -d --build --wait
 
+.PHONY: stack-demo-users
+stack-demo-users: stack-slot ## make demo-users in the stack of slot SLOT
+	$(STACK_COMPOSE) exec backend python manage.py create_demo_users
+
 .PHONY: stack-e2e
 stack-e2e: export FRONTEND_TARGET := gateway
 stack-e2e: stack-up ## Start the stack of slot SLOT with the gateway and run Playwright tests
+	$(MAKE) stack-demo-users
 	cd e2e && E2E_BASE_URL=http://localhost:$(STACK_FRONTEND_PORT) \
 		E2E_MAILPIT_URL=http://localhost:$(call slot_port,8025) pnpm test
 
