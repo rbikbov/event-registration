@@ -9,6 +9,8 @@
 src/main.ts          точка входа: mountApp("#app")
 src/app/             приложение: App.vue, router.ts, query-client.ts
 src/pages/<page>/    экраны: ui/, api/ (запросы, нужные только странице), index.ts
+src/pages/org-event/ макет события организатора: запрос, поток, шапка, вкладки —
+                     org-event-participants и org-checkin (дочерние маршруты)
 src/entities/session/ кто вошёл: meQuery (null — гость)
 src/entities/event/  события: orgEventsQuery / orgEventQuery(id) / orgEventLive(id) (организатор), publicEventsQuery / publicEventQuery(id) (публичные)
 src/shared/api/      клиент API, AppError, unwrap, сгенерированный schema.d.ts. Правила: src/shared/api/AGENTS.md
@@ -36,10 +38,10 @@ src/widgets|features/            появляются с первым срезо
    повтор не меняет (`not_found`, `forbidden`), страница показывает до `QueryState`. Тест
    страницы с запросом проверяет и неудачный `refetchQueries()` после загрузки.
    Исключения: `pages/health` — страница показывает текущую доступность backend, и после
-   неудачного обновления верно «недоступен», а не прежнее «работает»; `pages/org-checkin` —
-   форма работает и без события (название — только подпись), а `QueryState` прячет
-   содержимое до данных: там своя разметка, ошибка запроса — через `RetryAlert` из того же
-   `shared/ui/query-state` (повтор блокирует кнопку и показывает, что запрос идёт).
+   неудачного обновления верно «недоступен», а не прежнее «работает».
+   Макет события организатора (`pages/org-event`) держит в `QueryState` только шапку: форма
+   чекина работает и без события (название — только подпись), поэтому вкладка «Чекин» стоит
+   вне `QueryState` и видна при загрузке и ошибке события.
 5. Тексты интерфейса — по-русски, в блоке `<i18n lang="json" locale="ru">` того же
    компонента, достаются через `useI18n({ useScope: "local" })`; в store и чистых функциях
    текстов нет (они возвращают коды, компонент подбирает текст). Глобальных сообщений нет.

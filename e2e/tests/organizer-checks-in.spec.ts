@@ -27,7 +27,11 @@ test("the code from the email passes check-in once, and the panel counts the arr
   });
   await organizer.getByRole("link", { name: title }).click();
   await organizer.getByRole("link", { name: "Чекин" }).click();
-  await expect(organizer.getByRole("heading", { name: `Чекин: ${title}` })).toBeVisible();
+  await expect(organizer.getByRole("heading", { name: title })).toBeVisible();
+  await expect(organizer.getByRole("link", { name: "Чекин" })).toHaveAttribute(
+    "aria-current",
+    "page",
+  );
 
   await organizer.getByLabel("Код билета").fill(code);
   await organizer.getByRole("button", { name: "Отметить" }).click();
@@ -41,7 +45,9 @@ test("the code from the email passes check-in once, and the panel counts the arr
   await expect(organizer.getByText(/^Уже отмечен в \d{2}:\d{2}$/)).toBeVisible();
   await expect(organizer.getByText("Пропущен", { exact: true })).toBeHidden();
 
-  await organizer.getByRole("link", { name: "Панель события" }).click();
+  // The header of the check-in counts the arrival too, and the participants tab keeps it.
+  await expect(panelStat(organizer, "Пришло")).toHaveText("1");
+  await organizer.getByRole("link", { name: "Участники" }).click();
   await expect(panelStat(organizer, "Пришло")).toHaveText("1");
   await expect(organizer.getByRole("row", { name: /Анна/ })).toContainText(email);
   expect(consoleErrors).toEqual([]);

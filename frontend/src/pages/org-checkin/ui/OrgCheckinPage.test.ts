@@ -4,26 +4,13 @@ import { http, HttpResponse } from "msw";
 import { afterEach, describe, expect, it } from "vitest";
 import { createMemoryHistory, createRouter } from "vue-router";
 
-import { checkinPath, orgEventPath, routes } from "@/shared/config";
+import { checkinPath, routes } from "@/shared/config";
 import { createAppI18n } from "@/shared/lib/i18n";
 import { server } from "@/shared/lib/test/msw";
 
 import OrgCheckinPage from "./OrgCheckinPage.vue";
 
 const CHECKIN = "*/api/org/events/7/checkin/";
-const EVENT = "*/api/org/events/7/";
-const event = {
-  id: 7,
-  title: "Meetup",
-  description: "",
-  starts_at: "2030-05-01T18:00:00Z",
-  capacity: 10,
-  confirmed: 3,
-  waitlisted: 0,
-  checked_in: 1,
-  free_seats: 7,
-  cancelled: 0,
-};
 const checkedIn = {
   result: "checked_in",
   name: "Ivan",
@@ -39,12 +26,10 @@ afterEach(() => {
   mounted = undefined;
 });
 
-// The screen loads its event for the title; a test about the event passes its own answer.
-async function mountPage(
-  eventResponse: () => Response = () => HttpResponse.json(event),
-  queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } }),
-) {
-  server.use(http.get(EVENT, eventResponse));
+// The event and its title belong to the layout (pages/org-event): the screen reads no event,
+// and an unhandled GET of one would fail the test.
+async function mountPage() {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const router = createRouter({
     history: createMemoryHistory(),
     routes: [{ path: routes.orgCheckin, component: OrgCheckinPage }],
@@ -253,81 +238,5 @@ describe("OrgCheckinPage", () => {
 
     expect(requests).toBe(0);
     expect(wrapper.get('button[type="submit"]').attributes("disabled")).toBeDefined();
-  });
-
-  it("names the event in the title and links back to its panel", async () => {
-    const wrapper = await mountPage();
-    await flushPromises();
-
-    expect(wrapper.get("h1").text()).toBe("Чекин: Meetup");
-    expect(wrapper.get(`a[href="${orgEventPath(7)}"]`).text()).toBe("Панель события");
-  });
-
-  it("says a missing event is not found instead of taking codes", async () => {
-    const wrapper = await mountPage(() => HttpResponse.json({}, { status: 404 }));
-    await flushPromises();
-
-    expect(wrapper.get('[role="alert"]').text()).toBe("Событие не найдено");
-    expect(wrapper.find("form").exists()).toBe(false);
-  });
-
-  it("says someone else's event is foreign instead of taking codes", async () => {
-    const wrapper = await mountPage(() => HttpResponse.json({}, { status: 403 }));
-    await flushPromises();
-
-    expect(wrapper.get('[role="alert"]').text()).toBe("Это событие другого организатора");
-    expect(wrapper.find("form").exists()).toBe(false);
-  });
-
-  it("keeps checking codes in when the event title fails to load", async () => {
-    server.use(http.post(CHECKIN, () => HttpResponse.json(checkedIn)));
-    const wrapper = await mountPage(() => HttpResponse.json({}, { status: 500 }));
-    await flushPromises();
-
-    expect(wrapper.get('[role="alert"]').text()).toContain("Не удалось загрузить название события");
-    expect(wrapper.get("h1").text()).toBe("Чекин");
-    await enter(wrapper, "abcd2345");
-
-    expect(wrapper.find('[data-answer="checked_in"]').exists()).toBe(true);
-  });
-
-  it("keeps the title and checks codes in when a refetch of the event fails", async () => {
-    let fail = false;
-    server.use(http.post(CHECKIN, () => HttpResponse.json(checkedIn)));
-    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    const wrapper = await mountPage(
-      () => (fail ? HttpResponse.json({}, { status: 500 }) : HttpResponse.json(event)),
-      queryClient,
-    );
-    await flushPromises();
-
-    fail = true;
-    await queryClient.refetchQueries();
-    await flushPromises();
-
-    expect(wrapper.get("h1").text()).toBe("Чекин: Meetup");
-    expect(wrapper.get('[role="alert"]').text()).toContain("Не удалось обновить событие");
-    await enter(wrapper, "abcd2345");
-    expect(wrapper.find('[data-answer="checked_in"]').exists()).toBe(true);
-  });
-
-  it("shows that a retry of the event is under way", async () => {
-    let calls = 0;
-    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    const wrapper = await mountPage(() => {
-      calls += 1;
-      return calls === 1 ? HttpResponse.json(event) : HttpResponse.json({}, { status: 500 });
-    }, queryClient);
-    await flushPromises();
-    await queryClient.refetchQueries();
-    await flushPromises();
-    server.use(http.get(EVENT, () => new Promise<Response>(() => {})));
-
-    await wrapper.get('[role="alert"] button').trigger("click");
-    await flushPromises();
-
-    const button = wrapper.get('[role="alert"] button');
-    expect(button.text()).toBe("Загружаем…");
-    expect(button.attributes("disabled")).toBeDefined();
   });
 });

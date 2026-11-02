@@ -7,8 +7,9 @@ import { HealthPage } from "@/pages/health";
 import { HomePage } from "@/pages/home";
 import { LoginPage } from "@/pages/login";
 import { OrgCheckinPage } from "@/pages/org-checkin";
-import { OrgEventPage } from "@/pages/org-event";
+import { OrgEventLayout } from "@/pages/org-event";
 import { OrgEventNewPage } from "@/pages/org-event-new";
+import { OrgEventParticipantsPage } from "@/pages/org-event-participants";
 import { OrgEventsPage } from "@/pages/org-events";
 import { TicketPage } from "@/pages/ticket";
 import { routes } from "@/shared/config";
@@ -23,8 +24,17 @@ export function createAppRouter(queryClient: QueryClient, history: RouterHistory
       { path: routes.login, component: LoginPage },
       { path: routes.orgEvents, component: OrgEventsPage, meta: { requiresAuth: true } },
       { path: routes.orgEventsNew, component: OrgEventNewPage, meta: { requiresAuth: true } },
-      { path: routes.orgEvent, component: OrgEventPage, meta: { requiresAuth: true } },
-      { path: routes.orgCheckin, component: OrgCheckinPage, meta: { requiresAuth: true } },
+      {
+        path: routes.orgEvent,
+        component: OrgEventLayout,
+        meta: { requiresAuth: true },
+        // Absolute child paths: every path lives in `routes`. The layout keeps the event and its
+        // stream while the organizer switches between the tabs.
+        children: [
+          { path: routes.orgEvent, component: OrgEventParticipantsPage },
+          { path: routes.orgCheckin, component: OrgCheckinPage },
+        ],
+      },
       { path: routes.ticket, component: TicketPage },
     ],
   });
