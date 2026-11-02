@@ -97,19 +97,18 @@ describe("OrgEventEditPage", () => {
     expect(saveButton(wrapper).attributes("disabled")).toBeUndefined();
   });
 
-  it("sends only the changed fields and puts the answer into the event cache", async () => {
+  it("sends only the changed fields and leaves the event cache to the stream", async () => {
     const bodies = patched();
     const { wrapper, queryClient } = mountPage();
+    queryClient.setQueryData(orgEventQuery(7).queryKey, event);
 
     await type(wrapper, { title: "Renamed", capacity: "5" });
     await submit(wrapper);
 
     expect(bodies).toEqual([{ title: "Renamed", capacity: 5 }]);
     expect(wrapper.get('[role="status"]').text()).toBe("Сохранено");
-    expect(queryClient.getQueryData(orgEventQuery(7).queryKey)).toMatchObject({
-      title: "Renamed",
-      capacity: 5,
-    });
+    // Its counts were read after the commit: a snapshot of a later registration may be newer.
+    expect(queryClient.getQueryData(orgEventQuery(7).queryKey)).toBe(event);
     // The saved values are the new starting point.
     expect(saveButton(wrapper).attributes("disabled")).toBeDefined();
   });

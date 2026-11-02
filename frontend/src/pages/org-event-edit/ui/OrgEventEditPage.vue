@@ -6,7 +6,6 @@ import { useI18n } from "vue-i18n";
 import {
   changedFields,
   eventFormInput,
-  orgEventQuery,
   orgEventsQuery,
   parseEventChanges,
   publicEventsQuery,
@@ -54,11 +53,12 @@ const canSave = computed(() => changed.value.length > 0 || capacityTyped.value);
 const { mutate, isPending, isSuccess, error, reset } = useMutation({
   mutationFn: (changes: Parameters<typeof updateEvent>[1]) => updateEvent(props.event.id, changes),
   onSuccess: async (updated) => {
-    // The panel shows the answer at once; the stream brings later changes.
-    queryClient.setQueryData(orgEventQuery(updated.id).queryKey, updated);
+    // Not into the event cache: the counts of the answer are read after the commit, and a
+    // snapshot of a registration committed meanwhile is newer. The change itself notifies the
+    // stream, whose snapshot brings the new fields to the header.
     // The form keeps what was typed: it is what was saved, so nothing reads as changed now.
     initial.value = eventFormInput(updated);
-    // Exact: the list key prefixes the panel's, whose data is the answer already.
+    // Exact: the list key prefixes the panel's, which the stream keeps (see above).
     await queryClient.invalidateQueries({ queryKey: orgEventsQuery.queryKey, exact: true });
     await queryClient.invalidateQueries({ queryKey: publicEventsQuery.queryKey });
   },
