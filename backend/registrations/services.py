@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime, timedelta
+from typing import TypedDict
 
 from django.db import transaction
 from django.db.models import Case, F, Max, Q, QuerySet, When, Window
@@ -7,7 +8,7 @@ from django.db.models.functions import RowNumber
 from django.utils import timezone
 
 from emails.models import OutboxEmail
-from emails.services import enqueue_email, enqueue_waitlisted
+from emails.services import enqueue_email, enqueue_rescheduled, enqueue_waitlisted
 from events.models import Event
 from events.realtime import notify_stats_changed
 from registrations.models import Registration, new_ticket_code
@@ -159,6 +160,38 @@ def cancel(manage_token: str, *, now: datetime | None = None) -> Registration:
         # One notification with the promotion: the subscribers read the counts after both.
         notify_stats_changed(event_id)
         return registration
+
+
+class EventChanges(TypedDict, total=False):
+    starts_at: datetime
+
+
+def update_event(event_id: int, changes: EventChanges) -> Event:
+    """Apply the organizer's `changes` (only the fields sent) to the event and return it.
+
+    A new start bumps the schedule version and emails every confirmed and waitlisted
+    registration about it, in the same transaction under the event lock: an email goes out if
+    and only if the new date is committed, and concurrent reschedules each get a version and
+    emails of their own. The same start is no change. Raises Event.DoesNotExist for an unknown
+    event.
+    """
+    with transaction.atomic():
+        event = Event.objects.select_for_update().get(pk=event_id)
+        starts_at = changes.get("starts_at")
+        if starts_at is not None and starts_at != event.starts_at:
+            old_starts_at = event.starts_at
+            event.starts_at = starts_at
+            event.schedule_version += 1
+            event.save(update_fields=["starts_at", "schedule_version"])
+            participants = Registration.objects.filter(
+                event=event,
+                status__in=[Registration.Status.CONFIRMED, Registration.Status.WAITLISTED],
+            ).order_by("id")
+            for registration in participants:
+                # The locked event, not a fresh read per row: its version is the one just saved.
+                registration.event = event
+                enqueue_rescheduled(registration, old_starts_at)
+        return event
 
 
 def check_in(event_id: int, code: str, *, now: datetime | None = None) -> CheckInResult:

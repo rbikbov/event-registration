@@ -8,6 +8,7 @@ import { HomePage } from "@/pages/home";
 import { LoginPage } from "@/pages/login";
 import { OrgCheckinPage } from "@/pages/org-checkin";
 import { OrgEventLayout } from "@/pages/org-event";
+import { OrgEventEditPage } from "@/pages/org-event-edit";
 import { OrgEventNewPage } from "@/pages/org-event-new";
 import { OrgEventParticipantsPage } from "@/pages/org-event-participants";
 import { OrgEventsPage } from "@/pages/org-events";
@@ -33,6 +34,7 @@ export function createAppRouter(queryClient: QueryClient, history: RouterHistory
         children: [
           { path: routes.orgEvent, component: OrgEventParticipantsPage },
           { path: routes.orgCheckin, component: OrgCheckinPage },
+          { path: routes.orgEventEdit, component: OrgEventEditPage },
         ],
       },
       { path: routes.ticket, component: TicketPage },

@@ -12,7 +12,9 @@ from rest_framework.views import APIView
 
 from config.exceptions import Conflict, ValidationErrorSerializer
 from events.models import Event
+from events.serializers import EventUpdateSerializer, OrgEventSerializer
 from events.services import get_org_event
+from events.views import OrgEventDetailView
 from registrations.models import Registration
 from registrations.serializers import (
     CheckInRequestSerializer,
@@ -32,6 +34,7 @@ from registrations.services import (
     get_ticket,
     mask_email,
     register,
+    update_event,
 )
 
 
@@ -184,3 +187,30 @@ class OrgRegistrationListView(ListAPIView[Registration]):
         return event_registrations(
             event.id, query.validated_data.get("status"), query.validated_data["page"]
         )
+
+
+# The event panel of events with the change added here: a new date emails the participants,
+# and events cannot import registrations.
+class OrgEventView(OrgEventDetailView):
+    """The organizer's event panel: the event with its registration counts; the organizer changes
+    it with PATCH of the fields to change."""
+
+    @extend_schema(
+        request=EventUpdateSerializer,
+        responses={
+            200: OrgEventSerializer,
+            400: ValidationErrorSerializer,
+            403: OpenApiResponse(description="Another organizer's event"),
+            404: OpenApiResponse(description="No such event"),
+        },
+    )
+    def patch(self, request: Request, event_id: int) -> Response:
+        get_org_event(request.user, event_id)  # type: ignore[arg-type]  # IsAuthenticated: never AnonymousUser here
+        serializer = EventUpdateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            update_event(event_id, serializer.validated_data)
+        except Event.DoesNotExist:  # deleted since the check above
+            raise NotFound from None
+        event = Event.objects.with_registration_counts().get(pk=event_id)
+        return Response(OrgEventSerializer(event).data)

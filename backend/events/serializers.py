@@ -49,6 +49,12 @@ class OrgEventSerializer(serializers.ModelSerializer[Event]):
         read_only_fields = fields
 
 
+class EventUpdateSerializer(serializers.Serializer[None]):
+    """The fields of the event the organizer changes; any subset of them."""
+
+    starts_at = serializers.DateTimeField(required=False)
+
+
 class PublicEventListSerializer(serializers.ModelSerializer[Event]):
     free_seats = serializers.IntegerField(read_only=True)
 

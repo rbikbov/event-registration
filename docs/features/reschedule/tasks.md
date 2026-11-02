@@ -4,7 +4,7 @@ Spec — `spec.md`. Одна задача — один коммит; отмет�
 
 ## Этап 1. Перенос и изменение лимита
 
-- [ ] 1.1. Tracer bullet: перенос даты насквозь — `Event.schedule_version`, вид письма
+- [x] 1.1. Tracer bullet: перенос даты насквозь — `Event.schedule_version`, вид письма
       `rescheduled` (миграции), `update_event` только для `starts_at`,
       `PATCH /api/org/events/{id}/`, `openapi.yaml` и типы, вкладка «Редактирование» с полем
       даты.
@@ -34,6 +34,9 @@ Spec — `spec.md`. Одна задача — один коммит; отмет�
 ## Лог
 
 - база этапа 1 — `ae1e639`.
+- исследование: письма — `_enqueue` в `emails/services.py` (ключ по коду билета; для переноса —
+  свой ключ по `schedule_version`), замок и повышение — `cancel` / `_promote_first_waitlisted`;
+  форма и коды ошибок — `pages/org-event-new/model/event-form.ts`; вкладки — `OrgEventLayout`.
 
 ## На потом
 

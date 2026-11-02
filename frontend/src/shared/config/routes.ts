@@ -9,6 +9,7 @@ export const routes = {
   orgEventsNew: "/org/events/new",
   orgEvent: "/org/events/:id(\\d+)",
   orgCheckin: "/org/events/:id(\\d+)/checkin",
+  orgEventEdit: "/org/events/:id(\\d+)/edit",
   ticket: "/tickets/:token",
 } as const;
 
@@ -26,4 +27,8 @@ export function orgEventPath(id: number): string {
 
 export function checkinPath(eventId: number): string {
   return `/org/events/${eventId}/checkin`;
+}
+
+export function orgEventEditPath(id: number): string {
+  return `/org/events/${id}/edit`;
 }

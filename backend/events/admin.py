@@ -30,7 +30,8 @@ class EventAdmin(admin.ModelAdmin[Event]):
 
     def get_readonly_fields(self, request: HttpRequest, obj: Any = None) -> tuple[str, ...]:
         # A plain save skips the event lock and the side effects: a larger capacity must
-        # promote the waitlist, a new date must notify participants.
+        # promote the waitlist, a new date must notify participants. The schedule version is
+        # only the reschedule's to bump.
         if obj is None:
-            return ()
-        return ("organizer", "starts_at", "capacity")
+            return ("schedule_version",)
+        return ("organizer", "starts_at", "capacity", "schedule_version")

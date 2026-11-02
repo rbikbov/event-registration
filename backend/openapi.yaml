@@ -253,8 +253,9 @@ paths:
   /api/org/events/{event_id}/:
     get:
       operationId: org_events_retrieve
-      description: 'The organizer''s event panel: the event with its registration
-        counts.'
+      description: |-
+        The organizer's event panel: the event with its registration counts; the organizer changes
+        it with PATCH of the fields to change.
       parameters:
       - in: path
         name: event_id
@@ -271,6 +272,49 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/OrgEvent'
+          description: ''
+        '403':
+          description: Another organizer's event
+        '404':
+          description: No such event
+    patch:
+      operationId: org_events_partial_update
+      description: |-
+        The organizer's event panel: the event with its registration counts; the organizer changes
+        it with PATCH of the fields to change.
+      parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - org
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedEventUpdateRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedEventUpdateRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedEventUpdateRequest'
+      security:
+      - cookieAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrgEvent'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
           description: ''
         '403':
           description: Another organizer's event
@@ -652,6 +696,13 @@ components:
       - id
       - name
       - status
+    PatchedEventUpdateRequest:
+      type: object
+      description: The fields of the event the organizer changes; any subset of them.
+      properties:
+        starts_at:
+          type: string
+          format: date-time
     PublicEvent:
       type: object
       properties:

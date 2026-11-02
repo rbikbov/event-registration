@@ -23,6 +23,7 @@ SUBJECTS = {
     OutboxEmail.Kind.TICKET: "Билет: {title}",
     OutboxEmail.Kind.WAITLISTED: "Лист ожидания: {title}",
     OutboxEmail.Kind.PROMOTED: "Освободилось место: {title}",
+    OutboxEmail.Kind.RESCHEDULED: "Событие перенесено: {title}",
 }
 
 
@@ -41,19 +42,47 @@ def enqueue_waitlisted(registration: Registration, position: int) -> None:
     _enqueue(OutboxEmail.Kind.WAITLISTED, registration, {"position": position})
 
 
-def _enqueue(kind: OutboxEmail.Kind, registration: Registration, extra: dict[str, object]) -> None:
+def enqueue_rescheduled(registration: Registration, old_starts_at: datetime) -> None:
+    """Queue the email about a new date; call it in the transaction that bumped the version.
+
+    One per registration and schedule version: each reschedule is a change of its own. A seat
+    gets its code, the waitlist only that it waits: the position would go stale, the link shows
+    the current one.
+    """
+    _enqueue(
+        OutboxEmail.Kind.RESCHEDULED,
+        registration,
+        {
+            "old_starts_at": _email_time(old_starts_at),
+            "confirmed": registration.status == Registration.Status.CONFIRMED,
+        },
+        dedup_key=f"rescheduled:{registration.id}:{registration.event.schedule_version}",
+    )
+
+
+def _email_time(value: datetime) -> str:
+    # Events have no time zone of their own; the ticket page shows the browser's local time.
+    return value.astimezone(UTC).strftime("%d.%m.%Y %H:%M UTC")
+
+
+def _enqueue(
+    kind: OutboxEmail.Kind,
+    registration: Registration,
+    extra: dict[str, object],
+    *,
+    dedup_key: str | None = None,
+) -> None:
     """Queue an email about a registration change.
 
-    The text is rendered now, so it shows the state at the change. The key includes the ticket
-    code: a repeat of the same change queues nothing, a revival after cancelling (new code)
-    queues a new email.
+    The text is rendered now, so it shows the state at the change. The default key includes the
+    ticket code: a repeat of the same change queues nothing, a revival after cancelling (new
+    code) queues a new email.
     """
     event = registration.event
     context = {
         "name": registration.name,
         "title": event.title,
-        # Events have no time zone of their own; the ticket page shows the browser's local time.
-        "starts_at": event.starts_at.astimezone(UTC).strftime("%d.%m.%Y %H:%M UTC"),
+        "starts_at": _email_time(event.starts_at),
         "ticket_code": registration.ticket_code,
         "manage_url": f"{settings.FRONTEND_URL}/tickets/{registration.manage_token}",
         **extra,
@@ -61,7 +90,7 @@ def _enqueue(kind: OutboxEmail.Kind, registration: Registration, extra: dict[str
     email = OutboxEmail(
         kind=kind,
         registration=registration,
-        dedup_key=f"{kind}:{registration.id}:{registration.ticket_code}",
+        dedup_key=dedup_key or f"{kind}:{registration.id}:{registration.ticket_code}",
         to=registration.email,
         # One line: a line break in a header makes Django refuse to send the message.
         subject=SUBJECTS[kind].format(title=" ".join(event.title.split())),

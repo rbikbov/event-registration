@@ -169,14 +169,21 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description The organizer's event panel: the event with its registration counts. */
+        /**
+         * @description The organizer's event panel: the event with its registration counts; the organizer changes
+         *     it with PATCH of the fields to change.
+         */
         get: operations["org_events_retrieve"];
         put?: never;
         post?: never;
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
+        /**
+         * @description The organizer's event panel: the event with its registration counts; the organizer changes
+         *     it with PATCH of the fields to change.
+         */
+        patch: operations["org_events_partial_update"];
         trace?: never;
     };
     "/api/org/events/{event_id}/checkin/": {
@@ -353,6 +360,11 @@ export interface components {
             position?: number;
             /** Format: date-time */
             checked_in_at: string | null;
+        };
+        /** @description The fields of the event the organizer changes; any subset of them. */
+        PatchedEventUpdateRequest: {
+            /** Format: date-time */
+            starts_at?: string;
         };
         PublicEvent: {
             readonly id: number;
@@ -722,6 +734,55 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OrgEvent"];
+                };
+            };
+            /** @description Another organizer's event */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description No such event */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    org_events_partial_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                event_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PatchedEventUpdateRequest"];
+                "application/x-www-form-urlencoded": components["schemas"]["PatchedEventUpdateRequest"];
+                "multipart/form-data": components["schemas"]["PatchedEventUpdateRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OrgEvent"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidationError"];
                 };
             };
             /** @description Another organizer's event */

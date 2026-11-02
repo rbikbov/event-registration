@@ -4,7 +4,6 @@ from django.urls import path
 from accounts.views import LoginView, LogoutView, MeView
 from config.health import HealthView
 from events.views import (
-    OrgEventDetailView,
     OrgEventListView,
     OrgEventStreamView,
     PublicEventDetailView,
@@ -14,6 +13,7 @@ from events.views import (
 from registrations.views import (
     CancelView,
     CheckInView,
+    OrgEventView,
     OrgRegistrationListView,
     RegisterView,
     TicketView,
@@ -25,7 +25,7 @@ urlpatterns = [
     path("api/auth/logout/", LogoutView.as_view(), name="logout"),
     path("api/auth/me/", MeView.as_view(), name="me"),
     path("api/org/events/", OrgEventListView.as_view(), name="org-events"),
-    path("api/org/events/<int:event_id>/", OrgEventDetailView.as_view(), name="org-event"),
+    path("api/org/events/<int:event_id>/", OrgEventView.as_view(), name="org-event"),
     path(
         "api/org/events/<int:event_id>/stream/",
         OrgEventStreamView.as_view(),
