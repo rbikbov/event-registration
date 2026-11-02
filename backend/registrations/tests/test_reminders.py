@@ -6,6 +6,7 @@ from django.test import override_settings
 from accounts.models import User
 from emails.models import OutboxEmail
 from events.models import Event
+from registrations.models import Registration
 from registrations.services import cancel, enqueue_reminders, register, update_event
 
 pytestmark = pytest.mark.django_db
@@ -69,8 +70,11 @@ def test_waitlisted_cancelled_and_promoted_inside_the_window_get_no_reminder(
     ann = register(event.id, "a@x.io", "Ann", now=EARLY).registration
     register(event.id, "b@x.io", "Bob", now=EARLY)
     register(event.id, "c@x.io", "Cid", now=EARLY)
-    # Ann's seat goes to Cid, the waitlist head, inside the window.
+    dan = register(event.id, "d@x.io", "Dan", now=EARLY).registration
+    # Ann's seat goes to Cid, the waitlist head, inside the window; Dan still waits.
     cancel(ann.manage_token, now=NOW - timedelta(hours=1))
+    dan.refresh_from_db()
+    assert dan.status == Registration.Status.WAITLISTED
 
     assert enqueue_reminders(now=NOW) == 1
     assert [email.to for email in reminders()] == ["b@x.io"]
