@@ -100,9 +100,13 @@ describe("eventFormInput", () => {
 describe("changedFields", () => {
   const initial = input();
 
-  it("is empty for the initial values, and for a title that differs only in spaces", () => {
+  // The server trims both: a saved " Talks " comes back as "Talks" and must not read as changed.
+  it("is empty for the initial values, and for text that differs only in spaces", () => {
     expect(changedFields(initial, initial)).toEqual([]);
     expect(changedFields(input({ title: " Meetup " }), initial)).toEqual([]);
+    expect(
+      changedFields(input({ description: " Talks " }), input({ description: "Talks" })),
+    ).toEqual([]);
   });
 
   it("lists every field that differs, in form order", () => {
@@ -114,6 +118,12 @@ describe("changedFields", () => {
 
 describe("parseEventChanges", () => {
   const initial = input();
+
+  it("sends the description trimmed, as the server keeps it", () => {
+    const result = parseEventChanges(input({ description: " Talks " }), initial, now);
+
+    expect(result).toEqual({ ok: true, changes: { description: "Talks" } });
+  });
 
   it("returns only the changed fields, ready to send", () => {
     const result = parseEventChanges(input({ title: " Renamed ", capacity: 40 }), initial, now);

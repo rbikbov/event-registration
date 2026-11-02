@@ -49,7 +49,7 @@ export type EventChangesResult =
 function eventSchema(now: Date, checkPast = true) {
   return z.object({
     title: z.string().trim().min(1, "blank").max(200, "max_length"),
-    description: z.string().max(2000, "max_length"),
+    description: z.string().trim().max(2000, "max_length"),
     starts_at: z
       .string()
       .min(1, "required")
@@ -84,14 +84,15 @@ export function eventFormInput(event: EventFormValues): EventFormInput {
   return { ...event, starts_at: localInputValue(event.starts_at) };
 }
 
-// The fields the organizer has changed against `initial`, in form order. The title is compared
-// as it is sent, trimmed.
+// The fields the organizer has changed against `initial`, in form order. Text is compared as it is
+// sent and as the server keeps it, trimmed.
 export function changedFields(input: EventFormInput, initial: EventFormInput): EventField[] {
-  return EVENT_FIELDS.filter((field) =>
-    field === "title"
-      ? input.title.trim() !== initial.title.trim()
-      : input[field] !== initial[field],
-  );
+  return EVENT_FIELDS.filter((field) => comparable(input, field) !== comparable(initial, field));
+}
+
+function comparable(form: EventFormInput, field: EventField) {
+  const value = form[field];
+  return typeof value === "string" && field !== "starts_at" ? value.trim() : value;
 }
 
 // The changed fields ready to send, each checked as on creation; the start is checked for the
