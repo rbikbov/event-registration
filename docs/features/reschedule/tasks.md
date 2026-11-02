@@ -27,7 +27,7 @@ Spec — `spec.md`. Одна задача — один коммит; отмет�
       Готово, когда: pytest — одно напоминание на регистрацию и дату, правило 24 ч,
       `waitlisted` / `cancelled` / прошедшее событие без писем, новое напоминание после
       переноса, перенос во время прохода — не о старой дате (Postgres).
-- [ ] 2.2. `make seed` (`seed_demo`) и `make stack-seed`; README и `development.md`.
+- [x] 2.2. `make seed` (`seed_demo`) и `make stack-seed`; README и `development.md`.
       Готово, когда: после `make stack-seed` в Mailpit слота 1 через ~30 с — три напоминания.
 - [ ] 2.3. Закрытие фазы: критерии по фактам, `architecture.md`, README, roadmap.
 

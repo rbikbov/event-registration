@@ -16,6 +16,11 @@ up: ## Build and start the whole stack; open http://localhost:5173
 demo-users: ## Create the demo organizer and admin in the running stack (DEBUG only)
 	docker compose exec backend python manage.py create_demo_users
 
+.PHONY: seed
+# Not idempotent: each run adds two new demo events (see seed_demo).
+seed: ## Add demo events with participants to the running stack (DEBUG only)
+	docker compose exec backend python manage.py seed_demo
+
 .PHONY: down
 down: ## Stop the stack (data in the postgres-data volume is kept)
 	docker compose down
@@ -152,6 +157,10 @@ stack-up: stack-slot ## Stack of slot SLOT: frontend on 5173+SLOT, Mailpit on 80
 .PHONY: stack-demo-users
 stack-demo-users: stack-slot ## make demo-users in the stack of slot SLOT
 	$(STACK_COMPOSE) exec backend python manage.py create_demo_users
+
+.PHONY: stack-seed
+stack-seed: stack-slot ## make seed in the stack of slot SLOT
+	$(STACK_COMPOSE) exec backend python manage.py seed_demo
 
 .PHONY: stack-e2e
 stack-e2e: export FRONTEND_TARGET := gateway
