@@ -1,6 +1,6 @@
 import { expect, test, type Browser, type Page } from "@playwright/test";
 
-import { createEvent, emailTo, extract } from "./helpers";
+import { createEvent, emailTo, extract, registerOn } from "./helpers";
 
 async function participantPage(browser: Browser, consoleErrors: string[]): Promise<Page> {
   const page = await (await browser.newContext()).newPage();
@@ -8,14 +8,6 @@ async function participantPage(browser: Browser, consoleErrors: string[]): Promi
     if (message.type() === "error") consoleErrors.push(message.text());
   });
   return page;
-}
-
-async function registerOn(page: Page, title: string, email: string, name: string): Promise<void> {
-  await page.goto("/");
-  await page.getByRole("link", { name: title }).click();
-  await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Имя").fill(name);
-  await page.getByRole("button", { name: "Зарегистрироваться" }).click();
 }
 
 test("a cancelled seat goes to the waitlist head, who gets an email with the ticket", async ({

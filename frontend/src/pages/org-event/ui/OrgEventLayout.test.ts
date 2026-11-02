@@ -6,7 +6,7 @@ import { h, type FunctionalComponent } from "vue";
 import { createMemoryHistory, createRouter, RouterView } from "vue-router";
 
 import type { OrgEvent } from "@/entities/event";
-import { checkinPath, orgEventPath, routes } from "@/shared/config";
+import { checkinPath, orgEventEditPath, orgEventPath, routes } from "@/shared/config";
 import { createAppI18n } from "@/shared/lib/i18n";
 import { fakeEventSource } from "@/shared/lib/test/fake-event-source";
 import { server } from "@/shared/lib/test/msw";
@@ -32,9 +32,13 @@ const Participants: FunctionalComponent<{ event: OrgEvent }> = (props) =>
   h("p", { "data-tab": "participants" }, props.event.title);
 Participants.props = ["event"];
 const Checkin: FunctionalComponent = () => h("form", { "data-tab": "checkin" });
+const Edit: FunctionalComponent<{ event: OrgEvent }> = (props) =>
+  h("form", { "data-tab": "edit" }, props.event.starts_at);
+Edit.props = ["event"];
 // Without a name vue-router takes a function component for a lazy import.
 Participants.displayName = "Participants";
 Checkin.displayName = "Checkin";
+Edit.displayName = "Edit";
 
 function newQueryClient() {
   return new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -51,6 +55,7 @@ async function mountLayout(path = orgEventPath(7), queryClient = newQueryClient(
         children: [
           { path: routes.orgEvent, component: Participants },
           { path: routes.orgCheckin, component: Checkin },
+          { path: routes.orgEventEdit, component: Edit },
         ],
       },
     ],
@@ -141,6 +146,16 @@ describe("OrgEventLayout", () => {
     expect(currentTab(wrapper)).toBe("Участники");
     expect(wrapper.get(`nav a[href="${checkinPath(7)}"]`).text()).toBe("Чекин");
     expect(wrapper.get('[data-tab="participants"]').text()).toBe("Meetup");
+  });
+
+  it("gives the event to the edit tab", async () => {
+    server.use(http.get(EVENT, () => HttpResponse.json(event)));
+
+    const { wrapper } = await mountLayout(orgEventEditPath(7));
+    await flushPromises();
+
+    expect(currentTab(wrapper)).toBe("Редактирование");
+    expect(wrapper.get('[data-tab="edit"]').text()).toBe(event.starts_at);
   });
 
   it.each([

@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime, timedelta
+from typing import TypedDict
 
 from django.db import transaction
 from django.db.models import Case, F, Max, Q, QuerySet, When, Window
@@ -7,7 +8,7 @@ from django.db.models.functions import RowNumber
 from django.utils import timezone
 
 from emails.models import OutboxEmail
-from emails.services import enqueue_email, enqueue_waitlisted
+from emails.services import enqueue_email, enqueue_rescheduled, enqueue_waitlisted
 from events.models import Event
 from events.realtime import notify_stats_changed
 from registrations.models import Registration, new_ticket_code
@@ -161,6 +162,73 @@ def cancel(manage_token: str, *, now: datetime | None = None) -> Registration:
         return registration
 
 
+class EventChanges(TypedDict, total=False):
+    title: str
+    description: str
+    starts_at: datetime
+    capacity: int
+
+
+class CapacityBelowConfirmed(Exception):
+    """The new capacity would leave confirmed seats without a place; nobody loses a seat."""
+
+    def __init__(self, confirmed: int) -> None:
+        super().__init__(confirmed)
+        self.confirmed = confirmed
+
+
+def update_event(event_id: int, changes: EventChanges, *, now: datetime | None = None) -> Event:
+    """Apply the organizer's `changes` (only the fields sent) to the event and return it.
+
+    All under the event lock, in one transaction with the emails: an email goes out if and only
+    if its change is committed, and concurrent changes run one after another.
+    - A new start bumps the schedule version and emails every confirmed and waitlisted
+      registration about it; each reschedule has a version and emails of its own.
+    - A capacity below the confirmed count raises CapacityBelowConfirmed and changes nothing;
+      a larger one promotes the waitlist head, in queue order, until the seats are taken.
+    - Any change notifies the event's stats stream: its snapshot has the whole event.
+    A field sent with its current value is no change. Raises Event.DoesNotExist for an unknown
+    event.
+    """
+    with transaction.atomic():
+        event = Event.objects.select_for_update().get(pk=event_id)
+        # After the lock, like in `cancel`: the promotion time is when it really happened.
+        now = now or timezone.now()
+        capacity = changes.get("capacity", event.capacity)
+        confirmed = _confirmed_count(event)
+        if capacity < confirmed:
+            raise CapacityBelowConfirmed(confirmed)
+        old_starts_at = event.starts_at
+        changed = []
+        for field, value in changes.items():
+            if getattr(event, field) != value:
+                setattr(event, field, value)
+                changed.append(field)
+        if not changed:
+            return event
+        if "starts_at" in changed:
+            event.schedule_version += 1
+            changed.append("schedule_version")
+        event.save(update_fields=changed)
+        if "starts_at" in changed:
+            _email_reschedule(event, old_starts_at)
+        for _ in range(capacity - confirmed):
+            if not _promote_first_waitlisted(event.id, now):
+                break
+        notify_stats_changed(event.id)
+        return event
+
+
+def _email_reschedule(event: Event, old_starts_at: datetime) -> None:
+    participants = Registration.objects.filter(
+        event=event, status__in=[Registration.Status.CONFIRMED, Registration.Status.WAITLISTED]
+    ).order_by("id")
+    for registration in participants:
+        # The locked event, not a fresh read per row: its version is the one just saved.
+        registration.event = event
+        enqueue_rescheduled(registration, old_starts_at)
+
+
 def check_in(event_id: int, code: str, *, now: datetime | None = None) -> CheckInResult:
     """Mark the confirmed ticket with `code` at the event as checked in.
 
@@ -239,14 +307,17 @@ def _confirmed_count(event: Event) -> int:
     return Registration.objects.filter(event=event, status=Registration.Status.CONFIRMED).count()
 
 
-def _promote_first_waitlisted(event_id: int, now: datetime) -> None:
+def _promote_first_waitlisted(event_id: int, now: datetime) -> bool:
+    """Give a seat to the waitlist head with the promotion email; False if nobody waits."""
     first = (
         Registration.objects.filter(event_id=event_id, status=Registration.Status.WAITLISTED)
         .order_by("queued_at", "id")
         .first()
     )
-    if first is not None:
-        first.status = Registration.Status.CONFIRMED
-        first.confirmed_at = now
-        first.save()
-        enqueue_email(OutboxEmail.Kind.PROMOTED, first)
+    if first is None:
+        return False
+    first.status = Registration.Status.CONFIRMED
+    first.confirmed_at = now
+    first.save()
+    enqueue_email(OutboxEmail.Kind.PROMOTED, first)
+    return True

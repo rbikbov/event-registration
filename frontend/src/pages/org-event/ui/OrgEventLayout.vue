@@ -6,7 +6,7 @@ import { useRoute } from "vue-router";
 
 import { orgEventLive, orgEventProbe, orgEventQuery, type OrgEvent } from "@/entities/event";
 import { AppError } from "@/shared/api";
-import { checkinPath, orgEventPath, routes } from "@/shared/config";
+import { checkinPath, orgEventEditPath, orgEventPath, routes } from "@/shared/config";
 import { useLive } from "@/shared/lib/use-live";
 import { QueryState } from "@/shared/ui/query-state";
 import { Alert, AlertDescription } from "@/shared/ui/shadcn/alert";
@@ -14,15 +14,16 @@ import { Button } from "@/shared/ui/shadcn/button";
 
 // The event of the organizer: read and kept live here, once for every tab under it, so switching
 // tabs keeps the stream. Nothing of the event is shown before its GET has answered: until then it
-// may be someone else's. The participants get the loaded event as the `event` prop; the check-in
-// form needs none and stays usable when the load fails for another reason.
+// may be someone else's. The participants and the edit form get the loaded event as the `event`
+// prop; the check-in form needs none and stays usable when the load fails for another reason.
 const { t, d } = useI18n({ useScope: "local" });
 const route = useRoute();
 
 // The route pattern admits digits only.
 const eventId = computed(() => Number(route.params.id));
 // By the matched record, not the path: the router also matches an address with a trailing slash.
-const onCheckin = computed(() => route.matched.at(-1)?.path === routes.orgCheckin);
+const tabRoute = computed(() => route.matched.at(-1)?.path);
+const onCheckin = computed(() => tabRoute.value === routes.orgCheckin);
 
 // Read once, then kept by the stream: a GET of its own (window focus, a remount of stale data)
 // could have read the event before a snapshot and answer after it with older counts.
@@ -69,10 +70,13 @@ async function probe(id: number) {
   }
 }
 
-const tabs = computed(() => [
-  { key: "participants", to: orgEventPath(eventId.value), current: !onCheckin.value },
-  { key: "checkin", to: checkinPath(eventId.value), current: onCheckin.value },
-]);
+const tabs = computed(() =>
+  [
+    { key: "participants", to: orgEventPath(eventId.value), route: routes.orgEvent },
+    { key: "checkin", to: checkinPath(eventId.value), route: routes.orgCheckin },
+    { key: "edit", to: orgEventEditPath(eventId.value), route: routes.orgEventEdit },
+  ].map((tab) => ({ ...tab, current: tab.route === tabRoute.value })),
+);
 
 function counters(loaded: OrgEvent) {
   return [
@@ -163,7 +167,8 @@ function startsAt(iso: string): string {
   "tabs": "Разделы события",
   "tab": {
     "participants": "Участники",
-    "checkin": "Чекин"
+    "checkin": "Чекин",
+    "edit": "Редактирование"
   },
   "counters": {
     "capacity": "Мест",

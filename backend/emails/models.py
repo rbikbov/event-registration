@@ -17,13 +17,14 @@ class OutboxEmail(models.Model):
         TICKET = "ticket"
         WAITLISTED = "waitlisted"
         PROMOTED = "promoted"
+        RESCHEDULED = "rescheduled"
 
     class Status(models.TextChoices):
         PENDING = "pending"
         SENT = "sent"
         FAILED = "failed"
 
-    kind = models.CharField(max_length=10, choices=Kind.choices)
+    kind = models.CharField(max_length=20, choices=Kind.choices)
     registration = models.ForeignKey(Registration, on_delete=models.CASCADE, related_name="emails")
     dedup_key = models.CharField(max_length=100, unique=True)
     to = models.EmailField()
@@ -39,7 +40,7 @@ class OutboxEmail(models.Model):
     class Meta:
         constraints: ClassVar[list[models.BaseConstraint]] = [
             models.CheckConstraint(
-                condition=models.Q(kind__in=["ticket", "waitlisted", "promoted"]),
+                condition=models.Q(kind__in=["ticket", "waitlisted", "promoted", "rescheduled"]),
                 name="outboxemail_kind_valid",
             ),
             models.CheckConstraint(

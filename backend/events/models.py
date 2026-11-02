@@ -41,6 +41,9 @@ class Event(models.Model):
     capacity = models.IntegerField(
         validators=[MinValueValidator(1), MaxValueValidator(MAX_CAPACITY)]
     )
+    # Bumped by each change of `starts_at`: emails about the date (reschedule, reminder) are
+    # one per registration and version.
+    schedule_version = models.IntegerField(default=1)
 
     objects: ClassVar[EventQuerySet] = EventQuerySet.as_manager()  # type: ignore[assignment]  # manager built from the queryset
 

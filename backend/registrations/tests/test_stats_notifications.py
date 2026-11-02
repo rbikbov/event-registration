@@ -10,7 +10,7 @@ from accounts.models import User
 from events.models import Event
 from events.realtime import CHANNEL, connection_params
 from registrations.models import Registration
-from registrations.services import cancel, check_in, register
+from registrations.services import cancel, check_in, register, update_event
 
 # Postgres delivers a notification only on commit: the data must really be committed.
 pytestmark = pytest.mark.django_db(transaction=True)
@@ -157,5 +157,22 @@ def test_repeat_cancel_does_not_notify(
     notifications()
 
     cancel(seat.manage_token)
+
+    assert notifications() == []
+
+
+def test_an_event_change_notifies_after_commit(
+    event: Event, notifications: Callable[[], list[str]]
+) -> None:
+    # The snapshot has the whole event: a new title or date is news for the open pages too.
+    update_event(event.id, {"title": "Renamed"})
+
+    assert notifications() == [str(event.id)]
+
+
+def test_an_event_patch_that_changes_nothing_does_not_notify(
+    event: Event, notifications: Callable[[], list[str]]
+) -> None:
+    update_event(event.id, {"title": event.title, "starts_at": event.starts_at})
 
     assert notifications() == []

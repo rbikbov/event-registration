@@ -59,25 +59,33 @@ def test_add_rejects_a_start_in_the_past(admin_client: Client, organizer: User) 
 
 
 def test_add_accepts_a_start_in_the_future(admin_client: Client, organizer: User) -> None:
-    response = admin_client.post(ADD_URL, form_data(organizer, timezone.now() + timedelta(days=1)))
+    data = form_data(organizer, timezone.now() + timedelta(days=1), schedule_version=9)
+
+    response = admin_client.post(ADD_URL, data)
 
     assert response.status_code == 302
-    assert Event.objects.count() == 1
+    assert Event.objects.get().schedule_version == 1
 
 
-def test_change_keeps_capacity_start_and_organizer(
+def test_change_keeps_capacity_start_organizer_and_schedule_version(
     admin_client: Client, organizer: User, event: Event
 ) -> None:
     # Changing them needs the event lock and side effects (promotion, emails), not a plain save.
     other = User.objects.create_user(email="other@example.com", password="x")
-    data = form_data(other, event.starts_at + timedelta(days=1), title="Renamed", capacity=99)
+    data = form_data(
+        other,
+        event.starts_at + timedelta(days=1),
+        title="Renamed",
+        capacity=99,
+        schedule_version=9,
+    )
 
     response = admin_client.post(f"{CHANGELIST_URL}{event.pk}/change/", data)
 
     assert response.status_code == 302
     event.refresh_from_db()
     assert event.title == "Renamed"
-    assert (event.capacity, event.organizer_id) == (2, organizer.pk)
+    assert (event.capacity, event.organizer_id, event.schedule_version) == (2, organizer.pk, 1)
 
 
 def test_event_with_registrations_is_not_deleted(admin_client: Client, event: Event) -> None:

@@ -4,7 +4,14 @@ import { computed, reactive, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 
-import { orgEventsQuery, publicEventsQuery } from "@/entities/event";
+import {
+  orgEventsQuery,
+  parseEventForm,
+  publicEventsQuery,
+  serverFormErrors,
+  type EventFormErrors,
+  type EventFormInput,
+} from "@/entities/event";
 import { AppError } from "@/shared/api";
 import { routes } from "@/shared/config";
 import { Alert, AlertDescription } from "@/shared/ui/shadcn/alert";
@@ -22,12 +29,6 @@ import {
 } from "@/shared/ui/shadcn/number-field";
 
 import { createEvent } from "../api/create-event";
-import {
-  parseEventForm,
-  serverFormErrors,
-  type EventFormErrors,
-  type EventFormInput,
-} from "../model/event-form";
 
 const { t } = useI18n({ useScope: "local" });
 const router = useRouter();
