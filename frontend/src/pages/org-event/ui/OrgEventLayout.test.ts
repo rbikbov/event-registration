@@ -137,6 +137,7 @@ describe("OrgEventLayout", () => {
         counter(wrapper, key),
       ),
     ).toEqual(["2", "2", "1", "1", "0"]);
+    expect(wrapper.find('[data-counters="cards"]').exists()).toBe(true);
     expect(currentTab(wrapper)).toBe("Участники");
     expect(wrapper.get(`nav a[href="${checkinPath(7)}"]`).text()).toBe("Чекин");
     expect(wrapper.get('[data-tab="participants"]').text()).toBe("Meetup");
@@ -306,20 +307,25 @@ describe("OrgEventLayout", () => {
   });
 
   describe("on the check-in tab", () => {
-    it("shows the title and every counter in a short header", async () => {
+    it("shows the same event header with the counters as text", async () => {
       server.use(http.get(EVENT, () => HttpResponse.json(event)));
 
       const { wrapper } = await mountLayout(checkinPath(7));
       await flushPromises();
 
-      const header = wrapper.get('[data-header="compact"]');
-      expect(header.get("h1").text()).toBe("Meetup");
+      expect(wrapper.get("h1").text()).toBe("Meetup");
+      expect(wrapper.text()).toContain(
+        new Intl.DateTimeFormat("ru", { dateStyle: "long", timeStyle: "short" }).format(
+          new Date(event.starts_at),
+        ),
+      );
+      expect(wrapper.find('[data-counters="cards"]').exists()).toBe(false);
       expect(
         ["capacity", "confirmed", "waitlisted", "checkedIn", "freeSeats"].map((key) =>
           counter(wrapper, key),
         ),
       ).toEqual(["2", "2", "1", "1", "0"]);
-      expect(header.find("p").exists()).toBe(false);
+      expect(wrapper.find('[data-counters="text"]').exists()).toBe(true);
       expect(currentTab(wrapper)).toBe("Чекин");
     });
 
