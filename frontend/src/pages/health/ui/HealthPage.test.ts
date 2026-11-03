@@ -21,6 +21,19 @@ function mountPage() {
 }
 
 describe("HealthPage", () => {
+  it("does not link the error to this very page", async () => {
+    server.use(
+      http.get("*/api/health/", () =>
+        HttpResponse.json({ status: "error", database: "error" }, { status: 503 }),
+      ),
+    );
+
+    const wrapper = mountPage();
+    await vi.waitFor(() => expect(wrapper.find('[role="alert"]').exists()).toBe(true));
+
+    expect(wrapper.find('[role="alert"] a').exists()).toBe(false);
+  });
+
   it("shows backend and database status", async () => {
     server.use(
       http.get("*/api/health/", () => HttpResponse.json({ status: "ok", database: "ok" })),
@@ -28,9 +41,10 @@ describe("HealthPage", () => {
 
     const wrapper = mountPage();
     expect(wrapper.get('[role="status"]').text()).toBe("Загружаем…");
-    await flushPromises();
 
-    expect(wrapper.get("[data-health]").text()).toBe("Backend и база данных работают");
+    await vi.waitFor(() =>
+      expect(wrapper.get("[data-health]").text()).toBe("Backend и база данных работают"),
+    );
   });
 
   it("says the service does not answer on a 503", async () => {
@@ -41,9 +55,11 @@ describe("HealthPage", () => {
     );
 
     const wrapper = mountPage();
-    await flushPromises();
 
-    expect(wrapper.get('[role="alert"] h2').text()).toBe("Backend или база данных не отвечают");
+    // The answer of MSW may come later than a tick: wait for the result, not for the promises.
+    await vi.waitFor(() =>
+      expect(wrapper.get('[role="alert"] h2').text()).toBe("Backend или база данных не отвечают"),
+    );
   });
 
   it("asks the backend again on retry", async () => {

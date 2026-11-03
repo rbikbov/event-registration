@@ -14,6 +14,7 @@ export interface QueryStateSource<T> {
 <script setup lang="ts" generic="T">
 import { useI18n } from "vue-i18n";
 
+import { routes } from "@/shared/config";
 import { Button } from "@/shared/ui/shadcn/button";
 import { ErrorState } from "@/shared/ui/error-state";
 
@@ -21,15 +22,20 @@ import RetryAlert from "./RetryAlert.vue";
 
 // A failed refetch (window focus, invalidation) keeps the data in TanStack Query and sets
 // isError: the error goes above the data, which stays on screen, instead of replacing it.
-const props = defineProps<{
-  query: QueryStateSource<T>;
-  /** The first load failed: nothing to show. */
-  errorText: string;
-  /** A refetch failed: the data on screen is the previous one. */
-  refreshErrorText: string;
-  /** Heading level of the failed first load: 1 where the data holds the page's h1. */
-  level?: 1 | 2;
-}>();
+const props = withDefaults(
+  defineProps<{
+    query: QueryStateSource<T>;
+    /** The first load failed: nothing to show. */
+    errorText: string;
+    /** A refetch failed: the data on screen is the previous one. */
+    refreshErrorText: string;
+    /** Heading level of the failed first load: 1 where the data holds the page's h1. */
+    level?: 1 | 2;
+    /** A failed first load links to the service status; off on that page itself. */
+    healthLink?: boolean;
+  }>(),
+  { level: 2, healthLink: true },
+);
 
 defineSlots<{ default(props: { data: T }): unknown }>();
 
@@ -57,10 +63,13 @@ function retry(): void {
       />
       <slot :data="query.data.value" />
     </template>
-    <ErrorState v-else-if="query.isError.value" :title="errorText" :level="level ?? 2">
+    <ErrorState v-else-if="query.isError.value" :title="errorText" :level="level">
       <template #actions>
         <Button variant="outline" :disabled="query.isFetching.value" @click="retry">
           {{ query.isFetching.value ? t("loading") : t("retry") }}
+        </Button>
+        <Button v-if="healthLink" variant="outline" as-child>
+          <RouterLink :to="routes.health">{{ t("health") }}</RouterLink>
         </Button>
       </template>
     </ErrorState>
@@ -70,6 +79,7 @@ function retry(): void {
 <i18n lang="json" locale="ru">
 {
   "loading": "Загружаем…",
-  "retry": "Повторить"
+  "retry": "Повторить",
+  "health": "Состояние сервиса"
 }
 </i18n>

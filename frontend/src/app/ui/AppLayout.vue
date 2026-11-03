@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
+import { useOnline } from "@vueuse/core";
 import { computed, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
@@ -31,6 +32,10 @@ const signOut = useMutation({
     forgetUserData(queryClient);
   },
 });
+// One notice for the whole app instead of a line in every failed request. By `navigator.onLine`
+// and its events, which are sure only of "offline": online means a network, not a working backend.
+const online = useOnline();
+
 // The error is about the click on this screen: it does not follow the organizer to the next one.
 watch(
   () => route.path,
@@ -60,6 +65,11 @@ watch(
         </nav>
       </div>
     </header>
+    <div v-if="!online" class="mx-auto w-full max-w-4xl px-4 pt-4">
+      <Alert role="status" data-offline>
+        <AlertDescription>{{ t("offline") }}</AlertDescription>
+      </Alert>
+    </div>
     <div v-if="signOut.isError.value" class="mx-auto w-full max-w-4xl px-4 pt-4">
       <Alert variant="destructive" role="alert">
         <AlertDescription>{{ t("signOutError") }}</AlertDescription>
@@ -77,6 +87,7 @@ watch(
   "myEvents": "Мои события",
   "signIn": "Вход для организатора",
   "signOut": "Выйти",
-  "signOutError": "Не удалось выйти, повторите"
+  "signOutError": "Не удалось выйти, повторите",
+  "offline": "Нет подключения к интернету"
 }
 </i18n>

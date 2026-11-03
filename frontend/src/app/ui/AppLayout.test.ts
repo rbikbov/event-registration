@@ -10,6 +10,7 @@ import { meQuery } from "@/entities/session";
 import { routes } from "@/shared/config";
 import { createAppI18n } from "@/shared/lib/i18n";
 import { server } from "@/shared/lib/test/msw";
+import { goOnline } from "@/shared/lib/test/online";
 
 import AppLayout from "./AppLayout.vue";
 
@@ -57,6 +58,22 @@ describe("AppLayout", () => {
     await flushPromises();
 
     expect(wrapper.get("main").text()).toBe("page");
+  });
+
+  it("shows one notice under the header while the browser is offline", async () => {
+    server.use(http.get("*/api/auth/me/", () => HttpResponse.json({}, { status: 401 })));
+    const { wrapper } = await mountLayout();
+    await flushPromises();
+    expect(wrapper.find("[data-offline]").exists()).toBe(false);
+
+    goOnline(false);
+    await flushPromises();
+    expect(wrapper.get("[data-offline]").text()).toBe("Нет подключения к интернету");
+    expect(wrapper.get("[data-offline]").attributes("role")).toBe("status");
+
+    goOnline(true);
+    await flushPromises();
+    expect(wrapper.find("[data-offline]").exists()).toBe(false);
   });
 
   it("shows nothing on the right while the session is being asked", async () => {
