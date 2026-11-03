@@ -1,6 +1,13 @@
 import { expect, test } from "@playwright/test";
 
-import { createEvent, emailTo, extract, organizerPage, panelStat } from "./helpers";
+import {
+  collectConsoleErrors,
+  createEvent,
+  emailTo,
+  extract,
+  organizerPage,
+  panelStat,
+} from "./helpers";
 
 test("the code from the email passes check-in once, and the panel counts the arrival", async ({
   browser,
@@ -22,9 +29,7 @@ test("the code from the email passes check-in once, and the panel counts the arr
 
   const organizer = await organizerPage(browser);
   const consoleErrors: string[] = [];
-  organizer.on("console", (message) => {
-    if (message.type() === "error") consoleErrors.push(message.text());
-  });
+  collectConsoleErrors(organizer, consoleErrors);
   await organizer.getByRole("link", { name: title }).click();
   await organizer.getByRole("link", { name: "Чекин" }).click();
   await expect(organizer.getByRole("heading", { name: title })).toBeVisible();

@@ -32,13 +32,14 @@ describe("route guard", () => {
     expect(router.currentRoute.value.path).toBe(routes.login);
   });
 
-  it("sends a guest from an event panel to /login", async () => {
+  it("sends a guest from an event panel to /login with the way back", async () => {
     guest();
     const router = setup();
 
-    await router.push(orgEventPath(7));
+    await router.push(`${orgEventPath(7)}?status=waitlisted`);
 
     expect(router.currentRoute.value.path).toBe(routes.login);
+    expect(router.currentRoute.value.query.next).toBe(`${orgEventPath(7)}?status=waitlisted`);
   });
 
   // The check-in is a tab of the event layout: it is guarded by the layout's route.
@@ -67,6 +68,27 @@ describe("route guard", () => {
     await router.push(routes.login);
 
     expect(router.currentRoute.value.path).toBe(routes.orgEvents);
+  });
+
+  it("sends a signed-in user from /login to the page they were going to", async () => {
+    signedIn();
+    const router = setup();
+
+    await router.push({ path: routes.login, query: { next: checkinPath(7) } });
+
+    expect(router.currentRoute.value.fullPath).toBe(checkinPath(7));
+  });
+
+  it.each([
+    ["another site", "//evil.example"],
+    ["the sign-in page itself", "/login"],
+  ])("sends a signed-in user to the organizer page when next is %s", async (_, next) => {
+    signedIn();
+    const router = setup();
+
+    await router.push({ path: routes.login, query: { next } });
+
+    expect(router.currentRoute.value.fullPath).toBe(routes.orgEvents);
   });
 
   it("does not ask the server about the session on every navigation", async () => {

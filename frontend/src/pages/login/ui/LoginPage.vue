@@ -2,10 +2,11 @@
 import { useMutation, useQueryClient } from "@tanstack/vue-query";
 import { computed, reactive, ref } from "vue";
 import { useI18n } from "vue-i18n";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 
-import { meQuery } from "@/entities/session";
+import { forgetUserData, meQuery } from "@/entities/session";
 import { routes } from "@/shared/config";
+import { safeNext } from "@/shared/lib/safe-next";
 import { AppError } from "@/shared/api";
 import { Alert, AlertDescription } from "@/shared/ui/shadcn/alert";
 import { Button } from "@/shared/ui/shadcn/button";
@@ -19,6 +20,7 @@ import { parseLoginForm, type LoginField, type LoginFieldError } from "../model/
 
 const { t } = useI18n({ useScope: "local" });
 const router = useRouter();
+const route = useRoute();
 const queryClient = useQueryClient();
 
 const form = reactive({ email: "", password: "" });
@@ -27,8 +29,9 @@ const fieldErrors = ref<Partial<Record<LoginField, LoginFieldError>>>({});
 const { mutate, isPending, error } = useMutation({
   mutationFn: login,
   onSuccess: async (user) => {
+    forgetUserData(queryClient);
     queryClient.setQueryData(meQuery.queryKey, user);
-    await router.push(routes.orgEvents);
+    await router.push(safeNext(route.query.next) ?? routes.orgEvents);
   },
 });
 
@@ -49,7 +52,7 @@ function submit(): void {
 </script>
 
 <template>
-  <main class="mx-auto flex min-h-screen max-w-sm items-center px-4">
+  <div class="mx-auto max-w-sm sm:mt-8">
     <Card class="w-full">
       <CardHeader>
         <CardHeading :level="1">{{ t("title") }}</CardHeading>
@@ -91,7 +94,7 @@ function submit(): void {
         </form>
       </CardContent>
     </Card>
-  </main>
+  </div>
 </template>
 
 <i18n lang="json" locale="ru">

@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { createEvent, emailTo, extract } from "./helpers";
+import { collectConsoleErrors, createEvent, emailTo, extract } from "./helpers";
 
 test("the ticket email leads to the ticket page, where the participant cancels", async ({
   browser,
@@ -12,9 +12,7 @@ test("the ticket email leads to the ticket page, where the participant cancels",
   const participantContext = await browser.newContext();
   const participant = await participantContext.newPage();
   const consoleErrors: string[] = [];
-  participant.on("console", (message) => {
-    if (message.type() === "error") consoleErrors.push(message.text());
-  });
+  collectConsoleErrors(participant, consoleErrors);
   const email = `ticket-${Date.now()}@example.com`;
   await participant.goto("/");
   await participant.getByRole("link", { name: title }).click();

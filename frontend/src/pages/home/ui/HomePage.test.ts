@@ -6,7 +6,7 @@ import { createMemoryHistory, createRouter } from "vue-router";
 
 import HomePage from "./HomePage.vue";
 
-import { eventPath, routes } from "@/shared/config";
+import { eventPath } from "@/shared/config";
 import { createAppI18n } from "@/shared/lib/i18n";
 import { server } from "@/shared/lib/test/msw";
 
@@ -40,7 +40,7 @@ describe("HomePage", () => {
     expect(text).toContain("свободно 3 места");
     expect(text).toContain("мест нет");
     const hrefs = wrapper.findAll("a").map((a) => a.attributes("href"));
-    expect(hrefs).toEqual([routes.login, eventPath(1), eventPath(2)]);
+    expect(hrefs).toEqual([eventPath(1), eventPath(2)]);
   });
 
   it("says so when there are no events", async () => {

@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { server } from "@/shared/lib/test/msw";
 
 import { AppError } from "./app-error";
-import { api, unwrap } from "./client";
+import { api, unwrap, unwrapEmpty } from "./client";
 
 describe("unwrap", () => {
   it("returns data of a successful response", async () => {
@@ -54,5 +54,29 @@ describe("unwrap", () => {
 
     expect(error).toBeInstanceOf(AppError);
     expect((error as AppError).kind).toBe("network");
+  });
+});
+
+describe("unwrapEmpty", () => {
+  it("resolves on 204 No Content", async () => {
+    server.use(http.post("*/api/auth/logout/", () => new HttpResponse(null, { status: 204 })));
+
+    await expect(unwrapEmpty(api.POST("/api/auth/logout/"))).resolves.toBeUndefined();
+  });
+
+  it("throws AppError with the kind derived from the status", async () => {
+    server.use(http.post("*/api/auth/logout/", () => HttpResponse.json({}, { status: 401 })));
+
+    await expect(unwrapEmpty(api.POST("/api/auth/logout/"))).rejects.toMatchObject({
+      kind: "unauthorized",
+    });
+  });
+
+  it("throws a network AppError when the request does not reach the server", async () => {
+    server.use(http.post("*/api/auth/logout/", () => HttpResponse.error()));
+
+    await expect(unwrapEmpty(api.POST("/api/auth/logout/"))).rejects.toMatchObject({
+      kind: "network",
+    });
   });
 });

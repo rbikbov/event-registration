@@ -1,12 +1,10 @@
 import { expect, test, type Browser, type Page } from "@playwright/test";
 
-import { createEvent, emailTo, extract, registerOn } from "./helpers";
+import { collectConsoleErrors, createEvent, emailTo, extract, registerOn } from "./helpers";
 
 async function participantPage(browser: Browser, consoleErrors: string[]): Promise<Page> {
   const page = await (await browser.newContext()).newPage();
-  page.on("console", (message) => {
-    if (message.type() === "error") consoleErrors.push(message.text());
-  });
+  collectConsoleErrors(page, consoleErrors);
   return page;
 }
 

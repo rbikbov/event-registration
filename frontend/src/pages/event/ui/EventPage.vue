@@ -140,7 +140,7 @@ const fields: { name: "email" | "name"; type: string; autocomplete: string }[] =
 </script>
 
 <template>
-  <main class="mx-auto max-w-xl px-4 py-8">
+  <div class="mx-auto max-w-xl">
     <RouterLink class="text-muted-foreground text-sm underline" :to="routes.home">
       {{ t("back") }}
     </RouterLink>
@@ -199,7 +199,7 @@ const fields: { name: "email" | "name"; type: string; autocomplete: string }[] =
         </CardContent>
       </Card>
     </QueryState>
-  </main>
+  </div>
 </template>
 
 <i18n lang="json" locale="ru">

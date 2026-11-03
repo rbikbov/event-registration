@@ -18,7 +18,7 @@ function startsAt(iso: string): string {
 </script>
 
 <template>
-  <main class="mx-auto max-w-3xl px-4 py-8">
+  <div class="mx-auto max-w-3xl">
     <div class="flex items-center justify-between gap-4">
       <h1 class="text-2xl font-semibold">{{ t("title") }}</h1>
       <Button as-child>
@@ -58,7 +58,7 @@ function startsAt(iso: string): string {
         </li>
       </ul>
     </QueryState>
-  </main>
+  </div>
 </template>
 
 <i18n lang="json" locale="ru">

@@ -21,6 +21,17 @@ export async function organizerPage(browser: Browser): Promise<Page> {
   return page;
 }
 
+// Collects the console errors of a page. The one allowed: a guest's 401 from `me`, the header
+// asking who is signed in — the answer for a guest, not a failure (frontend-polish spec, "Сессия").
+export function collectConsoleErrors(page: Page, errors: string[]): void {
+  page.on("console", (message) => {
+    if (message.type() !== "error") return;
+    const guestSession =
+      message.text().includes("401") && message.location().url.endsWith("/api/auth/me/");
+    if (!guestSession) errors.push(message.text());
+  });
+}
+
 // A counter on the event panel, such as "Пришло": the value next to its term.
 export function panelStat(page: Page, term: string): Locator {
   return page

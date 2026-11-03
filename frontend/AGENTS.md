@@ -7,16 +7,16 @@
 
 ```text
 src/main.ts          точка входа: mountApp("#app")
-src/app/             приложение: App.vue, router.ts, query-client.ts
+src/app/             приложение: App.vue, router.ts, query-client.ts; ui/AppLayout — шапка (по meQuery, выход) и общий <main>
 src/pages/<page>/    экраны: ui/, api/ (запросы, нужные только странице), index.ts
 src/pages/org-event/ макет события организатора: запрос, поток, шапка, вкладки —
                      org-event-participants, org-checkin и org-event-edit (дочерние маршруты)
-src/entities/session/ кто вошёл: meQuery (null — гость)
+src/entities/session/ кто вошёл: meQuery (null — гость), logout, forgetUserData — сброс данных прежнего пользователя при входе и выходе
 src/entities/event/  события: orgEventsQuery / orgEventQuery(id) / orgEventLive(id) / orgEventProbe(id) (организатор), publicEventsQuery / publicEventQuery(id) / publicEventLive(id) / publicEventProbe(id) (публичные); проба — статус события после отказа потока, без записи в его кэш; модель формы события (создание и редактирование) — `model/event-form.ts`
 src/shared/api/      клиент API, AppError, unwrap, сгенерированный schema.d.ts. Правила: src/shared/api/AGENTS.md
 src/shared/ui/       самописные компоненты (query-state — загрузка и ошибки запроса, `RetryAlert` — ошибка с повтором); ui/shadcn/ — сгенерированные shadcn-vue, руками не правятся
 src/shared/config/   routes — все пути приложения
-src/shared/lib/      утилиты; live-source (`LiveSource` — данные от сервера, `sseSource` — по SSE) и use-live — подписка на время жизни компонента; lib/test/ — MSW, фейк EventSource и setup для Vitest
+src/shared/lib/      утилиты; safe-next — `?next=` входа, только путь этого приложения; live-source (`LiveSource` — данные от сервера, `sseSource` — по SSE) и use-live — подписка на время жизни компонента; lib/test/ — MSW, фейк EventSource и setup для Vitest
 src/widgets|features/            появляются с первым срезом, пустыми не создаются
 ```
 

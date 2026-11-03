@@ -17,7 +17,10 @@ function readOrgEvent(id: number) {
 
 // Under the list key: invalidating the list after a change refreshes the panel too.
 export function orgEventQuery(id: number) {
-  return queryOptions({ queryKey: ["org", "events", id], queryFn: () => readOrgEvent(id) });
+  return queryOptions({
+    queryKey: ["org", "events", id],
+    queryFn: () => readOrgEvent(id),
+  });
 }
 
 // The event read only for what the server answers now, to tell why its stream was refused: under

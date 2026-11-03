@@ -14,6 +14,7 @@ import { OrgEventParticipantsPage } from "@/pages/org-event-participants";
 import { OrgEventsPage } from "@/pages/org-events";
 import { TicketPage } from "@/pages/ticket";
 import { routes } from "@/shared/config";
+import { safeNext } from "@/shared/lib/safe-next";
 
 export function createAppRouter(queryClient: QueryClient, history: RouterHistory) {
   const router = createRouter({
@@ -42,13 +43,24 @@ export function createAppRouter(queryClient: QueryClient, history: RouterHistory
   });
 
   router.beforeEach(async (to) => {
-    // Public pages do not depend on the session; asking `me` there only logs a 401 for a guest.
+    // Public pages are not gated: who is signed in is the header's to show, not the guard's.
     if (!to.meta.requiresAuth && to.path !== routes.login) return true;
     const user = await queryClient.ensureQueryData(meQuery);
-    if (to.meta.requiresAuth && user === null) return routes.login;
-    if (to.path === routes.login && user !== null) return routes.orgEvents;
+    // The only place that decides where a guest may go: a 401 elsewhere only forgets the user
+    // and runs the navigation again (session-expiry.ts).
+    if (to.meta.requiresAuth && user === null) {
+      return { path: routes.login, query: { next: to.fullPath } };
+    }
+    if (to.path === routes.login && user !== null) return signedInTarget(to.query.next);
     return true;
   });
 
   return router;
+}
+
+// After sign-in: back to the page the guard sent the user from, if it is a page of this app.
+// `next=/login` would only bounce once more through the guard: straight to the organizer page.
+function signedInTarget(next: unknown): string {
+  const path = safeNext(next);
+  return path === null || path.startsWith(routes.login) ? routes.orgEvents : path;
 }

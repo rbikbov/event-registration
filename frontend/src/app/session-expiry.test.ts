@@ -5,11 +5,13 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { createMemoryHistory, RouterView } from "vue-router";
 
 import { AppError } from "@/shared/api";
-import { checkinPath, routes } from "@/shared/config";
+import { meQuery } from "@/entities/session";
+import { checkinPath, orgEventPath, routes } from "@/shared/config";
 import { createAppI18n } from "@/shared/lib/i18n";
 import { fakeEventSource } from "@/shared/lib/test/fake-event-source";
 import { server } from "@/shared/lib/test/msw";
 
+import App from "./App.vue";
 import { createAppRouter } from "./router";
 import { redirectOnExpiredSession } from "./session-expiry";
 
@@ -30,14 +32,16 @@ const settle = () => new Promise((resolve) => setTimeout(resolve, 30));
 const unauthorized = new AppError("unauthorized", { status: 401 });
 
 describe("expired session", () => {
-  it("sends the organizer to /login when a query gets 401", async () => {
-    const { queryClient, router } = await setup(routes.orgEvents);
+  it("sends the organizer to /login and back here when a query gets 401", async () => {
+    const { queryClient, router } = await setup(`${orgEventPath(7)}?page=2`);
 
     await queryClient
       .fetchQuery({ queryKey: ["x"], queryFn: () => Promise.reject(unauthorized) })
       .catch(() => undefined);
 
     await expect.poll(() => router.currentRoute.value.path).toBe(routes.login);
+    expect(router.currentRoute.value.query.next).toBe(`${orgEventPath(7)}?page=2`);
+    expect(queryClient.getQueryData(meQuery.queryKey)).toBeNull();
   });
 
   it("sends the organizer to /login when a mutation gets 401", async () => {
@@ -75,6 +79,30 @@ describe("expired session", () => {
 
     await settle();
     expect(router.currentRoute.value.path).toBe(routes.orgEvents);
+  });
+});
+
+// The header asks `me` on every screen, and a guest gets 401. The guest stays on a public page:
+// only the guard sends to /login, and it lets public pages through — not the header, not the 401
+// handling.
+describe("a guest on a public page", () => {
+  it("stays there and is offered to sign in", async () => {
+    server.use(
+      http.get("*/api/auth/me/", () => HttpResponse.json({}, { status: 401 })),
+      http.get("*/api/events/", () => HttpResponse.json([])),
+    );
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const router = createAppRouter(queryClient, createMemoryHistory());
+    redirectOnExpiredSession(queryClient, router);
+    await router.push(routes.home);
+    const wrapper = mount(App, {
+      global: { plugins: [router, [VueQueryPlugin, { queryClient }], createAppI18n()] },
+    });
+
+    await vi.waitFor(() => expect(wrapper.get("header").text()).toContain("Вход для организатора"));
+    await settle();
+
+    expect(router.currentRoute.value.path).toBe(routes.home);
   });
 });
 

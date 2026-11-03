@@ -4,23 +4,25 @@ import { http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 import { createMemoryHistory, createRouter } from "vue-router";
 
+import { orgEventsQuery } from "@/entities/event";
 import { meQuery } from "@/entities/session";
-import { routes } from "@/shared/config";
+import { checkinPath, routes } from "@/shared/config";
 import { createAppI18n } from "@/shared/lib/i18n";
 import { server } from "@/shared/lib/test/msw";
 
 import LoginPage from "./LoginPage.vue";
 
-async function mountPage() {
+async function mountPage(next?: string) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const router = createRouter({
     history: createMemoryHistory(),
     routes: [
       { path: routes.login, component: LoginPage },
       { path: routes.orgEvents, component: { template: "<div />" } },
+      { path: routes.orgCheckin, component: { template: "<div />" } },
     ],
   });
-  await router.push(routes.login);
+  await router.push({ path: routes.login, query: next === undefined ? {} : { next } });
   const wrapper = mount(LoginPage, {
     global: { plugins: [router, [VueQueryPlugin, { queryClient }], createAppI18n()] },
   });
@@ -56,6 +58,57 @@ describe("LoginPage", () => {
     expect(queryClient.getQueryData(meQuery.queryKey)).toEqual({
       id: 1,
       email: "demo@example.com",
+    });
+  });
+
+  it("returns to the page the organizer was sent from", async () => {
+    server.use(
+      http.post("*/api/auth/login/", () => HttpResponse.json({ id: 1, email: "demo@example.com" })),
+    );
+    const { wrapper, router } = await mountPage(checkinPath(7));
+
+    await fill(wrapper, "demo@example.com", "demo");
+
+    expect(router.currentRoute.value.fullPath).toBe(checkinPath(7));
+  });
+
+  it("opens the organizer page when the way back leads off the site", async () => {
+    server.use(
+      http.post("*/api/auth/login/", () => HttpResponse.json({ id: 1, email: "demo@example.com" })),
+    );
+    const { wrapper, router } = await mountPage("//evil.example");
+
+    await fill(wrapper, "demo@example.com", "demo");
+
+    expect(router.currentRoute.value.fullPath).toBe(routes.orgEvents);
+  });
+
+  it("forgets what the previous user saw before opening the organizer page", async () => {
+    server.use(
+      http.post("*/api/auth/login/", () =>
+        HttpResponse.json({ id: 2, email: "other@example.com" }),
+      ),
+    );
+    const { wrapper, router, queryClient } = await mountPage();
+    // Left by the organizer whose session ended with a 401 in this tab.
+    queryClient.setQueryData(orgEventsQuery.queryKey, [
+      {
+        id: 1,
+        title: "Not yours",
+        starts_at: "2030-05-01T18:00:00Z",
+        capacity: 10,
+        confirmed: 3,
+        waitlisted: 0,
+      },
+    ]);
+
+    await fill(wrapper, "other@example.com", "secret");
+
+    expect(router.currentRoute.value.path).toBe(routes.orgEvents);
+    expect(queryClient.getQueryData(orgEventsQuery.queryKey)).toBeUndefined();
+    expect(queryClient.getQueryData(meQuery.queryKey)).toEqual({
+      id: 2,
+      email: "other@example.com",
     });
   });
 
