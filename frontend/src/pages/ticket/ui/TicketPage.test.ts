@@ -23,7 +23,7 @@ const checkedIn = { ...confirmed, checked_in_at: "2030-05-01T15:42:00Z" };
 const waitlisted = { status: "waitlisted", position: 3, name: "Ann", checked_in_at: null, event };
 const cancelled = { status: "cancelled", name: "Ann", checked_in_at: null, event };
 
-async function mountPage() {
+async function mountPage({ loaded = true } = {}) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const router = createRouter({
     history: createMemoryHistory(),
@@ -36,7 +36,9 @@ async function mountPage() {
   const wrapper = mount(TicketPage, {
     global: { plugins: [router, [VueQueryPlugin, { queryClient }], createAppI18n()] },
   });
-  await vi.waitFor(() => expect(wrapper.find('[role="status"]').exists()).toBe(false));
+  if (loaded) {
+    await vi.waitFor(() => expect(wrapper.find('[role="status"]').exists()).toBe(false));
+  }
   return { wrapper, queryClient };
 }
 
@@ -120,6 +122,15 @@ describe("TicketPage", () => {
     const { wrapper } = await mountPage();
 
     expect(wrapper.get('[role="alert"] h1').text()).toBe("Билет не найден");
+  });
+
+  it("shows a loading state until the ticket arrives", async () => {
+    server.use(http.get("*/api/tickets/tok/", () => HttpResponse.json(confirmed)));
+    const { wrapper } = await mountPage({ loaded: false });
+
+    expect(wrapper.get('[role="status"]').text()).toBe("Загружаем…");
+    await vi.waitFor(() => expect(wrapper.find('[role="status"]').exists()).toBe(false));
+    expect(wrapper.text()).toContain("Meetup");
   });
 
   it("shows a load error with a retry", async () => {

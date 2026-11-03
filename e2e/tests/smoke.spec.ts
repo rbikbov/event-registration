@@ -4,5 +4,5 @@ test("frontend reaches the backend and the database through the proxy", async ({
   await page.goto("/health");
 
   await expect(page.getByRole("heading", { name: "Состояние сервиса" })).toBeVisible();
-  await expect(page.getByText("Backend: ok, база данных: ok")).toBeVisible();
+  await expect(page.getByRole("definition")).toHaveText(["работает", "работает"]);
 });
