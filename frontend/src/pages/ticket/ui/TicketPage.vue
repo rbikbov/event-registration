@@ -7,6 +7,7 @@ import { useRoute } from "vue-router";
 import { publicEventsQuery } from "@/entities/event";
 import { AppError } from "@/shared/api";
 import { eventPath } from "@/shared/config";
+import { NotFound } from "@/shared/ui/error-state";
 import { QueryState } from "@/shared/ui/query-state";
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/shadcn/alert";
 import { Button } from "@/shared/ui/shadcn/button";
@@ -80,13 +81,12 @@ function time(iso: string): string {
 
 <template>
   <div class="mx-auto max-w-xl">
-    <Alert v-if="notFound" role="alert">
-      <AlertDescription>{{ t("notFound") }}</AlertDescription>
-    </Alert>
+    <NotFound v-if="notFound" :title="t('notFound')" />
     <!-- A failed reread keeps the data: the code must stay on screen at the entrance. -->
     <QueryState
       v-else
       v-slot="{ data: loaded }"
+      :level="1"
       :query="ticket"
       :error-text="t('error')"
       :refresh-error-text="t('refreshFailed')"

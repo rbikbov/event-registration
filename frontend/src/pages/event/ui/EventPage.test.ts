@@ -21,7 +21,7 @@ const event = {
   free_seats: 2,
 };
 
-async function mountPage() {
+async function mountPage({ loaded = true } = {}) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const router = createRouter({
     history: createMemoryHistory(),
@@ -34,7 +34,9 @@ async function mountPage() {
   const wrapper = mount(EventPage, {
     global: { plugins: [router, [VueQueryPlugin, { queryClient }], createAppI18n()] },
   });
-  await vi.waitFor(() => expect(wrapper.find('[role="status"]').exists()).toBe(false));
+  if (loaded) {
+    await vi.waitFor(() => expect(wrapper.find('[role="status"]').exists()).toBe(false));
+  }
   return { wrapper, queryClient, router };
 }
 
@@ -113,8 +115,17 @@ describe("EventPage", () => {
     const page = await mountPage();
     const { wrapper } = page;
 
-    expect(wrapper.get('[role="alert"]').text()).toBe("Такого события нет");
+    expect(wrapper.get('[role="alert"] h1').text()).toBe("Такого события нет");
     expect(wrapper.find("form").exists()).toBe(false);
+  });
+
+  it("shows a loading state until the event arrives", async () => {
+    server.use(http.get("*/api/events/7/", () => HttpResponse.json(event)));
+    const { wrapper } = await mountPage({ loaded: false });
+
+    expect(wrapper.get('[role="status"]').text()).toBe("Загружаем…");
+    await vi.waitFor(() => expect(wrapper.find('[role="status"]').exists()).toBe(false));
+    expect(wrapper.text()).toContain("Meetup");
   });
 
   it("shows a load error with a retry", async () => {
@@ -378,7 +389,9 @@ describe("EventPage", () => {
     vi.useFakeTimers();
 
     streams.opened[0]?.fail({ closed: true });
-    await vi.waitFor(() => expect(wrapper.get('[role="alert"]').text()).toBe("Такого события нет"));
+    await vi.waitFor(() =>
+      expect(wrapper.get('[role="alert"] h1').text()).toBe("Такого события нет"),
+    );
     vi.advanceTimersByTime(3000);
 
     expect(streams.opened).toHaveLength(1);

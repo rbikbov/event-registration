@@ -8,6 +8,7 @@ import { orgEventLive, orgEventProbe, orgEventQuery, type OrgEvent } from "@/ent
 import { AppError } from "@/shared/api";
 import { checkinPath, orgEventEditPath, orgEventPath, routes } from "@/shared/config";
 import { useLive } from "@/shared/lib/use-live";
+import { ErrorState, NotFound } from "@/shared/ui/error-state";
 import { QueryState } from "@/shared/ui/query-state";
 import { Alert, AlertDescription } from "@/shared/ui/shadcn/alert";
 import { Button } from "@/shared/ui/shadcn/button";
@@ -95,17 +96,23 @@ function startsAt(iso: string): string {
 
 <template>
   <div class="mx-auto max-w-4xl">
-    <RouterLink class="text-muted-foreground text-sm underline" :to="routes.orgEvents">
-      {{ t("back") }}
-    </RouterLink>
-
-    <Alert v-if="loadAnswer" class="mt-6" role="alert">
-      <AlertDescription>{{ t(loadAnswer) }}</AlertDescription>
-    </Alert>
+    <NotFound v-if="loadAnswer === 'notFound'" :title="t('notFound')" />
+    <ErrorState
+      v-else-if="loadAnswer === 'foreign'"
+      :title="t('forbidden')"
+      :text="t('foreign')"
+      :level="1"
+    >
+      <template #actions>
+        <Button variant="outline" as-child>
+          <RouterLink :to="routes.orgEvents">{{ t("myEvents") }}</RouterLink>
+        </Button>
+      </template>
+    </ErrorState>
     <template v-else>
       <QueryState
         v-slot="{ data: loaded }"
-        class="mt-6"
+        :level="1"
         :query="event"
         :error-text="onCheckin ? t('checkinError') : t('error')"
         :refresh-error-text="onCheckin ? t('checkinRefreshError') : t('refreshError')"
@@ -156,12 +163,13 @@ function startsAt(iso: string): string {
 
 <i18n lang="json" locale="ru">
 {
-  "back": "Мои события",
+  "myEvents": "Мои события",
   "error": "Не удалось загрузить событие",
   "refreshError": "Не удалось обновить событие, показаны прежние данные",
   "checkinError": "Не удалось загрузить событие, чекин работает",
   "checkinRefreshError": "Не удалось обновить событие, чекин работает",
   "notFound": "Событие не найдено",
+  "forbidden": "Нет доступа",
   "foreign": "Это событие другого организатора",
   "reconnecting": "Соединение потеряно, переподключаюсь…",
   "tabs": "Разделы события",

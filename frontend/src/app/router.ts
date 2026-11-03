@@ -6,6 +6,7 @@ import { EventPage } from "@/pages/event";
 import { HealthPage } from "@/pages/health";
 import { HomePage } from "@/pages/home";
 import { LoginPage } from "@/pages/login";
+import { NotFoundPage } from "@/pages/not-found";
 import { OrgCheckinPage } from "@/pages/org-checkin";
 import { OrgEventLayout } from "@/pages/org-event";
 import { OrgEventEditPage } from "@/pages/org-event-edit";
@@ -16,16 +17,45 @@ import { TicketPage } from "@/pages/ticket";
 import { routes } from "@/shared/config";
 import { safeNext } from "@/shared/lib/safe-next";
 
+// The tab title of a page: a key of the titles in App.vue, where the texts of the app live.
+export type PageTitle =
+  | "home"
+  | "event"
+  | "health"
+  | "login"
+  | "orgEvents"
+  | "orgEventsNew"
+  | "participants"
+  | "checkin"
+  | "edit"
+  | "ticket"
+  | "notFound";
+
+declare module "vue-router" {
+  interface RouteMeta {
+    requiresAuth?: boolean;
+    title?: PageTitle;
+  }
+}
+
 export function createAppRouter(queryClient: QueryClient, history: RouterHistory) {
   const router = createRouter({
     history,
     routes: [
-      { path: routes.home, component: HomePage },
-      { path: routes.event, component: EventPage },
-      { path: routes.health, component: HealthPage },
-      { path: routes.login, component: LoginPage },
-      { path: routes.orgEvents, component: OrgEventsPage, meta: { requiresAuth: true } },
-      { path: routes.orgEventsNew, component: OrgEventNewPage, meta: { requiresAuth: true } },
+      { path: routes.home, component: HomePage, meta: { title: "home" } },
+      { path: routes.event, component: EventPage, meta: { title: "event" } },
+      { path: routes.health, component: HealthPage, meta: { title: "health" } },
+      { path: routes.login, component: LoginPage, meta: { title: "login" } },
+      {
+        path: routes.orgEvents,
+        component: OrgEventsPage,
+        meta: { requiresAuth: true, title: "orgEvents" },
+      },
+      {
+        path: routes.orgEventsNew,
+        component: OrgEventNewPage,
+        meta: { requiresAuth: true, title: "orgEventsNew" },
+      },
       {
         path: routes.orgEvent,
         component: OrgEventLayout,
@@ -33,12 +63,17 @@ export function createAppRouter(queryClient: QueryClient, history: RouterHistory
         // Absolute child paths: every path lives in `routes`. The layout keeps the event and its
         // stream while the organizer switches between the tabs.
         children: [
-          { path: routes.orgEvent, component: OrgEventParticipantsPage },
-          { path: routes.orgCheckin, component: OrgCheckinPage },
-          { path: routes.orgEventEdit, component: OrgEventEditPage },
+          {
+            path: routes.orgEvent,
+            component: OrgEventParticipantsPage,
+            meta: { title: "participants" },
+          },
+          { path: routes.orgCheckin, component: OrgCheckinPage, meta: { title: "checkin" } },
+          { path: routes.orgEventEdit, component: OrgEventEditPage, meta: { title: "edit" } },
         ],
       },
-      { path: routes.ticket, component: TicketPage },
+      { path: routes.ticket, component: TicketPage, meta: { title: "ticket" } },
+      { path: routes.notFound, component: NotFoundPage, meta: { title: "notFound" } },
     ],
   });
 

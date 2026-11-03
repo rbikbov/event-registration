@@ -1,9 +1,11 @@
-import { QueryClient } from "@tanstack/vue-query";
+import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
+import { mount } from "@vue/test-utils";
 import { http, HttpResponse } from "msw";
-import { describe, expect, it } from "vitest";
-import { createMemoryHistory } from "vue-router";
+import { describe, expect, it, vi } from "vitest";
+import { createMemoryHistory, RouterView } from "vue-router";
 
 import { checkinPath, eventPath, orgEventPath, routes } from "@/shared/config";
+import { createAppI18n } from "@/shared/lib/i18n";
 import { server } from "@/shared/lib/test/msw";
 
 import { createAppRouter } from "./router";
@@ -122,5 +124,29 @@ describe("route guard", () => {
     await router.push(eventPath(1));
 
     expect(router.currentRoute.value.path).toBe(eventPath(1));
+  });
+});
+
+// Addresses no route of the app matches, so they are typed here rather than taken from `routes`.
+describe("an address no route matches", () => {
+  it.each([
+    ["an unknown path", "/no-such-page"],
+    ["an event id that is not a number", "/events/abc"],
+    // Not an organizer route, so not guarded: no detour through /login. No handler for `me`:
+    // asking it would fail the test as unhandled.
+    ["an unknown path under /org", "/org/no-such-page"],
+  ])("shows 'page not found' for %s and keeps the address", async (_case, path) => {
+    const queryClient = new QueryClient();
+    const router = setup();
+    await router.push(path);
+    const wrapper = mount(RouterView, {
+      global: { plugins: [router, [VueQueryPlugin, { queryClient }], createAppI18n()] },
+    });
+
+    await vi.waitFor(() =>
+      expect(wrapper.get('[role="alert"] h1').text()).toBe("Страница не найдена"),
+    );
+    expect(router.currentRoute.value.fullPath).toBe(path);
+    expect(wrapper.get(`[role="alert"] a[href="${routes.home}"]`).text()).toBe("К событиям");
   });
 });
