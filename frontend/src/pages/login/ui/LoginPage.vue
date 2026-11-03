@@ -4,7 +4,7 @@ import { computed, reactive, ref } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 
-import { meQuery } from "@/entities/session";
+import { forgetUserData, meQuery } from "@/entities/session";
 import { routes } from "@/shared/config";
 import { safeNext } from "@/shared/lib/safe-next";
 import { AppError } from "@/shared/api";
@@ -29,6 +29,7 @@ const fieldErrors = ref<Partial<Record<LoginField, LoginFieldError>>>({});
 const { mutate, isPending, error } = useMutation({
   mutationFn: login,
   onSuccess: async (user) => {
+    forgetUserData(queryClient);
     queryClient.setQueryData(meQuery.queryKey, user);
     await router.push(safeNext(route.query.next) ?? routes.orgEvents);
   },

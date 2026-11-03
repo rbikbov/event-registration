@@ -6,11 +6,8 @@ import { sseSource, type LiveSource } from "@/shared/lib/live-source";
 
 export type OrgEvent = components["schemas"]["OrgEvent"];
 
-// Every organizer query key starts with this: signing out drops them all by this prefix.
-export const orgQueryKey = ["org"] as const;
-
 export const orgEventsQuery = queryOptions({
-  queryKey: [...orgQueryKey, "events"],
+  queryKey: ["org", "events"],
   queryFn: () => unwrap(api.GET("/api/org/events/")),
 });
 
@@ -21,7 +18,7 @@ function readOrgEvent(id: number) {
 // Under the list key: invalidating the list after a change refreshes the panel too.
 export function orgEventQuery(id: number) {
   return queryOptions({
-    queryKey: [...orgQueryKey, "events", id],
+    queryKey: ["org", "events", id],
     queryFn: () => readOrgEvent(id),
   });
 }
@@ -31,7 +28,7 @@ export function orgEventQuery(id: number) {
 // Not retried: the stream is opened again in 3 s, and its next refusal brings the next probe.
 export function orgEventProbe(id: number) {
   return queryOptions({
-    queryKey: [...orgQueryKey, "event-probe", id],
+    queryKey: ["org", "event-probe", id],
     queryFn: () => readOrgEvent(id),
     staleTime: 0,
     gcTime: 0,

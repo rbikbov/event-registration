@@ -1,8 +1,9 @@
-import { focusManager, QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
+import { focusManager, QueryClient, useQuery, VueQueryPlugin } from "@tanstack/vue-query";
 import { flushPromises, mount } from "@vue/test-utils";
 import { http, HttpResponse } from "msw";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createMemoryHistory, createRouter } from "vue-router";
+import { defineComponent, h } from "vue";
+import { createMemoryHistory, createRouter, RouterView } from "vue-router";
 
 import { orgEventsQuery } from "@/entities/event";
 import { meQuery } from "@/entities/session";
@@ -14,7 +15,16 @@ import AppLayout from "./AppLayout.vue";
 
 const user = { id: 1, email: "demo@example.com" };
 
+// The organizer's list as a page shows it: observed while the page is open.
+const OrgEventsList = defineComponent({
+  setup() {
+    useQuery(orgEventsQuery);
+    return () => h("p", "page");
+  },
+});
+
 async function mountLayout(path: string = routes.home) {
+  server.use(http.get("*/api/org/events/", () => HttpResponse.json([])));
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const page = { template: "<p>page</p>" };
   const router = createRouter({
@@ -22,12 +32,12 @@ async function mountLayout(path: string = routes.home) {
     routes: [
       { path: routes.home, component: page },
       { path: routes.login, component: page },
-      { path: routes.orgEvents, component: page },
+      { path: routes.orgEvents, component: OrgEventsList },
     ],
   });
   await router.push(path);
   const wrapper = mount(AppLayout, {
-    slots: { default: "<p>page</p>" },
+    slots: { default: () => h(RouterView) },
     global: { plugins: [router, [VueQueryPlugin, { queryClient }], createAppI18n()] },
   });
   return { wrapper, router, queryClient };
@@ -131,7 +141,7 @@ describe("AppLayout", () => {
     );
     const { wrapper, router, queryClient } = await mountLayout(routes.orgEvents);
     await flushPromises();
-    queryClient.setQueryData(orgEventsQuery.queryKey, []);
+    expect(queryClient.getQueryData(orgEventsQuery.queryKey)).toEqual([]);
 
     await wrapper.get("header button").trigger("click");
     await flushPromises();

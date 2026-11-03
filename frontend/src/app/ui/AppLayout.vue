@@ -4,8 +4,7 @@ import { computed, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute, useRouter } from "vue-router";
 
-import { orgQueryKey } from "@/entities/event";
-import { logout, meQuery } from "@/entities/session";
+import { forgetUserData, logout, meQuery } from "@/entities/session";
 import { routes } from "@/shared/config";
 import { Alert, AlertDescription } from "@/shared/ui/shadcn/alert";
 import { Button } from "@/shared/ui/shadcn/button";
@@ -26,9 +25,9 @@ const signOut = useMutation({
   mutationFn: logout,
   onSuccess: async () => {
     queryClient.setQueryData(meQuery.queryKey, null);
-    // Leave the organizer page first: dropped while it is open, its queries would be asked again.
+    // Leave the organizer page first: only what no screen shows is dropped.
     await router.push(routes.home);
-    queryClient.removeQueries({ queryKey: orgQueryKey });
+    forgetUserData(queryClient);
   },
 });
 // The error is about the click on this screen: it does not follow the organizer to the next one.

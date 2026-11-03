@@ -1,6 +1,5 @@
 import { queryOptions } from "@tanstack/vue-query";
 
-import { orgQueryKey } from "@/entities/event";
 import { api, unwrap } from "@/shared/api";
 import type { components } from "@/shared/api";
 
@@ -21,7 +20,7 @@ export function orgRegistrationsQuery(
   currentCounts: () => RegistrationCounts,
 ) {
   return queryOptions({
-    queryKey: [...orgQueryKey, "events", eventId, "registrations", status, page],
+    queryKey: ["org", "events", eventId, "registrations", status, page],
     queryFn: async () => {
       const counts = currentCounts();
       const rows = await unwrap(
