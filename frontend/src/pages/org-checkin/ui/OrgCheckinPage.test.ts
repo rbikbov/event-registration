@@ -62,6 +62,18 @@ async function enter(wrapper: Wrapper, code: string): Promise<void> {
   await flushPromises();
 }
 
+// "Next" waits a second after an answer; a test that moves on runs that second on fake timers.
+function fakePause(): void {
+  vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+}
+
+async function moveOn(wrapper: Wrapper): Promise<void> {
+  vi.advanceTimersByTime(1000);
+  await flushPromises();
+  await nextButton(wrapper).trigger("click");
+  await flushPromises();
+}
+
 function nextButton(wrapper: Wrapper) {
   const found = wrapper.findAll("button").find((b) => b.text() === "Следующий");
   if (found === undefined) throw new Error('No button "Следующий"');
@@ -97,13 +109,34 @@ describe("OrgCheckinPage", () => {
     expect(document.activeElement).toBe(nextButton(wrapper).element);
   });
 
-  it("brings back an empty, focused field for the next participant", async () => {
+  // A stray Enter or a held key must not take the answer away unread.
+  it("keeps the next button inactive, and focused, for a second after the answer", async () => {
+    fakePause();
     server.use(http.post(CHECKIN, () => HttpResponse.json(checkedIn)));
     const wrapper = await mountPage();
     await enter(wrapper, "ABCD2345");
 
+    expect(nextButton(wrapper).attributes("aria-disabled")).toBe("true");
+    expect(document.activeElement).toBe(nextButton(wrapper).element);
     await nextButton(wrapper).trigger("click");
+    vi.advanceTimersByTime(999);
+    await nextButton(wrapper).trigger("click");
+    expect(wrapper.find('[data-answer="checked_in"]').exists()).toBe(true);
+
+    vi.advanceTimersByTime(1);
     await flushPromises();
+    expect(nextButton(wrapper).attributes("aria-disabled")).toBeUndefined();
+    await nextButton(wrapper).trigger("click");
+    expect(wrapper.find("[data-answer]").exists()).toBe(false);
+  });
+
+  it("brings back an empty, focused field for the next participant", async () => {
+    fakePause();
+    server.use(http.post(CHECKIN, () => HttpResponse.json(checkedIn)));
+    const wrapper = await mountPage();
+    await enter(wrapper, "ABCD2345");
+
+    await moveOn(wrapper);
 
     expect(wrapper.find("[data-answer]").exists()).toBe(false);
     const field = wrapper.get<HTMLInputElement>("#code");
@@ -209,10 +242,11 @@ describe("OrgCheckinPage", () => {
   });
 
   it("keeps the code for a retry when the check-in fails", async () => {
+    fakePause();
     server.use(http.post(CHECKIN, () => HttpResponse.json(checkedIn)));
     const wrapper = await mountPage();
     await enter(wrapper, "ABCD2345");
-    await nextButton(wrapper).trigger("click");
+    await moveOn(wrapper);
     server.use(http.post(CHECKIN, () => HttpResponse.json({}, { status: 500 })));
 
     await enter(wrapper, "EFGH6789");
@@ -232,6 +266,7 @@ describe("OrgCheckinPage", () => {
   });
 
   it("keeps the field read-only while the code is being checked", async () => {
+    fakePause();
     let answer: () => void = () => undefined;
     server.use(
       http.post(
@@ -251,7 +286,7 @@ describe("OrgCheckinPage", () => {
 
     answer();
     await flushPromises();
-    await nextButton(wrapper).trigger("click");
+    await moveOn(wrapper);
     expect(wrapper.get("#code").attributes("readonly")).toBeUndefined();
   });
 

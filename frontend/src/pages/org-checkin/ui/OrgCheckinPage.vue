@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useMutation } from "@tanstack/vue-query";
+import { useTimeoutFn } from "@vueuse/core";
 import { computed, nextTick, onMounted, ref, useTemplateRef } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
@@ -62,15 +63,21 @@ const { mutate, isPending, error, reset } = useMutation({
   },
 });
 
+// For a second after an answer "Next" does nothing: a stray Enter or a held key would take the
+// answer away unread. It stays focusable (aria-disabled, not disabled), so the focus waits on it.
+const { isPending: pausing, start: pause } = useTimeoutFn(() => {}, 1000, { immediate: false });
+
 // The answer takes the place of the form until the organizer moves on, so it is never read as
 // the answer to the next code. "Next" gets the focus: Enter takes the organizer back to the field.
 function show(next: Answer): void {
   answer.value = next;
   code.value = "";
+  pause();
   void nextTick(() => answerPanel.value?.querySelector("button")?.focus());
 }
 
 function next(): void {
+  if (pausing.value) return;
   answer.value = null;
   void nextTick(focusCode);
 }
@@ -125,7 +132,14 @@ function submit(): void {
           {{ answer.kind === "not_found" ? t("notFound") : t("notConfirmed") }}
         </p>
       </div>
-      <Button size="lg" @click="next">{{ t("next") }}</Button>
+      <Button
+        size="lg"
+        :aria-disabled="pausing || undefined"
+        class="aria-disabled:opacity-50"
+        @click="next"
+      >
+        {{ t("next") }}
+      </Button>
     </div>
 
     <form v-else class="mt-6 grid gap-2" novalidate @submit.prevent="submit">
