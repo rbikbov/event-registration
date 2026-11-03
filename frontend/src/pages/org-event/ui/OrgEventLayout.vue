@@ -96,10 +96,6 @@ function startsAt(iso: string): string {
 
 <template>
   <div class="mx-auto max-w-4xl">
-    <RouterLink class="text-muted-foreground text-sm underline" :to="routes.orgEvents">
-      {{ t("back") }}
-    </RouterLink>
-
     <NotFound v-if="loadAnswer === 'notFound'" :title="t('notFound')" />
     <ErrorState
       v-else-if="loadAnswer === 'foreign'"
@@ -109,14 +105,13 @@ function startsAt(iso: string): string {
     >
       <template #actions>
         <Button variant="outline" as-child>
-          <RouterLink :to="routes.orgEvents">{{ t("back") }}</RouterLink>
+          <RouterLink :to="routes.orgEvents">{{ t("myEvents") }}</RouterLink>
         </Button>
       </template>
     </ErrorState>
     <template v-else>
       <QueryState
         v-slot="{ data: loaded }"
-        class="mt-6"
         :level="1"
         :query="event"
         :error-text="onCheckin ? t('checkinError') : t('error')"
@@ -168,7 +163,7 @@ function startsAt(iso: string): string {
 
 <i18n lang="json" locale="ru">
 {
-  "back": "Мои события",
+  "myEvents": "Мои события",
   "error": "Не удалось загрузить событие",
   "refreshError": "Не удалось обновить событие, показаны прежние данные",
   "checkinError": "Не удалось загрузить событие, чекин работает",

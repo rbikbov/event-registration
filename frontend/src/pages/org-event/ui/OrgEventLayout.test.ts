@@ -48,6 +48,7 @@ async function mountLayout(path = orgEventPath(7), queryClient = newQueryClient(
   const router = createRouter({
     history: createMemoryHistory(),
     routes: [
+      { path: routes.home, component: { render: () => null } },
       { path: routes.orgEvents, component: { render: () => null } },
       {
         path: routes.orgEvent,
@@ -159,15 +160,17 @@ describe("OrgEventLayout", () => {
   });
 
   it.each([
-    [404, "Событие не найдено"],
-    [403, "Нет доступа"],
-  ])("answers %i in place of the tabs", async (status, text) => {
+    [404, "Событие не найдено", [], routes.home, "К событиям"],
+    [403, "Нет доступа", ["Это событие другого организатора"], routes.orgEvents, "Мои события"],
+  ])("answers %i in place of the tabs", async (status, title, texts, to, link) => {
     server.use(http.get(EVENT, () => HttpResponse.json({}, { status })));
 
     const { wrapper } = await mountLayout(checkinPath(7));
     await flushPromises();
 
-    expect(wrapper.get('[role="alert"] h1').text()).toBe(text);
+    expect(wrapper.get('[role="alert"] h1').text()).toBe(title);
+    expect(wrapper.findAll('[role="alert"] p').map((p) => p.text())).toEqual(texts);
+    expect(wrapper.get(`[role="alert"] a[href="${to}"]`).text()).toBe(link);
     expect(wrapper.find("[data-tab]").exists()).toBe(false);
     expect(wrapper.find("nav").exists()).toBe(false);
   });

@@ -11,7 +11,6 @@ import {
   publicEventsQuery,
 } from "@/entities/event";
 import { AppError } from "@/shared/api";
-import { routes } from "@/shared/config";
 import { useLive } from "@/shared/lib/use-live";
 import { NotFound } from "@/shared/ui/error-state";
 import { QueryState } from "@/shared/ui/query-state";
@@ -142,15 +141,10 @@ const fields: { name: "email" | "name"; type: string; autocomplete: string }[] =
 
 <template>
   <div class="mx-auto max-w-xl">
-    <RouterLink class="text-muted-foreground text-sm underline" :to="routes.home">
-      {{ t("back") }}
-    </RouterLink>
-
     <NotFound v-if="notFound" :title="t('notFound')" />
     <QueryState
       v-else
       v-slot="{ data: loaded }"
-      class="mt-4"
       :level="1"
       :query="event"
       :error-text="t('error')"
@@ -204,7 +198,6 @@ const fields: { name: "email" | "name"; type: string; autocomplete: string }[] =
 
 <i18n lang="json" locale="ru">
 {
-  "back": "Все события",
   "error": "Не удалось загрузить событие",
   "refreshError": "Не удалось обновить событие, показаны прежние данные",
   "notFound": "Такого события нет",

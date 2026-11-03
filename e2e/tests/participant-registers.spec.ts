@@ -29,7 +29,7 @@ test("participants get the only seat, then a place on the waitlist", async ({ br
   await expect(participant.getByRole("button", { name: "Зарегистрироваться" })).toBeHidden();
 
   // The only seat is taken.
-  await participant.getByRole("link", { name: "Все события" }).click();
+  await participant.getByRole("banner").getByRole("link", { name: "События", exact: true }).click();
   await expect(card).toContainText("мест нет");
   await expect(card).not.toContainText("свободно");
 
