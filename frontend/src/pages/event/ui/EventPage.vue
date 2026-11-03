@@ -13,6 +13,7 @@ import {
 import { AppError } from "@/shared/api";
 import { useLive } from "@/shared/lib/use-live";
 import { NotFound } from "@/shared/ui/error-state";
+import { ExpandableText } from "@/shared/ui/expandable-text";
 import { QueryState } from "@/shared/ui/query-state";
 import { Alert, AlertDescription } from "@/shared/ui/shadcn/alert";
 import { Button } from "@/shared/ui/shadcn/button";
@@ -152,9 +153,7 @@ const fields: { name: "email" | "name"; type: string; autocomplete: string }[] =
     >
       <h1 class="text-2xl font-semibold wrap-anywhere">{{ loaded.title }}</h1>
       <p class="text-muted-foreground mt-1 text-sm">{{ startsAt(loaded.starts_at) }}</p>
-      <p v-if="loaded.description" class="mt-4 whitespace-pre-line wrap-anywhere">
-        {{ loaded.description }}
-      </p>
+      <ExpandableText class="mt-4" :text="loaded.description" />
       <p class="mt-4 font-medium">
         {{ loaded.free_seats > 0 ? t("freeSeats", loaded.free_seats) : t("noSeats") }}
       </p>

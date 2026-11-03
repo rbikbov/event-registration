@@ -149,6 +149,20 @@ describe("OrgEventLayout", () => {
     expect(wrapper.get('[data-tab="participants"]').text()).toBe("Meetup");
   });
 
+  it("shows the description under the date, and nothing for an empty one", async () => {
+    server.use(http.get(EVENT, () => HttpResponse.json({ ...event, description: "Talks\nPizza" })));
+
+    const { wrapper } = await mountLayout();
+    await flushPromises();
+
+    expect(wrapper.get("h1 ~ div > p").text()).toBe("Talks\nPizza");
+
+    server.use(http.get(EVENT, () => HttpResponse.json(event)));
+    const empty = await mountLayout(orgEventPath(7));
+    await flushPromises();
+    expect(empty.wrapper.find("h1 ~ div > p").exists()).toBe(false);
+  });
+
   it("gives the event to the edit tab", async () => {
     server.use(http.get(EVENT, () => HttpResponse.json(event)));
 
