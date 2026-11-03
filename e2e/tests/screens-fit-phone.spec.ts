@@ -19,8 +19,9 @@ test("every screen fits a 360 px phone without scrolling sideways", async ({
   browser,
   request,
 }) => {
-  // One word with no place to break, and a long address: the lines most likely to stick out.
+  // Words with no place to break, and a long address: the lines most likely to stick out.
   const title = `Конференцияразработчиковинтерфейсовипользователей${Date.now()}`;
+  const name = "АннаМарияАлександраКонстантиновнаПреображенская";
   await createEvent(browser, { title, capacity: 5 });
 
   const participant = await (await browser.newContext()).newPage();
@@ -34,12 +35,14 @@ test("every screen fits a 360 px phone without scrolling sideways", async ({
 
   const email = `phone-width-${Date.now()}-a-rather-long-address@example.com`;
   await participant.getByLabel("Email").fill(email);
-  await participant.getByLabel("Имя").fill("Анна");
+  await participant.getByLabel("Имя").fill(name);
   await participant.getByRole("button", { name: "Зарегистрироваться" }).click();
   await expect(participant.getByRole("status")).toHaveText("Место подтверждено");
   await expectFits(participant, "the event page after registering");
 
-  const link = extract(await emailTo(request, email, "Билет"), /(http\S+\/tickets\/\S+)/);
+  const ticketEmail = await emailTo(request, email, "Билет");
+  const link = extract(ticketEmail, /(http\S+\/tickets\/\S+)/);
+  const code = extract(ticketEmail, /Код билета: (\S+)/);
   await participant.goto(link);
   await expect(participant.getByRole("heading", { name: title, level: 1 })).toBeVisible();
   await expectFits(participant, "the ticket");
@@ -63,12 +66,16 @@ test("every screen fits a 360 px phone without scrolling sideways", async ({
   await organizer.goBack();
 
   await organizer.getByRole("link", { name: title }).click();
-  await expect(organizer.getByRole("row", { name: /Анна/ })).toBeVisible();
+  await expect(organizer.getByRole("row", { name: new RegExp(name) })).toBeVisible();
   await expectFits(organizer, "the participants tab");
 
   await organizer.getByRole("link", { name: "Чекин" }).click();
   await expect(organizer.getByLabel("Код билета")).toBeVisible();
   await expectFits(organizer, "the check-in tab");
+  await organizer.getByLabel("Код билета").fill(code);
+  await organizer.getByRole("button", { name: "Отметить" }).click();
+  await expect(organizer.getByText(name)).toBeVisible();
+  await expectFits(organizer, "the check-in answer");
 
   await organizer.getByRole("link", { name: "Редактирование" }).click();
   await expect(organizer.getByLabel("Название", { exact: true })).toHaveValue(title);
