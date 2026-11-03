@@ -130,10 +130,6 @@ function submit(): void {
   mutate(parsed.values);
 }
 
-function startsAt(iso: string): string {
-  return d(new Date(iso), { dateStyle: "long", timeStyle: "short" });
-}
-
 const fields: { name: "email" | "name"; type: string; autocomplete: string }[] = [
   { name: "email", type: "email", autocomplete: "email" },
   { name: "name", type: "text", autocomplete: "name" },
@@ -152,7 +148,7 @@ const fields: { name: "email" | "name"; type: string; autocomplete: string }[] =
       :refresh-error-text="t('refreshError')"
     >
       <h1 class="text-2xl font-semibold wrap-anywhere">{{ loaded.title }}</h1>
-      <p class="text-muted-foreground mt-1 text-sm">{{ startsAt(loaded.starts_at) }}</p>
+      <p class="text-muted-foreground mt-1 text-sm">{{ d(new Date(loaded.starts_at), "long") }}</p>
       <ExpandableText class="mt-4" :text="loaded.description" />
       <p class="mt-4 font-medium">
         {{ loaded.free_seats > 0 ? t("freeSeats", loaded.free_seats) : t("noSeats") }}

@@ -90,7 +90,7 @@ const textFields: { name: "title" | "description" | "starts_at"; type: string }[
   <div class="mx-auto max-w-xl">
     <Card>
       <CardHeader>
-        <CardHeading :level="1">{{ t("title") }}</CardHeading>
+        <CardHeading :level="1" class="text-2xl leading-tight">{{ t("title") }}</CardHeading>
       </CardHeader>
       <CardContent>
         <form class="grid gap-4" novalidate @submit.prevent="submit">

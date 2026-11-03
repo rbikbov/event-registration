@@ -11,7 +11,7 @@ const health = useQuery(healthQuery);
 </script>
 
 <template>
-  <div class="mx-auto max-w-xl">
+  <div>
     <h1 class="text-2xl font-semibold">{{ t("title") }}</h1>
     <!-- The backend answers 200 only when the database answers too: a loaded answer means both
        work. A down database (503 from the backend) and a down backend (502 from the proxy) are

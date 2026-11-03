@@ -71,10 +71,6 @@ function stopConfirming(): void {
   reset();
 }
 
-function startsAt(iso: string): string {
-  return d(new Date(iso), { dateStyle: "long", timeStyle: "short" });
-}
-
 function checkedInWhen(iso: string): string {
   const moment = formatMoment(iso, new Date(), (at, options) => d(at, options));
   return moment.withAt ? t("atTime", { time: moment.text }) : moment.text;
@@ -98,10 +94,12 @@ function checkedInWhen(iso: string): string {
           <CardHeading :level="1" class="text-2xl leading-tight wrap-anywhere">{{
             loaded.event.title
           }}</CardHeading>
-          <p class="text-muted-foreground text-sm">{{ startsAt(loaded.event.starts_at) }}</p>
+          <p class="text-muted-foreground text-sm">
+            {{ d(new Date(loaded.event.starts_at), "long") }}
+          </p>
         </CardHeader>
         <CardContent class="grid gap-4">
-          <p>{{ loaded.name }}</p>
+          <p class="wrap-anywhere">{{ loaded.name }}</p>
 
           <template v-if="loaded.status === 'confirmed'">
             <p class="text-muted-foreground text-sm">{{ t("code") }}</p>

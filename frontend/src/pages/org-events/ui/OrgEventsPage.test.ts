@@ -66,6 +66,10 @@ describe("OrgEventsPage", () => {
     expect(rows).toHaveLength(2);
     expect(rows[0]?.text()).toContain("Meetup");
     expect(rows[0]?.text()).toContain("Занято 1 из 1");
+    // The list format of the app (shared/lib/i18n).
+    expect(rows[0]?.text()).toContain(
+      createAppI18n().global.d(new Date("2030-05-01T18:00:00Z"), "short"),
+    );
     expect(rows[1]?.text()).toContain("Занято 12 из 30");
     expect(rows[1]?.text()).toContain("в листе ожидания 3");
     expect(rows[1]?.get(`a[href="${checkinPath(2)}"]`).text()).toBe("Чекин");

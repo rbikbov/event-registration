@@ -38,6 +38,8 @@ describe("HomePage", () => {
     const text = wrapper.text();
     expect(text).toContain("Meetup 1");
     expect(text).toContain("свободно 3 места");
+    // The list format of the app (shared/lib/i18n).
+    expect(text).toContain(createAppI18n().global.d(new Date(item(1, 3).starts_at), "short"));
     expect(text).toContain("мест нет");
     const hrefs = wrapper.findAll("a").map((a) => a.attributes("href"));
     expect(hrefs).toEqual([eventPath(1), eventPath(2)]);

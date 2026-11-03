@@ -89,14 +89,10 @@ function counters(loaded: OrgEvent) {
     { key: "freeSeats", value: loaded.free_seats },
   ];
 }
-
-function startsAt(iso: string): string {
-  return d(new Date(iso), { dateStyle: "long", timeStyle: "short" });
-}
 </script>
 
 <template>
-  <div class="mx-auto max-w-4xl">
+  <div>
     <NotFound v-if="loadAnswer === 'notFound'" :title="t('notFound')" />
     <ErrorState
       v-else-if="loadAnswer === 'foreign'"
@@ -119,7 +115,9 @@ function startsAt(iso: string): string {
         :refresh-error-text="onCheckin ? t('checkinRefreshError') : t('refreshError')"
       >
         <h1 class="text-2xl font-semibold wrap-anywhere">{{ loaded.title }}</h1>
-        <p class="text-muted-foreground mt-1 text-sm">{{ startsAt(loaded.starts_at) }}</p>
+        <p class="text-muted-foreground mt-1 text-sm">
+          {{ d(new Date(loaded.starts_at), "long") }}
+        </p>
         <ExpandableText class="mt-4" :text="loaded.description" />
         <!-- Until the next snapshot the counters may be stale: changes meanwhile are not seen. -->
         <Alert v-if="reconnecting" class="mt-4" role="status" data-live="reconnecting">
@@ -140,7 +138,7 @@ function startsAt(iso: string): string {
       </QueryState>
 
       <template v-if="!event.isPending.value">
-        <nav class="mt-6 flex gap-2 border-b pb-2" :aria-label="t('tabs')">
+        <nav class="mt-6 flex flex-wrap gap-2 border-b pb-2" :aria-label="t('tabs')">
           <Button
             v-for="tab in tabs"
             :key="tab.key"

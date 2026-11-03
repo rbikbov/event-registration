@@ -55,7 +55,7 @@ function submit(): void {
   <div class="mx-auto max-w-sm sm:mt-8">
     <Card class="w-full">
       <CardHeader>
-        <CardHeading :level="1">{{ t("title") }}</CardHeading>
+        <CardHeading :level="1" class="text-2xl leading-tight">{{ t("title") }}</CardHeading>
       </CardHeader>
       <CardContent>
         <form class="grid gap-4" novalidate @submit.prevent="submit">

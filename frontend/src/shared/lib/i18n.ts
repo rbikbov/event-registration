@@ -10,6 +10,15 @@ export function russianPlural(count: number): 0 | 1 | 2 {
   return 2;
 }
 
+// The two ways the app shows when an event starts: `short` in lists, `long` on a page of one
+// event (the event, the ticket, the organizer's event). A component formats with `d(date, name)`.
+const datetimeFormats = {
+  ru: {
+    short: { dateStyle: "medium", timeStyle: "short" },
+    long: { dateStyle: "long", timeStyle: "short" },
+  },
+} as const;
+
 // Messages are not global: each component keeps its own in an <i18n> block next to the
 // template (useI18n({ useScope: "local" })). Russian is the only locale the task requires.
 export function createAppI18n() {
@@ -18,5 +27,6 @@ export function createAppI18n() {
     locale: "ru",
     fallbackLocale: "ru",
     pluralRules: { ru: russianPlural },
+    datetimeFormats,
   });
 }
