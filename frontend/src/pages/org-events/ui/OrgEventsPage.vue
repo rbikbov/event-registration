@@ -11,14 +11,10 @@ import { Card, CardContent, CardHeader } from "@/shared/ui/shadcn/card";
 
 const { t, d } = useI18n({ useScope: "local" });
 const events = useQuery(orgEventsQuery);
-
-function startsAt(iso: string): string {
-  return d(new Date(iso), { dateStyle: "medium", timeStyle: "short" });
-}
 </script>
 
 <template>
-  <div class="mx-auto max-w-3xl">
+  <div>
     <div class="flex items-center justify-between gap-4">
       <h1 class="text-2xl font-semibold">{{ t("title") }}</h1>
       <Button as-child>
@@ -39,14 +35,14 @@ function startsAt(iso: string): string {
           <Card>
             <CardHeader>
               <CardHeading :level="2" class="leading-snug wrap-anywhere">
-                <RouterLink class="hover:underline" :to="orgEventPath(event.id)">
+                <RouterLink class="underline" :to="orgEventPath(event.id)">
                   {{ event.title }}
                 </RouterLink>
               </CardHeading>
             </CardHeader>
             <CardContent class="flex items-center justify-between gap-4">
               <span class="text-muted-foreground text-sm">
-                {{ startsAt(event.starts_at) }} ·
+                {{ d(new Date(event.starts_at), "short") }} ·
                 {{ t("seats", { confirmed: event.confirmed, capacity: event.capacity }) }} ·
                 {{ t("waitlist", { count: event.waitlisted }) }}
               </span>

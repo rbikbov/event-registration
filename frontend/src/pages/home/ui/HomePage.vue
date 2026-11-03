@@ -10,14 +10,10 @@ import { Card, CardContent, CardHeader } from "@/shared/ui/shadcn/card";
 
 const { t, d } = useI18n({ useScope: "local" });
 const events = useQuery(publicEventsQuery);
-
-function startsAt(iso: string): string {
-  return d(new Date(iso), { dateStyle: "medium", timeStyle: "short" });
-}
 </script>
 
 <template>
-  <div class="mx-auto max-w-3xl">
+  <div>
     <h1 class="text-2xl font-semibold">{{ t("title") }}</h1>
 
     <QueryState
@@ -39,7 +35,7 @@ function startsAt(iso: string): string {
               </CardHeading>
             </CardHeader>
             <CardContent class="text-muted-foreground text-sm">
-              {{ startsAt(event.starts_at) }} ·
+              {{ d(new Date(event.starts_at), "short") }} ·
               {{ event.free_seats > 0 ? t("freeSeats", event.free_seats) : t("noSeats") }}
             </CardContent>
           </Card>
