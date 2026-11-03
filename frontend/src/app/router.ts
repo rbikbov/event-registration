@@ -43,7 +43,7 @@ export function createAppRouter(queryClient: QueryClient, history: RouterHistory
   });
 
   router.beforeEach(async (to) => {
-    // Public pages do not depend on the session; asking `me` there only logs a 401 for a guest.
+    // Public pages are not gated: who is signed in is the header's to show, not the guard's.
     if (!to.meta.requiresAuth && to.path !== routes.login) return true;
     const user = await queryClient.ensureQueryData(meQuery);
     // The only place that decides where a guest may go: a 401 elsewhere only forgets the user
