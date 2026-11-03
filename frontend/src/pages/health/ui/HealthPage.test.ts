@@ -30,8 +30,7 @@ describe("HealthPage", () => {
     expect(wrapper.get('[role="status"]').text()).toBe("Загружаем…");
     await flushPromises();
 
-    expect(wrapper.get('[data-health="status"]').text()).toBe("работает");
-    expect(wrapper.get('[data-health="database"]').text()).toBe("работает");
+    expect(wrapper.get("[data-health]").text()).toBe("Backend и база данных работают");
   });
 
   it("shows an error when the backend is unavailable", async () => {
@@ -83,6 +82,6 @@ describe("HealthPage", () => {
     await flushPromises();
 
     expect(wrapper.get('[role="alert"]').text()).toContain("Не удалось проверить backend снова");
-    expect(wrapper.get('[data-health="status"]').text()).toBe("работает");
+    expect(wrapper.get("[data-health]").text()).toBe("Backend и база данных работают");
   });
 });
