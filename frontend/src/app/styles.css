@@ -54,3 +54,20 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Buttons show what a click would do. Tailwind's preflight gives a button the default arrow. */
+@layer base {
+  button:not(:disabled, [aria-disabled="true"]),
+  [role="button"]:not(:disabled, [aria-disabled="true"]) {
+    cursor: pointer;
+  }
+}
+
+/* Outside the layers on purpose: shadcn's button has the `disabled:pointer-events-none` utility,
+   which hides the cursor of a disabled button, and only an unlayered rule outranks a utility.
+   A disabled button gets no click either way: the browser does not fire one. */
+button:disabled,
+[aria-disabled="true"] {
+  cursor: not-allowed;
+  pointer-events: auto;
+}
