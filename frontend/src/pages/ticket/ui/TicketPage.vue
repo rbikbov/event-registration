@@ -99,7 +99,7 @@ function checkedInWhen(iso: string): string {
           </p>
         </CardHeader>
         <CardContent class="grid gap-4">
-          <p>{{ loaded.name }}</p>
+          <p class="wrap-anywhere">{{ loaded.name }}</p>
 
           <template v-if="loaded.status === 'confirmed'">
             <p class="text-muted-foreground text-sm">{{ t("code") }}</p>

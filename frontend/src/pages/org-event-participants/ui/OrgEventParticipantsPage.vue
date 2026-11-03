@@ -125,8 +125,15 @@ function statusText(row: OrgRegistration): string {
           </thead>
           <tbody>
             <tr v-for="row in loaded.rows" :key="row.id" class="border-b">
-              <td class="py-2 pr-4">{{ row.name }}</td>
-              <td class="py-2 pr-4">{{ row.email }}</td>
+              <!-- One long name or address wraps in its cell instead of widening the table; the
+                 bounds sit on a block inside, as a table cell ignores max-width. Too narrow a phone
+                 scrolls the table in its box rather than break an ordinary address into pieces. -->
+              <td class="py-2 pr-4">
+                <div class="max-w-60 min-w-32 wrap-anywhere">{{ row.name }}</div>
+              </td>
+              <td class="py-2 pr-4">
+                <div class="max-w-60 min-w-32 wrap-anywhere">{{ row.email }}</div>
+              </td>
               <td class="py-2 pr-4">{{ statusText(row) }}</td>
               <td class="py-2">{{ row.checked_in_at ? checkedInAt(row.checked_in_at) : "—" }}</td>
             </tr>

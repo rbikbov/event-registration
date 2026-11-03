@@ -111,8 +111,8 @@ function submit(): void {
         data-answer="checked_in"
       >
         <p class="text-4xl font-bold">{{ t("checkedIn") }}</p>
-        <p class="mt-2 text-xl">{{ answer.name }}</p>
-        <p class="text-lg opacity-90">{{ answer.maskedEmail }}</p>
+        <p class="mt-2 text-xl wrap-anywhere">{{ answer.name }}</p>
+        <p class="text-lg wrap-anywhere opacity-90">{{ answer.maskedEmail }}</p>
       </div>
       <div
         v-else-if="answer.kind === 'already_checked_in'"
@@ -122,7 +122,7 @@ function submit(): void {
         <p class="text-4xl font-bold">
           {{ t("alreadyCheckedIn", { when: checkedInWhen(answer.checkedInAt) }) }}
         </p>
-        <p class="mt-2 text-xl">{{ answer.name }}</p>
+        <p class="mt-2 text-xl wrap-anywhere">{{ answer.name }}</p>
       </div>
       <div v-else class="rounded-lg bg-red-600 p-6 text-white" :data-answer="answer.kind">
         <p class="text-4xl font-bold">
