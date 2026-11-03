@@ -94,7 +94,7 @@ function startsAt(iso: string): string {
 </script>
 
 <template>
-  <main class="mx-auto max-w-4xl px-4 py-8">
+  <div class="mx-auto max-w-4xl">
     <RouterLink class="text-muted-foreground text-sm underline" :to="routes.orgEvents">
       {{ t("back") }}
     </RouterLink>
@@ -151,7 +151,7 @@ function startsAt(iso: string): string {
         <RouterView v-else-if="event.data.value" class="mt-6" :event="event.data.value" />
       </template>
     </template>
-  </main>
+  </div>
 </template>
 
 <i18n lang="json" locale="ru">

@@ -79,7 +79,7 @@ function time(iso: string): string {
 </script>
 
 <template>
-  <main class="mx-auto max-w-xl px-4 py-8">
+  <div class="mx-auto max-w-xl">
     <Alert v-if="notFound" role="alert">
       <AlertDescription>{{ t("notFound") }}</AlertDescription>
     </Alert>
@@ -147,7 +147,7 @@ function time(iso: string): string {
         </CardContent>
       </Card>
     </QueryState>
-  </main>
+  </div>
 </template>
 
 <i18n lang="json" locale="ru">

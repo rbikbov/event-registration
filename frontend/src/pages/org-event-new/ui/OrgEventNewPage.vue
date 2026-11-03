@@ -86,7 +86,7 @@ const textFields: { name: "title" | "description" | "starts_at"; type: string }[
 </script>
 
 <template>
-  <main class="mx-auto max-w-xl px-4 py-8">
+  <div class="mx-auto max-w-xl">
     <Card>
       <CardHeader>
         <CardHeading :level="1">{{ t("title") }}</CardHeading>
@@ -132,7 +132,7 @@ const textFields: { name: "title" | "description" | "starts_at"; type: string }[
         </form>
       </CardContent>
     </Card>
-  </main>
+  </div>
 </template>
 
 <i18n lang="json" locale="ru">

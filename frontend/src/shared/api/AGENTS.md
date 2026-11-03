@@ -2,6 +2,7 @@
 
 - `api` (openapi-fetch) + `unwrap()` — единственный путь к backend. `unwrap` возвращает
   данные или бросает `AppError`; сетевую ошибку — как `kind: "network"`.
+  Ответ без тела (204) — `unwrapEmpty()`: `unwrap` принял бы отсутствие данных за `unknown`.
 - `AppError.kind` выводится из HTTP-статуса в `app-error.ts` и только там. Новый статус или
   новый `kind` — правка `kindForStatus` и новый случай в `app-error.test.ts`.
 - `csrf.ts` — middleware: `X-CSRFToken` из cookie `csrftoken` на всех изменяющих запросах;

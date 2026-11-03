@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/vue-query";
 import { useI18n } from "vue-i18n";
 
 import { publicEventsQuery } from "@/entities/event";
-import { eventPath, routes } from "@/shared/config";
+import { eventPath } from "@/shared/config";
 import { QueryState } from "@/shared/ui/query-state";
 import { CardHeading } from "@/shared/ui/card-heading";
 import { Card, CardContent, CardHeader } from "@/shared/ui/shadcn/card";
@@ -17,13 +17,8 @@ function startsAt(iso: string): string {
 </script>
 
 <template>
-  <main class="mx-auto max-w-3xl px-4 py-8">
-    <div class="flex items-center justify-between gap-4">
-      <h1 class="text-2xl font-semibold">{{ t("title") }}</h1>
-      <RouterLink class="text-muted-foreground text-sm underline" :to="routes.login">
-        {{ t("login") }}
-      </RouterLink>
-    </div>
+  <div class="mx-auto max-w-3xl">
+    <h1 class="text-2xl font-semibold">{{ t("title") }}</h1>
 
     <QueryState
       v-slot="{ data: loaded }"
@@ -51,13 +46,12 @@ function startsAt(iso: string): string {
         </li>
       </ul>
     </QueryState>
-  </main>
+  </div>
 </template>
 
 <i18n lang="json" locale="ru">
 {
   "title": "События",
-  "login": "Вход для организатора",
   "error": "Не удалось загрузить события",
   "refreshError": "Не удалось обновить события, показан прежний список",
   "empty": "Ближайших событий пока нет",

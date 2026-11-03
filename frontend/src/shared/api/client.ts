@@ -24,6 +24,17 @@ interface ApiResult<Data> {
 // Turns an openapi-fetch result into data or an AppError, so callers never look at
 // statuses or Response objects.
 export async function unwrap<Data>(request: Promise<ApiResult<Data>>): Promise<Data> {
+  const result = await settle(request);
+  if (result.data === undefined) throw new AppError("unknown", { status: result.response.status });
+  return result.data;
+}
+
+// For a response without a body (204): unwrap would take the missing data for a broken answer.
+export async function unwrapEmpty(request: Promise<ApiResult<unknown>>): Promise<void> {
+  await settle(request);
+}
+
+async function settle<Data>(request: Promise<ApiResult<Data>>): Promise<ApiResult<Data>> {
   let result: ApiResult<Data>;
   try {
     result = await request;
@@ -31,6 +42,5 @@ export async function unwrap<Data>(request: Promise<ApiResult<Data>>): Promise<D
     throw new AppError("network", { cause });
   }
   if (!result.response.ok) throw AppError.fromStatus(result.response.status, result.error);
-  if (result.data === undefined) throw new AppError("unknown", { status: result.response.status });
-  return result.data;
+  return result;
 }

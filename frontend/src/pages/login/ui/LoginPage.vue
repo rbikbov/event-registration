@@ -49,7 +49,7 @@ function submit(): void {
 </script>
 
 <template>
-  <main class="mx-auto flex min-h-screen max-w-sm items-center px-4">
+  <div class="mx-auto max-w-sm sm:mt-8">
     <Card class="w-full">
       <CardHeader>
         <CardHeading :level="1">{{ t("title") }}</CardHeading>
@@ -91,7 +91,7 @@ function submit(): void {
         </form>
       </CardContent>
     </Card>
-  </main>
+  </div>
 </template>
 
 <i18n lang="json" locale="ru">

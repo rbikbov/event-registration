@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { createEvent } from "./helpers";
+import { collectConsoleErrors, createEvent } from "./helpers";
 
 test("participants get the only seat, then a place on the waitlist", async ({ browser }) => {
   const title = `Meetup ${Date.now()}`;
@@ -10,9 +10,7 @@ test("participants get the only seat, then a place on the waitlist", async ({ br
   const participantContext = await browser.newContext();
   const participant = await participantContext.newPage();
   const consoleErrors: string[] = [];
-  participant.on("console", (message) => {
-    if (message.type() === "error") consoleErrors.push(message.text());
-  });
+  collectConsoleErrors(participant, consoleErrors);
 
   await participant.goto("/");
   const card = participant
@@ -38,9 +36,7 @@ test("participants get the only seat, then a place on the waitlist", async ({ br
   // A second person, a separate context: no seat left, so the waitlist.
   const waitingContext = await browser.newContext();
   const waiting = await waitingContext.newPage();
-  waiting.on("console", (message) => {
-    if (message.type() === "error") consoleErrors.push(message.text());
-  });
+  collectConsoleErrors(waiting, consoleErrors);
   await waiting.goto("/");
   await waiting.getByRole("link", { name: title }).click();
   await expect(waiting.getByText("Свободных мест нет, можно встать в лист ожидания")).toBeVisible();

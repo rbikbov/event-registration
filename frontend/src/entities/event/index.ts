@@ -3,6 +3,7 @@ export {
   orgEventProbe,
   orgEventQuery,
   orgEventsQuery,
+  orgQueryKey,
   type OrgEvent,
 } from "./api/org-events";
 export {
