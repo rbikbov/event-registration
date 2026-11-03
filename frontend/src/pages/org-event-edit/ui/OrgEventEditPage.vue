@@ -26,6 +26,7 @@ import {
   NumberFieldIncrement,
   NumberFieldInput,
 } from "@/shared/ui/shadcn/number-field";
+import { Textarea } from "@/shared/ui/shadcn/textarea";
 
 import { updateEvent } from "../api/update-event";
 
@@ -112,7 +113,7 @@ function errorText(field: keyof EventFormErrors): string | null {
 
 const textFields: { name: "title" | "description" | "starts_at"; type: string }[] = [
   { name: "title", type: "text" },
-  { name: "description", type: "text" },
+  { name: "description", type: "textarea" },
   { name: "starts_at", type: "datetime-local" },
 ];
 </script>
@@ -124,7 +125,14 @@ const textFields: { name: "title" | "description" | "starts_at"; type: string }[
     </Alert>
     <div v-for="field in textFields" :key="field.name" class="grid gap-2">
       <Label :for="field.name">{{ t(`fields.${field.name}`) }}</Label>
+      <Textarea
+        v-if="field.type === 'textarea'"
+        :id="field.name"
+        v-model="form[field.name]"
+        :aria-invalid="fieldErrors[field.name] !== undefined"
+      />
       <Input
+        v-else
         :id="field.name"
         v-model="form[field.name]"
         :type="field.type"

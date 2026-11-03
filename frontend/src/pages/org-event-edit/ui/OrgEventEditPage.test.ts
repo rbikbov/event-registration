@@ -81,7 +81,7 @@ describe("OrgEventEditPage", () => {
 
     const form = eventFormInput(event);
     expect((wrapper.get("#title").element as HTMLInputElement).value).toBe(form.title);
-    expect((wrapper.get("#description").element as HTMLInputElement).value).toBe("Talks");
+    expect((wrapper.get("#description").element as HTMLTextAreaElement).value).toBe("Talks");
     expect((wrapper.get("#starts_at").element as HTMLInputElement).value).toBe(form.starts_at);
     expect((wrapper.get("#capacity").element as HTMLInputElement).value).toBe("3");
     expect(saveButton(wrapper).attributes("disabled")).toBeDefined();
@@ -111,6 +111,16 @@ describe("OrgEventEditPage", () => {
     expect(queryClient.getQueryData(orgEventQuery(7).queryKey)).toBe(event);
     // The saved values are the new starting point.
     expect(saveButton(wrapper).attributes("disabled")).toBeDefined();
+  });
+
+  it("sends the description with its line breaks", async () => {
+    const bodies = patched();
+    const { wrapper } = mountPage();
+
+    await type(wrapper, { description: "Talks\n\nPizza after" });
+    await submit(wrapper);
+
+    expect(bodies).toEqual([{ description: "Talks\n\nPizza after" }]);
   });
 
   it("asks before a reschedule, naming who gets the email", async () => {
