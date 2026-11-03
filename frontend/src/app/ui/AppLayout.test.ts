@@ -130,6 +130,31 @@ describe("AppLayout", () => {
     expect(wrapper.get("header button").text()).toBe("Выйти");
   });
 
+  it.each([
+    ["the organizer on their events", user, routes.orgEvents, "Мои события"],
+    ["a guest on the sign-in page", null, routes.login, "Вход для организатора"],
+  ])("marks the current page in the header for %s", async (_who, me, path, link) => {
+    server.use(
+      http.get("*/api/auth/me/", () =>
+        me ? HttpResponse.json(me) : HttpResponse.json({}, { status: 401 }),
+      ),
+    );
+
+    const { wrapper } = await mountLayout(path);
+    await flushPromises();
+
+    expect(wrapper.get('header nav a[aria-current="page"]').text()).toBe(link);
+  });
+
+  it("marks no link of the header nav on a page it does not lead to", async () => {
+    server.use(http.get("*/api/auth/me/", () => HttpResponse.json(user)));
+
+    const { wrapper } = await mountLayout(routes.home);
+    await flushPromises();
+
+    expect(wrapper.find("header nav [aria-current]").exists()).toBe(false);
+  });
+
   it("signs out, forgets the organizer's data and opens the public events", async () => {
     let signedOut = false;
     server.use(

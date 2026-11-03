@@ -6,6 +6,7 @@ import { useRoute, useRouter } from "vue-router";
 
 import { forgetUserData, logout, meQuery } from "@/entities/session";
 import { routes } from "@/shared/config";
+import { NavLink } from "@/shared/ui/nav-link";
 import { Alert, AlertDescription } from "@/shared/ui/shadcn/alert";
 import { Button } from "@/shared/ui/shadcn/button";
 
@@ -42,12 +43,10 @@ watch(
     <header class="border-b">
       <div class="mx-auto flex w-full max-w-4xl items-center justify-between gap-4 px-4 py-3">
         <RouterLink class="font-semibold" :to="routes.home">{{ t("events") }}</RouterLink>
-        <nav v-if="!me.isPending.value" class="flex items-center gap-3 text-sm">
+        <nav v-if="!me.isPending.value" class="flex items-center gap-1 text-sm">
           <template v-if="user">
-            <RouterLink class="hover:underline" :to="routes.orgEvents">
-              {{ t("myEvents") }}
-            </RouterLink>
-            <span class="text-muted-foreground hidden sm:inline">{{ user.email }}</span>
+            <NavLink :to="routes.orgEvents">{{ t("myEvents") }}</NavLink>
+            <span class="text-muted-foreground hidden px-2 sm:inline">{{ user.email }}</span>
             <Button
               variant="ghost"
               size="sm"
@@ -57,9 +56,7 @@ watch(
               {{ t("signOut") }}
             </Button>
           </template>
-          <RouterLink v-else class="hover:underline" :to="routes.login">
-            {{ t("signIn") }}
-          </RouterLink>
+          <NavLink v-else :to="routes.login">{{ t("signIn") }}</NavLink>
         </nav>
       </div>
     </header>
