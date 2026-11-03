@@ -6,7 +6,7 @@ import { useRoute } from "vue-router";
 
 import type { OrgEvent } from "@/entities/event";
 import { orgEventPath } from "@/shared/config";
-import { momentFormat } from "@/shared/lib/moment-format";
+import { formatMoment } from "@/shared/lib/moment-format";
 import { QueryState } from "@/shared/ui/query-state";
 import { Alert, AlertDescription } from "@/shared/ui/shadcn/alert";
 import { Button } from "@/shared/ui/shadcn/button";
@@ -55,9 +55,9 @@ function link(filter: RegistrationStatus | null, toPage = 1) {
   };
 }
 
+// A table cell, not a phrase: the time alone needs no "в".
 function checkedInAt(iso: string): string {
-  const at = new Date(iso);
-  return d(at, momentFormat(at, new Date()));
+  return formatMoment(iso, new Date(), (at, options) => d(at, options)).text;
 }
 
 function statusText(row: OrgRegistration): string {

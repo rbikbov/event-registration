@@ -7,7 +7,7 @@ import { useRoute } from "vue-router";
 import { publicEventsQuery } from "@/entities/event";
 import { AppError } from "@/shared/api";
 import { eventPath } from "@/shared/config";
-import { momentFormat, sameDay } from "@/shared/lib/moment-format";
+import { formatMoment } from "@/shared/lib/moment-format";
 import { NotFound } from "@/shared/ui/error-state";
 import { QueryState } from "@/shared/ui/query-state";
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/shadcn/alert";
@@ -75,12 +75,9 @@ function startsAt(iso: string): string {
   return d(new Date(iso), { dateStyle: "long", timeStyle: "short" });
 }
 
-// "в 09:15" today, "2 ноября в 23:50" on another day: Russian puts the date without "в".
 function checkedInWhen(iso: string): string {
-  const at = new Date(iso);
-  const now = new Date();
-  const moment = d(at, momentFormat(at, now));
-  return sameDay(at, now) ? t("atTime", { time: moment }) : moment;
+  const moment = formatMoment(iso, new Date(), (at, options) => d(at, options));
+  return moment.withAt ? t("atTime", { time: moment.text }) : moment.text;
 }
 </script>
 

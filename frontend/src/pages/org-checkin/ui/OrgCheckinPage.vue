@@ -6,7 +6,7 @@ import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
 
 import { AppError } from "@/shared/api";
-import { momentFormat, sameDay } from "@/shared/lib/moment-format";
+import { formatMoment } from "@/shared/lib/moment-format";
 import { Alert, AlertDescription } from "@/shared/ui/shadcn/alert";
 import { Button } from "@/shared/ui/shadcn/button";
 import { Input } from "@/shared/ui/shadcn/input";
@@ -91,12 +91,9 @@ const failure = computed(() => {
   return "failed";
 });
 
-// "в 09:15" today, "2 ноября в 23:50" on another day: Russian puts the date without "в".
 function checkedInWhen(iso: string): string {
-  const at = new Date(iso);
-  const now = new Date();
-  const moment = d(at, momentFormat(at, now));
-  return sameDay(at, now) ? t("atTime", { time: moment }) : moment;
+  const moment = formatMoment(iso, new Date(), (at, options) => d(at, options));
+  return moment.withAt ? t("atTime", { time: moment.text }) : moment.text;
 }
 
 function submit(): void {
