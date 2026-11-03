@@ -82,8 +82,9 @@ describe("expired session", () => {
   });
 });
 
-// The header asks `me` on every screen, and the guest's answer is a 401. It must stay an answer:
-// were it an error, the 401 handling above would take the guest off a public page.
+// The header asks `me` on every screen, and a guest gets 401. The guest stays on a public page:
+// only the guard sends to /login, and it lets public pages through — not the header, not the 401
+// handling.
 describe("a guest on a public page", () => {
   it("stays there and is offered to sign in", async () => {
     server.use(
