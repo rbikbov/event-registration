@@ -138,7 +138,7 @@ function counters(loaded: OrgEvent) {
       </QueryState>
 
       <template v-if="!event.isPending.value">
-        <nav class="mt-6 flex gap-2 border-b pb-2 overflow-x-auto" :aria-label="t('tabs')">
+        <nav class="mt-6 flex flex-wrap gap-2 border-b pb-2" :aria-label="t('tabs')">
           <Button
             v-for="tab in tabs"
             :key="tab.key"
