@@ -1,7 +1,7 @@
-import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
+import { focusManager, QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
 import { flushPromises, mount } from "@vue/test-utils";
 import { http, HttpResponse } from "msw";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { createMemoryHistory, createRouter } from "vue-router";
 
 import { orgEventsQuery } from "@/entities/event";
@@ -38,6 +38,8 @@ function links(wrapper: Awaited<ReturnType<typeof mountLayout>>["wrapper"]) {
 }
 
 describe("AppLayout", () => {
+  afterEach(() => focusManager.setFocused(undefined));
+
   it("shows the page inside the shared main", async () => {
     server.use(http.get("*/api/auth/me/", () => HttpResponse.json({}, { status: 401 })));
 
@@ -73,6 +75,25 @@ describe("AppLayout", () => {
       ["Вход для организатора", routes.login],
     ]);
     expect(router.currentRoute.value.path).toBe(routes.home);
+  });
+
+  it("does not ask the session again when the window gets the focus back", async () => {
+    let requests = 0;
+    server.use(
+      http.get("*/api/auth/me/", () => {
+        requests += 1;
+        return HttpResponse.json(user);
+      }),
+    );
+    const { wrapper } = await mountLayout();
+    await flushPromises();
+
+    focusManager.setFocused(false);
+    focusManager.setFocused(true);
+    await flushPromises();
+
+    expect(requests).toBe(1);
+    wrapper.unmount();
   });
 
   it("offers a guest to sign in when the session cannot be asked", async () => {
