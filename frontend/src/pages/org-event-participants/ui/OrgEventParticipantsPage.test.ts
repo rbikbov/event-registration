@@ -1,7 +1,7 @@
 import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
 import { flushPromises, mount } from "@vue/test-utils";
 import { http, HttpResponse } from "msw";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { createMemoryHistory, createRouter } from "vue-router";
 
 import type { OrgEvent } from "@/entities/event";
@@ -47,6 +47,14 @@ const cid = {
   checked_in_at: null,
 };
 
+afterEach(() => vi.useRealTimers());
+
+// The page reads the clock to tell today's check-in from an earlier one; timers stay real.
+function nowIs(moment: Date) {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(moment);
+}
+
 // The event comes from the layout (pages/org-event), which reads it and keeps it live.
 // A snapshot of the stream reaches the page as a new `event` prop.
 async function mountPage(query: Record<string, string> = {}, shown: OrgEvent = event) {
@@ -74,6 +82,7 @@ describe("OrgEventParticipantsPage", () => {
   });
 
   it("lists the participants with the status, waitlist place and check-in time", async () => {
+    nowIs(new Date(ann.checked_in_at));
     server.use(http.get(REGISTRATIONS, () => HttpResponse.json([ann, bob, cid])));
 
     const { wrapper } = await mountPage();
@@ -88,6 +97,22 @@ describe("OrgEventParticipantsPage", () => {
       ["Bob", "bob@example.com", "Подтверждён", "—"],
       ["Cid", "cid@example.com", "В листе ожидания, №1", "—"],
     ]);
+  });
+
+  it("gives the date of a check-in made on another day", async () => {
+    nowIs(new Date(new Date(ann.checked_in_at).getTime() + 24 * 60 * 60 * 1000));
+    server.use(http.get(REGISTRATIONS, () => HttpResponse.json([ann])));
+
+    const { wrapper } = await mountPage();
+    await flushPromises();
+
+    const moment = new Intl.DateTimeFormat("ru", {
+      day: "numeric",
+      month: "long",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(new Date(ann.checked_in_at));
+    expect(wrapper.findAll("tbody td").at(-1)?.text()).toBe(moment);
   });
 
   it("asks the server for the status from the URL and marks that filter", async () => {

@@ -1,7 +1,7 @@
 import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
 import { flushPromises, mount } from "@vue/test-utils";
 import { http, HttpResponse } from "msw";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { createMemoryHistory, createRouter } from "vue-router";
 
 import { checkinPath, routes } from "@/shared/config";
@@ -24,7 +24,18 @@ let mounted: { unmount(): void } | undefined;
 afterEach(() => {
   mounted?.unmount();
   mounted = undefined;
+  vi.useRealTimers();
 });
+
+// The page reads the clock to tell today's check-in from an earlier one; timers stay real.
+function nowIs(moment: Date) {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(moment);
+}
+
+function dayAfter(iso: string): Date {
+  return new Date(new Date(iso).getTime() + 24 * 60 * 60 * 1000);
+}
 
 // The event and its title belong to the layout (pages/org-event): the screen reads no event,
 // and an unhandled GET of one would fail the test.
@@ -48,6 +59,18 @@ type Wrapper = Awaited<ReturnType<typeof mountPage>>;
 async function enter(wrapper: Wrapper, code: string): Promise<void> {
   await wrapper.get("#code").setValue(code);
   await wrapper.get("form").trigger("submit");
+  await flushPromises();
+}
+
+// "Next" waits a second after an answer; a test that moves on runs that second on fake timers.
+function fakePause(): void {
+  vi.useFakeTimers({ toFake: ["setTimeout", "clearTimeout"] });
+}
+
+async function moveOn(wrapper: Wrapper): Promise<void> {
+  vi.advanceTimersByTime(1000);
+  await flushPromises();
+  await nextButton(wrapper).trigger("click");
   await flushPromises();
 }
 
@@ -86,13 +109,34 @@ describe("OrgCheckinPage", () => {
     expect(document.activeElement).toBe(nextButton(wrapper).element);
   });
 
-  it("brings back an empty, focused field for the next participant", async () => {
+  // A stray Enter or a held key must not take the answer away unread.
+  it("keeps the next button inactive, and focused, for a second after the answer", async () => {
+    fakePause();
     server.use(http.post(CHECKIN, () => HttpResponse.json(checkedIn)));
     const wrapper = await mountPage();
     await enter(wrapper, "ABCD2345");
 
+    expect(nextButton(wrapper).attributes("aria-disabled")).toBe("true");
+    expect(document.activeElement).toBe(nextButton(wrapper).element);
     await nextButton(wrapper).trigger("click");
+    vi.advanceTimersByTime(999);
+    await nextButton(wrapper).trigger("click");
+    expect(wrapper.find('[data-answer="checked_in"]').exists()).toBe(true);
+
+    vi.advanceTimersByTime(1);
     await flushPromises();
+    expect(nextButton(wrapper).attributes("aria-disabled")).toBeUndefined();
+    await nextButton(wrapper).trigger("click");
+    expect(wrapper.find("[data-answer]").exists()).toBe(false);
+  });
+
+  it("brings back an empty, focused field for the next participant", async () => {
+    fakePause();
+    server.use(http.post(CHECKIN, () => HttpResponse.json(checkedIn)));
+    const wrapper = await mountPage();
+    await enter(wrapper, "ABCD2345");
+
+    await moveOn(wrapper);
 
     expect(wrapper.find("[data-answer]").exists()).toBe(false);
     const field = wrapper.get<HTMLInputElement>("#code");
@@ -112,6 +156,7 @@ describe("OrgCheckinPage", () => {
   });
 
   it("says a repeat ticket was already let in, and when", async () => {
+    nowIs(new Date(checkedIn.checked_in_at));
     server.use(
       http.post(CHECKIN, () => HttpResponse.json({ ...checkedIn, result: "already_checked_in" })),
     );
@@ -128,6 +173,25 @@ describe("OrgCheckinPage", () => {
     expect(answer.text()).toContain("Ivan");
     expect(wrapper.find("form").exists()).toBe(false);
     expect(document.activeElement).toBe(nextButton(wrapper).element);
+  });
+
+  it("gives the date of a check-in made on another day", async () => {
+    nowIs(dayAfter(checkedIn.checked_in_at));
+    server.use(
+      http.post(CHECKIN, () => HttpResponse.json({ ...checkedIn, result: "already_checked_in" })),
+    );
+    const wrapper = await mountPage();
+
+    await enter(wrapper, "ABCD2345");
+
+    const moment = new Intl.DateTimeFormat("ru", {
+      day: "numeric",
+      month: "long",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(new Date(checkedIn.checked_in_at));
+    const answer = wrapper.get('[data-answer="already_checked_in"]');
+    expect(answer.text()).toContain(`Уже отмечен ${moment}`);
   });
 
   it("says a waitlisted or cancelled ticket is not confirmed", async () => {
@@ -178,10 +242,11 @@ describe("OrgCheckinPage", () => {
   });
 
   it("keeps the code for a retry when the check-in fails", async () => {
+    fakePause();
     server.use(http.post(CHECKIN, () => HttpResponse.json(checkedIn)));
     const wrapper = await mountPage();
     await enter(wrapper, "ABCD2345");
-    await nextButton(wrapper).trigger("click");
+    await moveOn(wrapper);
     server.use(http.post(CHECKIN, () => HttpResponse.json({}, { status: 500 })));
 
     await enter(wrapper, "EFGH6789");
@@ -201,6 +266,7 @@ describe("OrgCheckinPage", () => {
   });
 
   it("keeps the field read-only while the code is being checked", async () => {
+    fakePause();
     let answer: () => void = () => undefined;
     server.use(
       http.post(
@@ -220,7 +286,7 @@ describe("OrgCheckinPage", () => {
 
     answer();
     await flushPromises();
-    await nextButton(wrapper).trigger("click");
+    await moveOn(wrapper);
     expect(wrapper.get("#code").attributes("readonly")).toBeUndefined();
   });
 

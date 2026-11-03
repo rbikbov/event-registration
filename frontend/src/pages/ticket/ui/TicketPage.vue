@@ -7,6 +7,7 @@ import { useRoute } from "vue-router";
 import { publicEventsQuery } from "@/entities/event";
 import { AppError } from "@/shared/api";
 import { eventPath } from "@/shared/config";
+import { formatMoment } from "@/shared/lib/moment-format";
 import { NotFound } from "@/shared/ui/error-state";
 import { QueryState } from "@/shared/ui/query-state";
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/shadcn/alert";
@@ -74,8 +75,9 @@ function startsAt(iso: string): string {
   return d(new Date(iso), { dateStyle: "long", timeStyle: "short" });
 }
 
-function time(iso: string): string {
-  return d(new Date(iso), { timeStyle: "short" });
+function checkedInWhen(iso: string): string {
+  const moment = formatMoment(iso, new Date(), (at, options) => d(at, options));
+  return moment.withAt ? t("atTime", { time: moment.text }) : moment.text;
 }
 </script>
 
@@ -110,7 +112,7 @@ function time(iso: string): string {
             <Alert v-if="loaded.checked_in_at" role="note" data-checked-in>
               <AlertTitle>{{ t("checkedInTitle") }}</AlertTitle>
               <AlertDescription>
-                {{ t("checkedIn", { time: time(loaded.checked_in_at) }) }}
+                {{ t("checkedIn", { when: checkedInWhen(loaded.checked_in_at) }) }}
               </AlertDescription>
             </Alert>
           </template>
@@ -157,7 +159,8 @@ function time(iso: string): string {
   "notFound": "Билет не найден",
   "code": "Код билета",
   "checkedInTitle": "Билет использован",
-  "checkedIn": "Вы отмечены на входе в {time}. Повторно пройти по этому коду нельзя, отказаться от регистрации — тоже.",
+  "atTime": "в {time}",
+  "checkedIn": "Вы отмечены на входе {when}. Повторно пройти по этому коду нельзя, отказаться от регистрации — тоже.",
   "waitlisted": "Вы в листе ожидания, №{position}",
   "cancelled": "Регистрация отменена",
   "registerAgain": "Зарегистрироваться снова",

@@ -9,6 +9,7 @@ import { AppError } from "@/shared/api";
 import { checkinPath, orgEventEditPath, orgEventPath, routes } from "@/shared/config";
 import { useLive } from "@/shared/lib/use-live";
 import { ErrorState, NotFound } from "@/shared/ui/error-state";
+import { ExpandableText } from "@/shared/ui/expandable-text";
 import { QueryState } from "@/shared/ui/query-state";
 import { Alert, AlertDescription } from "@/shared/ui/shadcn/alert";
 import { Button } from "@/shared/ui/shadcn/button";
@@ -119,6 +120,7 @@ function startsAt(iso: string): string {
       >
         <h1 class="text-2xl font-semibold wrap-anywhere">{{ loaded.title }}</h1>
         <p class="text-muted-foreground mt-1 text-sm">{{ startsAt(loaded.starts_at) }}</p>
+        <ExpandableText class="mt-4" :text="loaded.description" />
         <!-- Until the next snapshot the counters may be stale: changes meanwhile are not seen. -->
         <Alert v-if="reconnecting" class="mt-4" role="status" data-live="reconnecting">
           <AlertDescription>{{ t("reconnecting") }}</AlertDescription>

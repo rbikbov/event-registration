@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { useMutation } from "@tanstack/vue-query";
+import { useTimeoutFn } from "@vueuse/core";
 import { computed, nextTick, onMounted, ref, useTemplateRef } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
 
 import { AppError } from "@/shared/api";
+import { formatMoment } from "@/shared/lib/moment-format";
 import { Alert, AlertDescription } from "@/shared/ui/shadcn/alert";
 import { Button } from "@/shared/ui/shadcn/button";
 import { Input } from "@/shared/ui/shadcn/input";
@@ -61,15 +63,21 @@ const { mutate, isPending, error, reset } = useMutation({
   },
 });
 
+// For a second after an answer "Next" does nothing: a stray Enter or a held key would take the
+// answer away unread. It stays focusable (aria-disabled, not disabled), so the focus waits on it.
+const { isPending: pausing, start: pause } = useTimeoutFn(() => {}, 1000, { immediate: false });
+
 // The answer takes the place of the form until the organizer moves on, so it is never read as
 // the answer to the next code. "Next" gets the focus: Enter takes the organizer back to the field.
 function show(next: Answer): void {
   answer.value = next;
   code.value = "";
+  pause();
   void nextTick(() => answerPanel.value?.querySelector("button")?.focus());
 }
 
 function next(): void {
+  if (pausing.value) return;
   answer.value = null;
   void nextTick(focusCode);
 }
@@ -83,8 +91,9 @@ const failure = computed(() => {
   return "failed";
 });
 
-function time(iso: string): string {
-  return d(new Date(iso), { timeStyle: "short" });
+function checkedInWhen(iso: string): string {
+  const moment = formatMoment(iso, new Date(), (at, options) => d(at, options));
+  return moment.withAt ? t("atTime", { time: moment.text }) : moment.text;
 }
 
 function submit(): void {
@@ -111,7 +120,7 @@ function submit(): void {
         data-answer="already_checked_in"
       >
         <p class="text-4xl font-bold">
-          {{ t("alreadyCheckedIn", { time: time(answer.checkedInAt) }) }}
+          {{ t("alreadyCheckedIn", { when: checkedInWhen(answer.checkedInAt) }) }}
         </p>
         <p class="mt-2 text-xl">{{ answer.name }}</p>
       </div>
@@ -120,7 +129,14 @@ function submit(): void {
           {{ answer.kind === "not_found" ? t("notFound") : t("notConfirmed") }}
         </p>
       </div>
-      <Button size="lg" @click="next">{{ t("next") }}</Button>
+      <Button
+        size="lg"
+        :aria-disabled="pausing || undefined"
+        class="aria-disabled:opacity-50"
+        @click="next"
+      >
+        {{ t("next") }}
+      </Button>
     </div>
 
     <form v-else class="mt-6 grid gap-2" novalidate @submit.prevent="submit">
@@ -155,7 +171,8 @@ function submit(): void {
   "foreign": "Это событие другого организатора",
   "offline": "Нет связи, повторите",
   "checkedIn": "Пропущен",
-  "alreadyCheckedIn": "Уже отмечен в {time}",
+  "alreadyCheckedIn": "Уже отмечен {when}",
+  "atTime": "в {time}",
   "notFound": "Билет не найден",
   "notConfirmed": "Билет не подтверждён: лист ожидания или отказ",
   "next": "Следующий"

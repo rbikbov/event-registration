@@ -70,6 +70,21 @@ describe("OrgEventNewPage", () => {
     expect(queryClient.getQueryState(publicEventsQuery.queryKey)?.isInvalidated).toBe(true);
   });
 
+  it("sends the description with its line breaks", async () => {
+    let body: unknown;
+    server.use(
+      http.post("*/api/org/events/", async ({ request }) => {
+        body = await request.json();
+        return HttpResponse.json({ id: 1, ...(body as object) }, { status: 201 });
+      }),
+    );
+    const { wrapper } = await mountPage();
+
+    await fill(wrapper, { ...valid(), description: "Talks\n\nPizza after" });
+
+    expect(body).toMatchObject({ description: "Talks\n\nPizza after" });
+  });
+
   it("shows field errors without sending a request", async () => {
     const { wrapper } = await mountPage();
 
