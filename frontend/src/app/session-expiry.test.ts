@@ -5,7 +5,8 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { createMemoryHistory, RouterView } from "vue-router";
 
 import { AppError } from "@/shared/api";
-import { checkinPath, routes } from "@/shared/config";
+import { meQuery } from "@/entities/session";
+import { checkinPath, orgEventPath, routes } from "@/shared/config";
 import { createAppI18n } from "@/shared/lib/i18n";
 import { fakeEventSource } from "@/shared/lib/test/fake-event-source";
 import { server } from "@/shared/lib/test/msw";
@@ -30,14 +31,16 @@ const settle = () => new Promise((resolve) => setTimeout(resolve, 30));
 const unauthorized = new AppError("unauthorized", { status: 401 });
 
 describe("expired session", () => {
-  it("sends the organizer to /login when a query gets 401", async () => {
-    const { queryClient, router } = await setup(routes.orgEvents);
+  it("sends the organizer to /login and back here when a query gets 401", async () => {
+    const { queryClient, router } = await setup(`${orgEventPath(7)}?page=2`);
 
     await queryClient
       .fetchQuery({ queryKey: ["x"], queryFn: () => Promise.reject(unauthorized) })
       .catch(() => undefined);
 
     await expect.poll(() => router.currentRoute.value.path).toBe(routes.login);
+    expect(router.currentRoute.value.query.next).toBe(`${orgEventPath(7)}?page=2`);
+    expect(queryClient.getQueryData(meQuery.queryKey)).toBeNull();
   });
 
   it("sends the organizer to /login when a mutation gets 401", async () => {
