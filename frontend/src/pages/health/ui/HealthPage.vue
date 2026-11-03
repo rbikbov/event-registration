@@ -13,8 +13,9 @@ const health = useQuery(healthQuery);
 <template>
   <div class="mx-auto max-w-xl">
     <h1 class="text-2xl font-semibold">{{ t("title") }}</h1>
-    <!-- The backend answers 200 only when the database answers too, and 503 when it does not:
-       a loaded answer means both work. -->
+    <!-- The backend answers 200 only when the database answers too: a loaded answer means both
+       work. A down database (503 from the backend) and a down backend (502 from the proxy) are
+       the same `server` error, so the error text names neither. -->
     <QueryState
       class="mt-6"
       :query="health"
@@ -30,7 +31,7 @@ const health = useQuery(healthQuery);
 {
   "title": "Состояние сервиса",
   "ok": "Backend и база данных работают",
-  "unavailable": "Backend недоступен",
-  "refreshError": "Не удалось проверить backend снова, показан прежний ответ"
+  "unavailable": "Backend или база данных не отвечают",
+  "refreshError": "Backend или база данных перестали отвечать, показан прежний ответ"
 }
 </i18n>

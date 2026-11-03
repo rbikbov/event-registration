@@ -33,7 +33,7 @@ describe("HealthPage", () => {
     expect(wrapper.get("[data-health]").text()).toBe("Backend и база данных работают");
   });
 
-  it("shows an error when the backend is unavailable", async () => {
+  it("says the service does not answer on a 503", async () => {
     server.use(
       http.get("*/api/health/", () =>
         HttpResponse.json({ status: "error", database: "error" }, { status: 503 }),
@@ -43,7 +43,7 @@ describe("HealthPage", () => {
     const wrapper = mountPage();
     await flushPromises();
 
-    expect(wrapper.get('[role="alert"] h2').text()).toBe("Backend недоступен");
+    expect(wrapper.get('[role="alert"] h2').text()).toBe("Backend или база данных не отвечают");
   });
 
   it("asks the backend again on retry", async () => {
@@ -81,7 +81,9 @@ describe("HealthPage", () => {
     await queryClient.refetchQueries();
     await flushPromises();
 
-    expect(wrapper.get('[role="alert"]').text()).toContain("Не удалось проверить backend снова");
+    expect(wrapper.get('[role="alert"]').text()).toContain(
+      "Backend или база данных перестали отвечать",
+    );
     expect(wrapper.get("[data-health]").text()).toBe("Backend и база данных работают");
   });
 });
