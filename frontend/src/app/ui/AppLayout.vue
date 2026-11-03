@@ -1,16 +1,18 @@
 <script setup lang="ts">
 import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
-import { computed } from "vue";
+import { computed, watch } from "vue";
 import { useI18n } from "vue-i18n";
-import { useRouter } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 
 import { orgQueryKey } from "@/entities/event";
 import { logout, meQuery } from "@/entities/session";
 import { routes } from "@/shared/config";
+import { Alert, AlertDescription } from "@/shared/ui/shadcn/alert";
 import { Button } from "@/shared/ui/shadcn/button";
 
 const { t } = useI18n({ useScope: "local" });
 const router = useRouter();
+const route = useRoute();
 const queryClient = useQueryClient();
 
 // The header only shows who is signed in; where a guest may go is the route guard's decision.
@@ -27,6 +29,11 @@ const signOut = useMutation({
     queryClient.removeQueries({ queryKey: orgQueryKey });
   },
 });
+// The error is about the click on this screen: it does not follow the organizer to the next one.
+watch(
+  () => route.path,
+  () => signOut.reset(),
+);
 </script>
 
 <template>
@@ -40,7 +47,12 @@ const signOut = useMutation({
               {{ t("myEvents") }}
             </RouterLink>
             <span class="text-muted-foreground hidden sm:inline">{{ user.email }}</span>
-            <Button variant="ghost" size="sm" @click="signOut.mutate()">
+            <Button
+              variant="ghost"
+              size="sm"
+              :disabled="signOut.isPending.value"
+              @click="signOut.mutate()"
+            >
               {{ t("signOut") }}
             </Button>
           </template>
@@ -50,6 +62,11 @@ const signOut = useMutation({
         </nav>
       </div>
     </header>
+    <div v-if="signOut.isError.value" class="mx-auto w-full max-w-4xl px-4 pt-4">
+      <Alert variant="destructive" role="alert">
+        <AlertDescription>{{ t("signOutError") }}</AlertDescription>
+      </Alert>
+    </div>
     <main class="mx-auto w-full max-w-4xl flex-1 px-4 py-6 sm:py-8">
       <slot />
     </main>
@@ -61,6 +78,7 @@ const signOut = useMutation({
   "events": "События",
   "myEvents": "Мои события",
   "signIn": "Вход для организатора",
-  "signOut": "Выйти"
+  "signOut": "Выйти",
+  "signOutError": "Не удалось выйти, повторите"
 }
 </i18n>

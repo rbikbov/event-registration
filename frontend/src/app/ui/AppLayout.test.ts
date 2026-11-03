@@ -1,7 +1,7 @@
 import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
 import { flushPromises, mount } from "@vue/test-utils";
 import { http, HttpResponse } from "msw";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { createMemoryHistory, createRouter } from "vue-router";
 
 import { orgEventsQuery } from "@/entities/event";
@@ -119,5 +119,76 @@ describe("AppLayout", () => {
     expect(queryClient.getQueryData(meQuery.queryKey)).toBeNull();
     expect(queryClient.getQueryData(orgEventsQuery.queryKey)).toBeUndefined();
     expect(links(wrapper)).toContainEqual(["Вход для организатора", routes.login]);
+  });
+
+  it("keeps the session and says so when signing out fails", async () => {
+    server.use(
+      http.get("*/api/auth/me/", () => HttpResponse.json(user)),
+      http.post("*/api/auth/logout/", () => HttpResponse.json({}, { status: 500 })),
+    );
+    const { wrapper, router, queryClient } = await mountLayout(routes.orgEvents);
+    await flushPromises();
+
+    await wrapper.get("header button").trigger("click");
+    await flushPromises();
+
+    expect(wrapper.get('[role="alert"]').text()).toBe("Не удалось выйти, повторите");
+    expect(router.currentRoute.value.path).toBe(routes.orgEvents);
+    expect(queryClient.getQueryData(meQuery.queryKey)).toEqual(user);
+    expect(wrapper.get("header button").text()).toBe("Выйти");
+  });
+
+  it("takes 401 on sign-out as signed out: the session has already ended", async () => {
+    server.use(
+      http.get("*/api/auth/me/", () => HttpResponse.json(user)),
+      http.post("*/api/auth/logout/", () => HttpResponse.json({}, { status: 401 })),
+    );
+    const { wrapper, router, queryClient } = await mountLayout(routes.orgEvents);
+    await flushPromises();
+
+    await wrapper.get("header button").trigger("click");
+    await flushPromises();
+
+    expect(wrapper.find('[role="alert"]').exists()).toBe(false);
+    expect(router.currentRoute.value.path).toBe(routes.home);
+    expect(queryClient.getQueryData(meQuery.queryKey)).toBeNull();
+  });
+
+  it("sends one request when sign-out is clicked twice", async () => {
+    let requests = 0;
+    server.use(
+      http.get("*/api/auth/me/", () => HttpResponse.json(user)),
+      http.post("*/api/auth/logout/", async () => {
+        requests += 1;
+        await new Promise((resolve) => setTimeout(resolve, 50));
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+    const { wrapper } = await mountLayout(routes.orgEvents);
+    await flushPromises();
+
+    const button = wrapper.get("header button");
+    await button.trigger("click");
+    expect(button.attributes("disabled")).toBeDefined();
+    await button.trigger("click");
+    await vi.waitFor(() => expect(wrapper.find("header button").exists()).toBe(false));
+
+    expect(requests).toBe(1);
+  });
+
+  it("drops the sign-out error on the next screen", async () => {
+    server.use(
+      http.get("*/api/auth/me/", () => HttpResponse.json(user)),
+      http.post("*/api/auth/logout/", () => HttpResponse.json({}, { status: 500 })),
+    );
+    const { wrapper, router } = await mountLayout(routes.orgEvents);
+    await flushPromises();
+    await wrapper.get("header button").trigger("click");
+    await flushPromises();
+
+    await router.push(routes.home);
+    await flushPromises();
+
+    expect(wrapper.find('[role="alert"]').exists()).toBe(false);
   });
 });
