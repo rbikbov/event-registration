@@ -61,20 +61,21 @@ describe("AppLayout", () => {
 
     expect(links(wrapper)).toEqual([["События", routes.home]]);
     expect(wrapper.find("header button").exists()).toBe(false);
-    await flushPromises();
+    // The answer arrives after a timer, not a tick: wait for it, so it does not outlive the test.
+    await vi.waitFor(() => expect(wrapper.find("header button").exists()).toBe(true));
   });
 
-  it("offers a guest to sign in and stays on the page", async () => {
+  // That the guest also stays on the page is for the app's router to show: session-expiry.test.ts.
+  it("offers a guest to sign in", async () => {
     server.use(http.get("*/api/auth/me/", () => HttpResponse.json({}, { status: 401 })));
 
-    const { wrapper, router } = await mountLayout();
+    const { wrapper } = await mountLayout();
     await flushPromises();
 
     expect(links(wrapper)).toEqual([
       ["События", routes.home],
       ["Вход для организатора", routes.login],
     ]);
-    expect(router.currentRoute.value.path).toBe(routes.home);
   });
 
   it("does not ask the session again when the window gets the focus back", async () => {

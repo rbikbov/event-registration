@@ -11,6 +11,7 @@ import { createAppI18n } from "@/shared/lib/i18n";
 import { fakeEventSource } from "@/shared/lib/test/fake-event-source";
 import { server } from "@/shared/lib/test/msw";
 
+import App from "./App.vue";
 import { createAppRouter } from "./router";
 import { redirectOnExpiredSession } from "./session-expiry";
 
@@ -78,6 +79,29 @@ describe("expired session", () => {
 
     await settle();
     expect(router.currentRoute.value.path).toBe(routes.orgEvents);
+  });
+});
+
+// The header asks `me` on every screen, and the guest's answer is a 401. It must stay an answer:
+// were it an error, the 401 handling above would take the guest off a public page.
+describe("a guest on a public page", () => {
+  it("stays there and is offered to sign in", async () => {
+    server.use(
+      http.get("*/api/auth/me/", () => HttpResponse.json({}, { status: 401 })),
+      http.get("*/api/events/", () => HttpResponse.json([])),
+    );
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const router = createAppRouter(queryClient, createMemoryHistory());
+    redirectOnExpiredSession(queryClient, router);
+    await router.push(routes.home);
+    const wrapper = mount(App, {
+      global: { plugins: [router, [VueQueryPlugin, { queryClient }], createAppI18n()] },
+    });
+
+    await vi.waitFor(() => expect(wrapper.get("header").text()).toContain("Вход для организатора"));
+    await settle();
+
+    expect(router.currentRoute.value.path).toBe(routes.home);
   });
 });
 
