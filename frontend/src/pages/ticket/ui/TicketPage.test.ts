@@ -87,6 +87,8 @@ describe("TicketPage", () => {
     const text = wrapper.text();
     expect(wrapper.get("[data-ticket-code]").text()).toBe("ABCD2345");
     expect(wrapper.get("h1").text()).toBe("Meetup");
+    // The format of a page of one event (shared/lib/i18n).
+    expect(text).toContain(createAppI18n().global.d(new Date(event.starts_at), "long"));
     expect(text).toContain("Ann");
     expect(text).toContain("Отказаться");
   });

@@ -97,6 +97,8 @@ describe("EventPage", () => {
     expect(text).toContain("Meetup");
     expect(text).toContain("Talks and pizza");
     expect(text).toContain("Свободно 2 места");
+    // The format of a page of one event (shared/lib/i18n).
+    expect(text).toContain(createAppI18n().global.d(new Date(event.starts_at), "long"));
     expect(wrapper.find("form").exists()).toBe(true);
   });
 
