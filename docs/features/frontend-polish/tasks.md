@@ -16,7 +16,7 @@ Spec — `spec.md`. Одна задача — один коммит; отмет�
       (`force: true`); guard уводит на `/login?next=<fullPath>`; вход и вошедший на `/login` —
       на `safeNext(next)`, иначе `/org/events`. Готово, когда: Vitest — `safeNext` по таблице
       spec, 401 на панели → `/login?next=…` → после входа обратно, `next=/login` без цикла.
-- [ ] 1.4. E2E `organizer-logs-out.spec.ts`: вход → «Выйти» → `/`, «Вход для организатора»,
+- [x] 1.4. E2E `organizer-logs-out.spec.ts`: вход → «Выйти» → `/`, «Вход для организатора»,
       `/org/events` ведёт на `/login?next=/org/events`, вход возвращает туда. Готово, когда:
       проходит в `make stack-e2e` и падает без кнопки выхода.
 
