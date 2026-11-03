@@ -14,6 +14,9 @@ export interface QueryStateSource<T> {
 <script setup lang="ts" generic="T">
 import { useI18n } from "vue-i18n";
 
+import { Button } from "@/shared/ui/shadcn/button";
+import { ErrorState } from "@/shared/ui/error-state";
+
 import RetryAlert from "./RetryAlert.vue";
 
 // A failed refetch (window focus, invalidation) keeps the data in TanStack Query and sets
@@ -24,6 +27,8 @@ const props = defineProps<{
   errorText: string;
   /** A refetch failed: the data on screen is the previous one. */
   refreshErrorText: string;
+  /** Heading level of the failed first load: 1 where the data holds the page's h1. */
+  level?: 1 | 2;
 }>();
 
 defineSlots<{ default(props: { data: T }): unknown }>();
@@ -52,17 +57,19 @@ function retry(): void {
       />
       <slot :data="query.data.value" />
     </template>
-    <RetryAlert
-      v-else-if="query.isError.value"
-      :text="errorText"
-      :fetching="query.isFetching.value"
-      @retry="retry"
-    />
+    <ErrorState v-else-if="query.isError.value" :title="errorText" :level="level ?? 2">
+      <template #actions>
+        <Button variant="outline" :disabled="query.isFetching.value" @click="retry">
+          {{ query.isFetching.value ? t("loading") : t("retry") }}
+        </Button>
+      </template>
+    </ErrorState>
   </div>
 </template>
 
 <i18n lang="json" locale="ru">
 {
-  "loading": "Загружаем…"
+  "loading": "Загружаем…",
+  "retry": "Повторить"
 }
 </i18n>

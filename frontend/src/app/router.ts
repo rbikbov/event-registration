@@ -6,6 +6,7 @@ import { EventPage } from "@/pages/event";
 import { HealthPage } from "@/pages/health";
 import { HomePage } from "@/pages/home";
 import { LoginPage } from "@/pages/login";
+import { NotFoundPage } from "@/pages/not-found";
 import { OrgCheckinPage } from "@/pages/org-checkin";
 import { OrgEventLayout } from "@/pages/org-event";
 import { OrgEventEditPage } from "@/pages/org-event-edit";
@@ -39,6 +40,7 @@ export function createAppRouter(queryClient: QueryClient, history: RouterHistory
         ],
       },
       { path: routes.ticket, component: TicketPage },
+      { path: routes.notFound, component: NotFoundPage },
     ],
   });
 

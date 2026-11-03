@@ -113,7 +113,7 @@ describe("EventPage", () => {
     const page = await mountPage();
     const { wrapper } = page;
 
-    expect(wrapper.get('[role="alert"]').text()).toBe("Такого события нет");
+    expect(wrapper.get('[role="alert"] h1').text()).toBe("Такого события нет");
     expect(wrapper.find("form").exists()).toBe(false);
   });
 
@@ -378,7 +378,9 @@ describe("EventPage", () => {
     vi.useFakeTimers();
 
     streams.opened[0]?.fail({ closed: true });
-    await vi.waitFor(() => expect(wrapper.get('[role="alert"]').text()).toBe("Такого события нет"));
+    await vi.waitFor(() =>
+      expect(wrapper.get('[role="alert"] h1').text()).toBe("Такого события нет"),
+    );
     vi.advanceTimersByTime(3000);
 
     expect(streams.opened).toHaveLength(1);

@@ -45,7 +45,7 @@ describe("QueryState", () => {
       fail ? Promise.reject(new Error("down")) : Promise.resolve("Meetup"),
     );
     await flushPromises();
-    expect(wrapper.get('[role="alert"]').text()).toContain("Не удалось загрузить");
+    expect(wrapper.get('[role="alert"] h2').text()).toBe("Не удалось загрузить");
     expect(wrapper.find("[data-shown]").exists()).toBe(false);
 
     fail = false;

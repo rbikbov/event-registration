@@ -11,6 +11,8 @@ export const routes = {
   orgCheckin: "/org/events/:id(\\d+)/checkin",
   orgEventEdit: "/org/events/:id(\\d+)/edit",
   ticket: "/tickets/:token",
+  // Last in the router: anything no other route matches, `/events/abc` included.
+  notFound: "/:path(.*)*",
 } as const;
 
 export function eventPath(id: number): string {

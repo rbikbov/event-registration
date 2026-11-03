@@ -119,7 +119,7 @@ describe("TicketPage", () => {
 
     const { wrapper } = await mountPage();
 
-    expect(wrapper.get('[role="alert"]').text()).toBe("Билет не найден");
+    expect(wrapper.get('[role="alert"] h1').text()).toBe("Билет не найден");
   });
 
   it("shows a load error with a retry", async () => {

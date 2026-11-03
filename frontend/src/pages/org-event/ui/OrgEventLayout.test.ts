@@ -160,14 +160,14 @@ describe("OrgEventLayout", () => {
 
   it.each([
     [404, "Событие не найдено"],
-    [403, "Это событие другого организатора"],
+    [403, "Нет доступа"],
   ])("answers %i in place of the tabs", async (status, text) => {
     server.use(http.get(EVENT, () => HttpResponse.json({}, { status })));
 
     const { wrapper } = await mountLayout(checkinPath(7));
     await flushPromises();
 
-    expect(wrapper.get('[role="alert"]').text()).toBe(text);
+    expect(wrapper.get('[role="alert"] h1').text()).toBe(text);
     expect(wrapper.find("[data-tab]").exists()).toBe(false);
     expect(wrapper.find("nav").exists()).toBe(false);
   });
@@ -283,7 +283,7 @@ describe("OrgEventLayout", () => {
   // without its answer replacing the counts. A 401 is the app's (app/session-expiry tests).
   it.each([
     ["404", 404, "Событие не найдено"],
-    ["403", 403, "Это событие другого организатора"],
+    ["403", 403, "Нет доступа"],
   ])("ends the stream when a probe after a refusal answers %s", async (_case, status, text) => {
     server.use(http.get(EVENT, () => HttpResponse.json(event)));
     const { wrapper } = await mountLayout();
@@ -293,7 +293,7 @@ describe("OrgEventLayout", () => {
 
     // Refused on its first connection: the event may have gone between the GET and the stream.
     streams.opened[0]?.fail({ closed: true });
-    await vi.waitFor(() => expect(wrapper.get('[role="alert"]').text()).toBe(text));
+    await vi.waitFor(() => expect(wrapper.get('[role="alert"] h1').text()).toBe(text));
     vi.advanceTimersByTime(3000);
 
     expect(streams.opened).toHaveLength(1);
