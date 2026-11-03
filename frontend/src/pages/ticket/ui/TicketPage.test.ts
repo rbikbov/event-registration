@@ -1,7 +1,7 @@
 import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
 import { mount } from "@vue/test-utils";
 import { http, HttpResponse } from "msw";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { createMemoryHistory, createRouter } from "vue-router";
 
 import TicketPage from "./TicketPage.vue";
@@ -22,6 +22,18 @@ const confirmed = {
 const checkedIn = { ...confirmed, checked_in_at: "2030-05-01T15:42:00Z" };
 const waitlisted = { status: "waitlisted", position: 3, name: "Ann", checked_in_at: null, event };
 const cancelled = { status: "cancelled", name: "Ann", checked_in_at: null, event };
+
+afterEach(() => vi.useRealTimers());
+
+// The page reads the clock to tell today's check-in from an earlier one; timers stay real.
+function nowIs(moment: Date) {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(moment);
+}
+
+function dayAfter(iso: string): Date {
+  return new Date(new Date(iso).getTime() + 24 * 60 * 60 * 1000);
+}
 
 async function mountPage({ loaded = true } = {}) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -80,6 +92,7 @@ describe("TicketPage", () => {
   });
 
   it("says a checked-in ticket was let in, and offers no cancel", async () => {
+    nowIs(new Date(checkedIn.checked_in_at));
     ticketIs(checkedIn);
 
     const { wrapper } = await mountPage();
@@ -94,6 +107,21 @@ describe("TicketPage", () => {
     expect(notice).toContain("Повторно пройти по этому коду нельзя");
     expect(wrapper.get("[data-ticket-code]").text()).toBe("ABCD2345");
     expect(wrapper.text()).not.toContain("Отказаться");
+  });
+
+  it("gives the date of a check-in made on another day", async () => {
+    nowIs(dayAfter(checkedIn.checked_in_at));
+    ticketIs(checkedIn);
+
+    const { wrapper } = await mountPage();
+
+    const moment = new Intl.DateTimeFormat("ru", {
+      day: "numeric",
+      month: "long",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(new Date(checkedIn.checked_in_at));
+    expect(wrapper.get("[data-checked-in]").text()).toContain(`Вы отмечены на входе ${moment}.`);
   });
 
   it("shows the waitlist place without a code", async () => {
@@ -239,7 +267,7 @@ describe("TicketPage", () => {
 
     await confirmCancel(wrapper);
 
-    await vi.waitFor(() => expect(wrapper.text()).toContain("Вы отмечены на входе в"));
+    await vi.waitFor(() => expect(wrapper.text()).toContain("Вы отмечены на входе"));
     expect(wrapper.find('[role="alert"]').exists()).toBe(false);
     expect(wrapper.text()).not.toContain("Отказаться");
   });

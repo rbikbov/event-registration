@@ -6,6 +6,7 @@ import { useRoute } from "vue-router";
 
 import type { OrgEvent } from "@/entities/event";
 import { orgEventPath } from "@/shared/config";
+import { momentFormat } from "@/shared/lib/moment-format";
 import { QueryState } from "@/shared/ui/query-state";
 import { Alert, AlertDescription } from "@/shared/ui/shadcn/alert";
 import { Button } from "@/shared/ui/shadcn/button";
@@ -54,8 +55,9 @@ function link(filter: RegistrationStatus | null, toPage = 1) {
   };
 }
 
-function time(iso: string): string {
-  return d(new Date(iso), { timeStyle: "short" });
+function checkedInAt(iso: string): string {
+  const at = new Date(iso);
+  return d(at, momentFormat(at, new Date()));
 }
 
 function statusText(row: OrgRegistration): string {
@@ -126,7 +128,7 @@ function statusText(row: OrgRegistration): string {
               <td class="py-2 pr-4">{{ row.name }}</td>
               <td class="py-2 pr-4">{{ row.email }}</td>
               <td class="py-2 pr-4">{{ statusText(row) }}</td>
-              <td class="py-2">{{ row.checked_in_at ? time(row.checked_in_at) : "—" }}</td>
+              <td class="py-2">{{ row.checked_in_at ? checkedInAt(row.checked_in_at) : "—" }}</td>
             </tr>
           </tbody>
         </table>

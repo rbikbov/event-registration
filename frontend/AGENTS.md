@@ -16,7 +16,7 @@ src/entities/event/  события: orgEventsQuery / orgEventQuery(id) / orgEve
 src/shared/api/      клиент API, AppError, unwrap, сгенерированный schema.d.ts. Правила: src/shared/api/AGENTS.md
 src/shared/ui/       самописные компоненты (query-state — загрузка и ошибки запроса, `RetryAlert` — ошибка с повтором; error-state — `ErrorState` на месте страницы и `NotFound` над ним; expandable-text — текст до 4 строк с «Развернуть»); ui/shadcn/ — сгенерированные shadcn-vue, руками не правятся
 src/shared/config/   routes — все пути приложения
-src/shared/lib/      утилиты; safe-next — `?next=` входа, только путь этого приложения; live-source (`LiveSource` — данные от сервера, `sseSource` — по SSE) и use-live — подписка на время жизни компонента; lib/test/ — MSW, фейк EventSource и setup для Vitest
+src/shared/lib/      утилиты; safe-next — `?next=` входа, только путь этого приложения; moment-format — формат времени отметки: дата, если не сегодня; live-source (`LiveSource` — данные от сервера, `sseSource` — по SSE) и use-live — подписка на время жизни компонента; lib/test/ — MSW, фейк EventSource и setup для Vitest
 src/widgets|features/            появляются с первым срезом, пустыми не создаются
 ```
 

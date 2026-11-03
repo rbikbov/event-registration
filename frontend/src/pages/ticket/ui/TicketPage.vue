@@ -7,6 +7,7 @@ import { useRoute } from "vue-router";
 import { publicEventsQuery } from "@/entities/event";
 import { AppError } from "@/shared/api";
 import { eventPath } from "@/shared/config";
+import { momentFormat, sameDay } from "@/shared/lib/moment-format";
 import { NotFound } from "@/shared/ui/error-state";
 import { QueryState } from "@/shared/ui/query-state";
 import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/shadcn/alert";
@@ -74,8 +75,12 @@ function startsAt(iso: string): string {
   return d(new Date(iso), { dateStyle: "long", timeStyle: "short" });
 }
 
-function time(iso: string): string {
-  return d(new Date(iso), { timeStyle: "short" });
+// "в 09:15" today, "2 ноября в 23:50" on another day: Russian puts the date without "в".
+function checkedInWhen(iso: string): string {
+  const at = new Date(iso);
+  const now = new Date();
+  const moment = d(at, momentFormat(at, now));
+  return sameDay(at, now) ? t("atTime", { time: moment }) : moment;
 }
 </script>
 
@@ -110,7 +115,7 @@ function time(iso: string): string {
             <Alert v-if="loaded.checked_in_at" role="note" data-checked-in>
               <AlertTitle>{{ t("checkedInTitle") }}</AlertTitle>
               <AlertDescription>
-                {{ t("checkedIn", { time: time(loaded.checked_in_at) }) }}
+                {{ t("checkedIn", { when: checkedInWhen(loaded.checked_in_at) }) }}
               </AlertDescription>
             </Alert>
           </template>
@@ -157,7 +162,8 @@ function time(iso: string): string {
   "notFound": "Билет не найден",
   "code": "Код билета",
   "checkedInTitle": "Билет использован",
-  "checkedIn": "Вы отмечены на входе в {time}. Повторно пройти по этому коду нельзя, отказаться от регистрации — тоже.",
+  "atTime": "в {time}",
+  "checkedIn": "Вы отмечены на входе {when}. Повторно пройти по этому коду нельзя, отказаться от регистрации — тоже.",
   "waitlisted": "Вы в листе ожидания, №{position}",
   "cancelled": "Регистрация отменена",
   "registerAgain": "Зарегистрироваться снова",

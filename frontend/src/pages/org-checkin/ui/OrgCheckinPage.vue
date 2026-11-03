@@ -5,6 +5,7 @@ import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
 
 import { AppError } from "@/shared/api";
+import { momentFormat, sameDay } from "@/shared/lib/moment-format";
 import { Alert, AlertDescription } from "@/shared/ui/shadcn/alert";
 import { Button } from "@/shared/ui/shadcn/button";
 import { Input } from "@/shared/ui/shadcn/input";
@@ -83,8 +84,12 @@ const failure = computed(() => {
   return "failed";
 });
 
-function time(iso: string): string {
-  return d(new Date(iso), { timeStyle: "short" });
+// "в 09:15" today, "2 ноября в 23:50" on another day: Russian puts the date without "в".
+function checkedInWhen(iso: string): string {
+  const at = new Date(iso);
+  const now = new Date();
+  const moment = d(at, momentFormat(at, now));
+  return sameDay(at, now) ? t("atTime", { time: moment }) : moment;
 }
 
 function submit(): void {
@@ -111,7 +116,7 @@ function submit(): void {
         data-answer="already_checked_in"
       >
         <p class="text-4xl font-bold">
-          {{ t("alreadyCheckedIn", { time: time(answer.checkedInAt) }) }}
+          {{ t("alreadyCheckedIn", { when: checkedInWhen(answer.checkedInAt) }) }}
         </p>
         <p class="mt-2 text-xl">{{ answer.name }}</p>
       </div>
@@ -155,7 +160,8 @@ function submit(): void {
   "foreign": "Это событие другого организатора",
   "offline": "Нет связи, повторите",
   "checkedIn": "Пропущен",
-  "alreadyCheckedIn": "Уже отмечен в {time}",
+  "alreadyCheckedIn": "Уже отмечен {when}",
+  "atTime": "в {time}",
   "notFound": "Билет не найден",
   "notConfirmed": "Билет не подтверждён: лист ожидания или отказ",
   "next": "Следующий"

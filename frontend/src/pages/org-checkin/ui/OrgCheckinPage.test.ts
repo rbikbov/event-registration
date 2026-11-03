@@ -1,7 +1,7 @@
 import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
 import { flushPromises, mount } from "@vue/test-utils";
 import { http, HttpResponse } from "msw";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { createMemoryHistory, createRouter } from "vue-router";
 
 import { checkinPath, routes } from "@/shared/config";
@@ -24,7 +24,18 @@ let mounted: { unmount(): void } | undefined;
 afterEach(() => {
   mounted?.unmount();
   mounted = undefined;
+  vi.useRealTimers();
 });
+
+// The page reads the clock to tell today's check-in from an earlier one; timers stay real.
+function nowIs(moment: Date) {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  vi.setSystemTime(moment);
+}
+
+function dayAfter(iso: string): Date {
+  return new Date(new Date(iso).getTime() + 24 * 60 * 60 * 1000);
+}
 
 // The event and its title belong to the layout (pages/org-event): the screen reads no event,
 // and an unhandled GET of one would fail the test.
@@ -112,6 +123,7 @@ describe("OrgCheckinPage", () => {
   });
 
   it("says a repeat ticket was already let in, and when", async () => {
+    nowIs(new Date(checkedIn.checked_in_at));
     server.use(
       http.post(CHECKIN, () => HttpResponse.json({ ...checkedIn, result: "already_checked_in" })),
     );
@@ -128,6 +140,25 @@ describe("OrgCheckinPage", () => {
     expect(answer.text()).toContain("Ivan");
     expect(wrapper.find("form").exists()).toBe(false);
     expect(document.activeElement).toBe(nextButton(wrapper).element);
+  });
+
+  it("gives the date of a check-in made on another day", async () => {
+    nowIs(dayAfter(checkedIn.checked_in_at));
+    server.use(
+      http.post(CHECKIN, () => HttpResponse.json({ ...checkedIn, result: "already_checked_in" })),
+    );
+    const wrapper = await mountPage();
+
+    await enter(wrapper, "ABCD2345");
+
+    const moment = new Intl.DateTimeFormat("ru", {
+      day: "numeric",
+      month: "long",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(new Date(checkedIn.checked_in_at));
+    const answer = wrapper.get('[data-answer="already_checked_in"]');
+    expect(answer.text()).toContain(`Уже отмечен ${moment}`);
   });
 
   it("says a waitlisted or cancelled ticket is not confirmed", async () => {
