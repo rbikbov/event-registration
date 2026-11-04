@@ -12,11 +12,13 @@ MAX_CAPACITY = 10000
 
 
 class EventQuerySet(models.QuerySet["Event"]):
+    # At the same start the event created later goes first: a new event shows at the top of its
+    # time, and the order is total, so pages never repeat or skip a row.
     def for_organizer(self, user: User) -> Self:
-        return self.filter(organizer=user).order_by("starts_at", "id")
+        return self.filter(organizer=user).order_by("starts_at", "-id")
 
     def upcoming(self) -> Self:
-        return self.filter(starts_at__gt=timezone.now()).order_by("starts_at", "id")
+        return self.filter(starts_at__gt=timezone.now()).order_by("starts_at", "-id")
 
     def with_registration_counts(self) -> Self:
         # Statuses are Registration.Status values; events cannot import registrations (it imports

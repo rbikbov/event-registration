@@ -59,6 +59,16 @@ def test_list_has_only_future_events_by_start(organizer: User) -> None:
     assert [row["id"] for row in response.json()] == [earlier.id, later.id]
 
 
+def test_list_puts_the_later_created_first_at_the_same_start(organizer: User) -> None:
+    starts_at = timezone.now() + timedelta(days=1)
+    first = make_event(organizer, starts_at=starts_at)
+    second = make_event(organizer, starts_at=starts_at)
+
+    response = APIClient().get(URL)
+
+    assert [row["id"] for row in response.json()] == [second.id, first.id]
+
+
 def test_list_query_count_does_not_depend_on_number_of_events(
     organizer: User, django_assert_num_queries: DjangoAssertNumQueries
 ) -> None:

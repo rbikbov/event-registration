@@ -130,6 +130,18 @@ def test_list_has_only_own_events_ordered_by_start(client: APIClient, organizer:
     assert [row["id"] for row in response.json()] == [earlier.id, later.id]
 
 
+def test_list_puts_the_later_created_first_at_the_same_start(
+    client: APIClient, organizer: User
+) -> None:
+    starts_at = timezone.now() + timedelta(days=1)
+    first = make_event(organizer, starts_at=starts_at)
+    second = make_event(organizer, starts_at=starts_at)
+
+    response = client.get(URL)
+
+    assert [row["id"] for row in response.json()] == [second.id, first.id]
+
+
 def test_list_has_registration_counts(client: APIClient, organizer: User) -> None:
     event = make_event(organizer)
     other = make_event(organizer, title="Other")
