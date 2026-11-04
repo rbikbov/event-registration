@@ -89,7 +89,7 @@ describe("PageNav", () => {
     ]);
   });
 
-  // WCAG 2.5.3: voice control finds a button by the word on it. The word shows from `sm` up.
+  // WCAG 2.5.3: voice control finds a button by the word on it. The word shows from `md` up.
   it("names each edge button with the word it shows", async () => {
     const { wrapper } = await mountNav(5, 10);
 

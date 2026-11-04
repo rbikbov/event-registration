@@ -21,7 +21,8 @@ import {
 } from "@/shared/ui/shadcn/pagination";
 
 // The pages of a list: first, previous, the current one with its neighbours, next, last. A gap
-// ("…") stands where numbers are left out; on a phone it is hidden, so the bar fits in 360 px.
+// ("…") stands where numbers are left out. Below `md` the gaps and the words of the buttons are
+// hidden: with them the bar is wider than the page from 640 px (`sm`) to about 700 px.
 // The page lives in the address: a button goes to `link(page)`, the caller reads it back.
 // Nothing on one page, and nothing past the end: the page shows its own way to the last one.
 const props = defineProps<{
@@ -57,15 +58,15 @@ function numbers(items: ({ type: "page"; value: number } | { type: "ellipsis" })
     <PaginationContent v-slot="{ items }">
       <PaginationFirst :aria-label="t('first')">
         <ChevronsLeft />
-        <span class="hidden sm:block">{{ t("firstShort") }}</span>
+        <span class="hidden md:block">{{ t("firstShort") }}</span>
       </PaginationFirst>
       <PaginationPrevious :aria-label="t('previous')">
         <ChevronLeft />
-        <span class="hidden sm:block">{{ t("previousShort") }}</span>
+        <span class="hidden md:block">{{ t("previousShort") }}</span>
       </PaginationPrevious>
       <PaginationEllipsis
         v-if="(numbers(items)[0] ?? 1) > 1"
-        class="hidden sm:flex"
+        class="hidden md:flex"
         aria-hidden="true"
       >
         <MoreHorizontal class="size-4" />
@@ -81,17 +82,17 @@ function numbers(items: ({ type: "page"; value: number } | { type: "ellipsis" })
       </PaginationItem>
       <PaginationEllipsis
         v-if="(numbers(items).at(-1) ?? pages) < pages"
-        class="hidden sm:flex"
+        class="hidden md:flex"
         aria-hidden="true"
       >
         <MoreHorizontal class="size-4" />
       </PaginationEllipsis>
       <PaginationNext :aria-label="t('next')">
-        <span class="hidden sm:block">{{ t("nextShort") }}</span>
+        <span class="hidden md:block">{{ t("nextShort") }}</span>
         <ChevronRight />
       </PaginationNext>
       <PaginationLast :aria-label="t('last')">
-        <span class="hidden sm:block">{{ t("lastShort") }}</span>
+        <span class="hidden md:block">{{ t("lastShort") }}</span>
         <ChevronsRight />
       </PaginationLast>
     </PaginationContent>

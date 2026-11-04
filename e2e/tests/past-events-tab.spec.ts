@@ -1,19 +1,13 @@
 import { expect, test, type Page } from "@playwright/test";
 
-import { organizerPage } from "./helpers";
+import { organizerPage, postEvent } from "./helpers";
 
 // An event can be created only in the future: the started one starts a few seconds after, and
 // the test waits for it. Then it is the most recent past event, first on the past tab. A second
 // event, ten minutes ahead, is the nearest upcoming one: first on the upcoming tab, where the
 // started event would stand before it. Seeing it there tells the tab has loaded.
 async function createEvent(organizer: Page, title: string, inMs: number): Promise<void> {
-  const cookies = await organizer.context().cookies();
-  const csrf = cookies.find((cookie) => cookie.name === "csrftoken")?.value ?? "";
-  const response = await organizer.request.post("/api/org/events/", {
-    headers: { "X-CSRFToken": csrf },
-    data: { title, starts_at: new Date(Date.now() + inMs).toISOString(), capacity: 5 },
-  });
-  expect(response.status()).toBe(201);
+  await postEvent(organizer, { title, startsAt: new Date(Date.now() + inMs) });
 }
 
 // Opens the past tab of a list, reloading until the event has started.
