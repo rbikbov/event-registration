@@ -514,7 +514,7 @@ test_…` и `django.test.AsyncClient`. Цикл событий — один н�
 Code); правило по теме — `docs/rules/<тема>.md`.
 
 Процедуры («как сделать X по шагам») — skills в `.claude/skills/`: `session-handoff`,
-`feature-workflow`, `fsd-frontend`, `anti-slop-review`, `api-change` (черновик); агент
+`feature-workflow`, `fsd-frontend`, `anti-slop-review`, `api-change`; агент
 независимого ревью — `.claude/agents/reviewer.md`. Источник — шаблон
 [rbikbov/frontend-starter](https://github.com/rbikbov/frontend-starter), адаптированный под
 Django + Vue. Шаблоны spec и задач фазы — `docs/features/_template/`.

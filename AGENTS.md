@@ -23,12 +23,15 @@ backend на Postgres слота 1, а не на Postgres человека.
 ## Карта
 
 ```text
-backend/              Django + DRF: config/ — настройки и URL, accounts/ — модель пользователя.
+backend/              Django + DRF: config/ — настройки и URL, accounts/ — пользователь и вход,
+                      events/ — события и потоки SSE, registrations/ — регистрации, лист
+                      ожидания, чекин, напоминания, emails/ — outbox и воркер.
                       Правила: backend/AGENTS.md
-frontend/              Vue 3 + Vite, слои FSD в src/: app, pages, shared
+frontend/             Vue 3 + Vite, слои FSD в src/: app, pages, entities, shared
 e2e/                  Playwright; правила — e2e/AGENTS.md
 Makefile              все команды (make help); docker-compose.yml — сервисы
-scripts/              скрипты репозитория (pre-push.mjs) с тестами
+scripts/              скрипты репозитория с тестами: pre-push.mjs, worktime.mjs,
+                      check-action-refs.mjs, check-readme-tests.mjs
 docs/task.md          текст задания — не редактируется
 docs/decisions.md     лог решений с временем
 docs/development.md   руководство разработчика: установка, команды, проверки, нюансы
@@ -96,13 +99,14 @@ docs/rules/           правила по темам: db-migrations.md, concurre
 
 ## Skills и агенты
 
-| Skill / агент      | Когда                                                                                   |
-| ------------------ | --------------------------------------------------------------------------------------- |
-| `session-handoff`  | начало и конец сессии, после задачи из roadmap, закрытие фазы                           |
-| `feature-workflow` | начало фазы roadmap: spec → задачи → tracer bullet → тест вперёд → ревью → браузер      |
-| `fsd-frontend`     | код фронтенда: слои, связь срезов, состояние, ошибки, тесты                             |
-| `anti-slop-review` | перед коммитом крупного изменения и перед сдачей: мусор и утверждения без подтверждения |
-| агент `reviewer`   | независимое ревью этапа или фазы с чистым контекстом; без субагентов — новая сессия     |
+| Skill / агент      | Когда                                                                                    |
+| ------------------ | ---------------------------------------------------------------------------------------- |
+| `session-handoff`  | начало и конец сессии, после задачи из roadmap, закрытие фазы                            |
+| `feature-workflow` | начало фазы roadmap: spec → задачи → tracer bullet → тест вперёд → ревью → браузер       |
+| `fsd-frontend`     | код фронтенда: слои, связь срезов, состояние, ошибки, тесты                              |
+| `anti-slop-review` | перед коммитом крупного изменения и перед сдачей: мусор и утверждения без подтверждения  |
+| `api-change`       | изменение API: serializer, view или URL → тест → `openapi.yaml` → типы фронтенда → вызов |
+| агент `reviewer`   | независимое ревью этапа или фазы с чистым контекстом; без субагентов — новая сессия      |
 
 Skills проекта лежат в `.claude/skills/<имя>/SKILL.md`, агент — в `.claude/agents/reviewer.md`.
 Агенту без поддержки skills (Codex, Antigravity) — читать `SKILL.md` оттуда по таблице выше.

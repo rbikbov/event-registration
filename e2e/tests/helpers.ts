@@ -6,7 +6,8 @@ import {
   type Page,
 } from "@playwright/test";
 
-// Created by `create_demo_users` when the backend starts (docs/architecture.md, "Окружение").
+// Created by `create_demo_users`: `make e2e` and `stack-e2e` run it before the tests, the
+// backend does not at its start (docs/development.md, "Создать организатора").
 export const ORGANIZER = { email: "demo@example.com", password: "demo" };
 const MAILPIT_URL = process.env.E2E_MAILPIT_URL ?? "http://localhost:8025";
 
