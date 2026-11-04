@@ -5,6 +5,7 @@ import { useI18n } from "vue-i18n";
 import { useRouter } from "vue-router";
 
 import {
+  EVENT_TEXT_MAX,
   orgEventsQuery,
   parseEventForm,
   publicEventsQuery,
@@ -16,6 +17,7 @@ import { AppError } from "@/shared/api";
 import { routes } from "@/shared/config";
 import { Alert, AlertDescription } from "@/shared/ui/shadcn/alert";
 import { Button } from "@/shared/ui/shadcn/button";
+import { CharCounter } from "@/shared/ui/char-counter";
 import { CardHeading } from "@/shared/ui/card-heading";
 import { Card, CardContent, CardHeader } from "@/shared/ui/shadcn/card";
 import { Input } from "@/shared/ui/shadcn/input";
@@ -79,9 +81,9 @@ function submit(): void {
   mutate(parsed.values);
 }
 
-const textFields: { name: "title" | "description" | "starts_at"; type: string }[] = [
-  { name: "title", type: "text" },
-  { name: "description", type: "textarea" },
+const textFields: { name: "title" | "description" | "starts_at"; type: string; max?: number }[] = [
+  { name: "title", type: "text", max: EVENT_TEXT_MAX.title },
+  { name: "description", type: "textarea", max: EVENT_TEXT_MAX.description },
   { name: "starts_at", type: "datetime-local" },
 ];
 </script>
@@ -104,6 +106,7 @@ const textFields: { name: "title" | "description" | "starts_at"; type: string }[
               :id="field.name"
               v-model="form[field.name]"
               :aria-invalid="fieldErrors[field.name] !== undefined"
+              :aria-describedby="field.max ? `${field.name}-count` : undefined"
             />
             <Input
               v-else
@@ -111,10 +114,23 @@ const textFields: { name: "title" | "description" | "starts_at"; type: string }[
               v-model="form[field.name]"
               :type="field.type"
               :aria-invalid="fieldErrors[field.name] !== undefined"
+              :aria-describedby="field.max ? `${field.name}-count` : undefined"
             />
-            <p v-if="fieldErrors[field.name]" class="text-destructive text-sm">
-              {{ t(`errors.${fieldErrors[field.name]}`) }}
-            </p>
+            <div
+              v-if="fieldErrors[field.name] || field.max"
+              class="flex items-start justify-between gap-2"
+            >
+              <p v-if="fieldErrors[field.name]" class="text-destructive text-sm">
+                {{ t(`errors.${fieldErrors[field.name]}`) }}
+              </p>
+              <CharCounter
+                v-if="field.max"
+                :id="`${field.name}-count`"
+                :value="form[field.name]"
+                :max="field.max"
+                class="ms-auto"
+              />
+            </div>
           </div>
           <div class="grid gap-2">
             <Label for="capacity">{{ t("fields.capacity") }}</Label>

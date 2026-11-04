@@ -15,6 +15,7 @@ export {
 } from "./api/public-events";
 export {
   changedFields,
+  EVENT_TEXT_MAX,
   eventFormInput,
   parseEventChanges,
   parseEventForm,

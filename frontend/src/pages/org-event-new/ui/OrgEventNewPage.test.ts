@@ -85,6 +85,17 @@ describe("OrgEventNewPage", () => {
     expect(body).toMatchObject({ description: "Talks\n\nPizza after" });
   });
 
+  it("counts the characters of the title and the description against their limits", async () => {
+    const { wrapper } = await mountPage();
+
+    await type(wrapper, { title: "Meetup", description: "a".repeat(2001) });
+
+    expect(wrapper.get("#title-count").text()).toBe("6/200");
+    expect(wrapper.get("#title").attributes("aria-describedby")).toBe("title-count");
+    expect(wrapper.get("#description-count").text()).toBe("2001/2000");
+    expect(wrapper.get("#description-count").classes()).toContain("text-destructive");
+  });
+
   it("shows field errors without sending a request", async () => {
     const { wrapper } = await mountPage();
 

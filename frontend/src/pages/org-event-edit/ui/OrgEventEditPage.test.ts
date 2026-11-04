@@ -87,6 +87,17 @@ describe("OrgEventEditPage", () => {
     expect(saveButton(wrapper).attributes("disabled")).toBeDefined();
   });
 
+  it("counts the characters of the title and the description from the event's values", async () => {
+    const { wrapper } = mountPage();
+
+    expect(wrapper.get("#title-count").text()).toBe("6/200");
+    expect(wrapper.get("#description-count").text()).toBe("5/2000");
+
+    await type(wrapper, { description: "Talks and pizza" });
+
+    expect(wrapper.get("#description-count").text()).toBe("15/2000");
+  });
+
   // The number field applies what was typed on blur, and a press on the button blurs it only
   // after the press has met a disabled button: one click must still save.
   it("lets the button be pressed while a typed capacity is not applied yet", async () => {

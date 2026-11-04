@@ -7,6 +7,10 @@ import { localInputValue } from "./local-input";
 export const EVENT_FIELDS = ["title", "description", "starts_at", "capacity"] as const;
 export type EventField = (typeof EVENT_FIELDS)[number];
 
+// The longest text the server keeps (backend/events), counted trimmed. The form shows a counter
+// against it.
+export const EVENT_TEXT_MAX = { title: 200, description: 2000 } as const;
+
 // The codes are the ones the server answers with (backend/events), so a client-side and a
 // server-side error of the same kind show the same text. `below_confirmed` is the server's only:
 // the count of confirmed seats changes under the form.
@@ -48,8 +52,8 @@ export type EventChangesResult =
 // `checkPast: false` keeps a start that is already past: an event under way keeps its start.
 function eventSchema(now: Date, checkPast = true) {
   return z.object({
-    title: z.string().trim().min(1, "blank").max(200, "max_length"),
-    description: z.string().trim().max(2000, "max_length"),
+    title: z.string().trim().min(1, "blank").max(EVENT_TEXT_MAX.title, "max_length"),
+    description: z.string().trim().max(EVENT_TEXT_MAX.description, "max_length"),
     starts_at: z
       .string()
       .min(1, "required")
