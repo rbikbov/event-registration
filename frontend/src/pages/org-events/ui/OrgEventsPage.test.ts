@@ -10,6 +10,11 @@ import { server } from "@/shared/lib/test/msw";
 
 import OrgEventsPage from "./OrgEventsPage.vue";
 
+// A list answer: one page with all the events.
+function page<T>(results: T[]) {
+  return { count: results.length, results };
+}
+
 async function mountPage(
   queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } }),
 ) {
@@ -25,7 +30,7 @@ async function mountPage(
 
 describe("OrgEventsPage", () => {
   it("shows a loading state until the list arrives", async () => {
-    server.use(http.get("*/api/org/events/", () => HttpResponse.json([])));
+    server.use(http.get("*/api/org/events/", () => HttpResponse.json({ count: 0, results: [] })));
 
     const wrapper = await mountPage();
 
@@ -36,26 +41,28 @@ describe("OrgEventsPage", () => {
   it("lists events with their capacity", async () => {
     server.use(
       http.get("*/api/org/events/", () =>
-        HttpResponse.json([
-          {
-            id: 1,
-            title: "Meetup",
-            description: "",
-            starts_at: "2030-05-01T18:00:00Z",
-            capacity: 1,
-            confirmed: 1,
-            waitlisted: 0,
-          },
-          {
-            id: 2,
-            title: "Workshop",
-            description: "",
-            starts_at: "2030-06-01T18:00:00Z",
-            capacity: 30,
-            confirmed: 12,
-            waitlisted: 3,
-          },
-        ]),
+        HttpResponse.json(
+          page([
+            {
+              id: 1,
+              title: "Meetup",
+              description: "",
+              starts_at: "2030-05-01T18:00:00Z",
+              capacity: 1,
+              confirmed: 1,
+              waitlisted: 0,
+            },
+            {
+              id: 2,
+              title: "Workshop",
+              description: "",
+              starts_at: "2030-06-01T18:00:00Z",
+              capacity: 30,
+              confirmed: 12,
+              waitlisted: 3,
+            },
+          ]),
+        ),
       ),
     );
 
@@ -77,7 +84,7 @@ describe("OrgEventsPage", () => {
   });
 
   it("says there are no events yet and offers to create one", async () => {
-    server.use(http.get("*/api/org/events/", () => HttpResponse.json([])));
+    server.use(http.get("*/api/org/events/", () => HttpResponse.json({ count: 0, results: [] })));
 
     const wrapper = await mountPage();
     await flushPromises();
@@ -94,17 +101,19 @@ describe("OrgEventsPage", () => {
 
     server.use(
       http.get("*/api/org/events/", () =>
-        HttpResponse.json([
-          {
-            id: 1,
-            title: "Meetup",
-            description: "",
-            starts_at: "2030-05-01T18:00:00Z",
-            capacity: 5,
-            confirmed: 0,
-            waitlisted: 0,
-          },
-        ]),
+        HttpResponse.json(
+          page([
+            {
+              id: 1,
+              title: "Meetup",
+              description: "",
+              starts_at: "2030-05-01T18:00:00Z",
+              capacity: 5,
+              confirmed: 0,
+              waitlisted: 0,
+            },
+          ]),
+        ),
       ),
     );
     await wrapper.get('[role="alert"] button').trigger("click");
@@ -120,17 +129,19 @@ describe("OrgEventsPage", () => {
       http.get("*/api/org/events/", () =>
         fail
           ? HttpResponse.json({}, { status: 500 })
-          : HttpResponse.json([
-              {
-                id: 1,
-                title: "Meetup",
-                description: "",
-                starts_at: "2030-05-01T18:00:00Z",
-                capacity: 5,
-                confirmed: 0,
-                waitlisted: 0,
-              },
-            ]),
+          : HttpResponse.json(
+              page([
+                {
+                  id: 1,
+                  title: "Meetup",
+                  description: "",
+                  starts_at: "2030-05-01T18:00:00Z",
+                  capacity: 5,
+                  confirmed: 0,
+                  waitlisted: 0,
+                },
+              ]),
+            ),
       ),
     );
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });

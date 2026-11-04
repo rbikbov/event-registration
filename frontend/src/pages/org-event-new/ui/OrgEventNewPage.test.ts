@@ -59,8 +59,8 @@ describe("OrgEventNewPage", () => {
       }),
     );
     const { wrapper, router, queryClient } = await mountPage();
-    queryClient.setQueryData(orgEventsQuery.queryKey, []);
-    queryClient.setQueryData(publicEventsQuery.queryKey, []);
+    queryClient.setQueryData(orgEventsQuery.queryKey, { count: 0, results: [] });
+    queryClient.setQueryData(publicEventsQuery.queryKey, { count: 0, results: [] });
 
     await fill(wrapper, { ...valid(), description: "Talks" });
 

@@ -4,6 +4,7 @@ from django.utils import timezone
 from rest_framework import serializers
 
 from events.models import Event
+from events.services import PERIODS, EventPage
 
 
 class EventSerializer(serializers.ModelSerializer[Event]):
@@ -85,3 +86,23 @@ class PublicEventSerializer(serializers.ModelSerializer[Event]):
         model = Event
         fields = ("id", "title", "description", "starts_at", "capacity", "free_seats")
         read_only_fields = fields
+
+
+class EventListQuerySerializer(serializers.Serializer[None]):
+    period = serializers.ChoiceField(choices=PERIODS, default="upcoming")
+    # The upper bound keeps the OFFSET of a page within bigint.
+    page = serializers.IntegerField(min_value=1, max_value=10**6, default=1)
+
+
+class OrgEventPageSerializer(serializers.Serializer[EventPage]):
+    """A page of the organizer's events; `count` is the number of events of the period."""
+
+    count = serializers.IntegerField()
+    results = EventSerializer(many=True)
+
+
+class PublicEventPageSerializer(serializers.Serializer[EventPage]):
+    """A page of events for everyone; `count` is the number of events of the period."""
+
+    count = serializers.IntegerField()
+    results = PublicEventListSerializer(many=True)

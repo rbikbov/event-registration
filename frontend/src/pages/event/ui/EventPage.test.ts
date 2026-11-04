@@ -153,7 +153,7 @@ describe("EventPage", () => {
     );
     const page = await mountPage();
     const { wrapper, queryClient } = page;
-    queryClient.setQueryData(publicEventsQuery.queryKey, []);
+    queryClient.setQueryData(publicEventsQuery.queryKey, { count: 0, results: [] });
 
     await fill(page, { email: " a@x.io ", name: "Ann" });
 

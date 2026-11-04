@@ -46,7 +46,7 @@ describe("tab title", () => {
   it("names the page and the app, and follows the navigation", async () => {
     signedIn();
     server.use(
-      http.get("*/api/events/", () => HttpResponse.json([])),
+      http.get("*/api/events/", () => HttpResponse.json({ count: 0, results: [] })),
       http.get("*/api/org/events/7/", () => HttpResponse.json({}, { status: 404 })),
     );
     const { router, queryClient } = await mountApp(routes.home);

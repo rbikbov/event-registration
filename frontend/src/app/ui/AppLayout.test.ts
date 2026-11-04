@@ -25,7 +25,7 @@ const OrgEventsList = defineComponent({
 });
 
 async function mountLayout(path: string = routes.home) {
-  server.use(http.get("*/api/org/events/", () => HttpResponse.json([])));
+  server.use(http.get("*/api/org/events/", () => HttpResponse.json({ count: 0, results: [] })));
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const page = { template: "<p>page</p>" };
   const router = createRouter({
@@ -183,7 +183,7 @@ describe("AppLayout", () => {
     );
     const { wrapper, router, queryClient } = await mountLayout(routes.orgEvents);
     await flushPromises();
-    expect(queryClient.getQueryData(orgEventsQuery.queryKey)).toEqual([]);
+    expect(queryClient.getQueryData(orgEventsQuery.queryKey)).toEqual({ count: 0, results: [] });
 
     await wrapper.get("header button").trigger("click");
     await flushPromises();

@@ -10,6 +10,11 @@ import { eventPath } from "@/shared/config";
 import { createAppI18n } from "@/shared/lib/i18n";
 import { server } from "@/shared/lib/test/msw";
 
+// A list answer: one page with all the events.
+function page<T>(results: T[]) {
+  return { count: results.length, results };
+}
+
 async function mountPage(
   queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } }),
 ) {
@@ -31,7 +36,7 @@ const item = (id: number, free_seats: number) => ({
 
 describe("HomePage", () => {
   it("lists events with free seats and links to each", async () => {
-    server.use(http.get("*/api/events/", () => HttpResponse.json([item(1, 3), item(2, 0)])));
+    server.use(http.get("*/api/events/", () => HttpResponse.json(page([item(1, 3), item(2, 0)]))));
 
     const wrapper = await mountPage();
 
@@ -46,7 +51,7 @@ describe("HomePage", () => {
   });
 
   it("says so when there are no events", async () => {
-    server.use(http.get("*/api/events/", () => HttpResponse.json([])));
+    server.use(http.get("*/api/events/", () => HttpResponse.json({ count: 0, results: [] })));
 
     const wrapper = await mountPage();
 
@@ -58,7 +63,7 @@ describe("HomePage", () => {
     const wrapper = await mountPage();
     expect(wrapper.get('[role="alert"]').text()).toContain("Не удалось загрузить события");
 
-    server.use(http.get("*/api/events/", () => HttpResponse.json([item(1, 1)])));
+    server.use(http.get("*/api/events/", () => HttpResponse.json(page([item(1, 1)]))));
     await wrapper.get('[role="alert"] button').trigger("click");
 
     await vi.waitFor(() => expect(wrapper.text()).toContain("Meetup 1"));
@@ -84,7 +89,7 @@ describe("HomePage", () => {
     let fail = false;
     server.use(
       http.get("*/api/events/", () =>
-        fail ? HttpResponse.json({}, { status: 500 }) : HttpResponse.json([item(1, 3)]),
+        fail ? HttpResponse.json({}, { status: 500 }) : HttpResponse.json(page([item(1, 3)])),
       ),
     );
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });

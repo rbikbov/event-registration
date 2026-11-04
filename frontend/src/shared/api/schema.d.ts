@@ -67,7 +67,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description Future events with their free seat count (full ones stay in the list), for everyone. */
+        /**
+         * @description A page of upcoming or past events with their free seat count (full ones stay in the
+         *     list), for everyone.
+         */
         get: operations["events_list"];
         put?: never;
         post?: never;
@@ -151,10 +154,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** @description The signed-in organizer's own events; creating one makes the caller its organizer. */
+        /**
+         * @description The signed-in organizer's own events, a page of a period; creating one makes the caller
+         *     its organizer.
+         */
         get: operations["org_events_list"];
         put?: never;
-        /** @description The signed-in organizer's own events; creating one makes the caller its organizer. */
+        /**
+         * @description The signed-in organizer's own events, a page of a period; creating one makes the caller
+         *     its organizer.
+         */
         post: operations["org_events_create"];
         delete?: never;
         options?: never;
@@ -346,6 +355,11 @@ export interface components {
             readonly free_seats: number;
             readonly cancelled: number;
         };
+        /** @description A page of the organizer's events; `count` is the number of events of the period. */
+        OrgEventPage: {
+            count: number;
+            results: components["schemas"]["Event"][];
+        };
         /**
          * @description A row of the organizer's participant table: the full email, unlike the entrance screen.
          *
@@ -385,6 +399,11 @@ export interface components {
             readonly starts_at: string;
             readonly capacity: number;
             readonly free_seats: number;
+        };
+        /** @description A page of events for everyone; `count` is the number of events of the period. */
+        PublicEventPage: {
+            count: number;
+            results: components["schemas"]["PublicEventList"][];
         };
         RegisterRequestRequest: {
             /** Format: email */
@@ -525,7 +544,14 @@ export interface operations {
     };
     events_list: {
         parameters: {
-            query?: never;
+            query?: {
+                page?: number;
+                /**
+                 * @description * `upcoming` - upcoming
+                 *     * `past` - past
+                 */
+                period?: "upcoming" | "past";
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -537,7 +563,15 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PublicEventList"][];
+                    "application/json": components["schemas"]["PublicEventPage"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidationError"];
                 };
             };
         };
@@ -670,7 +704,14 @@ export interface operations {
     };
     org_events_list: {
         parameters: {
-            query?: never;
+            query?: {
+                page?: number;
+                /**
+                 * @description * `upcoming` - upcoming
+                 *     * `past` - past
+                 */
+                period?: "upcoming" | "past";
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -682,7 +723,15 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["Event"][];
+                    "application/json": components["schemas"]["OrgEventPage"];
+                };
+            };
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ValidationError"];
                 };
             };
         };

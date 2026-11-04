@@ -127,7 +127,7 @@ def test_list_has_only_own_events_ordered_by_start(client: APIClient, organizer:
     response = client.get(URL)
 
     assert response.status_code == 200
-    assert [row["id"] for row in response.json()] == [earlier.id, later.id]
+    assert [row["id"] for row in response.json()["results"]] == [earlier.id, later.id]
 
 
 def test_list_puts_the_later_created_first_at_the_same_start(
@@ -139,7 +139,7 @@ def test_list_puts_the_later_created_first_at_the_same_start(
 
     response = client.get(URL)
 
-    assert [row["id"] for row in response.json()] == [second.id, first.id]
+    assert [row["id"] for row in response.json()["results"]] == [second.id, first.id]
 
 
 def test_list_has_registration_counts(client: APIClient, organizer: User) -> None:
@@ -154,7 +154,7 @@ def test_list_has_registration_counts(client: APIClient, organizer: User) -> Non
         Registration.objects.create(event=event, email=email, name="N", status=status)
     Registration.objects.create(event=other, email="a@x.io", name="N", status="waitlisted")
 
-    rows = {row["id"]: row for row in client.get(URL).json()}
+    rows = {row["id"]: row for row in client.get(URL).json()["results"]}
 
     assert (rows[event.id]["confirmed"], rows[event.id]["waitlisted"]) == (2, 1)
     assert (rows[other.id]["confirmed"], rows[other.id]["waitlisted"]) == (0, 1)
@@ -164,19 +164,19 @@ def test_list_is_empty_for_new_organizer(client: APIClient) -> None:
     response = client.get(URL)
 
     assert response.status_code == 200
-    assert response.json() == []
+    assert response.json() == {"count": 0, "results": []}
 
 
 def test_list_query_count_does_not_depend_on_number_of_events(
     client: APIClient, organizer: User, django_assert_num_queries: DjangoAssertNumQueries
 ) -> None:
     make_event(organizer)
-    with django_assert_num_queries(3):
+    with django_assert_num_queries(4):
         client.get(URL)
 
     for _ in range(5):
         register(make_event(organizer).id, "a@x.io", "Ann")
-    with django_assert_num_queries(3):
+    with django_assert_num_queries(4):
         client.get(URL)
 
 

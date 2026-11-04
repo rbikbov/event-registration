@@ -29,9 +29,9 @@ const events = useQuery(orgEventsQuery);
       :error-text="t('error')"
       :refresh-error-text="t('refreshError')"
     >
-      <p v-if="loaded.length === 0" class="text-muted-foreground">{{ t("empty") }}</p>
+      <p v-if="loaded.results.length === 0" class="text-muted-foreground">{{ t("empty") }}</p>
       <ul v-else class="grid gap-3">
-        <li v-for="event in loaded" :key="event.id">
+        <li v-for="event in loaded.results" :key="event.id">
           <Card>
             <CardHeader>
               <CardHeading :level="2" class="leading-snug wrap-anywhere">

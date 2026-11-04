@@ -216,7 +216,7 @@ describe("TicketPage", () => {
       }),
     );
     const { wrapper, queryClient } = await mountPage();
-    queryClient.setQueryData(publicEventsQuery.queryKey, []);
+    queryClient.setQueryData(publicEventsQuery.queryKey, { count: 0, results: [] });
 
     await confirmCancel(wrapper);
 

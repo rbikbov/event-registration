@@ -5,7 +5,7 @@ from django.db.models import QuerySet
 from django.http import StreamingHttpResponse
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiResponse, extend_schema
-from rest_framework.generics import ListAPIView, ListCreateAPIView, RetrieveAPIView
+from rest_framework.generics import CreateAPIView, RetrieveAPIView
 from rest_framework.negotiation import BaseContentNegotiation
 from rest_framework.parsers import BaseParser
 from rest_framework.permissions import AllowAny
@@ -16,28 +16,45 @@ from rest_framework.serializers import BaseSerializer
 from rest_framework.views import APIView
 
 from config.exceptions import ValidationErrorSerializer
-from events.models import Event
+from events.models import Event, EventQuerySet
 from events.realtime import Snapshot, snapshot_stream
 from events.serializers import (
+    EventListQuerySerializer,
     EventSerializer,
+    OrgEventPageSerializer,
     OrgEventSerializer,
-    PublicEventListSerializer,
+    PublicEventPageSerializer,
     PublicEventSerializer,
 )
-from events.services import get_org_event
+from events.services import EventPage, event_page, get_org_event
 
 
-class OrgEventListView(ListCreateAPIView[Event]):
-    """The signed-in organizer's own events; creating one makes the caller its organizer."""
+def requested_page(request: Request, events: EventQuerySet) -> EventPage:
+    query = EventListQuerySerializer(data=request.query_params)
+    query.is_valid(raise_exception=True)
+    return event_page(events, query.validated_data["period"], query.validated_data["page"])
+
+
+class OrgEventListView(CreateAPIView[Event]):
+    """The signed-in organizer's own events, a page of a period; creating one makes the caller
+    its organizer.
+    """
 
     serializer_class = EventSerializer
+
+    # An APIView's GET reads as "retrieve"; the id names it a list, as before the pages.
+    @extend_schema(
+        operation_id="org_events_list",
+        parameters=[EventListQuerySerializer],
+        responses={200: OrgEventPageSerializer, 400: ValidationErrorSerializer},
+    )
+    def get(self, request: Request) -> Response:
+        events = Event.objects.for_organizer(request.user)  # type: ignore[arg-type]  # IsAuthenticated: never AnonymousUser here
+        return Response(OrgEventPageSerializer(requested_page(request, events)).data)
 
     @extend_schema(responses={201: EventSerializer, 400: ValidationErrorSerializer})
     def post(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         return super().post(request, *args, **kwargs)
-
-    def get_queryset(self):  # type: ignore[no-untyped-def]
-        return Event.objects.for_organizer(self.request.user).with_registration_counts()  # type: ignore[arg-type]
 
     def perform_create(self, serializer: BaseSerializer[Event]) -> None:
         serializer.save(organizer=self.request.user)
@@ -121,16 +138,23 @@ class OrgEventStreamView(APIView):
         return snapshot_response(event_id, org_event_snapshot)
 
 
-class PublicEventListView(ListAPIView[Event]):
-    """Future events with their free seat count (full ones stay in the list), for everyone."""
+class PublicEventListView(APIView):
+    """A page of upcoming or past events with their free seat count (full ones stay in the
+    list), for everyone.
+    """
 
     # No session authentication: a public endpoint must not depend on cookies or CSRF.
     authentication_classes = ()
     permission_classes = (AllowAny,)
-    serializer_class = PublicEventListSerializer
 
-    def get_queryset(self) -> QuerySet[Event]:
-        return Event.objects.upcoming().with_registration_counts()
+    @extend_schema(
+        operation_id="events_list",
+        parameters=[EventListQuerySerializer],
+        responses={200: PublicEventPageSerializer, 400: ValidationErrorSerializer},
+    )
+    def get(self, request: Request) -> Response:
+        page = requested_page(request, Event.objects.all())
+        return Response(PublicEventPageSerializer(page).data)
 
 
 class PublicEventDetailView(RetrieveAPIView[Event]):
