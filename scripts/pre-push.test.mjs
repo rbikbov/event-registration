@@ -4,16 +4,24 @@ import { test } from "node:test";
 import { commandsFor } from "./pre-push.mjs";
 
 test("docs-only changes run nothing", () => {
-  assert.deepEqual(commandsFor(["docs/decisions.md", "README.md"]), []);
+  assert.deepEqual(commandsFor(["docs/decisions.md", "docs/roadmap.md"]), []);
+});
+
+test("README changes check its test references", () => {
+  assert.deepEqual(commandsFor(["README.md"]), ["make check-readme"]);
 });
 
 test("backend changes run backend checks", () => {
-  assert.deepEqual(commandsFor(["backend/config/health.py"]), ["make dev-deps check-backend"]);
+  assert.deepEqual(commandsFor(["backend/config/health.py"]), [
+    "make dev-deps check-backend",
+    "make check-readme",
+  ]);
 });
 
 test("backend changes pushed from a slot use the slot's Postgres", () => {
   assert.deepEqual(commandsFor(["backend/config/health.py"], "1"), [
     "make stack-check-backend SLOT=1",
+    "make check-readme",
   ]);
 });
 
@@ -22,11 +30,17 @@ test("shared files pushed from a slot check the backend on the slot's Postgres",
 });
 
 test("frontend changes run frontend checks", () => {
-  assert.deepEqual(commandsFor(["frontend/src/app/App.vue"]), ["make check-frontend"]);
+  assert.deepEqual(commandsFor(["frontend/src/app/App.vue"]), [
+    "make check-frontend",
+    "make check-readme",
+  ]);
 });
 
 test("e2e changes run static checks of the e2e code", () => {
-  assert.deepEqual(commandsFor(["e2e/tests/smoke.spec.ts"]), ["make check-e2e"]);
+  assert.deepEqual(commandsFor(["e2e/tests/smoke.spec.ts"]), [
+    "make check-e2e",
+    "make check-readme",
+  ]);
 });
 
 test("workflow changes run CI workflow checks", () => {
@@ -44,5 +58,6 @@ test("shared files run every part", () => {
     "make check-e2e",
     "make check-ci",
     "make check-tooling",
+    "make check-readme",
   ]);
 });

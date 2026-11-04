@@ -131,6 +131,7 @@ make down   # остановить; данные БД остаются в том
 | `make check-frontend`                                         | ESLint, vue-tsc, Vitest                                                                  |
 | `make check-e2e`                                              | ESLint и tsc для кода e2e-тестов (сами тесты не запускает)                               |
 | `make check-tooling`                                          | тесты хуков Claude Code и `scripts/` (`node:test`)                                       |
+| `make check-readme`                                           | README: каждый тест из таблиц «Требования и тесты» существует — файл, функция, название  |
 | `make check-ci`                                               | workflow GitHub Actions: actionlint и существование тегов actions (нужна сеть)           |
 | `make format-check`                                           | Prettier: форматирование всех файлов                                                     |
 | `make lint-backend` / `typecheck-backend` / `test-backend`    | по отдельности: ruff / mypy / pytest (pytest нужен `make dev-deps`)                      |
@@ -306,6 +307,7 @@ docs: close phase 1 (registration)
 | `e2e/**`                                                                                                      | `make check-e2e`                                                                                                                               |
 | `.github/**`                                                                                                  | `make check-ci`                                                                                                                                |
 | `.claude/hooks/**`, `scripts/**`                                                                              | `make check-tooling`                                                                                                                           |
+| `README.md`, `backend/**`, `frontend/**`, `e2e/**`                                                            | ещё `make check-readme`: переименованный тест ломает ссылку в README                                                                           |
 | `Makefile`, `docker-compose.yml`, `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `.prettierrc.json` | проверки всех частей                                                                                                                           |
 | только документация                                                                                           | ничего                                                                                                                                         |
 
