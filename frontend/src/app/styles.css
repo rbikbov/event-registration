@@ -66,8 +66,13 @@
 /* Outside the layers on purpose: shadcn's button has the `disabled:pointer-events-none` utility,
    which hides the cursor of a disabled button, and only an unlayered rule outranks a utility.
    A disabled button gets no click either way: the browser does not fire one. */
-button:disabled,
-[aria-disabled="true"] {
+button:disabled {
   cursor: not-allowed;
   pointer-events: auto;
+}
+
+/* Only the cursor: the browser does deliver a click to an element that is merely aria-disabled,
+   so its handler has to drop it, and pointer events stay as the element's own classes set them. */
+[aria-disabled="true"] {
+  cursor: not-allowed;
 }
