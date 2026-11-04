@@ -20,9 +20,10 @@ class EventQuerySet(models.QuerySet["Event"]):
     def upcoming(self) -> Self:
         return self.filter(starts_at__gt=timezone.now()).order_by("starts_at", "-id")
 
-    # Past is started: an event has no end time. The most recent first.
+    # Past is started: an event has no end time. The upcoming order turned back in time: the most
+    # recent first, and at the same start the earlier created, which upcoming puts second.
     def past(self) -> Self:
-        return self.filter(starts_at__lte=timezone.now()).order_by("-starts_at", "-id")
+        return self.filter(starts_at__lte=timezone.now()).order_by("-starts_at", "id")
 
     def with_registration_counts(self) -> Self:
         # Statuses are Registration.Status values; events cannot import registrations (it imports

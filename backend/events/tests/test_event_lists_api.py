@@ -76,14 +76,16 @@ def test_past_has_only_started_events_most_recent_first(get: Any, organizer: Use
     assert ids(response) == [recent, long_ago]
 
 
-def test_past_puts_the_later_created_first_at_the_same_start(get: Any, organizer: User) -> None:
+# Past is the upcoming order turned back in time: at the same start, the event upcoming shows
+# second (created earlier, smaller id) goes first.
+def test_past_mirrors_the_upcoming_order_at_the_same_start(get: Any, organizer: User) -> None:
     starts_at = timezone.now() - timedelta(days=1)
     first, second = (
         Event.objects.create(organizer=organizer, title="M", starts_at=starts_at, capacity=5).id
         for _ in range(2)
     )
 
-    assert ids(get(period="past")) == [second, first]
+    assert ids(get(period="past")) == [first, second]
 
 
 def test_pages_go_on_in_order_with_the_total_count(
