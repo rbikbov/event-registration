@@ -1,9 +1,10 @@
 // Exports every Claude Code session of this project as text close to the built-in `/export`,
 // which exports only the current session; resuming an old one to export it would append to it.
 // Reads ~/.claude/projects/<project>/*.jsonl and never writes there. Subagent transcripts (in
-// per-session folders) and the model's thinking are left out, as in `/export`. A file is named
-// after the session's first record, so running it again overwrites the same files and adds
-// the sessions that are new.
+// per-session folders), the model's thinking and what the environment adds to a prompt
+// (background task notifications, IDE context, shell output) are left out. A file is named
+// after the local time of the session's first message and how long it lasted, so running it
+// again overwrites the files of finished sessions and adds the new ones.
 import { mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
@@ -12,6 +13,9 @@ import { pathToFileURL } from "node:url";
 const RESULT_LINES = 6;
 const RESULT_WIDTH = 200;
 const NOISE = ["<local-command-caveat>", "<local-command-stdout>", "<system-reminder>", "Caveat:"];
+// Added by the environment, not typed by the person: dropped with their contents.
+const ENVIRONMENT_BLOCKS =
+  /<(task-notification|ide_opened_file|ide_selection|bash-stdout|bash-stderr)>[\s\S]*?<\/\1>/g;
 const SUMMARY_KEYS = ["command", "file_path", "pattern", "description", "prompt", "query", "skill"];
 
 // Claude Code keeps a project's sessions in a folder named after its path, every character
@@ -52,9 +56,19 @@ function resultHead(text) {
   return shown.map((line, i) => (i === 0 ? "  ⎿  " : "     ") + line).join("\n");
 }
 
-function slug(text) {
-  const words = text.toLowerCase().match(/[\p{L}\p{N}_-]+/gu) ?? [];
-  return words.slice(0, 8).join("-").slice(0, 60).replace(/-+$/, "") || "session";
+function duration(fromIso, toIso) {
+  const minutes = Math.round((Date.parse(toIso) - Date.parse(fromIso)) / 60000);
+  if (minutes < 60) return `${minutes}m`;
+  return `${Math.floor(minutes / 60)}h${String(minutes % 60).padStart(2, "0")}m`;
+}
+
+// What the person typed: a shell command after "!" stays, a pasted text loses only its tags.
+function cleanPrompt(text) {
+  return text
+    .replace(ENVIRONMENT_BLOCKS, "")
+    .replace(/<bash-input>([\s\S]*?)<\/bash-input>/g, "! $1")
+    .replace(/<\/?pasted_content[^>]*>/g, "")
+    .trim();
 }
 
 function stamp(iso, timeZone) {
@@ -80,10 +94,9 @@ export function exportSession(records, timeZone) {
     (r) => (r.type === "user" || r.type === "assistant") && !r.isSidechain && !r.isMeta,
   );
   if (messages.length === 0) return null;
-  const started = messages.map((r) => r.timestamp).sort()[0];
+  const times = messages.map((r) => r.timestamp).sort();
 
   const out = [];
-  let firstPrompt = "";
   for (const record of messages) {
     const content = record.message.content;
     if (record.type === "user") {
@@ -95,11 +108,10 @@ export function exportSession(records, timeZone) {
         out.push("> [summary of the earlier conversation]\n");
         continue;
       }
-      const text = textOf(content);
+      const text = cleanPrompt(textOf(content));
       const isCommand = text.includes("<command-name>");
-      if (!isCommand && (!text.trim() || NOISE.some((n) => text.trim().startsWith(n)))) continue;
+      if (!isCommand && (!text || NOISE.some((n) => text.startsWith(n)))) continue;
       const prompt = promptOf(text);
-      if (!isCommand && !firstPrompt) firstPrompt = prompt.replace(/<\/?[\w-]+[^>]*>/g, " ");
       out.push("> " + prompt.replaceAll("\n", "\n  ") + "\n");
       continue;
     }
@@ -109,7 +121,8 @@ export function exportSession(records, timeZone) {
       else if (block.type === "tool_use") out.push("⏺ " + toolSummary(block));
     }
   }
-  return { name: `${stamp(started, timeZone)}-${slug(firstPrompt)}.txt`, text: out.join("\n") };
+  const name = `${stamp(times[0], timeZone)}-${duration(times[0], times.at(-1))}.txt`;
+  return { name, text: out.join("\n") };
 }
 
 function parseLines(text) {

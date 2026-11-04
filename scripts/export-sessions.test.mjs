@@ -16,14 +16,21 @@ const assistant = (minute, content) => ({
   message: { content },
 });
 
-test("names the file by the local start time and the first prompt, not a command", () => {
+test("names the file by the local start time and how long the session lasted", () => {
   const records = [
     user(1, "<command-name>/clear</command-name>\n<command-args></command-args>"),
-    user(2, "Делаем фазу 7, этап 1"),
-    assistant(3, [{ type: "text", text: "Начинаю." }]),
+    user(2, "Делаем фазу 7"),
+    assistant(49, [{ type: "text", text: "Готово." }]),
   ];
-  const { name } = exportSession(records, "Europe/Kyiv");
-  assert.equal(name, "2026-11-04-1901-делаем-фазу-7-этап-1.txt");
+  assert.equal(exportSession(records, "Europe/Kyiv").name, "2026-11-04-1901-48m.txt");
+});
+
+test("a session over an hour shows hours and minutes", () => {
+  const records = [
+    user(1, "старт"),
+    { ...assistant(0, [{ type: "text", text: "конец" }]), timestamp: "2026-11-04T19:06:00.000Z" },
+  ];
+  assert.equal(exportSession(records, "UTC").name, "2026-11-04-1701-2h05m.txt");
 });
 
 test("writes prompts, answers, tool calls and the head of their output", () => {
@@ -54,7 +61,8 @@ test("leaves out subagents, meta records and reminders", () => {
     user(2, "skill body", { isMeta: true }),
     user(3, "subagent prompt", { isSidechain: true }),
     user(4, "<system-reminder>x</system-reminder>"),
-    { type: "attachment", timestamp: at(5) },
+    user(5, "<task-notification><summary>Agent finished</summary></task-notification>"),
+    { type: "attachment", timestamp: at(6) },
   ];
   assert.equal(exportSession(records, "UTC").text, "> вопрос\n");
 });
@@ -68,4 +76,14 @@ test("finds the Claude Code folder of a project by its path", () => {
     claudeProjectDir("/home/raf/event-registration", "/home/raf"),
     "/home/raf/.claude/projects/-home-raf-event-registration",
   );
+});
+
+test("drops the blocks the environment adds to a prompt, with their contents", () => {
+  const records = [
+    user(1, "<ide_opened_file>The user opened the file x.md</ide_opened_file>разбей коммит на два"),
+    user(2, "<bash-input>git status</bash-input><bash-stdout>clean</bash-stdout>"),
+    user(3, "<ide_selection>selected text</ide_selection>"),
+  ];
+  // What the person typed after "!" stays, its output is the environment's.
+  assert.equal(exportSession(records, "UTC").text, "> разбей коммит на два\n\n> ! git status\n");
 });
