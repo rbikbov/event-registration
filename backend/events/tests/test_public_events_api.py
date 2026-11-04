@@ -37,11 +37,11 @@ def test_list_is_open_to_guests_and_has_free_seats(organizer: User) -> None:
     response = APIClient().get(URL)
 
     assert response.status_code == 200
-    assert response.json() == [
+    assert response.json()["results"] == [
         {
             "id": event.id,
             "title": "Meetup",
-            "starts_at": response.json()[0]["starts_at"],
+            "starts_at": response.json()["results"][0]["starts_at"],
             "capacity": 3,
             "free_seats": 2,
         }
@@ -56,19 +56,29 @@ def test_list_has_only_future_events_by_start(organizer: User) -> None:
 
     response = APIClient().get(URL)
 
-    assert [row["id"] for row in response.json()] == [earlier.id, later.id]
+    assert [row["id"] for row in response.json()["results"]] == [earlier.id, later.id]
+
+
+def test_list_puts_the_later_created_first_at_the_same_start(organizer: User) -> None:
+    starts_at = timezone.now() + timedelta(days=1)
+    first = make_event(organizer, starts_at=starts_at)
+    second = make_event(organizer, starts_at=starts_at)
+
+    response = APIClient().get(URL)
+
+    assert [row["id"] for row in response.json()["results"]] == [second.id, first.id]
 
 
 def test_list_query_count_does_not_depend_on_number_of_events(
     organizer: User, django_assert_num_queries: DjangoAssertNumQueries
 ) -> None:
     make_event(organizer)
-    with django_assert_num_queries(1):
+    with django_assert_num_queries(2):
         APIClient().get(URL)
 
     for _ in range(5):
         register(make_event(organizer).id, "a@x.io", "Ann")
-    with django_assert_num_queries(1):
+    with django_assert_num_queries(2):
         APIClient().get(URL)
 
 

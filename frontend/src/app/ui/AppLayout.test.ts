@@ -10,6 +10,7 @@ import { meQuery } from "@/entities/session";
 import { routes } from "@/shared/config";
 import { createAppI18n } from "@/shared/lib/i18n";
 import { server } from "@/shared/lib/test/msw";
+import { goOnline } from "@/shared/lib/test/online";
 
 import AppLayout from "./AppLayout.vue";
 
@@ -18,13 +19,13 @@ const user = { id: 1, email: "demo@example.com" };
 // The organizer's list as a page shows it: observed while the page is open.
 const OrgEventsList = defineComponent({
   setup() {
-    useQuery(orgEventsQuery);
+    useQuery(orgEventsQuery("upcoming", 1));
     return () => h("p", "page");
   },
 });
 
 async function mountLayout(path: string = routes.home) {
-  server.use(http.get("*/api/org/events/", () => HttpResponse.json([])));
+  server.use(http.get("*/api/org/events/", () => HttpResponse.json({ count: 0, results: [] })));
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const page = { template: "<p>page</p>" };
   const router = createRouter({
@@ -57,6 +58,22 @@ describe("AppLayout", () => {
     await flushPromises();
 
     expect(wrapper.get("main").text()).toBe("page");
+  });
+
+  it("shows one notice under the header while the browser is offline", async () => {
+    server.use(http.get("*/api/auth/me/", () => HttpResponse.json({}, { status: 401 })));
+    const { wrapper } = await mountLayout();
+    await flushPromises();
+    expect(wrapper.find("[data-offline]").exists()).toBe(false);
+
+    goOnline(false);
+    await flushPromises();
+    expect(wrapper.get("[data-offline]").text()).toBe("Нет подключения к интернету");
+    expect(wrapper.get("[data-offline]").attributes("role")).toBe("status");
+
+    goOnline(true);
+    await flushPromises();
+    expect(wrapper.find("[data-offline]").exists()).toBe(false);
   });
 
   it("shows nothing on the right while the session is being asked", async () => {
@@ -130,6 +147,31 @@ describe("AppLayout", () => {
     expect(wrapper.get("header button").text()).toBe("Выйти");
   });
 
+  it.each([
+    ["the organizer on their events", user, routes.orgEvents, "Мои события"],
+    ["a guest on the sign-in page", null, routes.login, "Вход для организатора"],
+  ])("marks the current page in the header for %s", async (_who, me, path, link) => {
+    server.use(
+      http.get("*/api/auth/me/", () =>
+        me ? HttpResponse.json(me) : HttpResponse.json({}, { status: 401 }),
+      ),
+    );
+
+    const { wrapper } = await mountLayout(path);
+    await flushPromises();
+
+    expect(wrapper.get('header nav a[aria-current="page"]').text()).toBe(link);
+  });
+
+  it("marks no link of the header nav on a page it does not lead to", async () => {
+    server.use(http.get("*/api/auth/me/", () => HttpResponse.json(user)));
+
+    const { wrapper } = await mountLayout(routes.home);
+    await flushPromises();
+
+    expect(wrapper.find("header nav [aria-current]").exists()).toBe(false);
+  });
+
   it("signs out, forgets the organizer's data and opens the public events", async () => {
     let signedOut = false;
     server.use(
@@ -141,7 +183,10 @@ describe("AppLayout", () => {
     );
     const { wrapper, router, queryClient } = await mountLayout(routes.orgEvents);
     await flushPromises();
-    expect(queryClient.getQueryData(orgEventsQuery.queryKey)).toEqual([]);
+    expect(queryClient.getQueryData(orgEventsQuery("upcoming", 1).queryKey)).toEqual({
+      count: 0,
+      results: [],
+    });
 
     await wrapper.get("header button").trigger("click");
     await flushPromises();
@@ -149,7 +194,7 @@ describe("AppLayout", () => {
     expect(signedOut).toBe(true);
     expect(router.currentRoute.value.path).toBe(routes.home);
     expect(queryClient.getQueryData(meQuery.queryKey)).toBeNull();
-    expect(queryClient.getQueryData(orgEventsQuery.queryKey)).toBeUndefined();
+    expect(queryClient.getQueryData(orgEventsQuery("upcoming", 1).queryKey)).toBeUndefined();
     expect(links(wrapper)).toContainEqual(["Вход для организатора", routes.login]);
   });
 

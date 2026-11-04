@@ -7,12 +7,15 @@ import { useRoute } from "vue-router";
 import type { OrgEvent } from "@/entities/event";
 import { orgEventPath } from "@/shared/config";
 import { formatMoment } from "@/shared/lib/moment-format";
+import { pageFromQuery } from "@/shared/lib/page-query";
+import { FilterLink } from "@/shared/ui/filter-link";
+import { PageNav } from "@/shared/ui/page-nav";
 import { QueryState } from "@/shared/ui/query-state";
 import { Alert, AlertDescription } from "@/shared/ui/shadcn/alert";
 import { Button } from "@/shared/ui/shadcn/button";
 
 import { orgRegistrationsQuery, type OrgRegistration } from "../api/registrations";
-import { countsChanged, pageCount, pageFromQuery } from "../model/participant-pages";
+import { countsChanged, pageCount } from "../model/participant-pages";
 import {
   registrationStatuses,
   statusFilter,
@@ -72,17 +75,14 @@ function statusText(row: OrgRegistration): string {
   <section>
     <h2 class="sr-only">{{ t("participants") }}</h2>
     <nav class="mt-3 flex flex-wrap gap-2" :aria-label="t('filter')">
-      <Button
+      <FilterLink
         v-for="value in filters"
         :key="value ?? 'all'"
-        :variant="value === status ? 'default' : 'outline'"
-        size="sm"
-        as-child
+        :to="link(value)"
+        :current="value === status"
       >
-        <RouterLink :to="link(value)" :aria-current="value === status ? 'true' : undefined">
-          {{ t(`filters.${value ?? "all"}`) }}
-        </RouterLink>
-      </Button>
+        {{ t(`filters.${value ?? "all"}`) }}
+      </FilterLink>
     </nav>
 
     <Alert v-if="hasUpdates" class="mt-4" role="status">
@@ -142,15 +142,13 @@ function statusText(row: OrgRegistration): string {
       </div>
     </QueryState>
 
-    <nav v-if="pages > 1" class="mt-4 flex items-center gap-3" :aria-label="t('pages')">
-      <Button v-if="page > 1" variant="outline" size="sm" as-child>
-        <RouterLink :to="link(status, page - 1)">{{ t("previous") }}</RouterLink>
-      </Button>
-      <span class="text-muted-foreground text-sm">{{ t("pageOf", { page, pages }) }}</span>
-      <Button v-if="page < pages" variant="outline" size="sm" as-child>
-        <RouterLink :to="link(status, page + 1)">{{ t("next") }}</RouterLink>
-      </Button>
-    </nav>
+    <PageNav
+      class="mt-4"
+      :page="page"
+      :pages="pages"
+      :link="(toPage: number) => link(status, toPage)"
+      :label="t('pages')"
+    />
   </section>
 </template>
 
@@ -168,9 +166,6 @@ function statusText(row: OrgRegistration): string {
   "refresh": "Обновить",
   "refreshing": "Обновляем…",
   "pages": "Страницы участников",
-  "pageOf": "Страница {page} из {pages}",
-  "previous": "Назад",
-  "next": "Вперёд",
   "pastEnd": "На этой странице никого нет.",
   "lastPage": "К последней странице",
   "participantsError": "Не удалось загрузить участников",

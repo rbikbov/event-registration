@@ -3,7 +3,13 @@ import { flushPromises, mount } from "@vue/test-utils";
 import { delay, http, HttpResponse } from "msw";
 import { describe, expect, it } from "vitest";
 
-import { eventFormInput, orgEventQuery, type OrgEvent } from "@/entities/event";
+import {
+  eventFormInput,
+  orgEventQuery,
+  orgEventsQuery,
+  publicEventsQuery,
+  type OrgEvent,
+} from "@/entities/event";
 import { createAppI18n } from "@/shared/lib/i18n";
 import { server } from "@/shared/lib/test/msw";
 
@@ -87,6 +93,17 @@ describe("OrgEventEditPage", () => {
     expect(saveButton(wrapper).attributes("disabled")).toBeDefined();
   });
 
+  it("counts the characters of the title and the description from the event's values", async () => {
+    const { wrapper } = mountPage();
+
+    expect(wrapper.get("#title-count").text()).toBe("6/200");
+    expect(wrapper.get("#description-count").text()).toBe("5/2000");
+
+    await type(wrapper, { description: "Talks and pizza" });
+
+    expect(wrapper.get("#description-count").text()).toBe("15/2000");
+  });
+
   // The number field applies what was typed on blur, and a press on the button blurs it only
   // after the press has met a disabled button: one click must still save.
   it("lets the button be pressed while a typed capacity is not applied yet", async () => {
@@ -101,6 +118,8 @@ describe("OrgEventEditPage", () => {
     const bodies = patched();
     const { wrapper, queryClient } = mountPage();
     queryClient.setQueryData(orgEventQuery(7).queryKey, event);
+    queryClient.setQueryData(orgEventsQuery("past", 2).queryKey, { count: 0, results: [] });
+    queryClient.setQueryData(publicEventsQuery("past", 2).queryKey, { count: 0, results: [] });
 
     await type(wrapper, { title: "Renamed", capacity: "5" });
     await submit(wrapper);
@@ -109,6 +128,12 @@ describe("OrgEventEditPage", () => {
     expect(wrapper.get('[role="status"]').text()).toBe("Сохранено");
     // Its counts were read after the commit: a snapshot of a later registration may be newer.
     expect(queryClient.getQueryData(orgEventQuery(7).queryKey)).toBe(event);
+    expect(queryClient.getQueryState(orgEventQuery(7).queryKey)?.isInvalidated).toBe(false);
+    // Every page of both lists shows the event's title, date and seats.
+    expect(queryClient.getQueryState(orgEventsQuery("past", 2).queryKey)?.isInvalidated).toBe(true);
+    expect(queryClient.getQueryState(publicEventsQuery("past", 2).queryKey)?.isInvalidated).toBe(
+      true,
+    );
     // The saved values are the new starting point.
     expect(saveButton(wrapper).attributes("disabled")).toBeDefined();
   });

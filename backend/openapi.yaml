@@ -69,8 +69,29 @@ paths:
   /api/events/:
     get:
       operationId: events_list
-      description: Future events with their free seat count (full ones stay in the
+      description: |-
+        A page of upcoming or past events with their free seat count (full ones stay in the
         list), for everyone.
+      parameters:
+      - in: query
+        name: page
+        schema:
+          type: integer
+          maximum: 1000000
+          minimum: 1
+          default: 1
+      - in: query
+        name: period
+        schema:
+          enum:
+          - upcoming
+          - past
+          type: string
+          default: upcoming
+          minLength: 1
+        description: |-
+          * `upcoming` - upcoming
+          * `past` - past
       tags:
       - events
       security:
@@ -80,9 +101,13 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/PublicEventList'
+                $ref: '#/components/schemas/PublicEventPage'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
           description: ''
   /api/events/{event_id}/registrations/:
     post:
@@ -202,8 +227,29 @@ paths:
   /api/org/events/:
     get:
       operationId: org_events_list
-      description: The signed-in organizer's own events; creating one makes the caller
+      description: |-
+        The signed-in organizer's own events, a page of a period; creating one makes the caller
         its organizer.
+      parameters:
+      - in: query
+        name: page
+        schema:
+          type: integer
+          maximum: 1000000
+          minimum: 1
+          default: 1
+      - in: query
+        name: period
+        schema:
+          enum:
+          - upcoming
+          - past
+          type: string
+          default: upcoming
+          minLength: 1
+        description: |-
+          * `upcoming` - upcoming
+          * `past` - past
       tags:
       - org
       security:
@@ -213,13 +259,18 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/Event'
+                $ref: '#/components/schemas/OrgEventPage'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
           description: ''
     post:
       operationId: org_events_create
-      description: The signed-in organizer's own events; creating one makes the caller
+      description: |-
+        The signed-in organizer's own events, a page of a period; creating one makes the caller
         its organizer.
       tags:
       - org
@@ -667,6 +718,20 @@ components:
       - starts_at
       - title
       - waitlisted
+    OrgEventPage:
+      type: object
+      description: A page of the organizer's events; `count` is the number of events
+        of the period.
+      properties:
+        count:
+          type: integer
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Event'
+      required:
+      - count
+      - results
     OrgRegistration:
       type: object
       description: |-
@@ -769,6 +834,20 @@ components:
       - id
       - starts_at
       - title
+    PublicEventPage:
+      type: object
+      description: A page of events for everyone; `count` is the number of events
+        of the period.
+      properties:
+        count:
+          type: integer
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicEventList'
+      required:
+      - count
+      - results
     RegisterRequestRequest:
       type: object
       properties:

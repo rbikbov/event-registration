@@ -19,6 +19,7 @@ const health = useQuery(healthQuery);
     <QueryState
       class="mt-6"
       :query="health"
+      :health-link="false"
       :error-text="t('unavailable')"
       :refresh-error-text="t('refreshError')"
     >

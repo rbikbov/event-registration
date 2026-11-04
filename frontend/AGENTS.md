@@ -7,16 +7,16 @@
 
 ```text
 src/main.ts          точка входа: mountApp("#app")
-src/app/             приложение: App.vue, router.ts, query-client.ts; ui/AppLayout — шапка (по meQuery, выход) и общий <main>
+src/app/             приложение: App.vue, router.ts, query-client.ts; ui/AppLayout — шапка (по meQuery, выход), плашка «Нет подключения к интернету» и общий <main>
 src/pages/<page>/    экраны: ui/, api/ (запросы, нужные только странице), index.ts; not-found — маршрут `routes.notFound`, последний
 src/pages/org-event/ макет события организатора: запрос, поток, шапка, вкладки —
                      org-event-participants, org-checkin и org-event-edit (дочерние маршруты)
 src/entities/session/ кто вошёл: meQuery (null — гость), logout, forgetUserData — сброс данных прежнего пользователя при входе и выходе
-src/entities/event/  события: orgEventsQuery / orgEventQuery(id) / orgEventLive(id) / orgEventProbe(id) (организатор), publicEventsQuery / publicEventQuery(id) / publicEventLive(id) / publicEventProbe(id) (публичные); проба — статус события после отказа потока, без записи в его кэш; модель формы события (создание и редактирование) — `model/event-form.ts`
+src/entities/event/  события: orgEventsQuery / orgEventQuery(id) / orgEventLive(id) / orgEventProbe(id) (организатор), publicEventsQuery / publicEventQuery(id) / publicEventLive(id) / publicEventProbe(id) (публичные); проба — статус события после отказа потока, без записи в его кэш; модель формы события (создание и редактирование) — `model/event-form.ts`; списки — по периоду и странице (`orgEventsQuery(period, page)`, `publicEventsQuery(period, page)`), после изменения событий сбрасываются все страницы — `orgEventListsKey` / `publicEventListsKey`, число страниц — `eventPageCount(count)`; период списка — `periodFromQuery` (`?period=past`, иначе предстоящие)
 src/shared/api/      клиент API, AppError, unwrap, сгенерированный schema.d.ts. Правила: src/shared/api/AGENTS.md
-src/shared/ui/       самописные компоненты (query-state — загрузка и ошибки запроса, `RetryAlert` — ошибка с повтором; error-state — `ErrorState` на месте страницы и `NotFound` над ним; expandable-text — текст до 4 строк с «Развернуть»); ui/shadcn/ — сгенерированные shadcn-vue, руками не правятся
+src/shared/ui/       самописные компоненты (query-state — загрузка и ошибки запроса, при первой ошибке — ссылка на `/health`, `RetryAlert` — ошибка с повтором; error-state — `ErrorState` на месте страницы и `NotFound` над ним; expandable-text — текст до 4 строк с «Развернуть»; nav-link — ссылка шапки и вкладок, текущая страница выделена и с `aria-current`; char-counter — «12/200» под полем с пределом; filter-link — фильтр списка в адресе (статус, период), выбранный выделен и с `aria-current`; page-nav — страницы списка: первая, предыдущая, номера рядом с текущей, следующая, последняя, номер — в адресе); ui/shadcn/ — сгенерированные shadcn-vue, руками не правятся
 src/shared/config/   routes — все пути приложения
-src/shared/lib/      утилиты; safe-next — `?next=` входа, только путь этого приложения; moment-format — `formatMoment`, время отметки: дата, если не сегодня; live-source (`LiveSource` — данные от сервера, `sseSource` — по SSE) и use-live — подписка на время жизни компонента; lib/test/ — MSW, фейк EventSource и setup для Vitest
+src/shared/lib/      утилиты; safe-next — `?next=` входа, только путь этого приложения; page-query — `pageFromQuery`, номер страницы из `?page=`; moment-format — `formatMoment`, время отметки: дата, если не сегодня; live-source (`LiveSource` — данные от сервера, `sseSource` — по SSE) и use-live — подписка на время жизни компонента; lib/test/ — MSW, фейк EventSource, `goOnline` (сеть браузера) и setup для Vitest
 src/widgets|features/            появляются с первым срезом, пустыми не создаются
 ```
 

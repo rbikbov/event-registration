@@ -4,12 +4,20 @@ import { api, unwrap } from "@/shared/api";
 import type { components, paths } from "@/shared/api";
 import { sseSource, type LiveSource } from "@/shared/lib/live-source";
 
+import type { EventPeriod } from "../model/event-period";
+
 export type OrgEvent = components["schemas"]["OrgEvent"];
 
-export const orgEventsQuery = queryOptions({
-  queryKey: ["org", "events"],
-  queryFn: () => unwrap(api.GET("/api/org/events/")),
-});
+// Every page of the list: what to invalidate when the events change. Not a prefix of the
+// event's own key, `["org", "events", id]`, which the stream keeps.
+export const orgEventListsKey = ["org", "events", "list"] as const;
+
+export function orgEventsQuery(period: EventPeriod, page: number) {
+  return queryOptions({
+    queryKey: [...orgEventListsKey, period, page],
+    queryFn: () => unwrap(api.GET("/api/org/events/", { params: { query: { period, page } } })),
+  });
+}
 
 function readOrgEvent(id: number) {
   return unwrap(api.GET("/api/org/events/{event_id}/", { params: { path: { event_id: id } } }));

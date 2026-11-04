@@ -2,6 +2,9 @@ import { QueryClient, VueQueryPlugin, useQuery } from "@tanstack/vue-query";
 import { flushPromises, mount } from "@vue/test-utils";
 import { describe, expect, it } from "vitest";
 import { defineComponent, h } from "vue";
+import { createMemoryHistory, createRouter } from "vue-router";
+
+import { routes } from "@/shared/config";
 
 import { createAppI18n } from "@/shared/lib/i18n";
 
@@ -9,7 +12,11 @@ import { QueryState } from ".";
 
 // A real query, not a hand-made state: the case under test is how TanStack Query reports a
 // failed refetch (isError with the previous data kept).
-function mountWith(load: () => Promise<string>) {
+function mountWith(load: () => Promise<string>, props: { healthLink?: boolean } = {}) {
+  const router = createRouter({
+    history: createMemoryHistory(),
+    routes: [{ path: routes.health, component: { template: "<p>health</p>" } }],
+  });
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   const Page = defineComponent({
     setup() {
@@ -17,13 +24,18 @@ function mountWith(load: () => Promise<string>) {
       return () =>
         h(
           QueryState,
-          { query, errorText: "Не удалось загрузить", refreshErrorText: "Не удалось обновить" },
+          {
+            query,
+            errorText: "Не удалось загрузить",
+            refreshErrorText: "Не удалось обновить",
+            ...props,
+          },
           { default: ({ data }: { data: string }) => h("p", { "data-shown": "" }, data) },
         );
     },
   });
   const wrapper = mount(Page, {
-    global: { plugins: [[VueQueryPlugin, { queryClient }], createAppI18n()] },
+    global: { plugins: [router, [VueQueryPlugin, { queryClient }], createAppI18n()] },
   });
   return { wrapper, queryClient };
 }
@@ -54,6 +66,23 @@ describe("QueryState", () => {
 
     expect(wrapper.find('[role="alert"]').exists()).toBe(false);
     expect(wrapper.get("[data-shown]").text()).toBe("Meetup");
+  });
+
+  it("links a failed first load to the service status", async () => {
+    const { wrapper } = mountWith(() => Promise.reject(new Error("down")));
+    await flushPromises();
+
+    const link = wrapper.get('[role="alert"] a');
+    expect(link.text()).toBe("Состояние сервиса");
+    expect(link.attributes("href")).toBe(routes.health);
+  });
+
+  it("leaves the link out where the service status is the page itself", async () => {
+    const { wrapper } = mountWith(() => Promise.reject(new Error("down")), { healthLink: false });
+    await flushPromises();
+
+    expect(wrapper.get('[role="alert"]').text()).toContain("Не удалось загрузить");
+    expect(wrapper.find('[role="alert"] a').exists()).toBe(false);
   });
 
   it("keeps the data on screen when a refetch fails, with the error above it", async () => {

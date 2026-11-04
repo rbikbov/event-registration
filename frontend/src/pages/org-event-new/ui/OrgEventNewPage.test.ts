@@ -59,15 +59,17 @@ describe("OrgEventNewPage", () => {
       }),
     );
     const { wrapper, router, queryClient } = await mountPage();
-    queryClient.setQueryData(orgEventsQuery.queryKey, []);
-    queryClient.setQueryData(publicEventsQuery.queryKey, []);
+    queryClient.setQueryData(orgEventsQuery("past", 2).queryKey, { count: 0, results: [] });
+    queryClient.setQueryData(publicEventsQuery("past", 2).queryKey, { count: 0, results: [] });
 
     await fill(wrapper, { ...valid(), description: "Talks" });
 
     expect(body).toMatchObject({ title: "Meetup", description: "Talks", capacity: 30 });
     expect(router.currentRoute.value.path).toBe(routes.orgEvents);
-    expect(queryClient.getQueryState(orgEventsQuery.queryKey)?.isInvalidated).toBe(true);
-    expect(queryClient.getQueryState(publicEventsQuery.queryKey)?.isInvalidated).toBe(true);
+    expect(queryClient.getQueryState(orgEventsQuery("past", 2).queryKey)?.isInvalidated).toBe(true);
+    expect(queryClient.getQueryState(publicEventsQuery("past", 2).queryKey)?.isInvalidated).toBe(
+      true,
+    );
   });
 
   it("sends the description with its line breaks", async () => {
@@ -83,6 +85,17 @@ describe("OrgEventNewPage", () => {
     await fill(wrapper, { ...valid(), description: "Talks\n\nPizza after" });
 
     expect(body).toMatchObject({ description: "Talks\n\nPizza after" });
+  });
+
+  it("counts the characters of the title and the description against their limits", async () => {
+    const { wrapper } = await mountPage();
+
+    await type(wrapper, { title: "Meetup", description: "a".repeat(2001) });
+
+    expect(wrapper.get("#title-count").text()).toBe("6/200");
+    expect(wrapper.get("#title").attributes("aria-describedby")).toBe("title-count");
+    expect(wrapper.get("#description-count").text()).toBe("2001/2000");
+    expect(wrapper.get("#description-count").classes()).toContain("text-destructive");
   });
 
   it("shows field errors without sending a request", async () => {

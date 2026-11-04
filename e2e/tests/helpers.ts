@@ -56,6 +56,21 @@ export async function createEvent(
   await page.context().close();
 }
 
+// An event created through the API by a signed-in organizer: quicker than the form when a test
+// needs many, or one starting in seconds. Django checks the CSRF header against the cookie.
+export async function postEvent(
+  organizer: Page,
+  { title, startsAt }: { title: string; startsAt: Date },
+): Promise<void> {
+  const cookies = await organizer.context().cookies();
+  const csrf = cookies.find((cookie) => cookie.name === "csrftoken")?.value ?? "";
+  const response = await organizer.request.post("/api/org/events/", {
+    headers: { "X-CSRFToken": csrf },
+    data: { title, starts_at: startsAt.toISOString(), capacity: 5 },
+  });
+  expect(response.status()).toBe(201);
+}
+
 // A participant registers on the event page, reached from the public list.
 export async function registerOn(
   page: Page,

@@ -4,7 +4,7 @@ import { computed, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useRoute } from "vue-router";
 
-import { publicEventsQuery } from "@/entities/event";
+import { publicEventListsKey, publicEventQuery } from "@/entities/event";
 import { AppError } from "@/shared/api";
 import { eventPath } from "@/shared/config";
 import { formatMoment } from "@/shared/lib/moment-format";
@@ -43,9 +43,13 @@ const {
       (old) =>
         old && { status: result.status, name: old.name, checked_in_at: null, event: old.event },
     );
+    const eventId = queryClient.getQueryData(query.value.queryKey)?.event.id;
     await queryClient.invalidateQueries({ queryKey: query.value.queryKey });
     // A freed seat changes the free seats of the event and of the list.
-    await queryClient.invalidateQueries({ queryKey: publicEventsQuery.queryKey });
+    if (eventId !== undefined) {
+      await queryClient.invalidateQueries({ queryKey: publicEventQuery(eventId).queryKey });
+    }
+    await queryClient.invalidateQueries({ queryKey: publicEventListsKey });
   },
   // 409: the ticket was checked in while the page was open. Not a failure: the reread shows it.
   onError: async (error) => {

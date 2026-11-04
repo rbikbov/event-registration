@@ -1,28 +1,15 @@
-import type { LocationQueryValue } from "vue-router";
-
 import type { OrgEvent } from "@/entities/event";
 
 import type { RegistrationStatus } from "./status-filter";
 
-// PAGE_SIZE and the bound of `page` in backend/registrations (services.py, serializers.py).
+// PAGE_SIZE in backend/registrations/services.py.
 const PAGE_SIZE = 50;
-const LAST_PAGE = 1_000_000;
 
 /** The counts of the event that tell what a page of participants shows. */
 export type RegistrationCounts = Pick<
   OrgEvent,
   "confirmed" | "waitlisted" | "cancelled" | "checked_in"
 >;
-
-/** The page from `?page=` of the URL; anything but a whole number in range is page 1. */
-export function pageFromQuery(
-  value: LocationQueryValue | LocationQueryValue[] | undefined,
-): number {
-  const first = Array.isArray(value) ? value[0] : value;
-  if (typeof first !== "string" || !/^\d+$/.test(first)) return 1;
-  const page = Number(first);
-  return page >= 1 && page <= LAST_PAGE ? page : 1;
-}
 
 /** How many pages the filter has, at least one: the list does not count itself. */
 export function pageCount(counts: RegistrationCounts, status: RegistrationStatus | null): number {

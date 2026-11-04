@@ -89,7 +89,7 @@ describe("a guest on a public page", () => {
   it("stays there and is offered to sign in", async () => {
     server.use(
       http.get("*/api/auth/me/", () => HttpResponse.json({}, { status: 401 })),
-      http.get("*/api/events/", () => HttpResponse.json([])),
+      http.get("*/api/events/", () => HttpResponse.json({ count: 0, results: [] })),
     );
     const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
     const router = createAppRouter(queryClient, createMemoryHistory());

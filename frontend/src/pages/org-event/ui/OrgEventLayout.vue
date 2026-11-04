@@ -10,6 +10,7 @@ import { checkinPath, orgEventEditPath, orgEventPath, routes } from "@/shared/co
 import { useLive } from "@/shared/lib/use-live";
 import { ErrorState, NotFound } from "@/shared/ui/error-state";
 import { ExpandableText } from "@/shared/ui/expandable-text";
+import { NavLink } from "@/shared/ui/nav-link";
 import { QueryState } from "@/shared/ui/query-state";
 import { Alert, AlertDescription } from "@/shared/ui/shadcn/alert";
 import { Button } from "@/shared/ui/shadcn/button";
@@ -72,13 +73,11 @@ async function probe(id: number) {
   }
 }
 
-const tabs = computed(() =>
-  [
-    { key: "participants", to: orgEventPath(eventId.value), route: routes.orgEvent },
-    { key: "checkin", to: checkinPath(eventId.value), route: routes.orgCheckin },
-    { key: "edit", to: orgEventEditPath(eventId.value), route: routes.orgEventEdit },
-  ].map((tab) => ({ ...tab, current: tab.route === tabRoute.value })),
-);
+const tabs = computed(() => [
+  { key: "participants", to: orgEventPath(eventId.value) },
+  { key: "checkin", to: checkinPath(eventId.value) },
+  { key: "edit", to: orgEventEditPath(eventId.value) },
+]);
 
 function counters(loaded: OrgEvent) {
   return [
@@ -139,17 +138,9 @@ function counters(loaded: OrgEvent) {
 
       <template v-if="!event.isPending.value">
         <nav class="mt-6 flex flex-wrap gap-2 border-b pb-2" :aria-label="t('tabs')">
-          <Button
-            v-for="tab in tabs"
-            :key="tab.key"
-            :variant="tab.current ? 'default' : 'ghost'"
-            size="sm"
-            as-child
-          >
-            <RouterLink :to="tab.to" :aria-current="tab.current ? 'page' : undefined">
-              {{ t(`tab.${tab.key}`) }}
-            </RouterLink>
-          </Button>
+          <NavLink v-for="tab in tabs" :key="tab.key" :to="tab.to">
+            {{ t(`tab.${tab.key}`) }}
+          </NavLink>
         </nav>
 
         <!-- The check-in form works without the event once the GET has answered with something

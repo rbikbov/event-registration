@@ -91,21 +91,24 @@ describe("LoginPage", () => {
     );
     const { wrapper, router, queryClient } = await mountPage();
     // Left by the organizer whose session ended with a 401 in this tab.
-    queryClient.setQueryData(orgEventsQuery.queryKey, [
-      {
-        id: 1,
-        title: "Not yours",
-        starts_at: "2030-05-01T18:00:00Z",
-        capacity: 10,
-        confirmed: 3,
-        waitlisted: 0,
-      },
-    ]);
+    queryClient.setQueryData(orgEventsQuery("upcoming", 1).queryKey, {
+      count: 1,
+      results: [
+        {
+          id: 1,
+          title: "Not yours",
+          starts_at: "2030-05-01T18:00:00Z",
+          capacity: 10,
+          confirmed: 3,
+          waitlisted: 0,
+        },
+      ],
+    });
 
     await fill(wrapper, "other@example.com", "secret");
 
     expect(router.currentRoute.value.path).toBe(routes.orgEvents);
-    expect(queryClient.getQueryData(orgEventsQuery.queryKey)).toBeUndefined();
+    expect(queryClient.getQueryData(orgEventsQuery("upcoming", 1).queryKey)).toBeUndefined();
     expect(queryClient.getQueryData(meQuery.queryKey)).toEqual({
       id: 2,
       email: "other@example.com",

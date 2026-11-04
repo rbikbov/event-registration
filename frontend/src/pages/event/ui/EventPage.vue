@@ -8,7 +8,7 @@ import {
   publicEventLive,
   publicEventProbe,
   publicEventQuery,
-  publicEventsQuery,
+  publicEventListsKey,
 } from "@/entities/event";
 import { AppError } from "@/shared/api";
 import { useLive } from "@/shared/lib/use-live";
@@ -86,10 +86,8 @@ const {
 } = useMutation({
   mutationFn: (values: RegistrationFormInput) => registerForEvent(eventId.value, values),
   // Only on success: a failed registration changed nothing. The free seats of this event come
-  // with the snapshot of the registration; `exact` keeps the list from refreshing the event too,
-  // which lives under its key.
-  onSuccess: () =>
-    queryClient.invalidateQueries({ queryKey: publicEventsQuery.queryKey, exact: true }),
+  // with the snapshot of the registration; the list key leaves the event's own key alone.
+  onSuccess: () => queryClient.invalidateQueries({ queryKey: publicEventListsKey }),
 });
 
 // The router reuses this component when the id changes (history between two events): the

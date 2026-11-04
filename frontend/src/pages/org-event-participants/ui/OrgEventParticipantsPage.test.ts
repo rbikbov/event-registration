@@ -211,7 +211,14 @@ describe("OrgEventParticipantsPage", () => {
     return wrapper.get('nav[aria-label="Страницы участников"]');
   }
 
-  it("asks the server for the page from the URL and links its neighbours", async () => {
+  // The page numbers of the bar, the current one in brackets.
+  function pageNumbers(wrapper: Awaited<ReturnType<typeof mountPage>>["wrapper"]) {
+    return pageNav(wrapper)
+      .findAll("[data-type='page']")
+      .map((b) => (b.attributes("aria-current") === "page" ? `[${b.text()}]` : b.text()));
+  }
+
+  it("asks the server for the page from the URL and goes to the next one", async () => {
     const asked: (string | null)[] = [];
     server.use(
       http.get(REGISTRATIONS, ({ request }) => {
@@ -220,28 +227,27 @@ describe("OrgEventParticipantsPage", () => {
       }),
     );
 
-    const { wrapper } = await mountPage({ page: "2" }, crowded);
-    await flushPromises();
+    const { wrapper, router } = await mountPage({ page: "2" }, crowded);
+    await vi.waitFor(() => expect(asked).toEqual(["2"]));
+    expect(pageNumbers(wrapper)).toEqual(["1", "[2]", "3"]);
 
-    expect(asked).toEqual(["2"]);
-    const nav = pageNav(wrapper);
-    expect(nav.text()).toContain("Страница 2 из 3");
-    expect(nav.get("a:first-child").attributes("href")).toBe(orgEventPath(7));
-    expect(nav.findAll("a").map((a) => a.text())).toEqual(["Назад", "Вперёд"]);
-    expect(nav.findAll("a")[1]?.attributes("href")).toBe(`${orgEventPath(7)}?page=3`);
+    await pageNav(wrapper).get('button[aria-label="Следующая страница"]').trigger("click");
+
+    await vi.waitFor(() => expect(asked).toEqual(["2", "3"]));
+    expect(router.currentRoute.value.fullPath).toBe(`${orgEventPath(7)}?page=3`);
   });
 
-  it("counts the pages of the filter and keeps it in the page links", async () => {
+  it("counts the pages of the filter and keeps it on another page", async () => {
     server.use(http.get(REGISTRATIONS, () => HttpResponse.json([ann])));
 
-    const { wrapper } = await mountPage({ status: "confirmed" }, crowded);
-    await flushPromises();
+    const { wrapper, router } = await mountPage({ status: "confirmed" }, crowded);
+    await vi.waitFor(() => expect(pageNumbers(wrapper)).toEqual(["[1]", "2"]));
 
-    const nav = pageNav(wrapper);
-    expect(nav.text()).toContain("Страница 1 из 2");
-    expect(nav.findAll("a").map((a) => a.attributes("href"))).toEqual([
-      `${orgEventPath(7)}?status=confirmed&page=2`,
-    ]);
+    await pageNav(wrapper).get('button[aria-label="Страница 2"]').trigger("click");
+
+    await vi.waitFor(() =>
+      expect(router.currentRoute.value.fullPath).toBe(`${orgEventPath(7)}?status=confirmed&page=2`),
+    );
   });
 
   it("has no page links when everything fits on one page", async () => {

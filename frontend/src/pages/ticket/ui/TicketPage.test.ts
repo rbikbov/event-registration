@@ -6,7 +6,7 @@ import { createMemoryHistory, createRouter } from "vue-router";
 
 import TicketPage from "./TicketPage.vue";
 
-import { publicEventsQuery } from "@/entities/event";
+import { publicEventQuery, publicEventsQuery } from "@/entities/event";
 import { routes, ticketPath } from "@/shared/config";
 import { createAppI18n } from "@/shared/lib/i18n";
 import { server } from "@/shared/lib/test/msw";
@@ -216,13 +216,24 @@ describe("TicketPage", () => {
       }),
     );
     const { wrapper, queryClient } = await mountPage();
-    queryClient.setQueryData(publicEventsQuery.queryKey, []);
+    // The second page of the list and the event, as the participant may have opened them.
+    const listPage = publicEventsQuery("past", 2).queryKey;
+    queryClient.setQueryData(listPage, { count: 0, results: [] });
+    queryClient.setQueryData(publicEventQuery(event.id).queryKey, {
+      ...event,
+      description: "",
+      capacity: 5,
+      free_seats: 0,
+    });
 
     await confirmCancel(wrapper);
 
     await vi.waitFor(() => expect(wrapper.text()).toContain("Регистрация отменена"));
     expect(cancels).toBe(1);
-    expect(queryClient.getQueryState(publicEventsQuery.queryKey)?.isInvalidated).toBe(true);
+    expect(queryClient.getQueryState(listPage)?.isInvalidated).toBe(true);
+    expect(queryClient.getQueryState(publicEventQuery(event.id).queryKey)?.isInvalidated).toBe(
+      true,
+    );
   });
 
   it("shows the cancellation even when rereading the ticket after it fails", async () => {
