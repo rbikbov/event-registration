@@ -31,7 +31,7 @@ frontend/             Vue 3 + Vite, слои FSD в src/: app, pages, entities, 
 e2e/                  Playwright; правила — e2e/AGENTS.md
 Makefile              все команды (make help); docker-compose.yml — сервисы
 scripts/              скрипты репозитория с тестами: pre-push.mjs, worktime.mjs,
-                      check-action-refs.mjs, check-readme-tests.mjs
+                      check-action-refs.mjs, check-readme-tests.mjs, export-sessions.mjs
 docs/task.md          текст задания — не редактируется
 docs/decisions.md     лог решений с временем
 docs/development.md   руководство разработчика: установка, команды, проверки, нюансы
