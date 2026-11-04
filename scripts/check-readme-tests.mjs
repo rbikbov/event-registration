@@ -1,19 +1,12 @@
 // Checks that every test the README «Требования и тесты» tables point to exists: the file, the
 // pytest function after `::`, a `test_x_*` glob and a test title in «…». Without it the table
 // drifts from the tests at the first rename.
-import { readdirSync, readFileSync } from "node:fs";
+import { execFileSync } from "node:child_process";
+import { existsSync, readFileSync } from "node:fs";
 import { basename, join } from "node:path";
 import { pathToFileURL } from "node:url";
 
 const SECTION = "## Требования и тесты";
-const SKIP_DIRS = new Set([
-  ".git",
-  "node_modules",
-  ".venv",
-  "__pycache__",
-  "dist",
-  ".pytest_cache",
-]);
 // Relative paths in the table are from these roots (README says so above the table).
 const ROOTS = ["", "backend/", "frontend/src/", "e2e/tests/"];
 const FILE_REF = /^([\w./-]+\.(?:py|ts|mjs|md|vue))(?:::(\w+))?$/;
@@ -86,15 +79,17 @@ export function brokenTestRefs(readme, fs) {
   return broken;
 }
 
-function repoFiles(dir = "") {
-  const files = [];
-  for (const entry of readdirSync(dir || ".", { withFileTypes: true })) {
-    if (SKIP_DIRS.has(entry.name)) continue;
-    const path = join(dir, entry.name);
-    if (entry.isDirectory()) files.push(...repoFiles(path));
-    else files.push(path);
-  }
-  return files;
+// The files git sees: tracked and new ones, not ignored. A walk of the disk would also find the
+// copies in ignored folders (the reviewer's worktree in .claude/worktrees/) and call every bare
+// file name ambiguous. A tracked file deleted but not yet committed is left out.
+export function repoFiles(cwd = ".") {
+  const output = execFileSync(
+    "git",
+    ["ls-files", "-z", "--cached", "--others", "--exclude-standard"],
+    { cwd, encoding: "utf8" },
+  );
+  const files = output.split("\0").filter((file) => file && existsSync(join(cwd, file)));
+  return [...new Set(files)];
 }
 
 function main() {

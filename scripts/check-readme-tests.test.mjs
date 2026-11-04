@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { test } from "node:test";
 
-import { brokenTestRefs } from "./check-readme-tests.mjs";
+import { brokenTestRefs, repoFiles } from "./check-readme-tests.mjs";
 
 const FILES = {
   "backend/accounts/tests/test_auth_api.py":
@@ -103,4 +107,33 @@ test("fails when the section is missing", () => {
   assert.deepEqual(brokenTestRefs("# Project\n", fs), [
     "README has no «## Требования и тесты» table",
   ]);
+});
+
+// A worktree of the reviewer in an ignored folder holds a copy of every test: its files must
+// not make a bare file name ambiguous. A new test not yet added to git still counts.
+test("repo files are those git sees: ignored folders and deleted files are left out", () => {
+  const repo = mkdtempSync(join(tmpdir(), "check-readme-"));
+  try {
+    const git = (...args) => execFileSync("git", args, { cwd: repo, stdio: "ignore" });
+    const write = (path, text = "") => {
+      mkdirSync(join(repo, path, ".."), { recursive: true });
+      writeFileSync(join(repo, path), text);
+    };
+    git("init", "-q");
+    write(".gitignore", ".claude/worktrees/\n");
+    write("backend/tests/test_kept.py");
+    write("backend/tests/test_deleted.py");
+    git("add", ".");
+    rmSync(join(repo, "backend/tests/test_deleted.py"));
+    write("backend/tests/test_new.py");
+    write(".claude/worktrees/review/backend/tests/test_kept.py");
+
+    assert.deepEqual(repoFiles(repo).sort(), [
+      ".gitignore",
+      "backend/tests/test_kept.py",
+      "backend/tests/test_new.py",
+    ]);
+  } finally {
+    rmSync(repo, { recursive: true, force: true });
+  }
 });
