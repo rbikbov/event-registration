@@ -87,6 +87,14 @@ test("reports a bare file name that matches several files", () => {
   ]);
 });
 
+test("prefers a file at a root to files of the same name deeper", () => {
+  const nested = {
+    files: [...fs.files, "AGENTS.md", "backend/AGENTS.md"],
+    read: fs.read,
+  };
+  assert.deepEqual(brokenTestRefs(readme("`AGENTS.md`"), nested), []);
+});
+
 test("ignores code that is not a file reference", () => {
   assert.deepEqual(brokenTestRefs(readme("`make seed`, `confirmed`"), fs), []);
 });

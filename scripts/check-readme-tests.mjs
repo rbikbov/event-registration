@@ -38,10 +38,9 @@ function sectionRows(readme) {
 }
 
 function resolve(ref, files) {
-  if (ref.includes("/")) {
-    const path = ROOTS.map((root) => root + ref).find((p) => files.includes(p));
-    return path ? { path } : { error: "no such file" };
-  }
+  const path = ROOTS.map((root) => root + ref).find((p) => files.includes(p));
+  if (path) return { path };
+  if (ref.includes("/")) return { error: "no such file" };
   const matches = files.filter((f) => basename(f) === ref);
   if (matches.length === 0) return { error: "no such file" };
   if (matches.length > 1) return { error: `several files: ${matches.join(", ")}` };
