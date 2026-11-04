@@ -40,7 +40,7 @@ test("participants get the only seat, then a place on the waitlist", async ({ br
   await waiting.goto("/");
   await waiting.getByRole("link", { name: title }).click();
   await expect(waiting.getByText("Свободных мест нет, можно встать в лист ожидания")).toBeVisible();
-  await waiting.getByLabel("Email").fill(`waiting-${Date.now()}@example.com`);
+  await waiting.getByLabel("Email").fill(`registers-waiting-${Date.now()}@example.com`);
   await waiting.getByLabel("Имя").fill("Борис");
   await waiting.getByRole("button", { name: "Зарегистрироваться" }).click();
 

@@ -18,12 +18,12 @@ test("a cancelled seat goes to the waitlist head, who gets an email with the tic
 
   // Two people, two contexts: separate cookies and storage.
   const first = await participantPage(browser, consoleErrors);
-  const firstEmail = `first-${Date.now()}@example.com`;
+  const firstEmail = `promoted-first-${Date.now()}@example.com`;
   await registerOn(first, title, firstEmail, "Анна");
   await expect(first.getByRole("status")).toHaveText("Место подтверждено");
 
   const waiting = await participantPage(browser, consoleErrors);
-  const waitingEmail = `waiting-${Date.now()}@example.com`;
+  const waitingEmail = `promoted-waiting-${Date.now()}@example.com`;
   await registerOn(waiting, title, waitingEmail, "Борис");
   await expect(waiting.getByRole("status")).toHaveText("Вы в листе ожидания, №1");
 
