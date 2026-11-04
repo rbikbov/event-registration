@@ -89,6 +89,19 @@ describe("PageNav", () => {
     ]);
   });
 
+  // WCAG 2.5.3: voice control finds a button by the word on it. The word shows from `sm` up.
+  it("names each edge button with the word it shows", async () => {
+    const { wrapper } = await mountNav(5, 10);
+
+    const edges = wrapper.findAll("button").filter((b) => b.attributes("data-type") !== "page");
+    expect(edges.map((b) => [b.text(), b.attributes("aria-label")])).toEqual([
+      ["Первая", "Первая страница"],
+      ["Предыдущая", "Предыдущая страница"],
+      ["Следующая", "Следующая страница"],
+      ["Последняя", "Последняя страница"],
+    ]);
+  });
+
   it("names each page number", async () => {
     const { wrapper } = await mountNav(1, 2);
 

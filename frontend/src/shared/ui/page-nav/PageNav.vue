@@ -103,9 +103,9 @@ function numbers(items: ({ type: "page"; value: number } | { type: "ellipsis" })
   "first": "Первая страница",
   "firstShort": "Первая",
   "previous": "Предыдущая страница",
-  "previousShort": "Назад",
+  "previousShort": "Предыдущая",
   "next": "Следующая страница",
-  "nextShort": "Вперёд",
+  "nextShort": "Следующая",
   "last": "Последняя страница",
   "lastShort": "Последняя",
   "page": "Страница {n}"
