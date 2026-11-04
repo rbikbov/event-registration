@@ -19,7 +19,7 @@ const user = { id: 1, email: "demo@example.com" };
 // The organizer's list as a page shows it: observed while the page is open.
 const OrgEventsList = defineComponent({
   setup() {
-    useQuery(orgEventsQuery(1));
+    useQuery(orgEventsQuery("upcoming", 1));
     return () => h("p", "page");
   },
 });
@@ -183,7 +183,10 @@ describe("AppLayout", () => {
     );
     const { wrapper, router, queryClient } = await mountLayout(routes.orgEvents);
     await flushPromises();
-    expect(queryClient.getQueryData(orgEventsQuery(1).queryKey)).toEqual({ count: 0, results: [] });
+    expect(queryClient.getQueryData(orgEventsQuery("upcoming", 1).queryKey)).toEqual({
+      count: 0,
+      results: [],
+    });
 
     await wrapper.get("header button").trigger("click");
     await flushPromises();
@@ -191,7 +194,7 @@ describe("AppLayout", () => {
     expect(signedOut).toBe(true);
     expect(router.currentRoute.value.path).toBe(routes.home);
     expect(queryClient.getQueryData(meQuery.queryKey)).toBeNull();
-    expect(queryClient.getQueryData(orgEventsQuery(1).queryKey)).toBeUndefined();
+    expect(queryClient.getQueryData(orgEventsQuery("upcoming", 1).queryKey)).toBeUndefined();
     expect(links(wrapper)).toContainEqual(["Вход для организатора", routes.login]);
   });
 

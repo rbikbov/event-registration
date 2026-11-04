@@ -10,6 +10,9 @@ import { server } from "@/shared/lib/test/msw";
 
 import OrgEventsPage from "./OrgEventsPage.vue";
 
+const PAGE_NAV = 'nav[aria-label="Страницы событий"]';
+const PERIOD_NAV = 'nav[aria-label="Какие события показать"]';
+
 // A list answer: one page with all the events.
 function page<T>(results: T[]) {
   return { count: results.length, results };
@@ -120,7 +123,7 @@ describe("OrgEventsPage", () => {
     const wrapper = await mountPage();
     await flushPromises();
 
-    expect(wrapper.text()).toContain("Событий пока нет");
+    expect(wrapper.text()).toContain("Предстоящих событий нет");
     expect(wrapper.get(`a[href="${routes.orgEventsNew}"]`).text()).toBe("Создать событие");
   });
 
@@ -192,7 +195,7 @@ describe("OrgEventsPage", () => {
     const { wrapper, router } = await mountAt(`${routes.orgEvents}?page=3`);
     await vi.waitFor(() => expect(wrapper.text()).toContain("Meetup 300"));
 
-    await wrapper.get('button[aria-label="Предыдущая страница"]').trigger("click");
+    await wrapper.get(PAGE_NAV).get('button[aria-label="Предыдущая страница"]').trigger("click");
 
     await vi.waitFor(() => expect(wrapper.text()).toContain("Meetup 200"));
     expect(router.currentRoute.value.query).toEqual({ page: "2" });
@@ -205,6 +208,74 @@ describe("OrgEventsPage", () => {
 
     await vi.waitFor(() => expect(wrapper.text()).toContain("Здесь событий нет."));
     expect(wrapper.get(`a[href="${routes.orgEvents}?page=3"]`).text()).toBe("К последней странице");
-    expect(wrapper.find("nav").exists()).toBe(false);
+    expect(wrapper.find(PAGE_NAV).exists()).toBe(false);
+  });
+
+  // Keeps the period and the page of each request; answers with `count` events in all.
+  function recordedList(count: number) {
+    const asked: string[] = [];
+    server.use(
+      http.get("*/api/org/events/", ({ request }) => {
+        const query = new URL(request.url).searchParams;
+        asked.push(`${query.get("period")} ${query.get("page")}`);
+        return HttpResponse.json({ count, results: [] });
+      }),
+    );
+    return asked;
+  }
+
+  type Wrapper = Awaited<ReturnType<typeof mountAt>>["wrapper"];
+
+  // The tabs by their text, the chosen one in brackets.
+  function tabs(wrapper: Wrapper) {
+    return wrapper
+      .findAll(`${PERIOD_NAV} a`)
+      .map((a) => (a.attributes("aria-current") === "true" ? `[${a.text()}]` : a.text()));
+  }
+
+  function tab(wrapper: Wrapper, name: string) {
+    const found = wrapper.findAll(`${PERIOD_NAV} a`).find((a) => a.text() === name);
+    if (!found) throw new Error(`no tab "${name}"`);
+    return found;
+  }
+
+  it("shows upcoming events by default", async () => {
+    const asked = recordedList(0);
+    const { wrapper } = await mountAt(routes.orgEvents);
+    await vi.waitFor(() => expect(asked).toHaveLength(1));
+
+    expect(tabs(wrapper)).toEqual(["[Предстоящие]", "Прошедшие"]);
+    expect(asked).toEqual(["upcoming 1"]);
+  });
+
+  it("shows past events by the address, with their own empty text", async () => {
+    const asked = recordedList(0);
+    const { wrapper } = await mountAt(`${routes.orgEvents}?period=past`);
+
+    await vi.waitFor(() => expect(wrapper.text()).toContain("Прошедших событий нет"));
+    expect(tabs(wrapper)).toEqual(["Предстоящие", "[Прошедшие]"]);
+    expect(asked).toEqual(["past 1"]);
+  });
+
+  it("opens another tab on its first page", async () => {
+    const asked = recordedList(45);
+    const { wrapper, router } = await mountAt(`${routes.orgEvents}?page=2`);
+    await vi.waitFor(() => expect(asked).toEqual(["upcoming 2"]));
+
+    await tab(wrapper, "Прошедшие").trigger("click");
+
+    await vi.waitFor(() => expect(asked).toEqual(["upcoming 2", "past 1"]));
+    expect(router.currentRoute.value.fullPath).toBe(`${routes.orgEvents}?period=past`);
+  });
+
+  it("keeps the tab when going to another page", async () => {
+    const asked = recordedList(45);
+    const { wrapper, router } = await mountAt(`${routes.orgEvents}?period=past`);
+    await vi.waitFor(() => expect(wrapper.find(PAGE_NAV).exists()).toBe(true));
+
+    await wrapper.get(PAGE_NAV).get('button[aria-label="Страница 2"]').trigger("click");
+
+    await vi.waitFor(() => expect(asked).toEqual(["past 1", "past 2"]));
+    expect(router.currentRoute.value.fullPath).toBe(`${routes.orgEvents}?period=past&page=2`);
   });
 });

@@ -8,6 +8,7 @@ import type { OrgEvent } from "@/entities/event";
 import { orgEventPath } from "@/shared/config";
 import { formatMoment } from "@/shared/lib/moment-format";
 import { pageFromQuery } from "@/shared/lib/page-query";
+import { FilterLink } from "@/shared/ui/filter-link";
 import { PageNav } from "@/shared/ui/page-nav";
 import { QueryState } from "@/shared/ui/query-state";
 import { Alert, AlertDescription } from "@/shared/ui/shadcn/alert";
@@ -74,17 +75,14 @@ function statusText(row: OrgRegistration): string {
   <section>
     <h2 class="sr-only">{{ t("participants") }}</h2>
     <nav class="mt-3 flex flex-wrap gap-2" :aria-label="t('filter')">
-      <Button
+      <FilterLink
         v-for="value in filters"
         :key="value ?? 'all'"
-        :variant="value === status ? 'default' : 'outline'"
-        size="sm"
-        as-child
+        :to="link(value)"
+        :current="value === status"
       >
-        <RouterLink :to="link(value)" :aria-current="value === status ? 'true' : undefined">
-          {{ t(`filters.${value ?? "all"}`) }}
-        </RouterLink>
-      </Button>
+        {{ t(`filters.${value ?? "all"}`) }}
+      </FilterLink>
     </nav>
 
     <Alert v-if="hasUpdates" class="mt-4" role="status">

@@ -59,15 +59,17 @@ describe("OrgEventNewPage", () => {
       }),
     );
     const { wrapper, router, queryClient } = await mountPage();
-    queryClient.setQueryData(orgEventsQuery(2).queryKey, { count: 0, results: [] });
-    queryClient.setQueryData(publicEventsQuery(2).queryKey, { count: 0, results: [] });
+    queryClient.setQueryData(orgEventsQuery("past", 2).queryKey, { count: 0, results: [] });
+    queryClient.setQueryData(publicEventsQuery("past", 2).queryKey, { count: 0, results: [] });
 
     await fill(wrapper, { ...valid(), description: "Talks" });
 
     expect(body).toMatchObject({ title: "Meetup", description: "Talks", capacity: 30 });
     expect(router.currentRoute.value.path).toBe(routes.orgEvents);
-    expect(queryClient.getQueryState(orgEventsQuery(2).queryKey)?.isInvalidated).toBe(true);
-    expect(queryClient.getQueryState(publicEventsQuery(2).queryKey)?.isInvalidated).toBe(true);
+    expect(queryClient.getQueryState(orgEventsQuery("past", 2).queryKey)?.isInvalidated).toBe(true);
+    expect(queryClient.getQueryState(publicEventsQuery("past", 2).queryKey)?.isInvalidated).toBe(
+      true,
+    );
   });
 
   it("sends the description with its line breaks", async () => {

@@ -217,7 +217,7 @@ describe("TicketPage", () => {
     );
     const { wrapper, queryClient } = await mountPage();
     // The second page of the list and the event, as the participant may have opened them.
-    const listPage = publicEventsQuery(2).queryKey;
+    const listPage = publicEventsQuery("past", 2).queryKey;
     queryClient.setQueryData(listPage, { count: 0, results: [] });
     queryClient.setQueryData(publicEventQuery(event.id).queryKey, {
       ...event,

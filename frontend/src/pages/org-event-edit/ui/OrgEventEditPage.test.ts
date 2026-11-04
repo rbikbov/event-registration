@@ -118,8 +118,8 @@ describe("OrgEventEditPage", () => {
     const bodies = patched();
     const { wrapper, queryClient } = mountPage();
     queryClient.setQueryData(orgEventQuery(7).queryKey, event);
-    queryClient.setQueryData(orgEventsQuery(2).queryKey, { count: 0, results: [] });
-    queryClient.setQueryData(publicEventsQuery(2).queryKey, { count: 0, results: [] });
+    queryClient.setQueryData(orgEventsQuery("past", 2).queryKey, { count: 0, results: [] });
+    queryClient.setQueryData(publicEventsQuery("past", 2).queryKey, { count: 0, results: [] });
 
     await type(wrapper, { title: "Renamed", capacity: "5" });
     await submit(wrapper);
@@ -130,8 +130,10 @@ describe("OrgEventEditPage", () => {
     expect(queryClient.getQueryData(orgEventQuery(7).queryKey)).toBe(event);
     expect(queryClient.getQueryState(orgEventQuery(7).queryKey)?.isInvalidated).toBe(false);
     // Every page of both lists shows the event's title, date and seats.
-    expect(queryClient.getQueryState(orgEventsQuery(2).queryKey)?.isInvalidated).toBe(true);
-    expect(queryClient.getQueryState(publicEventsQuery(2).queryKey)?.isInvalidated).toBe(true);
+    expect(queryClient.getQueryState(orgEventsQuery("past", 2).queryKey)?.isInvalidated).toBe(true);
+    expect(queryClient.getQueryState(publicEventsQuery("past", 2).queryKey)?.isInvalidated).toBe(
+      true,
+    );
     // The saved values are the new starting point.
     expect(saveButton(wrapper).attributes("disabled")).toBeDefined();
   });

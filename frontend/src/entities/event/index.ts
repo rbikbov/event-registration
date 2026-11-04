@@ -27,3 +27,4 @@ export {
   type EventFormInput,
 } from "./model/event-form";
 export { eventPageCount } from "./model/event-pages";
+export { periodFromQuery, type EventPeriod } from "./model/event-period";

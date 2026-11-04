@@ -4,6 +4,8 @@ import { api, unwrap } from "@/shared/api";
 import type { components, paths } from "@/shared/api";
 import { sseSource, type LiveSource } from "@/shared/lib/live-source";
 
+import type { EventPeriod } from "../model/event-period";
+
 export type PublicEventListItem = components["schemas"]["PublicEventList"];
 export type PublicEvent = components["schemas"]["PublicEvent"];
 
@@ -11,10 +13,10 @@ export type PublicEvent = components["schemas"]["PublicEvent"];
 // event's own key, `["events", id]`.
 export const publicEventListsKey = ["events", "list"] as const;
 
-export function publicEventsQuery(page: number) {
+export function publicEventsQuery(period: EventPeriod, page: number) {
   return queryOptions({
-    queryKey: [...publicEventListsKey, page],
-    queryFn: () => unwrap(api.GET("/api/events/", { params: { query: { page } } })),
+    queryKey: [...publicEventListsKey, period, page],
+    queryFn: () => unwrap(api.GET("/api/events/", { params: { query: { period, page } } })),
   });
 }
 

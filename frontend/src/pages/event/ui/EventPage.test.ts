@@ -153,14 +153,16 @@ describe("EventPage", () => {
     );
     const page = await mountPage();
     const { wrapper, queryClient } = page;
-    queryClient.setQueryData(publicEventsQuery(2).queryKey, { count: 0, results: [] });
+    queryClient.setQueryData(publicEventsQuery("past", 2).queryKey, { count: 0, results: [] });
 
     await fill(page, { email: " a@x.io ", name: "Ann" });
 
     expect(body).toEqual({ email: "a@x.io", name: "Ann" });
     expect(wrapper.get('[role="status"]').text()).toBe("Место подтверждено");
     expect(wrapper.find("form").exists()).toBe(false);
-    expect(queryClient.getQueryState(publicEventsQuery(2).queryKey)?.isInvalidated).toBe(true);
+    expect(queryClient.getQueryState(publicEventsQuery("past", 2).queryKey)?.isInvalidated).toBe(
+      true,
+    );
     // The free seats come with the snapshot of this registration.
     await flushPromises();
     expect(eventGets).toBe(1);
