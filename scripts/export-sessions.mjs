@@ -3,7 +3,7 @@
 // Reads ~/.claude/projects/<project>/*.jsonl and never writes there. Subagent transcripts (in
 // per-session folders), the model's thinking and what the environment adds to a prompt
 // (background task notifications, IDE context, shell output) are left out. A file is named
-// after the local time of the session's first message and how long it lasted, so running it
+// after the local time of the session's first message and the time worked in it, so running it
 // again overwrites the files of finished sessions and adds the new ones.
 import { mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
@@ -12,6 +12,7 @@ import { pathToFileURL } from "node:url";
 
 const RESULT_LINES = 6;
 const RESULT_WIDTH = 200;
+const MAX_PAUSE_MS = 15 * 60000;
 const NOISE = ["<local-command-caveat>", "<local-command-stdout>", "<system-reminder>", "Caveat:"];
 // Added by the environment, not typed by the person: dropped with their contents.
 const ENVIRONMENT_BLOCKS =
@@ -56,8 +57,13 @@ function resultHead(text) {
   return shown.map((line, i) => (i === 0 ? "  ⎿  " : "     ") + line).join("\n");
 }
 
-function duration(fromIso, toIso) {
-  const minutes = Math.round((Date.parse(toIso) - Date.parse(fromIso)) / 60000);
+// The time worked: the gaps between messages, each counted up to MAX_PAUSE. The span from the
+// first message to the last would count a session left open overnight as a day of work.
+function timeWorked(times) {
+  let ms = 0;
+  for (let i = 1; i < times.length; i++)
+    ms += Math.min(Date.parse(times[i]) - Date.parse(times[i - 1]), MAX_PAUSE_MS);
+  const minutes = Math.round(ms / 60000);
   if (minutes < 60) return `${minutes}m`;
   return `${Math.floor(minutes / 60)}h${String(minutes % 60).padStart(2, "0")}m`;
 }
@@ -121,7 +127,7 @@ export function exportSession(records, timeZone) {
       else if (block.type === "tool_use") out.push("⏺ " + toolSummary(block));
     }
   }
-  const name = `${stamp(times[0], timeZone)}-${duration(times[0], times.at(-1))}.txt`;
+  const name = `${stamp(times[0], timeZone)}-${timeWorked(times)}.txt`;
   return { name, text: out.join("\n") };
 }
 

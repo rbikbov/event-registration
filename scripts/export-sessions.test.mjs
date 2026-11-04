@@ -16,21 +16,32 @@ const assistant = (minute, content) => ({
   message: { content },
 });
 
-test("names the file by the local start time and how long the session lasted", () => {
+test("names the file by the local start time and the time worked in the session", () => {
   const records = [
     user(1, "<command-name>/clear</command-name>\n<command-args></command-args>"),
     user(2, "Делаем фазу 7"),
     assistant(49, [{ type: "text", text: "Готово." }]),
   ];
-  assert.equal(exportSession(records, "Europe/Kyiv").name, "2026-11-04-1901-48m.txt");
+  assert.equal(exportSession(records, "Europe/Kyiv").name, "2026-11-04-1901-16m.txt");
 });
 
-test("a session over an hour shows hours and minutes", () => {
+// A pause counts up to 15 minutes: the session may stay open overnight.
+test("a pause between messages counts up to 15 minutes", () => {
   const records = [
-    user(1, "старт"),
-    { ...assistant(0, [{ type: "text", text: "конец" }]), timestamp: "2026-11-04T19:06:00.000Z" },
+    user(0, "старт"),
+    assistant(10, [{ type: "text", text: "через 10 минут" }]),
+    user(55, "через 45 минут — засчитано 15"),
+    assistant(59, [{ type: "text", text: "через 4 минуты" }]),
   ];
-  assert.equal(exportSession(records, "UTC").name, "2026-11-04-1701-2h05m.txt");
+  assert.equal(exportSession(records, "UTC").name, "2026-11-04-1700-29m.txt");
+});
+
+test("time worked over an hour shows hours and minutes", () => {
+  const records = Array.from({ length: 10 }, (_, i) => ({
+    ...user(0, `шаг ${i}`),
+    timestamp: new Date(Date.parse(at(0)) + i * 14 * 60000).toISOString(),
+  }));
+  assert.equal(exportSession(records, "UTC").name, "2026-11-04-1700-2h06m.txt");
 });
 
 test("writes prompts, answers, tool calls and the head of their output", () => {
