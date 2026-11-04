@@ -1,0 +1,876 @@
+> Для: новой сессии агента в этом репозитории, без контекста этого разговора.
+  
+  ````text
+  Разберись с нестабильным тестом `backend/emails/tests/test_concurrency.py::test_two_workers_send_each_email_once`: найди причину и исправь её. Это задача вне фаз roadmap. Ветку сделай от `main`: `fix/flaky-email-workers-test` или другое подходящее имя.
+  
+  ## Что известно
+  
+  Тест падает только в совместном прогоне с тестами гонок регистраций. Это та команда, которой `docs/rules/concurrency.md` велит гонять тесты гонок 20 раз перед закрытием задачи:
+  
+  - `registrations/tests/test_concurrency.py` + `emails/tests/test_concurrency.py` вместе — 1–2 падения из 30;
+  - только `emails/tests/test_concurrency.py` — 0 падений из 40;
+  - оба файла без тестов фазы 3 (`-k "not check_ins"`) — 1 падение из 30. Значит, проблема старше фазы 3.
+  
+  Как выглядит падение:
+  
+  ```text
+  >       assert sorted(sent[0] + sent[1]) == all_ids
+  E       assert [53, 54, 55, 56, 57, 58, ...] == [36, 37, 38, 39, 40, 41, ...]
+  E         Right contains 17 more items, first extra item: 59
+  emails/tests/test_concurrency.py:36: AssertionError
+  ```
+  
+  Тест создаёт `2 * BATCH_SIZE` писем и запускает два `process_batch` (`backend/emails/services.py`) одновременно через `run_together` (`backend/config/tests/concurrency.py`). В упавшем прогоне ни в один `sent` не попала первая пачка (id 36–52), отправилась только вторая. Из ассерта не видно, что вернул каждый воркер: либо один воркер ничего не взял, либо взял, но письма не записались как отправленные. Причину раньше не искали. Запись о тесте есть в «На потом» в `docs/features/checkin/tasks.md`.
+  
+  ## Как воспроизвести (слот 1 агента, Postgres на 5433)
+  
+  Postgres слота 1 поднимает `make stack-check-backend` (или `make stack-check`). Слот 0 (`make dev-deps`, порт 5432) принадлежит человеку, его не трогай.
+  
+  ```sh
+  cd backend
+  mkdir -p "$SCRATCH/race-logs"   # SCRATCH — твой scratchpad
+  f=0
+  for i in $(seq 30); do
+    POSTGRES_PORT=5433 uv run pytest registrations/tests/test_concurrency.py emails/tests/test_concurrency.py \
+      -q -p no:cacheprovider > "$SCRATCH/race-logs/run-$i.log" 2>&1 \
+      || { f=$((f+1)); echo "fail on run $i"; }
+  done
+  echo "failures: $f/30"
+  ```
+  
+  Контрольные прогоны:
+  
+  ```sh
+  for i in $(seq 40); do POSTGRES_PORT=5433 uv run pytest emails/tests/test_concurrency.py -q -p no:cacheprovider >/dev/null 2>&1 || echo "fail $i"; done
+  for i in $(seq 30); do POSTGRES_PORT=5433 uv run pytest registrations/tests/test_concurrency.py emails/tests/test_concurrency.py -q -p no:cacheprovider -k "not check_ins" >/dev/null 2>&1 || echo "fail $i"; done
+  ```
+  
+  ## Порядок работы
+  
+  1. Сначала воспроизведи падение у себя и запиши частоту.
+  2. Временно выведи перед ассертом `sent[0]`, `sent[1]`, статусы и `next_attempt_at` писем, `attempts` и `last_error`, `len(mail.outbox)`. Задача — понять, какой из двух случаев: воркер не взял пачку, или взял, но письма не стали `sent`. Отладочный вывод в коммит не попадает.
+  3. Сформулируй гипотезу и проверь её фактами: вывод, план запроса, лог. Догадка — ещё не причина.
+  4. Отдельно реши, где ошибка: в тесте (порядок тестов, общий `mail.outbox`, время, данные от предыдущего теста) или в `process_batch`. Если ошибка в `process_batch`, это баг воркера в production. Тогда сначала тест, который падает по этой причине, потом исправление.
+  5. Готово, когда совместный прогон проходит 30 раз из 30 и ещё 20 раз командой из `docs/rules/concurrency.md`, а `make stack-check` проходит.
+  
+  ## Правила (подробно — AGENTS.md и docs/rules/concurrency.md)
+  
+  - Начало сессии — по skill `session-handoff`: маркер `▶ начало сессии` в `docs/decisions.md`, время из `date`.
+  - Тест не ослаблять: без ретраев, без `flaky`-маркеров, без увеличения таймаутов как «исправления» и без пропуска теста.
+  - Причину и выбранное исправление записать в `docs/decisions.md` в том же коммите. Удалить запись о тесте из «На потом» в `docs/features/checkin/tasks.md`.
+  - Три неудачные попытки исправить — остановиться и описать человеку, что пробовал и какая гипотеза.
+  - Найденное по пути, но не относящееся к задаче — в «На потом», не в этот коммит.
+  - Ревью — агент `reviewer` (skill `feature-workflow`, «Ревью»). Вместо spec передай описание задачи из этого промпта, без своих выводов о причине.
+  - Коммиты по Conventional Commits, по-английски. Push — `SLOT=1 git push`, только когда человек попросит.
+  ````
+
+⏺ Skill(session-handoff)
+  ⎿  Launching skill: session-handoff
+
+⏺ Bash(make worktime 2>&1 | tail -5; date '+%Y-%m-%d %H:%M'; tail -15 docs/decisions.md; git log -1 --format='%ci'; git log main --oneline -3)
+  ⎿  2026-10-31 04:48 → 2026-10-31 05:37  0 ч 49 мин
+     2026-10-31 05:39 → 2026-10-31 05:53  0 ч 14 мин
+     2026-10-31 06:03 → 2026-10-31 07:42  1 ч 39 мин
+     Итого: 23 ч 46 мин
+     Предупреждение: сессия с 2026-10-31 07:51 не закрыта и не учтена
+     2026-10-31 09:22
+     … +19 lines
+
+⏺ Bash(git log --oneline main..HEAD | wc -l; git show main:docs/decisions.md | tail -4; git show main:docs/features/checkin/tasks.md 2>&1 | grep -n -i -A3 "two_workers\|нестабил"; grep -n -i -A3 "two_workers)
+  ⎿  17
+     - **05:39** — ▶ начало сессии
+     - **05:50** — по ревью этапа 5 фазы 2 (решение человека): (1) комментарий воркера в `docker-compose.yml` назван точно — внутри воркера обрабатываются любые ошибки отправки письма и ошибки БД, процесс 
+     - **05:53** — фаза 2 закрыта. Критерии проверены: письма `ticket`, `waitlisted`, `promoted` ставятся в транзакции изменения (pytest `registrations/tests/test_emails.py`) и доходят до Mailpit (`make st
+     - **05:53** — ■ конец сессии
+     88:- Нестабильный `emails/tests/test_concurrency.py::test_two_workers_send_each_email_once`:
+     … +8 lines
+
+⏺ Bash(git fetch -q origin && git log --oneline origin/main -3 && git log --oneline origin/main..HEAD | wc -l && git status -sb | head -1 && gh pr list --state open)
+  ⎿  c96405a fix(frontend): show the check-in answer in place of the form until Next
+     28e9072 fix(frontend): drop the check-in session message the app never shows
+     22fcc34 fix(frontend): keep the check-in field read-only while a code is checked
+     7
+     ## feat/checkin-once
+
+⏺ Bash(printf -- '- **09:21** — ■ конец сессии\n' >> docs/decisions.md && git commit -qam "docs: close the check-in stage 2 session" -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>" && git switch)
+  ⎿  ⋯ Backing up original state…
+     ✔ Done backing up original state (0334365)!
+     ⋯ Running tasks for staged files…
+         *.{mjs,json,md,yml,yaml} — 1 file
+           ⋯ prettier --write
+     
+     … +203 lines
+
+⏺ Bash(printf -- '\n- **09:22** — ▶ начало сессии\n' >> docs/decisions.md && tail -c 300 docs/decisions.md | tail -3; cat backend/emails/models.py | sed -n '1,80p'; grep -rn "outbox\|EMAIL_BACKEND\|autouse" )
+  ⎿  � «на потом»: блокировка «Следующий» на 1–2 с после ответа. В `development.md` — исходники в стек слота не монтируются, после правки нужен `make stack-up`.
+     
+     - **09:22** — ▶ начало сессии
+     from typing import ClassVar
+     
+     from django.db import models
+     … +54 lines
+
+⏺ Bash(ls backend; find backend -name conftest.py -not -path "*/.venv/*"; grep -n -i "20 раз\|count\|seq" docs/rules/concurrency.md; grep -n -i "pytest\|DJANGO_SETTINGS\|addopts" backend/pyproject.toml)
+  ⎿  AGENTS.md
+     CLAUDE.md
+     Dockerfile
+     __pycache__
+     accounts
+     config
+     … +19 lines
+
+⏺ Bash(cat backend/conftest.py; cat backend/registrations/tests/test_concurrency.py | head -80; docker ps --format '{{.Names}} {{.Ports}}' | grep -i postgres)
+  ⎿  import pytest
+     from django.core.management import call_command
+     
+     
+     @pytest.fixture(scope="session", autouse=True)
+     def collected_static() -> None:
+     … +85 lines
+
+⏺ Postgres слота 1 работает. Добавляю временный отладочный вывод в тест и гоняю совместный прогон 30 раз.
+
+⏺ Bash(cd /home/raf/event-registration/backend && python3 - <<'EOF')
+  ⎿  fail on run 22
+     failures: 1/30
+
+⏺ Bash(S=/tmp/claude-1000/-home-raf-event-registration/4634a2ff-61b4-4b8b-88ec-9ab8fa0d7ccf/scratchpad/race-logs; grep -E "DEBUG|Error|assert" $S/run-22.log | head -60)
+  ⎿  print("DEBUG sent0", sent[0], "sent1", sent[1], "outbox", len(mail.outbox), "now", timezone.now(), file=sys.stderr)
+                 print("DEBUG row", e.id, e.status, e.next_attempt_at, e.created_at, e.attempts, repr(e.last_error), file=sys.stderr)
+     >       assert sorted(sent[0] + sent[1]) == all_ids
+     E       assert [72, 73, 74, 75] == [36, 37, 38, 39, 40, 41, ...]
+     emails/tests/test_concurrency.py:40: AssertionError
+     DEBUG sent0 [72, 73, 74, 75] sent1 [] outbox 4 now 2026-10-31 07:26:15.104590+00:00
+     … +40 lines
+
+⏺ Bash(S=/tmp/claude-1000/-home-raf-event-registration/4634a2ff-61b4-4b8b-88ec-9ab8fa0d7ccf/scratchpad; cat > $S/clockwatch.py <<'EOF')
+  ⎿  idle 60s:
+     BACKWARD 0.414s at 09:27:42
+     BACKWARD 0.449s at 09:27:42
+     BACKWARD 0.458s at 09:28:11
+     BACKWARD 0.454s at 09:28:11
+     done
+     … +6 lines
+
+⏺ Bash(git checkout emails/tests/test_concurrency.py && grep -rn "process_batch(" --include=*.py . | grep -v "\.venv" ; grep -rn "def handle\|process_batch\|sleep" emails/management 2>/dev/null | head)
+  ⎿  Updated 1 path from the index
+     (eval):1: no matches found: --include=*.py
+     emails/management/commands/run_worker.py:8:from emails.services import process_batch
+     emails/management/commands/run_worker.py:21:    def handle(self, *args: Any, **options: Any) -> None:
+     emails/management/commands/run_worker.py:24:            time.sleep(self.poll())
+     emails/management/commands/run_worker.py:29:            sent = process_batch()
+
+⏺ Bash(grep -rn "process_batch\b" --include='*.py' . | grep -v "\.venv"; sed -n 1,40p emails/management/commands/run_worker.py)
+  ⎿  emails/services.py:74:def process_batch(*, now: datetime | None = None) -> list[int]:
+     emails/management/commands/run_worker.py:8:from emails.services import process_batch
+     emails/management/commands/run_worker.py:29:            sent = process_batch()
+     emails/tests/test_concurrency.py:10:from emails.services import BATCH_SIZE, enqueue_email, process_batch
+     emails/tests/test_concurrency.py:33:    sent = run_together([process_batch, process_batch])
+     emails/tests/test_worker.py:16:from emails.services import BATCH_SIZE, MAX_ATTEMPTS, enqueue_email, process_batch
+     … +58 lines
+
+⏺ Bash(sed -n 1,130p emails/tests/test_worker.py; sed -n 185,275p emails/tests/test_worker.py)
+  ⎿  import smtplib
+     import socket
+     from collections.abc import Callable, Iterator, Sequence
+     from datetime import timedelta
+     
+     import pytest
+     … +212 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  backend/emails/tests/test_concurrency.py | 9 ++++++++-
+      docs/decisions.md                        | 2 ++
+      2 files changed, 10 insertions(+), 1 deletion(-)
+     failures: 0/30
+     9
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  1 failed in 2.10s
+     1 passed in 1.75s
+      M emails/tests/test_concurrency.py
+      M ../docs/decisions.md
+
+⏺ Bash(n=0; for i in $(seq 20); do POSTGRES_PORT=5433 uv run pytest registrations/tests/test_concurrency.py emails/tests/test_concurrency.py -q > /dev/null 2>&1 || break; n=$i; done; echo "passed $n/20")
+  ⎿  passed 20/20
+
+⏺ 20 из 20. Теперь документация: запись в логе решений и нюанс окружения в `development.md` (правило 5).
+
+⏺ Bash(cd /home/raf/event-registration && grep -n "^#" docs/development.md; grep -n -i "wsl" docs/development.md | head; grep -n -i "now\|время\|часы" docs/rules/concurrency.md | head)
+  ⎿  1:# Руководство разработчика
+     9:## Содержание
+     24:## Что установить
+     34:## Первая настройка
+     46:## Запуск
+     95:## Команды
+     … +16 lines
+
+⏺ Bash(sed -n '503,560p' docs/development.md; sed -n 36,50p docs/rules/concurrency.md)
+  ⎿  ## Нюансы
+     
+     **Окружение и проверки**
+     
+     - `pre-push` проверяет **рабочую копию**, а не содержимое отправляемых коммитов: так
+       устроены git-хуки. Незакоммиченные изменения могут и уронить push, и замаскировать ошибку
+     … +40 lines
+
+⏺ Тест я поменял, поэтому по правилу 4 проверяю, что без замка он по-прежнему падает.
+
+⏺ Bash(cd /home/raf/event-registration/backend && cp emails/services.py /tmp/claude-1000/-home-raf-event-registration/4634a2ff-61b4-4b8b-88ec-9ab8fa0d7ccf/scratchpad/services.bak && sed -i 's/OutboxEmail.obj)
+  ⎿  backend/emails/services.py | 2 +-
+      1 file changed, 1 insertion(+), 1 deletion(-)
+     1 failed in 2.04s
+     1 failed in 1.84s
+     1 failed in 1.87s
+     1 failed in 1.86s
+     … +4 lines
+
+⏺ Без замка тест падает 5 раз из 5. Записываю решение и нюанс окружения.
+
+⏺ Bash(cd /home/raf/event-registration && date '+%H:%M' && python3 - <<'EOF')
+  ⎿  09:36
+
+⏺ Bash(cat >> docs/decisions.md <<'EOF')
+  ⎿  diff --git a/backend/emails/tests/test_concurrency.py b/backend/emails/tests/test_concurrency.py
+     index c252555..ed1a7fd 100644
+     --- a/backend/emails/tests/test_concurrency.py
+     +++ b/backend/emails/tests/test_concurrency.py
+     @@ -1,7 +1,9 @@
+      from datetime import timedelta
+     … +22 lines
+
+⏺ Edit(/home/raf/event-registration/backend/emails/tests/test_concurrency.py)
+  ⎿  The file /home/raf/event-registration/backend/emails/tests/test_concurrency.py has been updated successfully.
+
+⏺ Запускаю `make stack-check` перед коммитом.
+
+⏺ Bash(cd /home/raf/event-registration && make stack-check > /tmp/claude-1000/-home-raf-event-registration/4634a2ff-61b4-4b8b-88ec-9ab8fa0d7ccf/scratchpad/stack-check.log 2>&1; echo "exit $?"; grep -iE "erro)
+  ⎿  exit 0
+     All checks passed!
+     ============================= 188 passed in 56.88s =============================
+      Test Files  19 passed (19)
+           Tests  138 passed (138)
+
+⏺ Bash(git add -A && git commit -q -m "test(backend): pass the due time to the two-worker email test" -m "The wall clock in WSL2 steps back by about 0.4 s every 30 s, so emails queued just before a step were)
+  ⎿  Exit code 1
+     ⋯ Backing up original state…
+     ✔ Done backing up original state (839ef27)!
+     ⋯ Running tasks for staged files…
+         backend/**/*.py — 1 file
+           ⋯ uv run --project backend ruff check --fix
+     … +25 lines
+
+⏺ Bash(git commit -q -m "test(backend): pass the due time to the two-worker email test" -m "The wall clock in WSL2 steps back by about 0.4 s every 30 s, so emails)
+  ⎿  6dc8c43 test(backend): pass the due time to the two-worker email test
+
+⏺ Bash(cd /home/raf/event-registration/backend && grep -n "process_batch()" emails/tests/test_worker.py)
+  ⎿  96:    process_batch()
+     98:    assert process_batch() == []
+     107:    assert process_batch() == []
+     114:    sent = process_batch()
+     117:    assert process_batch() == [queued[-1].id]
+     126:    process_batch()
+     … +4 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  ....................                                                     [100%]
+     20 passed in 6.30s
+     Success: no issues found in 14 source files
+     All checks passed!
+     16 files already formatted
+     [This command modified 1 file you've previously read: emails/tests/test_worker.py. Call Read before editing.]
+
+⏺ Bash(cd /home/raf/event-registration && t=$(date '+%H:%M') && echo "- **$t** — вне фаз, продолжение записи 09:36: в \`emails/tests/test_worker.py\` тесты, которые ставят письмо и сразу ждут его отправки, п)
+  ⎿  exit 0
+     config/tests/test_log_redaction.py ..........                            [100%]
+     
+     ============================= 188 passed in 57.64s =============================
+
+⏺ Bash(git add -A && git commit -q -m "test(backend): pass the due time to the worker tests that send at once" -m "Same cause as the two-worker test: a wall clock step back left a just)
+  ⎿  68fceeb test(backend): pass the due time to the worker tests that send at once
+     6dc8c43 test(backend): pass the due time to the two-worker email test
+
+⏺ Теперь ревью. Смотрю, что нужно передать агенту `reviewer` (skill `feature-workflow`, «Ревью»).
+
+⏺ Bash(awk '/^## Ревью/,/^## [^Р]/' .claude/skills/feature-workflow/SKILL.md | head -50)
+  ⎿  ## Ревью
+     
+     Агент `reviewer` (`.claude/agents/reviewer.md`) с чистым контекстом, после каждого этапа.
+     Независимость ревью держится на промпте: агент знает только то, что в нём.
+     
+     Передать **только**:
+     … +37 lines
+
+⏺ Agent(Review flaky email test fix)
+  ⎿  Async agent launched successfully. (This tool result is internal metadata — never quote or paste any part of it, including the agentId below, into a user-facing reply.)
+     agentId: a1a86946025c71cac (internal ID - do not mention to user. Use SendMessage with to: 'a1a86946025c71cac', summary: '<5-10 word recap>' to continue this agent.)
+     The agent is working in the background. You will be notified automatically when it completes. You know nothing about its results until that notification arrives — do not report, assume, or predict the
+     Do not duplicate this agent's work — avoid working with the same files or topics it is using.
+     output_file: /tmp/claude-1000/-home-raf-event-registration/4634a2ff-61b4-4b8b-88ec-9ab8fa0d7ccf/tasks/a1a86946025c71cac.output
+     Do NOT Read or tail this file via the shell tool — it is the full subagent JSONL transcript and reading it will overflow your context. If the user asks for progress, say the agent is still running; yo
+
+⏺ Ревьюер (`reviewer`) работает над диапазоном `origin/main..68fceeb`. Покажу его отчёт целиком, когда он закончит.
+  
+  **Причина** — ошибка в тесте, а не в `process_batch`. В WSL2 часы стены отскакивают назад на 0,4–0,9 с примерно каждые 30 с, даже без нагрузки. Наблюдатель за часами поймал 4 отскока за 60 с простоя, и падение в 09:28:44 пришлось на отскок в 09:28:40. Если отскок попадает на создание писем, у части писем `next_attempt_at` оказывается позже `now` воркеров, и воркеры считают, что их ещё рано отправлять. Отладочный вывод упавшего прогона: один воркер отправил 4 письма, второй ни одного, остальные 36 остались `pending` с `attempts = 0`, а `created_at` по порядку id дважды шёл назад. Значит, воркер пачку не брал: письма не стали `sent` не из-за ошибки отправки. От порядка тестов падение не зависит. В production такой отскок задерживает письмо до следующего опроса, письмо не теряется и не уходит дважды, поэтому воркер я не менял.
+  
+  **Исправление:** тест передаёт `process_batch` явный `now` — самый поздний `next_attempt_at` в очереди. Отклонены два варианта: время БД (Postgres на той же ВМ видит те же часы) и `now` с запасом вперёд (запас пришлось бы подбирать на глаз).
+  
+  **Проверки:**
+  - со смоделированным отскоком старый тест падает, новый проходит;
+  - без `select_for_update` новый тест падает 5 из 5, то есть замок он по-прежнему ловит;
+  - совместный прогон до исправления: 1 падение из 30 и 1 из 10; после — 0 из 30, хотя за это время часы отскочили 9 раз;
+  - 20 из 20 командой из `docs/rules/concurrency.md` и `make stack-check` прошли на первом коммите;
+  - после второго коммита я запускал `make check-backend` (188 passed), а полный `make stack-check` снова не запускал.
+  
+  **Коммиты** на `fix/flaky-email-workers-test` (не отправлены):
+  - `6dc8c43` — исправление теста двух воркеров, запись в `docs/decisions.md`, нюанс про часы WSL2 в `docs/development.md`.
+  - `68fceeb` — тот же `now` в тестах `test_worker.py`, которые ставят письмо и сразу ждут отправки. Причина та же, но это шире заданного, поэтому вынесено отдельным коммитом: если не нужно, его легко убрать.
+  
+  **Что ещё нужно:**
+  - Сессия 07:51 была не закрыта. Я закрыл её временем последнего коммита (09:21) коммитом `docs: close the check-in stage 2 session` на `feat/checkin-once`.
+  - Ветка `feat/checkin-once` (этап 2, 8 коммитов) не отправлена и PR по ней нет. Запись об этом тесте в «На потом» есть только там, поэтому удалить её из этой ветки я не смог. Её нужно убрать на `feat/checkin-once`; это отмечено в логе решений.
+  - Маркер `■ конец сессии` поставлю после того, как разберём находки ревью.
+
+> нужно ли записывать информацию об этой проблеме как памятку куда-то на будущее?
+
+⏺ Почти всё уже записано, и не хватает одного правила.
+  
+  **Где это уже есть:**
+  - [docs/development.md](docs/development.md), раздел «Нюансы»: часы в WSL2 отскакивают назад, поэтому тест должен передавать момент «письмо пора отправить» в `now`, а не брать его с часов. Это для того, кто наткнётся на похожее падение.
+  - [docs/decisions.md](docs/decisions.md): причина, как проверял, какие варианты отклонил. Это ответ на вопрос «почему тест так написан».
+  - Комментарии в самих тестах, у `due` и `due()`.
+  
+  **Чего не хватает:** правила для того, кто будет писать следующий такой тест. Нюанс в `development.md` читают, когда тест уже упал, а правила в `AGENTS.md` подгружаются, когда кто-то работает в `backend/`. Ловушка не только в письмах: она есть у любого теста, который создаёт запись со временем от `timezone.now()` и сразу проверяет, что её срок наступил. Например, это может случиться в фазе 5, если там появятся сроки.
+  
+  Предлагаю дописать одну фразу в п. 6 [backend/AGENTS.md](backend/AGENTS.md) (правило про время):
+  
+  > Тест, который проверяет «срок наступил», передаёт `now` явно (например, самое позднее время в данных), а не полагается на то, что часы между созданием записи и проверкой не идут назад: в WSL2 они отскакивают на доли секунды (`docs/development.md`, «Нюансы»).
+  
+  Личная память агента здесь не нужна: всё лежит в репозитории, и его прочитают и человек, и другие агенты.
+  
+  Добавить эту строку отдельным коммитом в эту ветку?
+
+⏺ Ревьюер ещё работает: он ждёт свою фоновую проверку (видимо, повторные прогоны), отчёта пока нет. Покажу его целиком, когда он придёт.
+  
+  Вопрос выше остаётся в силе: добавить строку про явный `now` в п. 6 [backend/AGENTS.md](backend/AGENTS.md) отдельным коммитом?
+
+> @docs/rules/concurrency.md  а сюда не логично дописать?
+
+⏺ Да, это логично. Но одного `concurrency.md` мало: ловушка шире тестов гонок. В `test_worker.py` гонок нет, а там была та же зависимость от часов (второй коммит). Правило в `concurrency.md` до них бы не дошло. Поэтому я бы записал в два места, и каждое про своё.
+  
+  **[backend/AGENTS.md](backend/AGENTS.md), п. 6 (общее правило о времени):** тест, который проверяет «срок наступил», передаёт `now` явно, а не полагается на часы между созданием записи и проверкой.
+  
+  **[docs/rules/concurrency.md](docs/rules/concurrency.md), раздел «Тесты» (то, что важно именно для гонок),** новый пункт 6:
+  
+  > 6. **Тест гонки не зависит от часов стены.** Момент, когда записи уже пора обработать, передаётся в `now` из данных теста (самое позднее время в них), а не берётся с часов: в WSL2 часы отскакивают назад на доли секунды (`docs/development.md`, «Нюансы»). Если тест гонки падает изредка, например 1 раз из 30, сначала нужно проверить, не зависит ли он от часов, а уже потом искать ошибку в замке.
+  
+  Вторая фраза — главная польза для `concurrency.md`. Падение 1 раз из 30 при прогонах «20 раз подряд» выглядит как пропущенная гонка, и поиск сразу уходит в замки. Здесь как раз так и было: тест подозревали в гонке, а дело было в часах.
+  
+  Добавить оба места одним коммитом `docs: …` в эту ветку?
+
+> добавь
+
+⏺ Edit(/home/raf/event-registration/backend/AGENTS.md)
+⏺ Edit(/home/raf/event-registration/docs/rules/concurrency.md)
+⏺ Bash(t=$(date '+%H:%M') && echo "- **$t** — вне фаз (решение человека): правило о явном \`now\` записано в два места — п. 6 \`backend/AGENTS.md\` (любой тест, который проверяет «срок наступил») и п. 6 разд)
+  ⎿  The file /home/raf/event-registration/backend/AGENTS.md has been updated successfully. (file state is current in your context — no need to Read it back)
+
+  ⎿  The file /home/raf/event-registration/docs/rules/concurrency.md has been updated successfully. (file state is current in your context — no need to Read it back)
+
+  ⎿  648f6ff docs: require an explicit now in tests that check a due time
+
+⏺ Правило добавлено в оба места одним коммитом `648f6ff` («docs: require an explicit now in tests that check a due time»):
+  
+  - **[backend/AGENTS.md](backend/AGENTS.md), п. 6** — общее правило: тест, который проверяет «срок наступил», передаёт `now` явно, а не полагается на часы.
+  - **[docs/rules/concurrency.md](docs/rules/concurrency.md), «Тесты», новый п. 6** — тест гонки не зависит от часов стены. Если он изредка падает, сначала проверить, не зависит ли он от часов, потом искать ошибку в замке.
+  
+  Решение записано в [docs/decisions.md](docs/decisions.md) в том же коммите. Хуки коммита прошли, рабочая копия чистая.
+  
+  Ревьюер ещё работает. Он смотрит диапазон до `68fceeb`, так что этот коммит в ревью не входит. Когда придёт отчёт, покажу его целиком.
+
+> обнови main, сделай ребейз от обновленного main
+
+⏺ Bash(git fetch origin && git fetch origin main:main 2>&1 | tail -2; git log --oneline -1 main; git log --oneline -1 origin/main; git merge-base --is-ancestor main HEAD && echo "branch already on main" || g)
+  ⎿  From github.com:rbikbov/event-registration
+        c96405a..7321280  main       -> origin/main
+     From github.com:rbikbov/event-registration
+        d4a390c..7321280  main       -> main
+     7321280 docs: point the stage 2 log at the commits rebased onto main
+     7321280 docs: point the stage 2 log at the commits rebased onto main
+     … +7 lines
+
+⏺ `main` подтянулся: этап 2 туда влит. Делаю ребейз, в `docs/decisions.md` ожидаю конфликт.
+
+⏺ Bash(git show main:docs/decisions.md | grep -n "сессии" | tail -3; git rebase main 2>&1 | tail -3; git status --short)
+  ⎿  587:- **07:33** — по повторному ревью этапа 1 фазы 3, находка 1 (решение человека; отменяет часть записи 07:14 про `unauthorized`): ветка «Сессия истекла — войдите снова» на экране чекина удалена вмес
+     589:- **07:42** — ■ конец сессии
+     590:- **07:51** — ▶ начало сессии
+     hint: You can instead skip this commit: run "git rebase --skip".
+     hint: To abort and get back to the state before "git rebase", run "git rebase --abort".
+     Could not apply 6dc8c43... test(backend): pass the due time to the two-worker email test
+     … +3 lines
+
+⏺ Bash(grep -n -A12 "^<<<<<<<" docs/decisions.md | cut -c1-160)
+  ⎿  589:<<<<<<< HEAD
+     590-- **07:42** — ■ конец сессии
+     591-- **07:51** — ▶ начало сессии
+     592-- **08:08** — задача 2.1 фазы 3: `check_in` возвращает `CheckInResult(registration, already_checked_in)`, а не бросает ис�
+     593-- **08:16** — задача 2.2 фазы 3: `cancel` берёт строку регистрации `select_for_update` после замка Event и на
+     594-- **08:22** — задача 2.3 фазы 3: экран чекина показывает 409 (`conflict`) ответом о билете на месте ф
+     … +6 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  0
+     - **08:22** — задача 2.3 фазы 3: экран чекина показ�
+     - **09:06** — по ревью этапа 2 фазы 3, находка 1 (ре�
+     - **09:21** — ■ конец сессии
+     - **09:22** — ▶ начало сессии
+     - **09:36** — вне фаз: нестабильный `emails/tests/test_concu
+     … +3 lines
+
+⏺ Bash(grep -n -B1 -A6 "two_workers" docs/features/checkin/tasks.md)
+  ⎿  87-
+     88:- Нестабильный `emails/tests/test_concurrency.py::test_two_workers_send_each_email_once`:
+     89-  в совместном прогоне с `registrations/tests/test_concurrency.py` (команда из
+     90-  `docs/rules/concurrency.md`) падает 1–2 раза из 30, отдельно — 0 из 40; падает и без
+     91-  тестов фазы 3 (`-k "not check_ins"`, 1 из 30). В упавшем прогоне отправлена одна пачка из
+     92-  двух: первые `BATCH_SIZE` писем не попали ни в один `sent`. Причина не найдена. Найдено в
+     … +2 lines
+
+⏺ Bash(sed -i '88,94d' docs/features/checkin/tasks.md && sed -n '84,90p' docs/features/checkin/tasks.md && t=$(date '+%H:%M') && echo "- **$t** — вне фаз: после ребейза на \`main\` с этапом 2 фазы 3 запись о)
+  ⎿  или клик не убрал ответ непрочитанным (предложение человека). Сейчас двойной Enter ответ не
+       пропускает — второй приходит, пока идёт запрос, и отсекается `isPending` (проверено в
+       Chromium), — но Enter уже после ответа, например автоповтор клавиши, его уберёт.
+     
+     - Время отметки «Уже отмечен в ЧЧ:ММ» (экран чекина) и «Вы отмечены на входе в ЧЧ:ММ»
+       (страница билета) — только часы и минуты. Если отметка была не сегодня (по часовому поясу
+     … +6 lines
+
+⏺ Ребейз сделан: `main` обновлён до `7321280` (туда влит этап 2), и ветка `fix/flaky-email-workers-test` теперь стоит на нём.
+  
+  - **Конфликт** был в `docs/decisions.md`: в `main` пришли записи этапа 2 с открытой сессией 07:51. Мой коммит, который закрывал эту сессию, остался на старой `feat/checkin-once`, поэтому маркер `■ 09:21` я вставил перед своим `▶ 09:22`.
+  - **Новый коммит `cbc72e8`:** вместе с этапом 2 в `main` пришла запись об этом тесте в «На потом» `docs/features/checkin/tasks.md`. Я её удалил и записал это в логе решений.
+  - **Проверки:** после ребейза `make stack-check` ещё не запускал. Запущу после того, как разберём ревью ниже.
+  
+  Коммиты ветки после ребейза: `992c457`, `a3f23a4`, `6de9bc8`, `cbc72e8`.
+  
+  Пришёл отчёт ревьюера по диапазону до `68fceeb` (до ребейза; коммиты с правилами и удалением записи в него не входят). Привожу его целиком:
+  
+  ---
+  
+  ## Ревью origin/main..68fceeb (ветка fix/flaky-email-workers-test)
+  
+  В диапазоне два коммита: 6dc8c43 и 68fceeb. Причину автор нашёл верно: в WSL2 часы стены отскакивают назад, поэтому `next_attempt_at` позже `now` воркера. С выводом, что ошибка в тесте, а не в `process_batch`, я согласен. Но исправление неполное: несколько тестов воркера по-прежнему зависят от тех же часов, а запись 09:39 говорит, что исправлены все такие тесты.
+  
+  ### Находки
+  
+  **`backend/emails/tests/test_worker.py:91` (и строки 150, 168, 186) — Тесты, нестабильность (та же причина не устранена)**
+  Что: `test_pending_email_is_sent_and_marked_sent`, `test_failed_send_is_retried_later`, `test_pause_between_attempts_doubles_and_the_last_attempt_fails_the_email` и `test_email_is_sent_when_the_server_accepts_it_again` по-прежнему ставят письмо и сразу берут `now = timezone.now()` для `process_batch(now=now)`. Это ровно та зависимость, которую убрали у соседних тестов. Если часы отскочат между `queue_ticket` и `timezone.now()`, письмо окажется «из будущего». Тогда `sent == [queued.id]` (строка 95) и `attempts == 1` (строка 157) упадут, а в тесте пауз список `pauses` окажется пустым или сдвинутым.
+  Почему важно: тест станет нестабильным с той же частотой, что и исправленные, только окно короче. Запись 09:39 утверждает, что `now` из `due()` получили тесты, «которые ставят письмо и сразу ждут его отправки». Эти четыре теста ждут именно этого, а исключение сделано только для `test_email_waits_for_its_next_attempt`.
+  Исправление: в этих тестах брать `now = due()`. Точные сравнения `sent_at == now` и `next_attempt_at == now + 30 s` при этом сохранятся. Либо добавить в запись решений, почему эти тесты оставлены на часах.
+  
+  **`backend/emails/tests/test_worker.py:125-128` и `:214-216` — Тесты, нестабильность (порядок)**
+  Что: `process_batch` сортирует по `order_by("next_attempt_at", "id")` (`backend/emails/services.py`, `process_batch`). При этом `test_batch_takes_the_oldest_due_emails_up_to_its_size` проверяет `sent == [email.id for email in queued[:BATCH_SIZE]]`, а `test_failed_email_does_not_stop_the_batch` — `== [first.id, last.id]` и порядок `mail.outbox`, то есть оба теста ждут порядка id. Если часы отскочат при создании писем, у письма с большим id `next_attempt_at` окажется раньше. Тогда в первую пачку из 20 попадёт `queued[-1]` (21-е письмо), а в другом тесте порядок `first`/`last` поменяется. Сам автор пишет в 09:36: «`created_at` по порядку id шёл назад дважды».
+  Почему важно: `due()` чинит только проверку «пора ли отправлять», порядок по-прежнему зависит от часов. Эти тесты падают по той же причине, что и исправленный.
+  Исправление: в этих тестах явно задать `next_attempt_at` по возрастанию (например, `base + timedelta(milliseconds=i)` через `update`) и передавать `now` не раньше последнего. Ожидаемый порядок тогда задаёт сам тест, а не часы.
+  
+  **`docs/development.md:513-517` — Документация**
+  Что: в нюансе как пример указан только `emails/tests/test_concurrency.py`, хотя тот же приём («передать `now`, не брать с часов») теперь есть и в `emails/tests/test_worker.py` (`due()`). То, что порядок `next_attempt_at` и `queued_at` тоже зависит от часов, не упомянуто.
+  Почему важно: следующий тест, который полагается на порядок меток времени, снова будет нестабильным.
+  Исправление: дописать: «время и порядок меток, нужные тесту, задаёт сам тест (`due()` в `emails/tests/test_worker.py`, `now` в `test_concurrency.py`)». После исправления двух находок выше — сослаться на тот приём, который в итоге выберут.
+  
+  ### Проверки
+  - `make -C .claude/worktrees/review stack-check SLOT=2` (копия на 68fceeb): прошла. Backend — 188 passed, frontend — 138 passed, линтеры и typecheck e2e чистые.
+  - Повторные прогоны на Postgres слота 2 (`registrations/tests/test_concurrency.py` + `emails/tests/test_concurrency.py` + `emails/tests/test_worker.py`):
+    - первая серия — 2 упавших прогона из 20. Какие тесты упали, не установлено: я сохранял только итоговую строку прогона. Поэтому эти падения не доказывают находки выше, они только показывают, что набор с `test_worker.py` пока не стабилен на 100 %;
+    - вторая серия с выводом `FAILED` — 0 падений из 20.
+  - Сама команда из `docs/rules/concurrency.md` (без `test_worker.py`) 20 раз отдельно не прогонялась. Число 30 из 30 из записи 09:36 я не воспроизводил.
+  - `stack-e2e` не запускал: API, UI и e2e не менялись.
+  - Стек слота 2 остановлен, копия удалена.
+  
+  ### Решения из docs/decisions.md
+  - 09:36. Что `process_batch` в production не меняется, обосновано: отскок только задерживает письмо до следующего опроса, письмо не теряется и не уходит дважды. Время БД `Now()` отклонено по делу: Docker на той же ВМ видит те же часы. Находок против воркера нет.
+  - 09:39. Находку 1 не снимает, а сама её вызывает: запись утверждает, что `now` получили все тесты, которые ставят письмо и сразу ждут отправки, а четыре таких теста остались на `timezone.now()`. Про порядок (находка 2) в записях ничего нет.
+  - Запись в «На потом» в `docs/features/checkin/tasks.md` по условию задачи не находка.
+  
+  ### Проверено без находок
+  - Diff `test_concurrency.py`: `partial(process_batch, now=due)` не ослабляет тест. Конкурентность через `run_together` и барьер сохранена, инварианты те же (каждое письмо отправлено ровно один раз, все `sent`), без ретраев, маркеров и пропусков.
+  - `due()` при пустой очереди вернул бы `None`, и `process_batch` взял бы `timezone.now()`. Но все вызовы идут после `queue_ticket`, так что на практике этого не бывает.
+  - Production-код, миграции, API и админка не менялись. Мусора (закомментированного кода, TODO, эмодзи, рекламного тона) в diff нет. Комментарий в тесте объясняет, почему так сделано, а не пересказывает код.
+  - Сообщения коммитов в формате Conventional Commits и соответствуют diff. Записи в `decisions.md` идут в тех же коммитах.
+  
+  ### Не проверялось
+  - Браузер: изменения только в тестах backend.
+  - Вне диапазона, но причина та же: `registrations/services.py` ставит `queued_at` по `timezone.now()` под замком и строит по нему очередь ожидания. Отскок часов в production переставит двух человек в листе ожидания. Решение 09:36 рассматривает отскок только для писем. Если это важно, стоит отдельно оценить, есть ли отскоки часов на целевом хосте.
+  
+  ---
+  
+  **Мои замечания по находкам (решаете вы):**
+  - **Находка 1** верна. Эти четыре теста я пропустил: они берут `now = timezone.now()` сразу после `queue_ticket`, а я искал только вызовы `process_batch()` без аргумента. Запись 09:39 из-за этого неточна.
+  - **Находка 2** тоже верна: `process_batch` сортирует по `next_attempt_at`, а тесты ждут порядка id. Отскок, который попал между созданием двух писем, меняет их местами.
+  - **Находка 3** зависит от того, что решим по 1 и 2.
+  - **«Не проверялось», `queued_at`.** Это уже production-поведение, а не тест: на сервере с NTP часы обычно подводятся плавно, без скачков назад, так что это скорее тема для «На потом».
+  
+  Как поступить с находками 1–3: исправить все три в этой ветке, а замечание про `queued_at` записать в «На потом»?
+
+> да
+
+⏺ Bash(cd /home/raf/event-registration/backend && grep -n "timezone.now()\|def test_\|queue_ticket\|due()" emails/tests/test_worker.py; sed -n 150,205p emails/tests/test_worker.py)
+  ⎿  66:        starts_at=timezone.now() + timedelta(days=7),
+     71:def queue_ticket(event: Event, email: str) -> OutboxEmail:
+     79:def due() -> datetime:
+     89:def test_pending_email_is_sent_and_marked_sent(event: Event) -> None:
+     90:    queued = queue_ticket(event, "a@x.io")
+     91:    now = timezone.now()
+     … +94 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  backend/emails/tests/test_worker.py | 24 ++++++++++++++++--------
+      1 file changed, 16 insertions(+), 8 deletions(-)
+     20 passed in 6.72s
+     Success: no issues found in 14 source files
+     All checks passed!
+     16 files already formatted
+     … +1 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  == old
+     ______________________ test_failed_send_is_retried_later _______________________
+         def test_failed_send_is_retried_later(event: Event, refuse: Refuse) -> None:
+     ___________ test_failed_email_does_not_stop_the_batch[smtp_refusal] ____________
+         def test_failed_email_does_not_stop_the_batch(
+     __________ test_failed_email_does_not_stop_the_batch[invalid_address] __________
+     … +11 lines
+
+⏺ Bash(cd /home/raf/event-registration && grep -n -A5 "В WSL2 часы стены" docs/development.md; grep -n -A4 "Тест,$" backend/AGENTS.md)
+  ⎿  513:- В WSL2 часы стены (`time.time()`, `timezone.now()`) отскакивают назад примерно на 0,4 с
+     514-  каждые ~30 с, даже без нагрузки: так хост подводит часы виртуальной машины. Тест, который
+     515-  ставит письмо и сразу вызывает `process_batch()` с текущим временем, может найти его
+     516-  «из будущего» и не отправить. Момент «письма уже пора отправить» тест передаёт в `now`
+     517-  (`emails/tests/test_concurrency.py`), а не берёт с часов.
+     518-- pnpm запускает install-скрипты только у пакетов из `pnpm.onlyBuiltDependencies` в корневом
+     … +5 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  41:## Этап 4. E2E и закрытие
+     49:## Лог
+     67:## На потом
+
+⏺ Bash(tail -4 docs/features/checkin/tasks.md && printf '\n- Лист ожидания упорядочен по `queued_at` из `timezone.now()` под замком Event. Если часы\n  хоста отскочат назад (в WSL2 — на 0,4–0,9 с каждые ~30 )
+  ⎿  - Регистрация на начавшееся событие не запрещена (Non-Goal фазы 1): можно зарегистрироваться
+       во время события и сразу пройти чекин. Закрыть регистрацию с `starts_at` — изменение API
+       фазы 1, решения пока нет.
+     exit 0
+     All checks passed!
+     ======================== 200 passed in 60.73s (0:01:00) ========================
+     … +2 lines
+
+⏺ Bash(git add -A && git commit -q -m "test(backend): set the due time and order in the worker tests" -m "Four worker tests still read the clock right after queuing, and two)
+  ⎿  36fe46a test(backend): set the due time and order in the worker tests
+     FAILED registrations/tests/test_concurrency.py::test_parallel_registrations_for_the_last_seat_confirm_exactly_one
+     joint: failures 1/30
+     FAILED registrations/tests/test_concurrency.py::test_parallel_registrations_for_the_last_seat_confirm_exactly_one
+     with worker: failures 1/30
+     Command did not complete within its 600s timeout and was moved to the background (ID: bkgk3dx9n). Output is being written to: /tmp/claude-1000/-home-raf-event-registration/4634a2ff-61b4-4b8b-88ec-9ab8
+     … +1 lines
+
+⏺ Bash(S=/tmp/claude-1000/-home-raf-event-registration/4634a2ff-61b4-4b8b-88ec-9ab8fa0d7ccf/scratchpad/race-logs; f=$(grep -l FAILED $S/final-*.log | head -1); grep -E "^E |^>|test_concurrency.py:[0-9]+" $f )
+  ⎿  >           assert r.position == waitlist_position(Registration.objects.get(id=r.registration.id))
+     E           assert 2 == 4
+     E            +  where 2 = RegisterResult(registration=<Registration: user0@x.io (waitlisted)>, created=True, position=2).position
+     E            +  and   4 = waitlist_position(<Registration: user0@x.io (waitlisted)>)
+     E            +    where <Registration: user0@x.io (waitlisted)> = get(id=3)
+     E            +      where get = <django.db.models.manager.Manager object at 0x7bef6e9fe660>.get
+     … +29 lines
+
+⏺ Это не новая проблема, а та, которую ревьюер отметил в «Не проверялось» и которую я только что записал в «На потом»: лист ожидания при отскоке часов.
+  
+  - **Что упало:** `register` сообщил `user0` позицию 2, а `waitlist_position` после всех регистраций насчитал 4.
+  - **Почему:** очередь считается по `queued_at`, а `queued_at` берётся из `timezone.now()` под замком Event (`registrations/services.py:90`, `:97`, порядок — `:49`). Две регистрации получили замок позже `user0`, но часы между ними отскочили назад. Их `queued_at` оказался раньше, и они встали в очередь перед `user0`, сдвинув номер, который ему уже сообщили.
+  - **Это баг production, а не теста.** Тест проверяет как раз то, что нарушается: номер, названный участнику, остаётся верным. На сервере с NTP часы обычно подводятся плавно, но шаг назад возможен: ручная правка, старт ВМ, `ntpdate`. Тогда очередь нарушается молча.
+  
+  **Статус задачи:**
+  - Совместный прогон: 1 падение из 30. Вместе с `test_worker.py` тоже 1 из 30, и оба раза падал этот тест регистраций. Тесты писем не упали ни разу.
+  - Серия «20 раз подряд» из правил ещё идёт в фоне.
+  - Без исправления листа ожидания критерий «30 из 30» выполнить нельзя.
+  
+  Это уже изменение логики очереди в production, а задача была про тест писем. Поэтому решать вам.
+  
+  1. **Исправить в этой ветке (я бы выбрал это).** `queued_at` под замком Event берётся не меньше последнего `queued_at` события плюс 1 мкс: `max(now, last + 1 µs)`. Замок уже сериализует регистрации события, так что очередь становится монотонной при любых часах; новых полей и миграций нет. Сначала детерминированный тест: часы подменяются так, чтобы между двумя регистрациями они шли назад, и тест падает на текущем коде. Потом исправление. Отклоняю время БД (`Now()`): Postgres на той же ВМ видит те же часы. Отклоняю порядок по `id`: при повторной регистрации после отказа строка остаётся прежней, и её `id` не отражает момент постановки в очередь.
+  2. **Отдельной задачей.** Эту ветку закрываю как есть: тесты писем исправлены, а нестабильность теста регистраций записываю в «На потом» вместе с причиной. Критерий «30 из 30» тогда не выполнен, и это нужно будет явно отметить.
+  
+  Какой вариант?
+
+⏺ Bash(tail -3 /tmp/claude-1000/-home-raf-event-registration/4634a2ff-61b4-4b8b-88ec-9ab8fa0d7ccf/tasks/bkgk3dx9n.output)
+  ⎿  rule: passed 11/20
+     
+     [exited with code 0]
+
+⏺ Фоновая серия «20 раз подряд» командой из `docs/rules/concurrency.md` остановилась на 12-м прогоне: прошло 11, 12-й упал. Вывод в этой серии не сохранялся, поэтому какой тест упал, я не знаю. В двух предыдущих сериях по 30 прогонов каждый раз падал только тест листа ожидания `test_parallel_registrations_for_the_last_seat_confirm_exactly_one`, тесты писем не упали ни разу. Скорее всего, и здесь он, но это не проверено.
+  
+  Значит, критерий «20 из 20» сейчас не выполняется, пока не решён лист ожидания. Жду вашего выбора: исправить `queued_at` в этой ветке (вариант 1) или вынести это отдельной задачей (вариант 2).
+
+> 1
+
+⏺ Bash(sed -n 1,130p registrations/services.py; grep -rn "queued_at" --include='*.py' . | grep -v "\.venv\|migrations" | grep -v "^./registrations/services.py")
+  ⎿  from dataclasses import dataclass
+     from datetime import datetime
+     
+     from django.db import transaction
+     from django.db.models import Q
+     from django.utils import timezone
+     … +136 lines
+
+⏺ Bash(sed -n 115,150p registrations/tests/test_services.py; sed -n 80,140p registrations/tests/test_cancel.py; grep -rn "register(.*now=" --include='*.py' . | grep -v .venv)
+  ⎿  register(event.id, "b@x.io", "Bob")
+         register(event.id, "c@x.io", "Cid")
+     
+         again = register(event.id, "C@x.io", "Cid")
+     
+         assert again.created is False
+     … +105 lines
+
+⏺ Bash(cd /home/raf/event-registration && grep -n "queued_at" docs/decisions.md docs/architecture.md docs/features/*/spec.md | cut -c1-400)
+  ⎿  docs/decisions.md:491:- **06:20** — 4.1: (1) `register` при нехватке мест создаёт `waitlisted` (`confirmed_at` пуст), `EventFull` и ответ 409 удалены — временная ветка 3.1 заменена. (2) `position` не 
+     docs/decisions.md:494:- **07:05** — по ревью этапа 4 (агент `reviewer`): (1) `position` в схеме OpenAPI необязателен (`position?: number`) — поля `RegistrationResultSerializer` больше не `read_only`, 
+     docs/decisions.md:496:- **06:30** — 5.1 в новой ветке `feat/cancel` от свежего `main` (PR #2 влит). Решения: (1) `cancel(manage_token)` сначала без блокировки читает `event_id` по токену, затем блокир
+     docs/decisions.md:497:- **06:42** — по ревью 5.1 (агент `reviewer`): добавлены тесты порядка повышения при равном `queued_at` (падает при `order_by("queued_at", "-id")`), оживления из `waitlisted` (хв
+     docs/decisions.md:507:- **07:36** — 6.1: тесты гонок (`registrations/tests/test_concurrency.py`) и `docs/rules/concurrency.md`. (1) Тест нашёл ошибку: `register` брал `now` до блокировки Event, поэтом
+     docs/decisions.md:601:- **09:58** — по ревью исправления нестабильного теста двух воркеров (решение человека): (1) `now = due()` получили и четыре теста `test_worker.py`, которые брали `timezone.now()
+     … +9 lines
+
+⏺ Bash(cd /home/raf/event-registration/backend && grep -n "def test_" registrations/tests/test_services.py registrations/tests/test_cancel.py | grep -i "reviv\|tail\|again\|order\|position\|queue")
+  ⎿  registrations/tests/test_cancel.py:85:def test_promotion_follows_queued_at_then_id(event: Event) -> None:
+     registrations/tests/test_cancel.py:97:def test_promotion_breaks_a_queued_at_tie_by_id(event: Event) -> None:
+     registrations/tests/test_cancel.py:125:def test_register_after_cancel_revives_the_row_with_a_new_ticket_code(event: Event) -> None:
+     registrations/tests/test_cancel.py:144:def test_register_after_cancel_on_a_full_event_goes_to_the_waitlist_tail(event: Event) -> None:
+     registrations/tests/test_cancel.py:157:def test_revived_from_the_waitlist_goes_to_the_tail(event: Event) -> None:
+     registrations/tests/test_cancel.py:169:def test_revived_registration_can_be_cancelled_and_promotes_the_next(event: Event) -> None:
+     … +7 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  E       assert (1, 1) == (1, 2)
+     2 failed, 36 deselected in 1.87s
+
+⏺ На текущем коде оба теста падают. Теперь исправление в `register`.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  107 passed in 32.78s
+
+⏺ Bash(grep -n "^from\|^import" registrations/tests/test_services.py registrations/tests/test_cancel.py | head -30)
+  ⎿  registrations/tests/test_cancel.py:1:from datetime import timedelta
+     registrations/tests/test_cancel.py:3:import pytest
+     registrations/tests/test_cancel.py:4:from django.utils import timezone
+     registrations/tests/test_cancel.py:5:from rest_framework.test import APIClient
+     registrations/tests/test_cancel.py:7:from accounts.models import User
+     registrations/tests/test_cancel.py:8:from events.models import Event
+     … +11 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  107 passed in 32.96s
+      backend/registrations/services.py | 25 +++++++++++++++++++------
+      1 file changed, 19 insertions(+), 6 deletions(-)
+     2 failed, 105 deselected in 1.60s
+     2 failed, 105 deselected in 1.65s
+      backend/registrations/services.py            | 21 +++++++++++++++++----
+     … +3 lines
+
+⏺ Bash(cd /home/raf/event-registration && sed -n 88,98p docs/architecture.md; sed -n 16,18p docs/rules/concurrency.md)
+  ⎿  **Реализовано (фаза 1)** — `registrations/services.py`, правила — `docs/rules/concurrency.md`:
+     
+     - **Регистрация:** транзакция, `SELECT … FOR UPDATE` на Event, подсчёт `confirmed` →
+       `confirmed` или `waitlisted`. Регистрации на одно событие выполняются строго по очереди —
+       двое не займут одно место и не вставят один email дважды. `queued_at` берётся после
+       блокировки, поэтому порядок листа — порядок блокировок. `UNIQUE(event, email)` — страховка
+     … +7 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  во время события и сразу пройти чекин. Закрыть регистрацию с `starts_at` — изменение API
+       фазы 1, решения пока нет.
+     
+      backend/registrations/services.py            | 21 +++++++++++++++++----
+      backend/registrations/tests/test_cancel.py   | 22 +++++++++++-----------
+      backend/registrations/tests/test_services.py | 23 ++++++++++++-----------
+     … +5 lines
+
+⏺ Запускаю `make stack-check`, затем коммичу.
+
+⏺ Bash(make stack-check > /tmp/claude-1000/-home-raf-event-registration/4634a2ff-61b4-4b8b-88ec-9ab8fa0d7ccf/scratchpad/stack-check3.log 2>&1; echo "exit $?"; grep -E "passed|failed|rror" /tmp/claude-1000/-h)
+  ⎿  exit 2
+      ELIFECYCLE  Command failed with exit code 1.
+     make[1]: *** [Makefile:37: format-check] Error 1
+     make: *** [Makefile:134: stack-check] Error 2
+
+⏺ Bash(grep -B5 "ELIFECYCLE" /tmp/claude-1000/-home-raf-event-registration/4634a2ff-61b4-4b8b-88ec-9ab8fa0d7ccf/scratchpad/stack-check3.log | head; git diff docs/features/checkin/tasks.md | tail -8)
+  ⎿  > prettier --check .
+     
+     Checking formatting...
+     [warn] docs/features/checkin/tasks.md
+     [warn] Code style issues found in the above file. Run Prettier with --write to fix.
+      ELIFECYCLE  Command failed with exit code 1.
+     … +8 lines
+
+⏺ Лишняя пустая строка в конце `tasks.md`. Убираю её и повторяю проверку.
+
+⏺ Bash(python3 -c ")
+  ⎿  exit 2
+     registrations/services.py:121: error: Returning Any from function declared to return "datetime"  [no-any-return]
+     Found 1 error in 1 file (checked 71 source files)
+     make[1]: *** [Makefile:62: typecheck-backend] Error 1
+     make: *** [Makefile:134: stack-check] Error 2
+
+⏺ Ошибка mypy: результат `aggregate` типизирован как `Any`. Аннотирую переменную, как в `due()`.
+
+⏺ Edit(/home/raf/event-registration/backend/registrations/services.py)
+⏺ Bash(make stack-check > /tmp/claude-1000/-home-raf-event-registration/4634a2ff-61b4-4b8b-88ec-9ab8fa0d7ccf/scratchpad/stack-check3.log 2>&1; echo "exit $?"; grep -E "passed|failed|rror" /tmp/claude-1000/-h)
+  ⎿  The file /home/raf/event-registration/backend/registrations/services.py has been updated successfully.
+
+  ⎿  exit 0
+     All checks passed!
+     ======================== 200 passed in 64.59s (0:01:04) ========================
+      Test Files  19 passed (19)
+           Tests  144 passed (144)
+
+⏺ Bash(git add -A && git commit -q -m "fix(backend): keep the waitlist in lock order when the clock steps back" -m "register took queued_at from the wall clock under the event lock, so a)
+  ⎿  cd09a44 fix(backend): keep the waitlist in lock order when the clock steps back
+
+⏺ Bash(cd /home/raf/event-registration/backend && S=/tmp/claude-1000/-home-raf-event-registration/4634a2ff-61b4-4b8b-88ec-9ab8fa0d7ccf/scratchpad/race-logs)
+  ⎿  Command running in background with ID: b8g4369j0. Output is being written to: /tmp/claude-1000/-home-raf-event-registration/4634a2ff-61b4-4b8b-88ec-9ab8fa0d7ccf/tasks/b8g4369j0.output. You will be not
+     Session cwd remains /home/raf/event-registration; directory changes made by the backgrounded command do not apply to subsequent commands.
+
+⏺ Порядок листа ожидания исправлен в коммите `cd09a44`, `make stack-check` проходит. Серии повторных прогонов, которые проверят критерий «30 из 30» и «20 из 20», ещё идут в фоне.
+  
+  **Что изменилось в `register`:** `queued_at` под замком Event теперь не может быть раньше последнего `queued_at` события. Если `now` не позже его, берётся последний плюс 1 мкс (`_queue_time` в `registrations/services.py`). Замок уже ставит регистрации события в очередь одну за другой, поэтому хватает одного чтения `MAX`: нового поля и миграции нет.
+  
+  **Тесты:**
+  - Тест вперёд. `test_earlier_queued_at_wins_over_a_smaller_id` и `test_promotion_follows_queued_at_then_id` закрепляли прежнее поведение: кто раньше по часам, тот раньше в очереди, даже если взял замок позже. Я переписал их под новое правило и переименовал. На старом коде оба падали, на новом проходят. Если убрать новое правило, снова падают.
+  - Тесты ничьей теперь создают ничью вручную через `update`, потому что `register` её больше не даёт. С обратным порядком по `id` они падают, то есть по-прежнему что-то проверяют.
+  - Тест оживления берёт `now` от первой регистрации, а не с часов.
+  
+  **Документация:** правило 3 в [docs/rules/concurrency.md](docs/rules/concurrency.md) и раздел о регистрации в [docs/architecture.md](docs/architecture.md) описывают новое правило. Решение с отклонёнными вариантами записано в [docs/decisions.md](docs/decisions.md). Записка о `queued_at` в «На потом» закрыта и удалена.
+  
+  Это изменение production-логики после ревью, поэтому по правилам проекта нужно повторное ревью коммитов после `68fceeb`: в них исправления по находкам и фикс листа ожидания. Запущу его, когда придут результаты серий. Маркер `■ конец сессии` поставлю после ревью.
+
+⏺ Bash(cat /tmp/claude-1000/-home-raf-event-registration/4634a2ff-61b4-4b8b-88ec-9ab8fa0d7ccf/tasks/b8g4369j0.output)
+  ⎿  joint: failures 0/30
+     with worker: failures 0/30
+     rule: passed 20/20
+     
+     [exited with code 0]
+
+⏺ Agent(Re-review flaky test fixes)
+  ⎿  Async agent launched successfully. (This tool result is internal metadata — never quote or paste any part of it, including the agentId below, into a user-facing reply.)
+     agentId: a46205da1a22c57ca (internal ID - do not mention to user. Use SendMessage with to: 'a46205da1a22c57ca', summary: '<5-10 word recap>' to continue this agent.)
+     The agent is working in the background. You will be notified automatically when it completes. You know nothing about its results until that notification arrives — do not report, assume, or predict the
+     Do not duplicate this agent's work — avoid working with the same files or topics it is using.
+     output_file: /tmp/claude-1000/-home-raf-event-registration/4634a2ff-61b4-4b8b-88ec-9ab8fa0d7ccf/tasks/a46205da1a22c57ca.output
+     Do NOT Read or tail this file via the shell tool — it is the full subagent JSONL transcript and reading it will overflow your context. If the user asks for progress, say the agent is still running; yo
+
+⏺ Финальные серии прошли полностью, вывод каждого прогона сохранён:
+  
+  | Прогон | Результат |
+  | --- | --- |
+  | Совместный (`registrations/` + `emails/` тесты гонок) | 0 падений из 30 |
+  | То же вместе с `test_worker.py` | 0 падений из 30 |
+  | 20 раз подряд командой из `docs/rules/concurrency.md` | 20 из 20 |
+  | `make stack-check` на `cd09a44` | прошёл |
+  
+  Критерии готовности задачи выполнены.
+  
+  Повторное ревью запущено на диапазон `a3f23a4..cd09a44`, это коммиты после первого ревью. По правилам проекта это последний повтор. Когда придёт отчёт, покажу его целиком. После разбора находок поставлю маркер `■ конец сессии`. Ветка не отправлена; push (`SLOT=1 git push`) — только когда скажете.
+
+⏺ Повторное ревью ещё идёт: ревьюер ждёт свою фоновую проверку, отчёта пока нет. Покажу его целиком, когда придёт.
+
+⏺ Повторное ревью диапазона `a3f23a4..cd09a44` закончилось без находок. Отчёт целиком:
+  
+  ---
+  
+  Повторное ревью диапазона a3f23a4..cd09a44 (ветка fix/flaky-email-workers-test, 4 коммита: 6de9bc8, cbc72e8, 36fe46a, cd09a44): находок нет.
+  
+  **Что проверено без находок**
+  
+  - **Исправление в `register`** (`backend/registrations/services.py`, `_queue_time`). Гонки здесь нет: `MAX(queued_at)` читается под `select_for_update` на Event. `queued_at` больше нигде не меняется: `cancel`, `_promote_first_waitlisted` и `check_in` его не трогают, админка регистраций только для чтения. Строка, оживлённая после отказа, учитывает в `MAX` и свой старый `queued_at`, поэтому встаёт в хвост. Повтор регистрации возвращает ответ раньше вызова `_queue_time`, лишнего запроса нет. Ключ `ORDER BY queued_at, id` в `waitlist_position` и при повышении из листа согласован с новым правилом.
+  - **Тесты на новое поведение.** `test_clock_stepping_back_does_not_queue_a_later_registration_first` и `test_promotion_follows_the_lock_order_when_the_clock_steps_back` проверяют поведение и на старом коде упали бы: вторая регистрация с меньшим `now` получила бы позицию 1. Ничьи в тестах `..._breaks_a_queued_at_tie_by_id` делаются вручную через `update`: `register` ничьей больше не даёт. Тест оживления берёт `now` от `first.queued_at`, а не с часов.
+  - **`test_worker.py`.** Все тесты, которые проверяют, что письмо уже пора отправить, получают `now=due()`. Тесты порядка пачки ставят метки сами через `queue_in_order`. `test_email_waits_for_its_next_attempt` остаётся на часах обоснованно: запас в минуту, и он проверяет, что срок ещё не наступил.
+  - **Документация против кода.** Ссылки на `due()`, `queue_in_order()` и `_queue_time` в `docs/development.md`, `backend/AGENTS.md`, `docs/rules/concurrency.md` и `docs/architecture.md` ведут на существующий код. Фраза в architecture про «+1 мкс» соответствует коду.
+  - **Требования задачи.** Запись о тесте из «На потом» в `docs/features/checkin/tasks.md` удалена (cbc72e8). Временная запись про `queued_at`, добавленная в 36fe46a, удалена в cd09a44. Сообщения коммитов соответствуют diff.
+  - **Поиск по чек-листу `anti-slop-review` в объёме diff** ничего не дал: нет эмодзи, рекламных слов, TODO, `except Exception` и персональных данных в логах. Комментарии объясняют причину, а не пересказывают код.
+  
+  **Наблюдение, не находка.** Если часы один раз скакнут далеко вперёд, следующие регистрации события будут получать «последний `queued_at` + 1 мкс», пока реальное время не догонит. Порядок при этом верный, неверна только сама метка в админке. Это прямое следствие варианта, который выбрал человек (запись 10:17), поэтому как находку не ставлю.
+  
+  **Проверки**
+  
+  - `make -C .claude/worktrees/review stack-check SLOT=2` на копии с cd09a44 прошёл: ruff «All checks passed», backend 200 passed, frontend 144 passed, lint и typecheck e2e без ошибок.
+  - Совместный прогон `registrations/tests/test_concurrency.py` + `emails/tests/test_concurrency.py` (команда из `docs/rules/concurrency.md`, Postgres слота 2, порт 5434) — 30 прогонов, 0 падений.
+  - Второй цикл я тоже запустил: 40 прогонов `registrations/tests` + `emails/tests/test_worker.py`. Результата по нему нет: я принял срабатывание `timeout` за конец цикла и остановил стек слота 2, пока цикл ещё шёл. Результата по этому циклу не заявляю.
+  - `stack-e2e` не запускал: API, UI и сценарии `e2e/` не менялись.
+  - Стек слота 2 остановлен (`stack-down`), копия удалена (`review-worktree-remove`).
+  
+  **Снято решениями из `docs/decisions.md`.** Ничего: находок, которые надо было бы снимать, не было. Запись 10:17 объясняет, почему не выбраны время БД, порядок по `id` и отдельное поле-последовательность. Она же объясняет, почему два теста, закреплявшие прежнее правило «раньше по часам — раньше в очереди», переписаны, а не ослаблены: на старом коде они падали.
+  
+  **Что не проверялось**
+  
+  - Страницы в браузере не смотрел.
+  - Порядок «сначала падающий тест, потом исправление» внутри cd09a44 по истории не проверить: тест и исправление в одном коммите. Падение тестов на старом коде я вывел из чтения кода и не запускал.
+  - Тела коммитов и содержимое `tasks.md` не читал, как требуют инструкции ревью.
+  
+  ---
+  
+  **Два факта к отчёту:**
+  - Падение новых тестов на старом коде я проверял запуском, а не только по чтению кода: до исправления `register` оба теста упали (`assert (1, 1) == (1, 2)`, «2 failed»).
+  - Второй цикл ревьюера, с `test_worker.py`, результата не дал. У меня такая серия есть: 0 падений из 30 на `cd09a44`.
+  
+  **Решение за вами:** что делать с наблюдением про скачок часов вперёд. Варианты: записать в «На потом», чтобы не потерялось, или оставить как есть. После этого закрою сессию маркером `■ конец сессии`. Push (`SLOT=1 git push`) — когда скажете.
+
+⏺ Это повторное уведомление о том же отчёте, нового в нём нет. Отчёт я показал выше целиком.
+  
+  Остаётся ваше решение по наблюдению про скачок часов вперёд: записать его в «На потом» или оставить как есть. После этого закрою сессию. Push — когда скажете.
+
+⏺ Повторное ревью завершилось полностью, его фоновых проверок больше нет. Отчёт тот же, что я показал выше, находок нет.
+  
+  Жду вашего решения по наблюдению про скачок часов вперёд: записать в «На потом» или оставить как есть. После этого закрою сессию. Push — когда скажете.
+
+> pr
+
+⏺ Перед PR ставлю маркер конца сессии. Наблюдение про скачок часов вперёд в этот PR не добавляю: решения по нему не было. Скажете, что записать, — добавлю отдельно. Сначала смотрю, как оформлены прошлые PR.
+
+⏺ Bash(gh pr view 12 --json body -q .body | head -30; git status --short; git fetch -q origin && git log --oneline HEAD..origin/main | head)
+  ⎿  ## Зачем
+     
+     Начало фазы 3: организатор отмечает пришедших по коду с билета. Этап 1 — tracer bullet, один
+     сценарий насквозь: код из письма → экран чекина → «Пропущен». Повтор чекина, неподтверждённый
+     билет, запрет отказа после чекина и тесты гонок — этап 2; панель события со счётчиками — этап 3.
+     
+     … +24 lines
+
+⏺ Bash(gh pr view 12 --json body -q .body | sed -n 30,60p; t=$(date '+%H:%M'); echo "- **$t** — ■ конец сессии" >> docs/decisions.md && git add -A && git commit -q -m "docs: close the flaky email test sessio)
+  ⎿  `docs/decisions.md`, записи 2026-10-31 с 06:03.
+     
+     ## Как проверено
+     
+     - `make stack-check` (слот 1): backend 188 тестов, frontend 138 — зелёные; `make stack-e2e` —
+       7 из 7 (сценарий чекина в e2e — этап 4).
+     … +23 lines
+
+⏺ Пушу ветку: хук `pre-push` проверит backend на Postgres слота 1.
+
+⏺ Bash(SLOT=1 git push -u origin fix/flaky-email-workers-test 2>&1 | grep -vE "^\s*$" | tail -6)
+  ⎿  remote: Create a pull request for 'fix/flaky-email-workers-test' on GitHub by visiting:        
+     remote:      https://github.com/rbikbov/event-registration/pull/new/fix/flaky-email-workers-test        
+     remote: 
+     To github.com:rbikbov/event-registration.git
+      * [new branch]      fix/flaky-email-workers-test -> fix/flaky-email-workers-test
+     branch 'fix/flaky-email-workers-test' set up to track 'origin/fix/flaky-email-workers-test'.
+
+⏺ Bash(cat > /tmp/claude-1000/-home-raf-event-registration/4634a2ff-61b4-4b8b-88ec-9ab8fa0d7ccf/scratchpad/pr-body.md <<'EOF')
+  ⎿  https://github.com/rbikbov/event-registration/pull/14
+
+⏺ Написано для: тех, кто проверяет PR в этом репозитории.
+  
+  PR создан: https://github.com/rbikbov/event-registration/pull/14 — «Fix the flaky two-worker email test and keep the waitlist in lock order».
+  
+  - **Причина:** в WSL2 часы отскакивают назад на 0,4–0,9 с примерно каждые 30 с. Из-за этого тесты писем видели только что поставленные письма как «ещё не пора», а лист ожидания мог поставить позднюю регистрацию перед ранней. Второе — ошибка production-кода, и в этом PR она тоже исправлена.
+  - **Ветка:** `fix/flaky-email-workers-test` отправлена через `SLOT=1 git push`, хук `pre-push` прошёл. В ней 8 коммитов, последний — маркер `■ конец сессии` (`14ceb34`), сессия закрыта.
+  - **Проверки:** совместный прогон тестов гонок — 0 падений из 30, вместе с `test_worker.py` — 0 из 30, команда из правил — 20 из 20. `make stack-check` прошёл. Повторное ревью — без находок.
+  - **Открытый вопрос:** наблюдение ревьюера про скачок часов вперёд в «На потом» не записано, решения по нему не было. В описании PR оно упомянуто как открытое.
+  - **Вне `main`:** на старой локальной ветке `feat/checkin-once` остался коммит, который закрывал сессию 07:51. В `main` он не нужен: маркер `■ 09:21` вошёл в эту ветку. Ветку можно удалить.

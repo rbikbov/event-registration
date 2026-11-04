@@ -1,0 +1,73 @@
+> Сделай ревью настройки ревью (агент reviewer, skill anti-slop-review, цели make review-*)
+  в репозитории /home/raf/event-registration.
+  
+  - Spec нет; рамки: агент .claude/agents/reviewer.md, skill .claude/skills/anti-slop-review/,
+    цели review-* в Makefile и их описание в docs/development.md. Правки feature-workflow и
+    AGENTS.md ещё не сделаны — их отсутствие не находка.
+  - Диапазон коммитов: 2522f43..1cc35b8 (ветка chore/reviewer-setup). Сначала проверь, что
+    коммиты на месте.
+  
+  Перед ревью, не открывая файлов: (1) назови свою модель; (2) процитируй дословно первый
+  принцип и пункт 5 раздела «Порядок» из skill anti-slop-review. Файлы в .claude/skills/
+  не открывай через Read, Glob или Grep — ни для этого, ни для ревью.
+  
+  Окружение: у меня запущены postgres и mailpit проекта event-registration, их не трогай.
+  Файлы не изменяй. Ответ — в формате из твоих инструкций.
+
+⏺ Это бриф для агента `reviewer`: он адресован ему («в формате из твоих инструкций») и проверяет, загружен ли skill в агента заранее. Поэтому передаю текст агенту без изменений.
+
+⏺ Agent(Review reviewer setup commits)
+  ⎿  Async agent launched successfully. (This tool result is internal metadata — never quote or paste any part of it, including the agentId below, into a user-facing reply.)
+     agentId: acf796553bbb30bb0 (internal ID - do not mention to user. Use SendMessage with to: 'acf796553bbb30bb0', summary: '<5-10 word recap>' to continue this agent.)
+     The agent is working in the background. You will be notified automatically when it completes. You know nothing about its results until that notification arrives — do not report, assume, or predict the
+     Do not duplicate this agent's work — avoid working with the same files or topics it is using.
+     output_file: /tmp/claude-1000/-home-raf-event-registration/cc70767f-5b7f-4680-9aab-936048a94603/tasks/acf796553bbb30bb0.output
+     Do NOT Read or tail this file via the shell tool — it is the full subagent JSONL transcript and reading it will overflow your context. If the user asks for progress, say the agent is still running; yo
+
+⏺ Я передал бриф агенту `reviewer` дословно. Агент ещё работает, результатов пока нет. Когда он закончит, перешлю его ответ полностью: модель, цитаты из skill и находки.
+  
+  Запись «▶ начало сессии» в [docs/decisions.md](docs/decisions.md) я не делал, потому что в брифе сказано не изменять файлы. Если это запрещение относилось только к ревьюеру, скажите, и я её добавлю.
+
+⏺ Ревьюер закончил и нашёл три проблемы. Ни одна не снимается решениями от 23:06 и 23:16 в `docs/decisions.md`. Сам я находки не перепроверял, ниже его отчёт в сжатом виде.
+  
+  **Перед ревью** (ответ дан до открытия файлов):
+  1. Модель: Opus 5.5 (`claude-opus-5-5`).
+  2. Цитаты из skill anti-slop-review:
+     - Первый принцип: «**Удалить лучше, чем добавить.** Мёртвая опция удаляется, а не документируется; рекламная фраза заменяется фактом или удаляется.»
+     - Пункт 5 «Порядка»: «Если есть браузер — поднять стек ревью (`make review-up`, http://localhost:5174, Mailpit http://localhost:8026), посмотреть страницы, затем `make review-down`. `make up` не запускать: он пересоздаёт стек человека. Без браузера (агент `reviewer`) — отметить в «не проверялось».»
+  
+     Skill загрузился в контекст при старте. Файлы в `.claude/skills/` агент не открывал, изменения в них смотрел только через `git diff`.
+  
+  Оба коммита, 2debb74 и 1cc35b8, на месте.
+  
+  ## Находки
+  
+  1. **[Makefile:115](Makefile#L115): имя compose-проекта `-p review` слишком общее.** Имя проекта действует на весь Docker daemon, а не на один репозиторий. Если на хосте есть другой проект `review`, `make review-up` пересоздаст его контейнеры, а `make review-down` (`down -v`) удалит его тома. Два параллельных ревью попадут в один стек, и `review-down` одного снесёт стек другого. Из-за этого утверждение в [docs/development.md:404-405](docs/development.md#L404-L405) о том, что удаляются только тома проекта `review`, верно лишь пока другого такого проекта нет.
+     *Исправление:* переименовать в `-p event-registration-review` и обновить текст в docs.
+  
+  2. **[reviewer.md:26](.claude/agents/reviewer.md#L26): `make check` у ревьюера идёт на ваш Postgres (5432).** `test-backend` запускает pytest с портом по умолчанию. pytest-django создаёт и удаляет `test_event_registration` в вашем Postgres. Если вы запустите тесты одновременно с ревью, оба прогона будут пересоздавать одну и ту же БД. Поэтому фраза в [docs/development.md:404](docs/development.md#L404) «Агент `reviewer` работает только с ним» неверна. Кроме того, без вашего `make dev-deps` проверка у ревьюера не работает вовсе.
+     *Исправление:* одно из двух:
+     - добавить цель `review-check`: она поднимает Postgres стека ревью и запускает `POSTGRES_PORT=5433 make check`;
+     - оставить `make check` и честно описать это в docs.
+  
+  3. **[Makefile:8](Makefile#L8): `make help` не показывает `review-e2e`.** Регулярное выражение `'^[a-z-]+:.*## '` не пропускает цифры в имени цели. По той же причине раньше пропадали `e2e` и `check-e2e`.
+     *Исправление:* заменить на `'^[a-z0-9-]+:.*## '`.
+  
+  ## Что агент запускал
+  
+  - **`make check`:** прошёл, backend 132 теста, Vitest 116. Тесты backend при этом шли на ваш Postgres во временной БД `test_event_registration`. Вы просили этот Postgres не трогать, а это ровно то, о чём находка 2.
+  - **`make review-e2e`:** прошёл, Playwright 5 из 5. До запуска агент убедился, что на хосте нет другого проекта `review`.
+  - **`make review-down`:** выполнен. Ваши `event-registration-postgres-1` и `event-registration-mailpit-1` по-прежнему запущены.
+  
+  ## Без находок и не проверялось
+  
+  - **Без находок:**
+    - Порты стека ревью и `FRONTEND_URL` в письмах указывают на стек ревью.
+    - e2e не обращаются к Mailpit и backend напрямую.
+    - Во frontmatter `reviewer.md` стоят `skills: [anti-slop-review]` и `model: opus`.
+    - В diff нет TODO, эмодзи и рекламного тона.
+  - **Не проверялось:**
+    - Страницы в браузере: браузера у агента нет.
+    - Коллизии из находок 1 и 2 агент не воспроизводил, они выведены из того, как устроены Docker Compose и pytest-django.
+  
+  Исправить все три?

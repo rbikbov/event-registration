@@ -1,0 +1,133 @@
+> /clear
+
+> переходим к фазе 1 и разбиваем её на этапы для вертикальных срезов. этапы разбиваем еще на подэтапы бекенд/фронтенд/...
+
+⏺ Skill(feature-workflow)
+  ⎿  Launching skill: feature-workflow
+
+⏺ Skill(session-handoff)
+  ⎿  Launching skill: session-handoff
+
+⏺ Bash(date '+%H:%M' && git status --short && tail -30 docs/decisions.md && cat docs/roadmap.md | head -80 && ls docs/features/_template && cat docs/features/_template/*.md)
+⏺ Bash(cat docs/architecture.md && make worktime 2>&1 | tail -5)
+  ⎿  01:00
+       Уточнения под проект — в `AGENTS.md` или в своих skills. Свои skills остаются настоящими
+       папками в `.claude/skills/`. Отклонены: `conventional-commit` (из `awesome-copilot`:
+       «автоматически» коммитит без подтверждения, формат уже в `AGENTS.md` и commitlint),
+       `django-verification` (дублирует `make check`, требует `black`, `bandit`, Celery, Redis),
+       `django-patterns` (пакет `settings/base|dev|prod|test`, каталог `apps/`, сигналы, кэш — всё
+     … +171 lines
+
+  ⎿  # Архитектура
+     
+     Как устроена система и почему. У каждого раздела — статус: **реализовано** (описание
+     совпадает с кодом) или **план (фаза N)** — согласованный проект, который уточняется в spec
+     фазы. При закрытии фазы её разделы приводятся к коду и получают статус «реализовано».
+     Обоснования выборов и отклонённые варианты — в [decisions.md](decisions.md), фазы — в
+     … +187 lines
+
+⏺ Bash(ls backend backend/accounts backend/config frontend/src frontend/src/* e2e e2e/* 2>/dev/null | grep -v node_modules | head -80; sed -n 1,60p backend/AGENTS.md | cut -c1-200)
+  ⎿  e2e/AGENTS.md
+     e2e/CLAUDE.md
+     e2e/eslint.config.js
+     e2e/package.json
+     e2e/playwright.config.ts
+     e2e/tsconfig.json
+     … +112 lines
+
+⏺ Bash(mkdir -p docs/features/registration && cat > docs/features/registration/spec.md <<'EOF')
+  ⎿  117 docs/features/registration/spec.md
+        79 docs/features/registration/tasks.md
+       196 total
+       планировалось в решении о составе skills). Отк
+       процедуры уже известен из правил backend и `devel
+     - **00:51** — ■ конец сессии
+     … +3 lines
+
+⏺ Bash(T=$(date +%H:%M) && cat >> docs/decisions.md <<EOF)
+  ⎿  «ЧЕРНОВИК» и местами «ПРОВЕРИТЬ». Пересмотреть на первом эндпоинте фазы 1 (как и
+       планировалось в решении о составе skills). Отклонено: ждать с первой строкой — каркас
+       процедуры уже известен из правил backend и `development.md`.
+      M docs/decisions.md
+     ?? docs/features/registration/
+
+⏺ Фаза 1 разбита на этапы и подэтапы, а `spec.md` и `tasks.md` написаны. Кода пока нет, и я ничего не коммитил: по процессу `feature-workflow` сначала нужно ваше утверждение.
+  
+  Written for: вы, как для человека, который утверждает spec и план задач.
+  
+  **Этапы** (в [tasks.md](docs/features/registration/tasks.md); в каждом подэтапы идут по порядку backend → frontend → e2e):
+  
+  1. **Вход организатора** — первый сквозной сценарий (tracer bullet).
+     - backend: login, logout, `me` и демо-учётки;
+     - frontend: CSRF в `shared/api`, страница `/login`;
+     - доводка skill `api-change` на первом эндпоинте.
+  2. **Создание события и список** — backend (Event, `/api/org/events/`), frontend (список и форма), e2e «организатор создаёт событие».
+  3. **Регистрация на свободное место** — backend (Registration, `register`, публичные эндпоинты), frontend (`/` и `/events/:id`), e2e участника.
+  4. **Лист ожидания** — backend (`waitlisted`, `position`), frontend («№N»), e2e.
+  5. **Отказ и повышение** — только backend (`cancel`, повышение первого из листа, оживление строки). Экрана в этой фазе нет.
+  6. **Гонки и закрытие** — тесты гонок, `docs/rules/concurrency.md`, таблица «требование → тест» в README, ревью агентом `reviewer`, проход в браузере.
+  
+  В плане 17 задач, у каждой своя проверка «готово, когда». Spec занимает 117 строк. В нём есть Non-Goals, инварианты, таблица API, экраны и крайние случаи.
+  
+  В `docs/decisions.md` добавлены маркер начала сессии и решение о разбиении. Предыдущая сессия была закрыта корректно.
+  
+  **Допущения в spec, которые нужно подтвердить** (задание их не определяет):
+  - Размеры полей: `title` и `name` до 200 символов, `description` до 2000, `capacity` от 1 до 10000.
+  - При создании `starts_at` должно быть в будущем.
+  - Публичный список показывает только будущие события, без пагинации.
+  - Повторная регистрация возвращает 200 с прежним результатом, новая — 201. Повторный отказ тоже даёт 200.
+  - Неверный пароль даёт 400, а не 401.
+  - Чужое событие в `/api/org/` даёт 404.
+  - `position` не хранится, а вычисляется.
+  - Запрет регистрации на уже начавшееся событие в фазу не входит.
+  
+  Утвердите spec и задачи или скажите, что поправить. После этого закоммичу документы и начну с задачи 1.1.
+
+> "кроме этапа 5 — отказа, у которого в фазе 1 нет экрана" - почему?
+  "Чужое событие в /api/org/ даёт 404" 403 не лучше? пусть админ сможет смотреть чужие события.
+  остальное подтверждаю, перед началом работы с фронтендом нужно будет определиться с ui-библиотекой и дизайн-токенами - занеси это
+
+⏺ Bash(grep -rn "чужое\|чужие\|чужой\|404" --include=*.md . 2>/dev/null | grep -v node_modules | grep -v "decisions.md" | cut -c1-170; ls frontend; grep -n "dependencies" -A12 frontend/package.json | head -3)
+  ⎿  (eval):1: no matches found: --include=*.md
+     AGENTS.md
+     CLAUDE.md
+     Dockerfile
+     dist
+     eslint.config.js
+     … +22 lines
+
+⏺ Bash(grep -rn "чужо\|404" docs backend/AGENTS.md README.md .claude/skills 2>/dev/null | grep -v "docs/decisions.md" | grep -v "features/registration" | cut -c1-170)
+  ⎿  docs/architecture.md:101:  в ответе нет — он приходит только письмом, иначе любой получил бы чужой билет, 
+     docs/architecture.md:115:- `POST /api/org/events/{id}/checkin/` `{code}` → 200 / 404 / 409 (уже отмечен) / 422 (билет
+     docs/roadmap.md:124:состояние, модель и инструмент, «что дальше», «что взято чужое»; проверка на мусор
+     docs/task.md:35:7. Если брали за основу чужое решение, шаблон или генератор — укажите это.
+     docs/development.md:342:  чужой срез — только через его `index.ts`. Проверяет ESLint (`eslint-plugin-boundaries`).
+     .claude/skills/api-change/SKILL.md:40:  через `Event.objects.for_organizer(user)`; чужое событие — тот же ответ, что и
+     … +3 lines
+
+⏺ Bash(cd /home/raf/event-registration/docs/features/registration && python3 - <<'EOF')
+  ⎿  docs/decisions.md | 16 ++++++++++++++++
+      1 file changed, 16 insertions(+)
+
+⏺ Bash(npx prettier --write docs/features/registration docs/decisions.md >/dev/null; git add -A docs && git commit -q -m "docs: plan phase 1 as vertical stages with spec and tasks)
+  ⎿  ⋯ Backing up original state…
+     ✔ Done backing up original state (43d6812)!
+     ⋯ Running tasks for staged files…
+         *.{mjs,json,md,yml,yaml} — 3 files
+           ⋯ prettier --write
+     
+     … +8 lines
+
+⏺ Всё внесено и закоммичено (`68cc84d`).
+  
+  **Почему у этапа 5 нет экрана.** Участнику отказаться нужно по `manage_token`, а он приходит только письмом, письма появляются в фазе 2, и экран билета запланирован там же. В фазе 1 отказ — это API и тесты. Теперь это объяснено в `tasks.md`.
+  
+  **403 вместо 404.** Принято:
+  - Чужое событие в `/api/org/{id}/` даёт 403, несуществующее — 404. Список показывает только свои события.
+  - Это отменяет часть решения от 00:48, запись в `decisions.md` есть. В `spec.md` обновлены инварианты, таблица API, крайние случаи и сценарии приёмки.
+  - Админ смотрит чужие события в админке Django, где Event доступен целиком. В `/api/org/` исключений для staff нет, потому что отдельной роли нет.
+  - Если вы имели в виду, что админ должен видеть чужие события именно в API организатора, скажите — это небольшая правка.
+  
+  **UI-библиотека и дизайн-токены.** Добавлена задача 1.2 «решение», она идёт до любого кода фронтенда (бывшая 1.2 стала 1.3). Готово, когда выбор и отклонённые варианты записаны в `decisions.md`, подключение описано в `development.md` и `frontend/AGENTS.md`, а библиотека установлена.
+  
+  Следующая задача — 1.1, backend входа. Начинаю?

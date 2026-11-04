@@ -1,0 +1,641 @@
+> /clear
+
+> обнови main и начни новую ветку для 6 этапа
+
+⏺ Bash(git fetch origin && git branch -vv | head -20 && git status -sb | head -3 && date && grep -n -i -E "этап|фаза|^#" docs/roadmap.md | head -40 && tail -15 docs/decisions.md)
+  ⎿  From github.com:rbikbov/event-registration
+        391233e..e82f15d  main       -> origin/main
+       e2e-admin-cleanup                      0f6979a test(e2e): clean up created events through the admin
+       feat/cancel                            204d01c [origin/feat/cancel] test(backend): cover the cancel tie-break and the revival paths
+       feat/registration-model                7128c9e [origin/feat/registration-model] ci: fetch full history so commitlint can see the PR base commit
+       feat/waitlist                          ca0a819 [origin/feat/waitlist] fix: make waitlist position optional in the API schema
+     … +35 lines
+
+⏺ Bash(git switch main && git merge --ff-only origin/main && git switch -c test/stage-6-races && git log --oneline -3 && grep -n "^- \[ \] 6" -A4 docs/features/registration/tasks.md | head -30)
+  ⎿  Switched to branch 'main'
+     Updating ce8370f..e82f15d
+     Fast-forward
+      .claude/skills/api-change/SKILL.md                 |   9 +-
+      .../management/commands/create_demo_users.py       |   8 +-
+      backend/accounts/tests/test_auth_api.py            |  34 ++++
+     … +42 lines
+
+⏺ `main` теперь на `origin/main` (e82f15d), обновилась fast-forward. Я создал ветку `test/stage-6-races` от неё и переключился на неё.
+  
+  Этап 6 в [tasks.md](docs/features/registration/tasks.md) состоит из трёх задач:
+  - 6.1: тесты гонок на Postgres (последнее место, один email, отказ параллельно с регистрацией) и `docs/rules/concurrency.md`.
+  - 6.2: таблица «требование → тест» и оговорка про email в README.
+  - 6.3: ревью агентом `reviewer`, проход в браузере и закрытие фазы.
+  
+  Запись `▶ начало сессии` в `docs/decisions.md` я пока не делал. Прошлая сессия закрыта (`■ 07:05`), так что закрывать её не нужно. Начать с 6.1?
+
+> начинай
+
+⏺ Bash(date +%H:%M && cat backend/registrations/services.py && ls backend/registrations/tests docs/rules && cat backend/AGENTS.md | head -80 && sed -n 1,40p backend/registrations/tests/test_cancel.py && make)
+  ⎿  07:32
+     from dataclasses import dataclass
+     from datetime import datetime
+     
+     from django.db import transaction
+     from django.db.models import Q
+     … +209 lines
+
+⏺ Сначала запись о начале сессии, затем тесты гонок.
+
+⏺ Bash(printf '\n## 2026-10-30\n\n- **07:32** — ▶ начало сессии\n' >> docs/decisions.md && tail -5 docs/decisions.md && grep -n "^## 2026-10-30" docs/decisions.md; grep -rn "transaction=True" backend --inclu)
+  ⎿  - **07:22** — кнопка выхода организатора и удобная навигация (ссылка с `/login` на главную, общая шапка) записаны в «На потом» `tasks.md`, не в фазу 1: правка вне критериев фазы. Ответ на вопрос о `cr
+     
+     ## 2026-10-30
+     
+     - **07:32** — ▶ начало сессии
+     353:## 2026-10-30
+     … +50 lines
+
+⏺ Bash(sed -n '353p;477p;507p' docs/decisions.md | cat; sed -n 474,479p docs/decisions.md | cut -c1-80)
+  ⎿  ## 2026-10-30
+     ## 2026-10-30
+     ## 2026-10-30
+     - **04:42** — e2e: по замечаниям код-ревью сценари�
+     - **04:44** — ■ конец сессии
+     
+     … +3 lines
+
+⏺ Bash(python3 - <<'E')
+  ⎿  - **07:22** — кнопка выхода организат
+     
+     - **07:32** — ▶ начало сессии
+     2
+
+⏺ Bash(python3 - <<'E')
+  ⎿  - **07:22** — кнопка выход�
+     - **07:32** — ▶ начало сес�
+         second = register(event.id, "b@x.io", "Bob").registration
+     
+         assert first.ticket_code != second.ticket_code
+         assert first.manage_token != second.manage_token
+     … +75 lines
+
+⏺ Bash(cat > backend/registrations/tests/test_concurrency.py <<'E')
+  ⎿  event = <Event: Meetup>
+     
+         def test_parallel_registrations_for_the_last_seat_confirm_exactly_one(event: Event) -> None:
+             emails = [f"user{i}@x.io" for i in range(8)]
+         
+             results = run_together([lambda e=e: register(event.id, e, "Name") for e in emails])
+     … +38 lines
+
+⏺ Bash(python3 - <<'E')
+  ⎿  All checks passed!
+     registrations/tests/test_concurrency.py:118: error: Argument 1 to "run_together" has incompatible type "list[object]"; expected "list[Callable[[], Never]]"  [arg-type]
+     Found 1 error in 1 file (checked 48 source files)
+     .......                                                                  [100%]
+     7 passed in 3.88s
+
+⏺ Bash(sed -n 112,122p registrations/tests/test_concurrency.py)
+  ⎿  event: Event,
+     ) -> None:
+         first = register(event.id, "a@x.io", "Ann").registration
+         register(event.id, "b@x.io", "Bob")
+     
+         run_together(
+     … +5 lines
+
+⏺ Bash(python3 - <<'E')
+  ⎿  All checks passed!
+     Success: no issues found in 48 source files
+     ..........................................................               [100%]
+     58 passed in 15.31s
+     [This command modified 1 file you've previously read: registrations/tests/test_concurrency.py. Call Read before editing.]
+
+⏺ Bash(cp registrations/services.py /tmp/claude-1000/svc.bak 2>/dev/null || cp registrations/services.py $TMPDIR/svc.bak; B=$(ls /tmp/claude-1000/svc.bak 2>/dev/null || echo $TMPDIR/svc.bak))
+  ⎿  == no lock in register
+     
+     .venv/lib/python3.12/site-packages/psycopg/cursor.py:117: IntegrityError
+     =========================== short test summary info ============================
+     FAILED registrations/tests/test_concurrency.py::test_parallel_registrations_for_the_last_seat_confirm_exactly_one
+     FAILED registrations/tests/test_concurrency.py::test_parallel_registrations_never_exceed_capacity
+     … +21 lines
+
+⏺ Bash(B=/tmp/claude-1000/svc.bak; ls $B >/dev/null || B=$TMPDIR/svc.bak)
+  ⎿  1 file changed, 5 insertions(+), 2 deletions(-)
+     FAILED registrations/tests/test_concurrency.py::test_parallel_cancels_of_one_token_promote_exactly_one
+     FAILED registrations/tests/test_concurrency.py::test_parallel_cancels_of_different_tokens_fill_seats_from_the_queue_in_order
+     2 failed, 5 passed in 4.63s
+     FAILED registrations/tests/test_concurrency.py::test_parallel_cancels_of_one_token_promote_exactly_one
+     FAILED registrations/tests/test_concurrency.py::test_parallel_cancels_of_different_tokens_fill_seats_from_the_queue_in_order
+     … +4 lines
+
+⏺ Bash(python3 - <<'E')
+  ⎿  15 passed, 6 deselected in 6.70s
+     15 passed, 6 deselected in 6.64s
+     15 passed, 6 deselected in 6.68s
+      backend/registrations/services.py | 5 ++++-
+      docs/decisions.md                 | 1 +
+      2 files changed, 5 insertions(+), 1 deletion(-)
+     … +1 lines
+
+⏺ Bash(python3 - <<'E')
+  ⎿  All checks passed!
+     Success: no issues found in 48 source files
+           1 7 passed in 3.70s
+           1 7 passed in 3.72s
+           1 7 passed in 3.76s
+           3 7 passed in 3.77s
+     … +14 lines
+
+⏺ Тесты стабильны, 20 прогонов подряд зелёные. Теперь пишу правило `docs/rules/concurrency.md` и запись в лог решений.
+
+⏺ Bash(cd /home/raf/event-registration && head -20 docs/rules/db-migrations.md; grep -rn "concurrency.md" --include=*.md . 2>/dev/null | grep -v node_modules | head; grep -n "\[x\] 5" docs/features/registrat)
+  ⎿  # Миграции БД
+     
+     Правила для `backend/*/migrations/`. Проверяются: `make migrations-check` (модели без
+     миграции), хук агента `guard-migrations.mjs` (правка закоммиченных миграций).
+     
+     ## Правила
+     … +17 lines
+
+⏺ Bash(cat > docs/rules/concurrency.md <<'E')
+  ⎿  AGENTS.md                           | 2 +-
+      backend/registrations/services.py   | 5 ++++-
+      docs/decisions.md                   | 2 ++
+      docs/features/registration/tasks.md | 2 +-
+      4 files changed, 8 insertions(+), 3 deletions(-)
+     6:папок (подгружаются при работе в папке) и в `docs/rules/`.
+     … +2 lines
+
+⏺ Bash(T=$(date +%H:%M) && echo $T && sed -i "s/^- \*\*07:38\*\* — 6.1/- **$T** — 6.1/" docs/decisions.md && make check-backend 2>&1 | tail -15)
+  ⎿  07:36
+     accounts/tests/test_auth_api.py ...............                          [ 12%]
+     accounts/tests/test_create_demo_users.py ....                            [ 16%]
+     accounts/tests/test_user.py .....                                        [ 20%]
+     config/tests/test_exceptions.py ....                                     [ 24%]
+     config/tests/test_health.py ..                                           [ 25%]
+     … +10 lines
+
+⏺ Бэкенд-проверки зелёные. Коммичу двумя шагами: исправление вместе с тестами, затем правило.
+
+⏺ Bash(git add backend docs/decisions.md && git commit -q -m "$(cat <<'E')
+  ⎿  ⋯ Backing up original state…
+     ✔ Done backing up original state (514a8c9)!
+     ⋯ Running tasks for staged files…
+         backend/**/*.py — 2 files
+           ⋯ uv run --project backend ruff check --fix
+           ⋯ uv run --project backend ruff format
+     … +29 lines
+
+⏺ Задача 6.1 выполнена и закоммичена в ветке `test/stage-6-races`, два коммита. `make check-backend` зелёный (116 тестов), 20 прогонов подряд `test_concurrency.py` тоже. Полный `make check` с фронтендом, e2e и `check-ci` я не запускал.
+  
+  **Что нашли.** Тест на последнее место показал реальный баг. `register` брал `now` до блокировки Event. Поздний запрос мог получить меньший `queued_at` и встать в очереди перед ранним, а номера в ответах дублировались (`[1, 1, 2, 2, 4, …]`). Теперь `now` читается после блокировки, и порядок очереди совпадает с порядком блокировок.
+  
+  **Что сделано.**
+  - В [test_concurrency.py](backend/registrations/tests/test_concurrency.py) 7 тестов с потоками на Postgres: последнее место, вместимость, один email, email в разном регистре и три теста на отказы. Отказы проверяются параллельно с регистрацией, с одним токеном и с разными.
+  - В [concurrency.md](docs/rules/concurrency.md) правила про замок, чтение состояния и времени после него и тесты гонок. Правило подключено в карту [AGENTS.md](AGENTS.md).
+  - Задача 6.1 отмечена в `tasks.md`, решения записаны в `docs/decisions.md`.
+  
+  **Проверка на падение.**
+  - Без блокировки в `register` падают 4 теста.
+  - Без блокировки в `cancel` падают 2 теста с параллельными отказами.
+  - С `now` до блокировки падает 1 тест.
+  - Тест «отказ параллельно с регистрацией» без блокировки в `cancel` проходит, даже за 15 раундов. Отказ атомарен, поэтому аномалии нет. Замок `cancel` держат тесты параллельных отказов. Это записано в правиле.
+  
+  Дальше 6.2: таблица «требование → тест» в README и оговорка про email. Продолжать?
+
+> да
+
+⏺ Bash(cat README.md && sed -n 39,72p docs/roadmap.md && grep -n "реализовано\|запланировано\|Статус\|^## \|^### " docs/architecture.md | head -60 && sed -n 1,60p docs/features/registration/spec.md)
+  ⎿  # Регистрация на мероприятия
+     
+     Тестовое задание: сервис регистрации на мероприятия с лимитом мест, листом ожидания,
+     билетами и чекином. Задание — [docs/task.md](docs/task.md), решения —
+     [docs/decisions.md](docs/decisions.md), устройство системы —
+     [docs/architecture.md](docs/architecture.md), ход работы — [docs/roadmap.md](docs/roadmap.md).
+     … +141 lines
+
+⏺ Bash(sed -n 60,140p docs/features/registration/spec.md; grep -rhn "^def test_\|^    test(\|^test(\|^  it(\|^  test(" backend/*/tests/test_org_events_api.py backend/registrations/tests e2e/tests | cut -c1-1)
+  ⎿  | `POST /api/auth/login/`                    | `{email, password}`                         | 200 `{id, email}`, cookie сессии                                   | 400 неверные данные      |
+     | `POST /api/auth/logout/`                   | —                                           | 204                                                                | 401 без сессии; 403 CSRF |
+     | `GET /api/auth/me/`                        | —                                           | 200 `{id, email}`                                                  | 401 без сессии           |
+     | `GET /api/org/events/`                     | —                                           | 200 `[Event]` (+ `confirmed`, `waitlisted` с этапа 3), только свои | 401                      |
+     | `POST /api/org/events/`                    | `{title, description, starts_at, capacity}` | 201 Event                                                          | 400 поля; 401            |
+     | `GET /api/events/`                         | —                                           | 200 `[{id, title, starts_at, capacity, free_seats}]`, будущие      | —                        |
+     … +127 lines
+
+⏺ Bash(ls e2e/tests; grep -n "^def test_" backend/accounts/tests/test_auth_api.py | cut -c1-110; ls backend/events/tests; grep -n "OrgEventNewPage\|test(\|it(" frontend/src/pages/event/ui/*.test.ts 2>/dev/nu)
+  ⎿  organizer-creates-event.spec.ts
+     participant-registers.spec.ts
+     smoke.spec.ts
+     16:def test_login_returns_user_and_starts_session(organizer: User) -> None:
+     38:def test_login_rejects_bad_credentials_with_400(organizer: User, payload: dict[str, str]) -> None:
+     47:def test_login_rejects_inactive_user(organizer: User) -> None:
+     … +93 lines
+
+⏺ Bash(python3 - <<'E')
+  ⎿  - `GET /api/tickets/{manage_token}/` — билет: код, статус, номер в листе (фаза 2, вместе с
+       экраном билета)
+     - `GET /api/events/{id}/stream/` — SSE: свободные места
+     
+     **Реализовано — организатор, сессия + CSRF:**
+     
+     … +37 lines
+
+⏺ Bash(python3 - <<'E')
+  ⎿  ok  accounts/tests/test_auth_api.py::test_login_returns_user_and_starts_session
+     ok  ::test_login_rejects_bad_credentials_with_400
+     ok  organizer-creates-event.spec.ts
+     ok  events/tests/test_org_events_api.py::test_create_makes_the_caller_the_organizer
+     ok  organizer-creates-event.spec.ts
+     ok  events/tests/test_org_events_api.py::test_list_has_only_own_events_ordered_by_start
+     … +23 lines
+
+⏺ Bash(T=$(date +%H:%M) && sed -i 's/^- \[ \] 6.2 /- [x] 6.2 /' docs/features/registration/tasks.md && echo "- **$T** — 6.2: в README таблица «требование → тест» (12 строк, каждая ссылка на тест проверена ск)
+  ⎿  9d43ee6 docs: add the requirement-to-test table and the email caveat, sync architecture with phase 1
+     4c885a4 docs: add the locking and race-test rules and mark task 6.1 done
+     ## test/stage-6-races
+
+⏺ Задача 6.2 закоммичена (`9d43ee6`). `make check` целиком я не запускал.
+  
+  - **README:** добавлен раздел «Требования и тесты» на 12 строк и оговорка про email. Я скриптом проверил, что каждый тест из таблицы существует, и все ссылки нашлись.
+  - **`architecture.md`:** раздел «Инварианты и конкурентность» и вход организатора переведены в «реализовано».
+  - **Исправление по коду:** в архитектуре было написано, что `IntegrityError` перехватывается и возвращается существующая запись. В коде этого нет: гонку закрывает блокировка Event, а `UNIQUE` служит страховкой. Описание исправлено. Письмо `promoted` перенесено на фазу 2.
+  - **Не менялось:** `development.md`, потому что новых команд нет. Раздел «Состояние» в README я не трогал, он обновляется при закрытии фазы.
+  
+  Дальше 6.3: ревью агентом `reviewer`, проход в браузере и закрытие фазы. Запускать?
+
+> "Исправление по коду: в архитектуре было написано, что IntegrityError перехватывается и возвращается существующая запись. В коде этого нет: гонку закрывает блокировка Event, а UNIQUE служит страховкой. Описание исправлено. Письмо promoted перенесено на фазу 2." подробнее
+
+⏺ Подробнее по каждому из двух пунктов.
+  
+  **1. `IntegrityError`**
+  
+  Раньше в `architecture.md` было написано: «Гонка за одинаковый email — `UNIQUE` + обработка `IntegrityError` → возврат существующей записи». Это был план. В [services.py](backend/registrations/services.py) работает другой механизм:
+  
+  - `register` сначала берёт `select_for_update()` на строку Event и только потом ищет существующую регистрацию по `(event, email)`.
+  - Параллельные запросы на одно событие идут по очереди. Второй запрос с тем же email видит уже закоммиченную строку первого и возвращает её с `created=False`.
+  - `try/except IntegrityError` в коде нет.
+  
+  `UNIQUE(event, email)` остаётся в БД. Он защищает на случай, если появится путь записи без блокировки.
+  
+  Я проверил, что будет без блокировки. Когда в мутационной проверке я убрал блокировку из `register`, потоки с одним email падали с необработанным `IntegrityError` из psycopg. В API это был бы 500, а не «вернуть существующую запись», как обещал старый текст. Поэтому тесты гонок из 6.1 ловят именно отсутствие блокировки.
+  
+  Я не стал добавлять перехват `IntegrityError` в код. Блокировка уже даёт нужное поведение, а второй механизм был бы «на будущее» (правило 3 в AGENTS.md). Если захотите защиту в два слоя, это отдельное решение.
+  
+  **2. Письмо `promoted`**
+  
+  Это не расхождение с кодом, а план, записанный как будто уже сделанное. Старый текст в разделе «Отказ» говорил: «отмена, повышение первого из листа и письмо `promoted` — в одной транзакции». Письмо появится с outbox в фазе 2. Сейчас `cancel` только отменяет и повышает.
+  
+  Я оставил ссылку на фазу 2 в том же абзаце: «Письмо `promoted` в той же транзакции — с фазы 2». Нужно ли отдельное описание outbox, или хватит этой пометки?
+  
+  Заодно в том же правиле я поправил ещё два места:
+  - Из текста о `queued_at` убрано утверждение, что порядок листа определяется временем запроса. Теперь там сказано, что время берётся после блокировки, и это связано с багом, найденным в 6.1.
+  - Блок «План (фазы 1 и 3)» разделён на «Реализовано (фаза 1)» и «План (фазы 3, 5)». Лимит мест перенесён в фазу 5, так как редактирование события там.
+  
+  Раздел «Чекин» остался в плане фазы 3 без изменений.
+
+> "Нужно ли отдельное описание outbox, или хватит этой пометки?" - без контекста не будет забыто когда начнется фаза 2?
+
+⏺ Bash(sed -n 72,82p docs/roadmap.md; grep -n "## Фоновые задачи и письма" -A26 docs/architecture.md; grep -n "promoted" docs/*.md docs/features/*/*.md | cut -c1-140)
+  ⎿  ## Фаза 2. Outbox, воркер, письма — не начата
+     
+     Spec и задачи — `docs/features/emails/`. Критерии: письма `ticket`, `waitlisted`,
+     `promoted` создаются в транзакции изменения и доставляются воркером в Mailpit; повторы при
+     ошибке SMTP. Mailpit и сервис `worker` добавляются в compose в этой фазе.
+     
+     … +37 lines
+
+⏺ Нет, не забудется: письмо `promoted` уже описано в трёх местах, и отдельный текст про outbox не нужен.
+  
+  - **[roadmap.md](docs/roadmap.md), фаза 2.** Критерии фазы прямо требуют, чтобы `ticket`, `waitlisted` и `promoted` создавались в транзакции изменения.
+  - **[architecture.md](docs/architecture.md), раздел «Фоновые задачи и письма».** Таблица видов писем содержит `promoted`: кому и когда он уходит. Есть и правило, что письмо создаётся ровно один раз по `UNIQUE dedup_key`.
+  - **[architecture.md](docs/architecture.md), раздел «Модель данных».** Среди значений `kind` у письма указан `promoted`.
+  
+  Пометка в разделе про отказ нужна, чтобы читатель не решил, что письмо уже отправляется. Ссылка на фазу 2 указывает, где искать продолжение.
+  
+  Остаётся одно слабое место. Когда начнётся фаза 2, ей понадобится правка именно в [services.py](backend/registrations/services.py). В `register` нужны письма `ticket` и `waitlisted`, в `cancel` — `promoted`, и все они в той же транзакции под блокировкой. Эту связку ни в одном из трёх мест не видно: в roadmap сказано «в транзакции изменения», а в каком коде, не указано. Могу добавить в roadmap одну строку: «`register` и `cancel` в `registrations/services.py` создают письма под блокировкой Event, см. `docs/rules/concurrency.md`, п. 5». Добавлять?
+
+> да
+
+⏺ Bash(python3 - <<'E')
+  ⎿  Traceback (most recent call last):
+       File "<stdin>", line 4, in <module>
+     AssertionError
+     9d43ee6 docs: add the requirement-to-test table and the email caveat, sync architecture with phase 1
+     ## Фаза 2. Outbox, воркер, письма — не начата
+     
+     … +9 lines
+
+⏺ Bash(python3 - <<'E')
+  ⎿  10d3af0 docs: point phase 2 at the services that will create the emails
+     ## test/stage-6-races
+     Spec и задачи — `docs/features/emails/`. Критерии: письма `ticket`, `waitlisted`,
+     `promoted` создаются в транзакции изменения и доставляются воркером в Mailpit; повторы при
+     ошибке SMTP. Mailpit и сервис `worker` добавляются в compose в этой фазе.
+     
+     … +5 lines
+
+⏺ Строка добавлена в [roadmap.md](docs/roadmap.md) в описание фазы 2 и закоммичена (`10d3af0`). Первая попытка не сработала: в файле перенос строки отличался от моего шаблона, и скрипт остановился на проверке. Ничего не записалось, вторая попытка прошла.
+  
+  Теперь фаза 2 прямо указывает на `register` и `cancel` в `services.py`, на блокировку Event и на правило в `concurrency.md`.
+  
+  Дальше 6.3: ревью агентом `reviewer`, проход в браузере и закрытие фазы. Запускать?
+
+> запускай
+
+⏺ Agent(Review phase 1 closing)
+  ⎿  Async agent launched successfully. (This tool result is internal metadata — never quote or paste any part of it, including the agentId below, into a user-facing reply.)
+     agentId: a8ce75e10687efd97 (internal ID - do not mention to user. Use SendMessage with to: 'a8ce75e10687efd97', summary: '<5-10 word recap>' to continue this agent.)
+     The agent is working in the background. You will be notified automatically when it completes. You know nothing about its results until that notification arrives — do not report, assume, or predict the
+     Do not duplicate this agent's work — avoid working with the same files or topics it is using.
+     output_file: /tmp/claude-1000/-home-raf-event-registration/cbeebb7e-981a-451c-8b10-f41baad083ab/tasks/a8ce75e10687efd97.output
+     Do NOT Read or tail this file via the shell tool — it is the full subagent JSONL transcript and reading it will overflow your context. If the user asks for progress, say the agent is still running; yo
+
+⏺ Bash(cd /home/raf/event-registration/e2e && cat tests/participant-registers.spec.ts playwright.config.ts | head -90; ls; curl -s -o /dev/null -w "%{http_code}\n" localhost:5174/ localhost:8001/api/health/)
+  ⎿  import { expect, test } from "@playwright/test";
+     
+     // Created by `create_demo_users` when the backend starts (docs/architecture.md, "Окружение").
+     const ORGANIZER = { email: "demo@example.com", password: "demo" };
+     
+     test("participants get the only seat, then a place on the waitlist", async ({ browser }) => {
+     … +93 lines
+
+⏺ Bash(mkdir -p /tmp/claude-1000/-home-raf-event-registration/e5fe3f27-bdf3-44ab-b381-54830ff38980/scratchpad && cd /tmp/claude-1000/-home-raf-event-registration/e5fe3f27-bdf3-44ab-b381-54830ff38980/scratchp)
+  ⎿  1 empty fields: posts: 0
+     1 body alerts: []
+     2 bad email: posts: 0
+     2 alerts: []
+     3 offline alerts: []
+     3 form still there: false
+     … +17 lines
+
+⏺ Bash(cd /tmp/claude-1000/-home-raf-event-registration/e5fe3f27-bdf3-44ab-b381-54830ff38980/scratchpad && cat > probe.mjs <<'E')
+  ⎿  --- initial
+     Все события / Waitlist check / 2 ноября 2026 г. в 06:11 / Свободных мест нет, можно встать в лист ожидания / Регистрация / Email / Имя / Зарегистрироваться
+     --- empty submit
+     Все события / Waitlist check / 2 ноября 2026 г. в 06:11 / Свободных мест нет, можно встать в лист ожидания / Регистрация / Email / Обязательное поле / Имя / Обязательное поле / Зарегистрироваться
+     --- bad email
+     Все события / Waitlist check / 2 ноября 2026 г. в 06:11 / Свободных мест нет, можно встать в лист ожидания / Регистрация / Email / Некорректное значение / Имя / Зарегистрироваться
+     … +4 lines
+
+⏺ Bash(cd /tmp/claude-1000/-home-raf-event-registration/e5fe3f27-bdf3-44ab-b381-54830ff38980/scratchpad && cat > probe2.mjs <<'E')
+  ⎿  offline 1s POSTs 0 | ободных мест нет, можно встать в лист ожидания / Регистрация / Email / Имя / Отправляем…
+     offline 5s POSTs 0 | ободных мест нет, можно встать в лист ожидания / Регистрация / Email / Имя / Отправляем…
+     offline 15s POSTs 0 | ободных мест нет, можно встать в лист ожидания / Регистрация / Email / Имя / Отправляем…
+     abort 1s POSTs 1 | ободных мест нет, можно встать в лист ожидания / Регистрация / Не удалось зарегистрироваться, попробуйте позже / Email / Имя / Зарегистрироваться
+     abort 5s POSTs 1 | ободных мест нет, можно встать в лист ожидания / Регистрация / Не удалось зарегистрироваться, попробуйте позже / Email / Имя / Зарегистрироваться
+     abort 15s POSTs 1 | ободных мест нет, можно встать в лист ожидания / Регистрация / Не удалось зарегистрироваться, попробуйте позже / Email / Имя / Зарегистрироваться
+     … +2 lines
+
+⏺ Bash(cd /home/raf/event-registration/frontend && grep -rn "QueryClient\|networkMode\|retry" src | grep -v "\.test\." | head; grep -n "tanstack" package.json)
+  ⎿  src/app/router.ts:1:import type { QueryClient } from "@tanstack/vue-query";
+     src/app/router.ts:13:export function createAppRouter(queryClient: QueryClient, history: RouterHistory) {
+     src/app/query-client.ts:1:import { QueryClient } from "@tanstack/vue-query";
+     src/app/query-client.ts:5:// A retry can fix only a lost connection or a server failure, never a 4xx.
+     src/app/query-client.ts:7:  const retryable =
+     src/app/query-client.ts:9:  return retryable && failureCount < 2;
+     … +5 lines
+
+⏺ Bash(cat src/app/query-client.ts; ls src/app; grep -rn "query-client" src | head)
+  ⎿  import { QueryClient } from "@tanstack/vue-query";
+     
+     import { AppError } from "@/shared/api";
+     
+     // A retry can fix only a lost connection or a server failure, never a 4xx.
+     function shouldRetry(failureCount: number, error: unknown): boolean {
+     … +17 lines
+
+⏺ Bash(cat > src/app/query-client.test.ts <<'E')
+  ⎿  21|   });
+          22|
+          23|   it("fails a query instead of pausing it while the browser is offline…
+            |   ^
+          24|     onlineManager.setOnline(false);
+          25|     const observer = new QueryObserver(queryClient, {
+     … +8 lines
+
+⏺ Bash(pnpm exec vitest run src/app/query-client.test.ts 2>&1 | grep -E "Error|timed out" | head -4)
+  ⎿  Error: Test timed out in 5000ms.
+     Error: Test timed out in 5000ms.
+     
+      Test Files  1 passed (1)
+           Tests  2 passed (2)
+        Start at  07:55:54
+     … +1 lines
+
+⏺ Bash(cd /tmp/claude-1000/-home-raf-event-registration/e5fe3f27-bdf3-44ab-b381-54830ff38980/scratchpad && python3 - <<'E')
+  ⎿  2 bad email: posts: 0
+     2 alerts: Email / Некорректное значение / Имя / Зарегистрироваться
+     3 offline alerts: Email / Имя / Отправляем…
+     3 button: Отправляем…
+     node:internal/modules/run_main:123
+         triggerUncaughtException(
+     … +15 lines
+
+⏺ Bash(grep -n "frontend:" -A22 docker-compose.yml | grep -n "volumes\|\./\|command\|build" ; for i in 1 2 3; do (cd frontend && pnpm exec vitest run src/app/query-client.test.ts 2>&1 | grep -E "Tests "); do)
+  ⎿  2:42-    build:
+     18:58-volumes:
+           Tests  2 passed (2)
+           Tests  2 passed (2)
+           Tests  2 passed (2)
+
+⏺ Bash(FRONTEND_PORT=5174 BACKEND_PORT=8001 docker compose up -d --build --wait frontend backend 2>&1 | tail -6; cd /tmp/claude-1000/-home-raf-event-registration/e5fe3f27-bdf3-44ab-b381-54830ff38980/scratchp)
+  ⎿  Container event-registration-backend-1 Waiting 
+      Container event-registration-frontend-1 Waiting 
+      Container event-registration-postgres-1 Waiting 
+      Container event-registration-postgres-1 Healthy 
+      Container event-registration-backend-1 Healthy 
+      Container event-registration-frontend-1 Healthy 
+     … +13 lines
+
+⏺ Bash(cd /tmp/claude-1000/-home-raf-event-registration/e5fe3f27-bdf3-44ab-b381-54830ff38980/scratchpad && node probe2.mjs 2>&1 | grep offline; grep -n "retry\|setTimeout\|timeout" /home/raf/event-registrati)
+  ⎿  offline 1s POSTs 1 | ободных мест нет, можно встать в лист ожидания / Регистрация / Email / Имя / Отправляем…
+     offline 5s POSTs 1 | 
+     offline 15s POSTs 1 |
+     Shell cwd was reset to /home/raf/event-registration
+
+⏺ Bash(cd /tmp/claude-1000/-home-raf-event-registration/e5fe3f27-bdf3-44ab-b381-54830ff38980/scratchpad && sed -i 's/\.slice(60)//' probe2.mjs && sed -i 's/\["offline", "abort"\]/["offline"]/' probe2.mjs && )
+  ⎿  offline 1s POSTs 1 | Все события / Waitlist check / 2 ноября 2026 г. в 06:11 / Свободных мест нет, можно встать в лист ожидания / Регистрация / Email / Имя / Отправляем…
+     offline 5s POSTs 1 | Все события / Не удалось загрузить событие / Повторить
+     offline 15s POSTs 1 | Все события / Не удалось загрузить событие / Повторить
+     Shell cwd was reset to /home/raf/event-registration
+
+⏺ Bash(cd /home/raf/event-registration/frontend && grep -rn "invalidateQueries\|onSettled\|onSuccess\|onError\|refetchOn" src | grep -v "\.test\." ; ls src/pages/event/ui src/pages/event/model)
+  ⎿  src/app/session-expiry.ts:12:  function onError(error: unknown): void {
+     src/app/session-expiry.ts:19:    if (event.type === "updated" && event.action.type === "error") onError(event.action.error);
+     src/app/session-expiry.ts:22:    if (event.type === "updated" && event.action.type === "error") onError(event.action.error);
+     src/pages/login/ui/LoginPage.vue:28:  onSuccess: async (user) => {
+     src/shared/api/schema.d.ts:246:        ValidationError: {
+     src/shared/api/schema.d.ts:288:                    "application/json": components["schemas"]["ValidationError"];
+     … +18 lines
+
+⏺ Bash(sed -n 30,110p src/pages/event/ui/EventPage.vue)
+  ⎿  const eventQuery = computed(() => publicEventQuery(eventId.value));
+     const { data: event, isPending, isError, error: loadError, refetch } = useQuery(eventQuery);
+     
+     const form = reactive<RegistrationFormInput>({ email: "", name: "" });
+     const clientErrors = ref<RegistrationFormErrors>({});
+     
+     … +75 lines
+
+⏺ Bash(sed -n 1,58p src/pages/event/ui/EventPage.test.ts; sed -n 99,118p src/pages/event/ui/EventPage.test.ts; sed -n 223,260p src/pages/event/ui/EventPage.test.ts; sed -n 110,150p src/pages/event/ui/EventPa)
+  ⎿  import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
+     import { mount } from "@vue/test-utils";
+     import { http, HttpResponse } from "msw";
+     import { describe, expect, it, vi } from "vitest";
+     import { createMemoryHistory, createRouter } from "vue-router";
+     
+     … +145 lines
+
+⏺ Bash(python3 - <<'E')
+  ⎿  × keeps the form and the loaded event when a registration fails 115ms
+     ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+      FAIL  src/pages/event/ui/EventPage.test.ts > EventPage > keeps the form and the loaded event when a registration fails
+     AssertionError: expected 3 to be 1 // Object.is equality
+           Tests  1 failed | 15 passed (16)
+
+⏺ Тест падает по ожидаемой причине (событие загружено 3 раза вместо 1). Теперь исправление.
+
+⏺ Bash(python3 - <<'E')
+  ⎿  Test Files  16 passed (16)
+           Tests  116 passed (116)
+
+⏺ Фронтенд-тесты зелёные (116), линтер и типы чисты. Пересобираю стек и повторяю проход, включая офлайн.
+
+⏺ Bash(cd /home/raf/event-registration && FRONTEND_PORT=5174 BACKEND_PORT=8001 docker compose up -d --build --wait frontend 2>&1 | tail -1; cd /tmp/claude-1000/-home-raf-event-registration/e5fe3f27-bdf3-44ab)
+  ⎿  Container event-registration-frontend-1 Healthy 
+     offline 1s POSTs 1 | Все события / Waitlist check / 2 ноября 2026 г. в 06:11 / Свободных мест нет, можно встать в лист ожидания / Регистрация / Не удалось зарегистрироваться, попробуйте позже / Email 
+     offline 5s POSTs 1 | Все события / Waitlist check / 2 ноября 2026 г. в 06:11 / Свободных мест нет, можно встать в лист ожидания / Регистрация / Не удалось зарегистрироваться, попробуйте позже / Email 
+     offline 15s POSTs 1 | Все события / Waitlist check / 2 ноября 2026 г. в 06:11 / Свободных мест нет, можно встать в лист ожидания / Регистрация / Не удалось зарегистрироваться, попробуйте позже / Email
+     1 empty fields: posts: 0
+     1 body alerts: Email / Обязательное поле / Имя / Обязательное поле / Зарегистрироваться
+     … +11 lines
+
+⏺ Bash(cd /tmp/claude-1000/-home-raf-event-registration/e5fe3f27-bdf3-44ab-b381-54830ff38980/scratchpad && python3 - <<'E')
+  ⎿  A before: Свободно 1 место
+     B before: Свободно 1 место
+     A: Место подтверждено
+     B (stale page): Вы в листе ожидания, №1
+     console errors: []
+     Shell cwd was reset to /home/raf/event-registration
+
+⏺ Bash(T=$(date +%H:%M) && echo "- **$T** — 6.3, проход в браузере (одноразовый сценарий вне репозитория, стек compose на 5174/8001). Негативные сценарии: пустые поля и неверный email — ошибки под полями, за)
+  ⎿  492e75f fix(frontend): send requests while offline and keep the form after a failed registration
+
+⏺ Теперь замечания ревьюера. Все три небольшие, проверяю каждое по коду, прежде чем править.
+
+⏺ Bash(grep -n "Future events" -B2 -A3 backend/events/views.py; grep -n "upcoming" -A6 backend/events/models.py | head -14; grep -n "со свободными местами\|schedule_version" docs/architecture.md docs/feature)
+  ⎿  31-
+     32-class PublicEventListView(ListAPIView[Event]):
+     33:    """Future events with free seats, for everyone."""
+     34-
+     35-    # No session authentication: a public endpoint must not depend on cookies or CSRF.
+     36-    authentication_classes = ()
+     … +20 lines
+
+⏺ Bash(python3 - <<'E')
+  ⎿  E501 Line too long (101 > 100)
+       --> registrations/services.py:93:101
+        |
+     91 |         # The status is read only after the lock: a concurrent cancel or promotion changes it.
+     92 |         Event.objects.select_for_update().get(pk=event_id)
+     93 |         # After the lock, like in `register`: `confirmed_at` of the promoted one is when it happened.
+     … +9 lines
+
+⏺ Строка длиннее 100 символов, а docstring view попал в описание OpenAPI, поэтому нужна регенерация схемы. Исправляю оба.
+
+⏺ Bash(sed -i 's/        # After the lock, like in `register`: `confirmed_at` of the promoted one is when it happened./        # After the lock, like in `register`: the promotion time is when it really happe)
+  ⎿  ✨ openapi-typescript 7.13.0
+     🚀 ../backend/openapi.yaml → src/shared/api/schema.d.ts [39.9ms]
+      backend/openapi.yaml                | 3 ++-
+      frontend/src/shared/api/schema.d.ts | 2 +-
+      2 files changed, 3 insertions(+), 2 deletions(-)
+     All checks passed!
+     … +3 lines
+
+⏺ Bash(cd /home/raf/event-registration && for i in $(seq 20); do (cd backend && uv run pytest registrations/tests/test_concurrency.py -q 2>&1 | tail -1); done | sed 's/ in .*//' | sort | uniq -c; T=$(date +%)
+  ⎿  20 7 passed
+     fb54f7e fix(backend): take the cancel time after the lock and fail race tests on a hung thread
+
+⏺ Теперь полный `make check` перед закрытием фазы. Смотрю, что делает e2e-часть, чтобы не нарваться на порты.
+
+⏺ Bash(grep -n "check-e2e\|^e2e\|^up:" -A6 Makefile | head -30; cat .env 2>/dev/null | head)
+  ⎿  11:up: ## Build and start the whole stack; open http://localhost:5173
+     12-	docker compose up -d --build --wait
+     13-
+     14-.PHONY: down
+     15-down: ## Stop the stack (data in the postgres-data volume is kept)
+     16-	docker compose down
+     … +23 lines
+
+⏺ `make check` не запускает сами e2e-тесты. Их я прогоню отдельно на стеке 5174/8001.
+
+⏺ Bash(make check 2>&1 | grep -vE "^\s*$|PASSED|\.\.\.\.|^(accounts|config|events|registrations)/" | tail -25)
+  ⎿  collected 116 items
+     ============================= 116 passed in 32.86s =============================
+     cd frontend && pnpm lint
+     > frontend@0.0.0 lint /home/raf/event-registration/frontend
+     > eslint .
+     cd frontend && pnpm typecheck
+     … +19 lines
+
+⏺ Bash(make check >/dev/null 2>&1; echo "make check exit: $?"; cd e2e && E2E_BASE_URL=http://localhost:5174 pnpm test 2>&1 | tail -12)
+  ⎿  make check exit: 0
+     > playwright test
+     
+     
+     Running 5 tests using 3 workers
+     
+     … +7 lines
+
+⏺ `make check` зелёный (exit 0), e2e 5 из 5. Закрываю фазу по процедуре `session-handoff`.
+
+⏺ Skill(session-handoff)
+  ⎿  Launching skill: session-handoff
+
+⏺ Bash(cd /home/raf/event-registration && sed -n 1,18p docs/roadmap.md; sed -n 1,8p docs/features/registration/spec.md | head -4; sed -n 79,100p docs/features/registration/tasks.md; date +%H:%M; git log -1 -)
+  ⎿  # Дорожная карта
+     
+     Фазы работы до сдачи (2026-11-05). Статус фазы — в заголовке: `не начата`, `в работе`,
+     `готова`. Фаза готова, когда выполнены критерии, `make check` и CI проходят, разделы фазы в
+     `docs/architecture.md` приведены к коду, а строки таблицы «требование → тест» в README для
+     её требований ссылаются на реальные тесты.
+     … +31 lines
+
+⏺ Bash(python3 - <<'E')
+  ⎿  2c2b523 docs: close phase 1 and start phase 2 in the roadmap
+     fb54f7e fix(backend): take the cancel time after the lock and fail race tests on a hung thread
+     492e75f fix(frontend): send requests while offline and keep the form after a failed registration
+     10d3af0 docs: point phase 2 at the services that will create the emails
+     9d43ee6 docs: add the requirement-to-test table and the email caveat, sync architecture with phase 1
+     4c885a4 docs: add the locking and race-test rules and mark task 6.1 done
+     … +3 lines
+
+⏺ Этап 6 готов, фаза 1 закрыта. Всё закоммичено в `test/stage-6-races`, ветку я не пушил. CI (GitHub Actions) на ней не запускался, это проверится на PR.
+  
+  **Проверка:** `make check` зелёный, e2e на compose (5174/8001) 5 из 5. Прогнал `make check` целиком и e2e. В `make check` 116 тестов бэкенда и 116 фронтенда. e2e в `make check` не входит, поэтому гонял их отдельно.
+  
+  **Коммиты:**
+  - **6.1, гонки.** 7 тестов с потоками на Postgres. Они нашли реальную ошибку: `register` брал время до блокировки Event, и номера в листе ожидания дублировались. Теперь время берётся после блокировки. Правила записаны в [concurrency.md](docs/rules/concurrency.md).
+  - **6.2, доки.** В README таблица «требование → тест» и оговорка про email. `architecture.md` приведён к коду, у `roadmap.md` для фазы 2 есть строка, где будут создаваться письма.
+  - **6.3, проход в браузере.** Пустые поля, неверный email, двойной клик и две вкладки работают как надо. Две ошибки нашлись при отключённой сети:
+    - запрос не уходил, и кнопка висела на «Отправляем…»;
+    - после ошибки событие перезапрашивалось, и форма заменялась на «Не удалось загрузить событие».
+  
+    Обе исправлены, тест сначала падал, потом проходил: `networkMode: "always"` для запросов и мутаций, а инвалидация события перенесена в `onSuccess`.
+  - **6.3, ревью `reviewer`.** Критерии фазы ревьюер подтвердил, ломающих замечаний не нашёл. Исправил три мелких: проверку зависшего потока в тестах, время в `cancel` после блокировки и формулировку про «свободные места» вместе с пересозданием схемы.
+  - **Закрытие.** Фаза 1 «готова», фаза 2 «в работе», README «Состояние» обновлён.
+  
+  **Что не проверено:** CI на этой ветке и то, что тесты падают без блокировки в `cancel` при параллельной регистрации. Этот тест проходит и без неё: отказ атомарен. Блокировку `cancel` держат тесты параллельных отказов, это записано в правиле.
+  
+  Запись `■ конец сессии` в `docs/decisions.md` поставлена со временем 08:05. Спеки фазы 2 ещё нет. Запушить ветку и открыть PR?
+
+> да, запуш и пр
+
+⏺ Bash(git push -u origin test/stage-6-races 2>&1 | tail -4 && gh pr create --base main --title "Stage 6: race tests, offline fixes and closing phase 1" --body "$(cat <<'E')
+  ⎿  remote: 
+     To github.com:rbikbov/event-registration.git
+      * [new branch]      test/stage-6-races -> test/stage-6-races
+     branch 'test/stage-6-races' set up to track 'origin/test/stage-6-races'.
+     https://github.com/rbikbov/event-registration/pull/5
+
+⏺ Ветка `test/stage-6-races` запушена, PR открыт: https://github.com/rbikbov/event-registration/pull/5
+  
+  CI на нём ещё не отработал. В описании пункт про CI оставлен незакрытым. Результат проверок смотрите на самой странице PR.

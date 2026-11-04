@@ -1,0 +1,836 @@
+> /clear
+
+> обнови main и создай новую ветку от main для этапа 2
+
+⏺ Bash(git checkout main && git pull --ff-only && git branch -a --sort=-committerdate | head -15 && git log --oneline -3)
+  ⎿  Switched to branch 'main'
+     Your branch is up to date with 'origin/main'.
+     From github.com:rbikbov/event-registration
+        b58044a..29a18a0  main       -> origin/main
+     Updating b58044a..29a18a0
+     Fast-forward
+     … +58 lines
+
+⏺ Bash(git checkout -b feat/realtime-gateway && git status -sb | head -1)
+  ⎿  Switched to a new branch 'feat/realtime-gateway'
+     ## feat/realtime-gateway
+
+⏺ Я обновил `main`: подтянулись 3 новых коммита, этап 1 уже в `main`. От него создал ветку `feat/realtime-gateway` для этапа 2 и переключился на неё. Рабочее дерево чистое.
+  
+  В этапе 2 две задачи:
+  - **2.1 (infra):** собрать фронтенд (`vite build`) и отдавать его через nginx на порту 5173, в новой стадии `gateway` в `frontend/Dockerfile`.
+  - **2.2 (e2e):** открыть панель организатора в двух контекстах браузера и проверить, что после чекина в одном счётчик «Пришло» меняется в другом без перезагрузки.
+  
+  Старая ветка `feat/realtime-org-stream` осталась локально и на удалённом репозитории, её не удалял.
+
+> делаем этап 2
+
+⏺ Skill(session-handoff)
+  ⎿  Launching skill: session-handoff
+
+⏺ Bash(make worktime 2>&1 | tail -5; date '+%Y-%m-%d %H:%M'; tail -15 docs/decisions.md; git log -1 --format='%ci')
+⏺ Bash(cat docs/features/realtime/spec.md docs/features/realtime/tasks.md)
+⏺ Skill(feature-workflow)
+  ⎿  2026-10-31 11:19 → 2026-10-31 13:09  1 ч 50 мин
+     2026-10-31 13:13 → 2026-10-31 13:28  0 ч 15 мин
+     2026-10-31 13:29 → 2026-10-31 14:05  0 ч 36 мин
+     Итого: 29 ч 35 мин
+     Предупреждение: сессия с 2026-10-31 14:05 не закрыта и не учтена
+     2026-10-31 17:52
+     … +16 lines
+
+  ⎿  # Realtime (SSE): spec
+     
+     Фаза — `docs/roadmap.md`, фаза 4. Статус: утверждён 2026-10-31.
+     
+     ## Что и зачем
+     
+     … +248 lines
+
+  ⎿  Launching skill: feature-workflow
+
+⏺ Bash(grep -n '▶\|■' docs/decisions.md | tail -4; git log --oneline -1; cat frontend/Dockerfile docker-compose.yml; ls frontend; cat .github/workflows/*.yml | head -150)
+  ⎿  618:- **13:28** — ■ конец сессии
+     619:- **13:29** — ▶ начало сессии
+     626:- **14:05** — ■ конец сессии (сессия не была закрыта; время последнего коммита)
+     627:- **14:05** — ▶ начало сессии
+     9502cca docs: plan reopening the live data after a bfcache restore in realtime task 4.2
+     # Build context is the repository root: the pnpm workspace and lock file live there.
+     … +182 lines
+
+⏺ Bash(sed -n 620,640p docs/decisions.md; cat Makefile; cat backend/Dockerfile; cat frontend/vite.config.ts; cat .dockerignore 2>/dev/null)
+  ⎿  <persisted-output>
+     Output too large (32.2KB). Full output saved to: /home/raf/.claude/projects/-home-raf-event-registration/de6e37db-e2a8-4865-b30d-9390bac403d2/tool-results/br8fzbqfi.txt
+     
+     Preview (first 2KB):
+     - **13:31** — фаза 4 начата в ветке `feat/realtime` от `feat/checkin-close` (PR #16 ещё не влит): spec фазы опирается на закрытие фазы 3 из этого PR; после слияния — ребейз на `main`. Отклонено: ждать
+     - **13:48** — spec фазы 4, решения человека (1, 2) и допущение spec (3): (1) потоки SSE — синхронные `APIView` DRF, которые возвращают `StreamingHttpResponse` с асинхронным генератором, и описаны в `o
+     … +2 lines
+
+⏺ Bash(cat Makefile; echo ----; cat backend/Dockerfile; echo ----; cat frontend/vite.config.ts; echo ----; cat .dockerignore 2>/dev/null)
+  ⎿  # Single entry point for developers, the agent and CI. `make help` lists the targets.
+     .DEFAULT_GOAL := help
+     BACKEND := cd backend &&
+     FRONTEND := cd frontend &&
+     
+     .PHONY: help
+     … +229 lines
+
+⏺ Bash(grep -n 'CSRF\|ALLOWED_HOSTS\|FRONTEND_URL\|STATIC' backend/config/settings.py; grep -n 'baseURL\|E2E_' e2e/playwright.config.ts; grep -n 'e2e\|E2E\|5173\|dev-backend\|uvicorn' docs/development.md | h)
+  ⎿  27:ALLOWED_HOSTS = env("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1").split(",")
+     101:STATIC_URL = "static/"
+     103:STATIC_ROOT = BASE_DIR / "staticfiles"
+     119:FRONTEND_URL = env("FRONTEND_URL", "http://localhost:5173")
+     13:    baseURL: process.env.E2E_BASE_URL ?? "http://localhost:5173",
+     19:9. [Backend](#backend) · [Frontend](#frontend) · [E2E](#e2e)
+     … +65 lines
+
+⏺ Bash(date '+%H:%M' && cat >> docs/decisions.md <<'EOF')
+  ⎿  17:52
+     ## E2E
+     
+     - Playwright, пакет `e2e/`, только chromium. Тесты идут против стека из `make up` — того же,
+       что запускает проверяющий; `make e2e` поднимает его сам. Другой адрес — `E2E_BASE_URL`.
+       Письма тесты читают через API Mailpit: `E2E_MAILPIT_URL` (по умолчанию
+     … +30 lines
+
+⏺ Bash(cat frontend/package.json | head -25; docker images --format '{{.Repository}}:{{.Tag}}' | grep -i nginx; grep -rn 'X-Accel\|Cache-Control' backend/events/*.py)
+  ⎿  {
+       "name": "frontend",
+       "version": "0.0.0",
+       "private": true,
+       "type": "module",
+       "scripts": {
+     … +21 lines
+
+⏺ Bash(curl -s 'https://hub.docker.com/v2/repositories/library/nginx/tags?page_size=40&name=alpine' | python3 -c "import json,sys; [print(t['name'], t['last_updated'][:10]) for t in json.load(sys.stdin)['res)
+  ⎿  1.30.6-alpine 2026-10-29
+     1.31.8-alpine 2026-10-28
+
+⏺ Пишу стадию `gateway` и конфиг nginx.
+
+⏺ Write(/home/raf/event-registration/frontend/Dockerfile)
+⏺ Write(/home/raf/event-registration/frontend/nginx.conf)
+⏺ Bash(python3 - <<'EOF')
+  ⎿  The file /home/raf/event-registration/frontend/Dockerfile has been updated successfully. (file state is current in your context — no need to Read it back)
+
+  ⎿  File created successfully at: /home/raf/event-registration/frontend/nginx.conf (file state is current in your context — no need to Read it back)
+
+  ⎿  Makefile            | 10 +++++++---
+      backend/Dockerfile  |  2 +-
+      docker-compose.yml  |  2 ++
+      docs/decisions.md   |  2 ++
+      frontend/Dockerfile | 13 ++++++++++++-
+      5 files changed, 24 insertions(+), 5 deletions(-)
+
+⏺ Собираю стек слота 1 со шлюзом и проверяю поток через `curl -N`.
+
+⏺ Bash(FRONTEND_TARGET=gateway make stack-up 2>&1 | tail -8)
+  ⎿  Container event-registration-s1-frontend-1 Waiting 
+      Container event-registration-s1-postgres-1 Waiting 
+      Container event-registration-s1-backend-1 Waiting 
+      Container event-registration-s1-worker-1 Healthy 
+      Container event-registration-s1-postgres-1 Healthy 
+      Container event-registration-s1-backend-1 Healthy 
+     … +2 lines
+
+⏺ Bash(grep -rn 'email\|password' backend/accounts/management/commands/create_demo_users.py | head; grep -n "path(" backend/config/urls.py | head -30; curl -sI http://localhost:5174/org/events/1 | head -3; c)
+  ⎿  backend/accounts/management/commands/create_demo_users.py:18:        # Known passwords and a superuser must never reach a deployment that runs without DEBUG.
+     backend/accounts/management/commands/create_demo_users.py:23:        for (email, password), is_admin in ((DEMO_ORGANIZER, False), (DEMO_ADMIN, True)):
+     backend/accounts/management/commands/create_demo_users.py:24:            user, _ = User.objects.get_or_create(email=email)
+     backend/accounts/management/commands/create_demo_users.py:25:            user.set_password(password)
+     22:    path("admin/", admin.site.urls),
+     23:    path("api/auth/login/", LoginView.as_view(), name="login"),
+     … +23 lines
+
+⏺ Bash(grep -rn 'DEMO_ORGANIZER\s*=' -A1 backend/ | head -3; grep -n 'csrf\|CSRF' backend/accounts/views.py | head)
+  ⎿  backend/accounts/management/commands/create_demo_users.py:10:DEMO_ORGANIZER = ("demo@example.com", "demo")
+     backend/accounts/management/commands/create_demo_users.py-11-DEMO_ADMIN = ("admin@example.com", "admin")
+     5:from django.views.decorators.csrf import ensure_csrf_cookie
+     42:@method_decorator(ensure_csrf_cookie, name="dispatch")
+     44:    """The frontend asks who is signed in; the response also hands out the CSRF cookie
+     45:    that it sends back in X-CSRFToken on unsafe requests."""
+
+⏺ Bash(cd /tmp/claude-1000/-home-raf-event-registration/de6e37db-e2a8-4865-b30d-9390bac403d2/scratchpad && B=http://localhost:5174 && rm -f jar && curl -s -c jar -b jar $B/api/auth/me/ >/dev/null && T=$(awk )
+  ⎿  {"id":1,"email":"demo@example.com"}
+     [{"id":1,"title":"Ticket 1793445388409","description":"","starts_at":"2027-05-01T15:00:00Z","capacity":5,"confirmed":0,"waitlisted":0},{"id":2,"title":"Check-in 1793445388629","description":"","starts
+     Shell cwd was reset to /home/raf/event-registration
+
+⏺ Вход через шлюз работает (CSRF с `Host` клиента проходит). Теперь поток:
+
+⏺ Bash(cd /tmp/claude-1000/-home-raf-event-registration/de6e37db-e2a8-4865-b30d-9390bac403d2/scratchpad && timeout 3 curl -sN -i -b jar http://localhost:5174/api/org/events/2/stream/ ; echo "exit=$?")
+  ⎿  HTTP/1.1 200 OK
+     Server: nginx/1.30.6
+     Date: Sat, 31 Oct 2026 15:53:56 GMT
+     Content-Type: text/event-stream
+     Transfer-Encoding: chunked
+     Connection: keep-alive
+     … +13 lines
+
+⏺ Bash(cd /tmp/claude-1000/-home-raf-event-registration/de6e37db-e2a8-4865-b30d-9390bac403d2/scratchpad && C=event-registration-s1-frontend-1 && docker exec $C sed -i 's/proxy_http_version 1.1;/proxy_http_ve)
+  ⎿  2026/10/31 15:54:08 [notice] 136#136: signal process started
+     event: snapshot
+     data: {"id": 2, "title": "Check-in 1793445388629", "description": "", "starts_at": "2027-05-01T15:00:00Z", "capacity": 5, "confirmed": 1, "waitlisted": 0, "checked_in": 1, "free_seats": 4}
+     
+     exit=124 (no output above = buffered)
+     event: snapshot
+     … +2 lines
+
+⏺ Снимок пришёл и без заголовка — надо понять почему. Проверяю, применилась ли правка конфига.
+
+⏺ Bash(C=event-registration-s1-frontend-1; docker exec $C grep -n proxy_ /etc/nginx/conf.d/default.conf; docker exec $C nginx -T 2>/dev/null | grep -n 'buffer\|ignore')
+  ⎿  14:        proxy_pass http://backend:8000;
+     16:        proxy_set_header Host $http_host;
+     17:        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+     18:        proxy_http_version 1.1; proxy_ignore_headers X-Accel-Buffering;
+     138:# proxy. Response buffering stays on (the default): the event stream passes unbuffered only
+     154:        proxy_http_version 1.1; proxy_ignore_headers X-Accel-Buffering;
+
+⏺ Bash(sed -n '/class CheckInView/,/^class /p' backend/registrations/views.py 2>/dev/null | head -30 || grep -rn 'class CheckInView' backend; grep -rn 'class CheckIn.*Serializer' -A8 backend/registrations/se)
+  ⎿  class CheckInView(APIView):
+         """The organizer checks a ticket in by the code the participant shows at the entrance."""
+     
+         @extend_schema(
+             request=CheckInRequestSerializer,
+             responses={
+     … +45 lines
+
+⏺ Bash(cd /tmp/claude-1000/-home-raf-event-registration/de6e37db-e2a8-4865-b30d-9390bac403d2/scratchpad && B=http://localhost:5174 && T=$(awk '/csrftoken/{print $7}' jar) && curl -s -b jar -c jar -H "X-CSRFT)
+  ⎿  {"status":"confirmed"}
+     id email name status queued_at confirmed_at cancelled_at ticket_code manage_token event_id checked_in_at
+     Shell cwd was reset to /home/raf/event-registration
+
+⏺ Bash(cd /tmp/claude-1000/-home-raf-event-registration/de6e37db-e2a8-4865-b30d-9390bac403d2/scratchpad && B=http://localhost:5174 && T=$(awk '/csrftoken/{print $7}' jar) && CODE=$(docker exec event-registra)
+  ⎿  checkin at 17:54:51.938
+     {"result":"checked_in","name":"Probe","masked_email":"gw***@example.com","checked_in_at":"2026-10-31T15:54:51.982637Z"}
+     17:54:50.006 3}
+     17:54:52.038 3}
+     Shell cwd was reset to /home/raf/event-registration
+
+⏺ Bash(cd /tmp/claude-1000/-home-raf-event-registration/de6e37db-e2a8-4865-b30d-9390bac403d2/scratchpad && C=event-registration-s1-frontend-1 && docker exec $C sed -i 's/proxy_http_version 1.1; //' /etc/ngin)
+  ⎿  18:        proxy_ignore_headers X-Accel-Buffering;
+     17:55:25.737 event: snapshot
+     17:55:25.741 data: {"id": 2, "title": "Chec
+     17:55:25.756 
+     --- start 17:55:30
+     Shell cwd was reset to /home/raf/event-registration
+
+⏺ И с HTTP/1.0 до upstream снимок пришёл сразу. Возвращаю контейнер к конфигу из образа.
+
+⏺ Bash(docker rm -f event-registration-s1-frontend-1 >/dev/null && FRONTEND_TARGET=gateway make stack-up 2>&1 | tail -1 && docker exec event-registration-s1-frontend-1 grep -c ignore /etc/nginx/conf.d/defaul)
+  ⎿  Exit code 1
+      Container event-registration-s1-frontend-1 Healthy 
+     0
+
+⏺ Контейнер восстановлен. Посылка spec (п. 3 «Допущений») на практике не подтвердилась, поэтому решение за вами.
+
+⏺ AskUserQuestion()
+  ⎿  Your questions have been answered: "Шлюз nginx 1.30.6 с буферизацией по умолчанию отдаёт поток SSE сразу даже без X-Accel-Buffering: no. Проверено: proxy_ignore_headers X-Accel-Buffering, снимок при п
+
+⏺ ToolSearch(select:WebSearch,WebFetch)
+  ⎿  (no output)
+
+⏺ WebSearch(nginx proxy_buffering on server-sent events delayed why small chunks still delivered immediately event pipe)
+  ⎿  Web search results for query: "nginx proxy_buffering on server-sent events delayed why small chunks still delivered immediately event pipe"
+     
+     Links: [{"title":"proxy buffering","url":"https://apisix.apache.org/docs/apisix/next/plugins/proxy-buffering/"},{"title":"proxy buffering","url":"https://apisix.apache.org/docs/apisix/3.18/plugins/pro
+     
+     The search turned up general guidance but nothing that directly explains small chunks still being held back with `proxy_buffering off`.
+     
+     … +7 lines
+
+⏺ Bash(cd /tmp/claude-1000/-home-raf-event-registration/de6e37db-e2a8-4865-b30d-9390bac403d2/scratchpad && cat > probe.sh <<'EOF')
+  ⎿  [] first bytes after 4.00 s (4 = nothing)
+     [proxy_ignore_headers X-Accel-Buffering;] first bytes after 4.00 s (4 = nothing)
+     [proxy_ignore_headers X-Accel-Buffering; gzip on; gzip_types text/event-stream;] first bytes after 4.01 s (4 = nothing)
+     [gzip on; gzip_types text/event-stream;] first bytes after 2.95 s (4 = nothing)
+     [proxy_ignore_headers X-Accel-Buffering; proxy_buffer_size 64k; proxy_buffers 8 64k;] first bytes after 4.01 s (4 = nothing)
+     Shell cwd was reset to /home/raf/event-registration
+
+⏺ Замер сломан: конвейер ждёт выхода `curl`. Переделываю: отмечаю время первой строки внутри конвейера.
+
+⏺ Bash(cd /tmp/claude-1000/-home-raf-event-registration/de6e37db-e2a8-4865-b30d-9390bac403d2/scratchpad && cat > probe.sh <<'EOF')
+  ⎿  [] first line after 75 ms
+     [proxy_ignore_headers X-Accel-Buffering;] first line after 75 ms
+     [proxy_ignore_headers X-Accel-Buffering; gzip on; gzip_types text/event-stream;] nothing in 4 s
+     [gzip on; gzip_types text/event-stream;] first line after 73 ms
+     Shell cwd was reset to /home/raf/event-registration
+
+⏺ Bash(cd /tmp/claude-1000/-home-raf-event-registration/de6e37db-e2a8-4865-b30d-9390bac403d2/scratchpad && B=http://localhost:5174 && T=$(awk '/csrftoken/{print $7}' jar) && for mode in "gzip on; gzip_types )
+  ⎿  [gzip on; gzip_types text/event-stream;] checkin 17:59:17.512
+     17:59:16.092 data: {"id":…checked_in="checked_in": 1
+     (end)
+     [proxy_ignore_headers X-Accel-Buffering; gzip on; gzip_types text/event-stream;] checkin 17:59:24.542
+     (end)
+     Shell cwd was reset to /home/raf/event-registration
+
+⏺ Bash(docker exec event-registration-s1-postgres-1 psql -U postgres -d event_registration -Atc "select email,status,checked_in_at is not null from registrations_registration where email like 'probe-%'; sele)
+  ⎿  probe-1793462354610980575@example.com|waitlisted|f
+     probe-1793462361608063582@example.com|waitlisted|f
+     3|1
+
+⏺ Так и есть: регистрации ушли в лист ожидания. Создаю своё событие с запасом мест и повторяю замер.
+
+⏺ Bash(cd /tmp/claude-1000/-home-raf-event-registration/de6e37db-e2a8-4865-b30d-9390bac403d2/scratchpad && B=http://localhost:5174 && T=$(awk '/csrftoken/{print $7}' jar) && EV=$(curl -s -b jar -H "X-CSRFTok)
+  ⎿  event 33
+     [gzip on; gzip_types text/event-stream;] checkin 17:59:48.356 -> 200
+     17:59:46.921 "checked_in": 0
+     17:59:48.450 "checked_in": 1
+     (end)
+     [proxy_ignore_headers X-Accel-Buffering; gzip on; gzip_types text/event-stream;] checkin 17:59:55.840 -> 200
+     … +6 lines
+
+⏺ Результат однозначный. Возвращаю контейнер к образу.
+
+⏺ Bash(docker rm -f event-registration-s1-frontend-1 >/dev/null && FRONTEND_TARGET=gateway make stack-up 2>&1 | tail -1)
+  ⎿  Container event-registration-s1-frontend-1 Healthy
+
+⏺ AskUserQuestion()
+  ⎿  The user answered: "Замер на слоте 1 (своё событие, чекин при открытом потоке). Без gzip: снимки идут сразу и с заголовком X-Accel-Buffering: no, и без него (~100 мс). С gzip on и gzip_types text/even
+
+⏺ Edit(/home/raf/event-registration/frontend/nginx.conf)
+⏺ Bash(grep -n 'X-Accel\|буфериз' docs/features/realtime/spec.md docs/development.md docs/architecture.md backend/events/views.py)
+  ⎿  The file /home/raf/event-registration/frontend/nginx.conf has been updated successfully. (file state is current in your context — no need to Read it back)
+
+  ⎿  backend/events/views.py:111:        response["X-Accel-Buffering"] = "no"
+     docs/architecture.md:24:  `X-Accel-Buffering: no`, длинный `proxy_read_timeout`. e2e идут через шлюз. Dev-сервер
+     docs/architecture.md:25:  Vite остаётся для локальной разработки (`make dev-frontend`). Почему в фазе 4: буферизация
+     docs/architecture.md:189:- Заголовок `X-Accel-Buffering: no`, поток без сжатия.
+     docs/features/realtime/spec.md:11:e2e идёт через сборку за nginx, который буферизует ответы, как прокси в продакшене.
+     docs/features/realtime/spec.md:51:  `X-Accel-Buffering: no`; без сжатия.
+     … +3 lines
+
+⏺ Bash(sed -n 105,113p backend/events/views.py; sed -n 128,134p docs/features/realtime/spec.md)
+  ⎿  response = StreamingHttpResponse(
+                 snapshot_stream(event_id, snapshot), content_type="text/event-stream"
+             )
+             response["Cache-Control"] = "no-cache"
+             # nginx buffers proxied responses by default; this header turns it off for the stream.
+             response["X-Accel-Buffering"] = "no"
+     … +9 lines
+
+⏺ Комментарий в `views.py` тоже неточен по замеру. Правлю его и spec.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  ```sh
+     make dev-deps       # Postgres и Mailpit
+     make dev-backend    # терминал 1: миграции + uvicorn с перезагрузкой на :8000
+     make dev-frontend   # терминал 2: http://localhost:5173
+     make dev-worker     # терминал 3, если нужны письма: outbox → Mailpit, http://localhost:8025
+     ```
+     … +49 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  18:04
+
+⏺ Проверяю `--timeout-graceful-shutdown`: перезапускаю backend слота 1 при открытом потоке и замеряю время.
+
+⏺ Bash(cd /tmp/claude-1000/-home-raf-event-registration/de6e37db-e2a8-4865-b30d-9390bac403d2/scratchpad && docker exec event-registration-s1-backend-1 cat /proc/1/cmdline | tr '\0' ' '; echo; (timeout 30 cur)
+  ⎿  sh -c python manage.py migrate --noinput && python manage.py create_demo_users && uvicorn config.asgi:application --host 0.0.0.0 --port 8000 --timeout-graceful-shutdown 3 
+     restart took 3779 ms
+     Shell cwd was reset to /home/raf/event-registration
+
+⏺ Bash(cd /home/raf/event-registration/backend && L=/tmp/claude-1000/-home-raf-event-registration/de6e37db-e2a8-4865-b30d-9390bac403d2/scratchpad/uv.log; POSTGRES_PORT=5433 timeout 40 uv run uvicorn config.a)
+  ⎿  {"detail":"Authentication credentials we
+     INFO:     Started reloader process [417017] using StatReload
+     INFO:     Started server process [417022]
+     INFO:     Waiting for application startup.
+     WARNING:  StatReload detected changes in 'config/urls.py'. Reloading...
+     INFO:     Finished server process [417022]
+     … +3 lines
+
+⏺ Bash(pkill -f 'port 8011' ; sleep 1; cd /home/raf/event-registration/backend && L=/tmp/claude-1000/-home-raf-event-registration/de6e37db-e2a8-4865-b30d-9390bac403d2/scratchpad/uv.log; POSTGRES_PORT=5433 ti)
+  ⎿  Exit code 144
+
+⏺ Bash(ss -ltn | grep -c ':8011 '; cd /home/raf/event-registration/backend && L=/tmp/claude-1000/-home-raf-event-registration/de6e37db-e2a8-4865-b30d-9390bac403d2/scratchpad/uv.log; POSTGRES_PORT=5433 timeou)
+  ⎿  0
+     {"id":1,"email":"demo@example.com"}
+     event: snapshot
+     data: {"id": 3
+     touched at 18:05:39
+     INFO:     Started server process [417182]
+     … +8 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Checking formatting...
+     [error] No parser could be inferred for file "/home/raf/event-registration/frontend/nginx.conf".
+     Error occurred when checking code style in the above file.
+
+⏺ Формат в порядке (`nginx.conf` Prettier не разбирает, это ожидаемо). Запускаю `make stack-check` и `make stack-e2e` (теперь через шлюз).
+
+⏺ Bash(make stack-check > /tmp/claude-1000/-home-raf-event-registration/de6e37db-e2a8-4865-b30d-9390bac403d2/scratchpad/check.log 2>&1; echo "check exit=$?"; grep -E 'passed|failed|error|Error' /tmp/claude-1)
+  ⎿  check exit=0
+     All checks passed!
+     ======================= 229 passed in 120.12s (0:02:00) ========================
+      Test Files  25 passed (25)
+           Tests  191 passed (191)
+
+⏺ Bash(make stack-e2e > /tmp/claude-1000/-home-raf-event-registration/de6e37db-e2a8-4865-b30d-9390bac403d2/scratchpad/e2e.log 2>&1; echo "e2e exit=$?"; tail -6 /tmp/claude-1000/-home-raf-event-registration/d)
+  ⎿  e2e exit=0
+       ✓  5 [chromium] › tests/participant-registers.spec.ts:5:1 › participants get the only seat, then a place on the waitlist (5.3s)
+       ✓  8 [chromium] › tests/organizer-creates-event.spec.ts:48:1 › a wrong password shows the server error and keeps the login form (1.4s)
+       ✓  2 [chromium] › tests/organizer-checks-in.spec.ts:5:1 › the code from the email passes check-in once, and the panel counts the arrival (6.5s)
+       ✓  3 [chromium] › tests/waitlisted-gets-promoted.spec.ts:21:1 › a cancelled seat goes to the waitlist head, who gets an email with the ticket (6.9s)
+     
+     … +2 lines
+
+⏺ Обе проверки зелёные, e2e шли через nginx (8 тестов). Коммичу задачу 2.1.
+
+⏺ Bash(git add -A && git status --short && git commit -q -F - <<'EOF')
+  ⎿  M  Makefile
+     M  backend/Dockerfile
+     M  backend/events/views.py
+     M  docker-compose.yml
+     M  docs/decisions.md
+     M  docs/development.md
+     … +23 lines
+
+⏺ Задача 2.2: e2e с двумя контекстами организатора. Смотрю существующий тест чекина и правила `e2e/`.
+
+⏺ Bash(cat e2e/AGENTS.md; ls e2e/tests e2e/*; cat e2e/tests/organizer-checks-in.spec.ts)
+  ⎿  # e2e/ — Playwright
+     
+     Команды — `docs/development.md`, раздел «E2E». Тесты идут против поднятого стека: человек — `make up` / `make e2e`, агент — `make stack-e2e` (слот 1).
+     
+     ## Правила
+     
+     … +100 lines
+
+⏺ Bash(cat e2e/tests/helpers.ts)
+  ⎿  import { expect, type APIRequestContext, type Browser, type Page } from "@playwright/test";
+     
+     // Created by `create_demo_users` when the backend starts (docs/architecture.md, "Окружение").
+     export const ORGANIZER = { email: "demo@example.com", password: "demo" };
+     const MAILPIT_URL = process.env.E2E_MAILPIT_URL ?? "http://localhost:8025";
+     
+     … +56 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  > e2e@0.0.0 lint /home/raf/event-registration/e2e
+     > eslint .
+     
+     
+     > e2e@0.0.0 typecheck /home/raf/event-registration/e2e
+     > tsc --noEmit
+     … +3 lines
+
+⏺ Линтер, типы и формат чистые. Прогоняю новый и изменённый тесты против шлюза слота 1.
+
+⏺ Bash(E2E_BASE_URL=http://localhost:5174 E2E_MAILPIT_URL=http://localhost:8026 pnpm exec playwright test tests/organizer-sees-arrivals-live.spec.ts tests/organizer-checks-in.spec.ts 2>&1 | tail -5)
+  ⎿  ✓  1 [chromium] › tests/organizer-checks-in.spec.ts:5:1 › the code from the email passes check-in once, and the panel counts the arrival (4.5s)
+       ✓  2 [chromium] › tests/organizer-sees-arrivals-live.spec.ts:5:1 › a check-in at the entrance updates the arrivals on a panel open elsewhere (5.6s)
+     
+       2 passed (7.0s)
+
+⏺ Bash(F=tests/organizer-sees-arrivals-live.spec.ts && cp $F /tmp/claude-1000/-home-raf-event-registration/de6e37db-e2a8-4865-b30d-9390bac403d2/scratchpad/live.bak && run() { E2E_BASE_URL=http://localhost:51)
+  ⎿  --- stream aborted:
+         Error: expect(locator).toHaveText(expected) failed
+         Expected: "1"
+         Received: "0"
+       1 failed
+     --- panel reloaded:
+     … +7 lines
+
+⏺ Обе поломки тест ловит, файл восстановлен. Отмечаю 2.2, записываю решение и гоняю полные проверки.
+
+⏺ Bash(cd /home/raf/event-registration && sed -i 's/^- \[ \] 2.2 e2e:/- [x] 2.2 e2e:/' docs/features/realtime/tasks.md && grep -n '2.2 e2e' docs/features/realtime/tasks.md && T=$(date +%H:%M) && cat >> docs/)
+  ⎿  29:- [x] 2.2 e2e: два контекста организатора — чекин в одном, «Пришло» меняется в другом без
+     check exit=0
+     ======================= 229 passed in 120.11s (0:02:00) ========================
+      Test Files  25 passed (25)
+           Tests  191 passed (191)
+     e2e exit=0
+     … +3 lines
+
+⏺ Bash(git add -A && git commit -q -F - <<'EOF' 2>&1 | grep -v '^[⋯✔ ]' ; git log --oneline -3)
+  ⎿  2cda4fe test(e2e): cover a check-in updating the arrivals on another organizer's panel
+     3196a1e build(infra): run e2e through an nginx gateway in front of the built frontend
+     9502cca docs: plan reopening the live data after a bfcache restore in realtime task 4.2
+
+⏺ Agent(Review realtime stage 2)
+  ⎿  Async agent launched successfully. (This tool result is internal metadata — never quote or paste any part of it, including the agentId below, into a user-facing reply.)
+     agentId: a28ce2b12cb9a819a (internal ID - do not mention to user. Use SendMessage with to: 'a28ce2b12cb9a819a', summary: '<5-10 word recap>' to continue this agent.)
+     The agent is working in the background. You will be notified automatically when it completes. You know nothing about its results until that notification arrives — do not report, assume, or predict the
+     Do not duplicate this agent's work — avoid working with the same files or topics it is using.
+     output_file: /tmp/claude-1000/-home-raf-event-registration/de6e37db-e2a8-4865-b30d-9390bac403d2/tasks/a28ce2b12cb9a819a.output
+     Do NOT Read or tail this file via the shell tool — it is the full subagent JSONL transcript and reading it will overflow your context. If the user asks for progress, say the agent is still running; yo
+
+⏺ Пока ревьюер работает, проверяю утверждение из spec: обычный `make stack-up` после e2e возвращает Vite.
+
+⏺ Bash(make stack-up 2>&1 | tail -1 && curl -s http://localhost:5174/ | grep -c '@vite/client'; curl -sI http://localhost:5174/ | grep -i '^server' || echo "no Server header (Vite)")
+  ⎿  Container event-registration-s1-frontend-1 Healthy 
+     1
+     no Server header (Vite)
+
+⏺ `make stack-up` возвращает Vite: в странице есть `@vite/client`, заголовка nginx нет. Жду отчёт ревьюера.
+
+⏺ Этап 2 сделан, в ветке `feat/realtime-gateway` два коммита. Он ещё не готов: ревьюер нашёл три мелочи, по ним нужны ваши решения. Я ничего не правил до ваших решений, отчёт ниже — от ревьюера.
+  
+  **Что сделано:**
+  - **`3196a1e`, шлюз nginx (2.1).** В `frontend/Dockerfile` добавлена стадия `gateway`: собранный фронтенд и nginx на том же порту, `/api`, `/admin`, `/static` идут на backend. `make e2e`, `make stack-e2e` и CI теперь гоняют e2e через шлюз, обычный `make up` и `make stack-up` остаются на Vite. uvicorn больше не ждёт открытые потоки при перезапуске: в Docker и в `make dev-backend` добавлен `--timeout-graceful-shutdown 3`.
+  - **`2cda4fe`, e2e (2.2).** Панель открыта в одном контексте организатора, чекин делается в другом, «Пришло» меняется 0 → 1 без перезагрузки. Я проверил, что тест падает в двух случаях: если оборвать поток, остаётся «0»; если перезагрузить панель, это ловит метка в `window`.
+  
+  **Проверки:** `make stack-check` прошёл (backend 229, Vitest 191), `make stack-e2e` — 9 из 9 через nginx. Отдельно замерил:
+  - перезапуск backend при открытом потоке занимает 3,8 с, раньше висел до таймаута Docker;
+  - `--reload` закрывает поток через 3 с и перезапускается;
+  - после e2e обычный `make stack-up` снова поднимает Vite.
+  
+  **Заголовок `X-Accel-Buffering: no`.** Пункт задачи 2.1 «без заголовка снимок не приходит» не выполнился:
+  - **Без сжатия** nginx 1.30 отдаёт снимки сразу и с заголовком, и без него, за ~100 мс.
+  - **Со сжатием gzip** для `text/event-stream` без заголовка за 5 с не пришло ничего, с заголовком снимок пришёл сразу.
+  
+  Заголовок оставили, gzip в шлюз не добавляли. Вы спрашивали, нужен ли заголовок всегда: да. Обычному nginx он ничего не меняет, но поток работает и за прокси, который начнут сжимать. Минус: e2e его отсутствие не поймает. Это записано в spec (п. 3), `development.md`, `nginx.conf`, комментарий в `views.py` и лог решений. Поиск в интернете ничего определённого не дал ([apisix proxy-buffering](https://apisix.apache.org/docs/apisix/plugins/proxy-buffering/), [it-premium: nginx и SSE](https://it-premium.com.ua/ru/blog/nginx-proxy-configuration-for-server-sent-events-and-ssl/), [SO: SSE и nginx](https://kiwix.lema.org/stackoverflow.com_en_all_2023-11/questions/64912788/sse-event-data-gets-cut-off-when-using-nginx)), вывод построен на замерах.
+  
+  ## Отчёт ревьюера
+  
+  Ревьюер повторил на своём слоте все проверки, включая замер буферизации, и получил те же результаты. Находки:
+  
+  1. **[docs/development.md:438](docs/development.md#L438), документация расходится с кодом.** В разделе «E2E» сказано, что тесты идут «против стека из `make up`». На деле `make e2e` и `stack-e2e` поднимают фронтенд со шлюзом и на слоте 0 подменяют им Vite из `make up`. Об этом написано только в другом разделе. Предложение: переписать фразу и сослаться на шлюз.
+  2. **[frontend/nginx.conf:14](frontend/nginx.conf#L14), расхождение со spec.** Правило `^/(api|admin|static)/` требует слеш, поэтому `/admin` без слеша отдаёт страницу SPA, а не редирект Django на `/admin/`. Ревьюер проверил: `curl /admin` вернул 200 text/html. Предложение: `^/(api|admin|static)(/|$)`.
+  3. **[frontend/nginx.conf:18](frontend/nginx.conf#L18), настройка без потребителя.** `X-Forwarded-For` backend нигде не читает, и spec его не упоминает. Это против правила «ничего на будущее». Предложение: удалить строку.
+  
+  Ревьюер не открывал страницы в браузере, сам не прогонял тест с оборванным потоком, не мерил перезапуск и `--reload` (их мерил я, цифры выше) и не смотрел CI.
+  
+  Что делать с находками 1–3? Я бы принял все три, это небольшие правки одним коммитом. После этого остаются проход в браузере на слоте 1 и PR этапа. Сессия в логе решений пока не закрыта.
+
+> ок
+
+⏺ Принимаю все три находки. Правлю конфиг и документацию.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  ## E2E
+     
+     - Playwright, пакет `e2e/`, только chromium. Тесты идут против стека из `make up` — того же,
+       что запускает проверяющий; `make e2e` поднимает его сам. Другой адрес — `E2E_BASE_URL`.
+       Письма тесты читают через API Mailpit: `E2E_MAILPIT_URL` (по умолчанию
+       `http://localhost:8025`; `make stack-e2e` передаёт Mailpit своего слота). Ящик общий и не
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Checking formatting...
+     All matched files use Prettier code style!
+      Container event-registration-s1-frontend-1 Healthy 
+     /admin -> 301 text/html; charset=utf-8 http://localhost:5174/admin/
+     /admin/ -> 302 text/html; charset=utf-8 http://localhost:5174/admin/login/?next=/admin/
+     /api/health/ -> 200 application/json 
+     … +3 lines
+
+⏺ `/admin` теперь получает от Django редирект на `/admin/`, а `/administrator` по-прежнему уходит в SPA. Гоняю проверки и коммичу.
+
+⏺ Bash(S=/tmp/claude-1000/-home-raf-event-registration/de6e37db-e2a8-4865-b30d-9390bac403d2/scratchpad; (make stack-check > $S/check.log 2>&1; echo "check exit=$?") && grep -E '[0-9]+ passed|failed' $S/check)
+  ⎿  check exit=2
+      Test Files  4 failed | 21 passed (25)
+           Tests  4 failed | 187 passed (191)
+      ELIFECYCLE  Test failed. See above for more details.
+     e2e exit=0
+       9 passed (11.3s)
+     … +3 lines
+
+⏺ Bash(S=/tmp/claude-1000/-home-raf-event-registration/de6e37db-e2a8-4865-b30d-9390bac403d2/scratchpad; grep -E '^ (FAIL|×)|✗| FAIL ' $S/check.log | head -12; grep -E 'AssertionError|Error:' $S/check.log | h)
+  ⎿  FAIL  src/pages/event/ui/EventPage.test.ts > EventPage > registers, shows the result and refreshes the lists
+      FAIL  src/pages/org-event/ui/OrgEventPage.test.ts > OrgEventPage > offers a retry when the event fails to load
+      FAIL  src/pages/org-event-new/ui/OrgEventNewPage.test.ts > OrgEventNewPage > creates the event, refreshes the list and returns to it
+      FAIL  src/pages/ticket/ui/TicketPage.test.ts > TicketPage > cancels, rereads the ticket and refreshes the events
+     AssertionError: expected undefined to deeply equal { email: 'a@x.io', name: 'Ann' }
+     Error: Unable to get h1 within: <main class="mx-auto max-w-4xl px-4 py-8"><a href="/org/events" class="text-muted-foreground text-sm underline">Мои события</a>
+     … +3 lines
+
+⏺ Bash(S=/tmp/claude-1000/-home-raf-event-registration/de6e37db-e2a8-4865-b30d-9390bac403d2/scratchpad; make stack-check > $S/check2.log 2>&1; rc=$?; echo "check exit=$rc"; grep -E '[0-9]+ passed|failed' $S/)
+  ⎿  check exit=2
+      Test Files  1 failed | 24 passed (25)
+           Tests  1 failed | 190 passed (191)
+      ELIFECYCLE  Test failed. See above for more details.
+      18:33:06 up 14:49,  2 users,  load average: 5.98, 3.47, 2.68
+
+⏺ Bash(S=/tmp/claude-1000/-home-raf-event-registration/de6e37db-e2a8-4865-b30d-9390bac403d2/scratchpad; grep -E ' FAIL ' $S/check2.log | head; top -bn1 | head -15 | tail -8; docker ps --format '{{.Names}}' )
+  ⎿  FAIL  src/pages/org-event-new/ui/OrgEventNewPage.test.ts > OrgEventNewPage > shows server field errors under the field they belong to
+      423360 raf       20   0   36116  26876   8112 R  90.9   0.3  11:24.36 uvicorn
+           1 root      20   0   21944   7088   4832 S   0.0   0.1   0:06.75 systemd
+           2 root      20   0    3804   1988   1948 S   0.0   0.0   0:00.05 init-sy+
+           3 root      20   0    3664   1876   1872 S   0.0   0.0   0:00.00 init-wa+
+           7 root      20   0    3880   2300   2172 S   0.0   0.0   0:01.33 init
+     … +10 lines
+
+⏺ Bash(ps -o pid,ppid,etime,cmd -p 423360; pgrep -af 'uvicorn' | grep -v pgrep)
+  ⎿  PID    PPID     ELAPSED CMD
+      423360  423357       19:37 /home/raf/event-registration/backend/.venv/bin/python /home/raf/event-registration/backend/.venv/bin/uvicorn config.asgi:application --reload --port 8000 --timeout-graceful
+     423356 /bin/sh -c cd backend && uv run uvicorn config.asgi:application --reload --port 8000 \ ?--timeout-graceful-shutdown 3
+     423357 uv run uvicorn config.asgi:application --reload --port 8000 --timeout-graceful-shutdown 3
+     423360 /home/raf/event-registration/backend/.venv/bin/python /home/raf/event-registration/backend/.venv/bin/uvicorn config.asgi:application --reload --port 8000 --timeout-graceful-shutdown 3
+
+⏺ Bash(for i in 1 2; do make test-frontend 2>&1 | grep -E 'Tests +[0-9]|FAIL ' | head -4; done)
+  ⎿  Tests  191 passed (191)
+           Tests  191 passed (191)
+
+⏺ Vitest зелёный два прогона подряд. В упавшем `stack-check` после Vitest не запустился `check-e2e`, догоняю его отдельно.
+
+⏺ Bash(make check-e2e 2>&1 | tail -3; echo "exit=${PIPESTATUS[0]}")
+  ⎿  > e2e@0.0.0 typecheck /home/raf/event-registration/e2e
+     > tsc --noEmit
+     
+     exit=
+
+⏺ Bash(make check-e2e >/dev/null 2>&1; echo "exit=$?")
+  ⎿  exit=0
+
+⏺ Bash(cd /home/raf/event-registration/e2e && S=/tmp/claude-1000/-home-raf-event-registration/de6e37db-e2a8-4865-b30d-9390bac403d2/scratchpad && cat > $S/browser-pass.mjs <<'EOF')
+  ⎿  ERROR:  syntax error at end of input
+     LINE 1: ... ticket_code from registrations_registration where event_id=
+                                                                            ^
+     node:internal/modules/package_json_reader:314
+       throw new ERR_MODULE_NOT_FOUND(packageName, fileURLToPath(base), null);
+             ^
+     … +14 lines
+
+⏺ Скрипт из scratchpad не видит `@playwright/test` (ESM игнорирует `NODE_PATH`). Импортирую по абсолютному пути и повторяю.
+
+⏺ Bash(S=/tmp/claude-1000/-home-raf-event-registration/de6e37db-e2a8-4865-b30d-9390bac403d2/scratchpad && sed -i 's|from "@playwright/test"|from "/home/raf/event-registration/e2e/node_modules/@playwright/tes)
+  ⎿  Server: nginx/1.30.6
+     file:///tmp/claude-1000/-home-raf-event-registration/de6e37db-e2a8-4865-b30d-9390bac403d2/scratchpad/browser-pass.mjs:25
+     const id = eventUrl.match(/events\/(\d+)/)[1];
+                                               ^
+     
+     TypeError: Cannot read properties of null (reading '1')
+     … +3 lines
+
+⏺ Bash(S=/tmp/claude-1000/-home-raf-event-registration/de6e37db-e2a8-4865-b30d-9390bac403d2/scratchpad && python3 - "$S/browser-pass.mjs" <<'EOF')
+  ⎿  participant: Место подтверждено
+     event id 56 url http://localhost:5174/org/events/56
+     A after reload: Пришло 0
+     {"id":"56"}
+     B Пришло 0
+     A Пришло -> 1 in 147 ms after click
+     … +7 lines
+
+⏺ Read(/tmp/claude-1000/-home-raf-event-registration/de6e37db-e2a8-4865-b30d-9390bac403d2/scratchpad/panel-after.png)
+  ⎿  (no output)
+
+⏺ Bash(cd /home/raf/event-registration && python3 - <<'EOF')
+  ⎿  fmt-ok
+     
+     
+     d64eea6 docs: record the review and browser pass of realtime stage 2
+     bcec1a4 fix(infra): proxy /admin without the slash through the gateway
+     2cda4fe test(e2e): cover a check-in updating the arrivals on another organizer's panel
+     … +1 lines
+
+⏺ Этап 2 готов: шлюз nginx работает, e2e идут через него, все три находки ревью исправлены. В ветке `feat/realtime-gateway` 4 коммита, ветка не запушена.
+  
+  | Коммит    | Что                                                                                           |
+  | --------- | --------------------------------------------------------------------------------------------- |
+  | `3196a1e` | 2.1: шлюз nginx перед собранным фронтендом; e2e и CI ходят через него; uvicorn не ждёт открытые потоки при перезапуске дольше 3 с |
+  | `2cda4fe` | 2.2: e2e — чекин в одном контексте организатора меняет «Пришло» в другом без перезагрузки   |
+  | `bcec1a4` | находки ревью: `/admin` без слеша идёт на backend, убран лишний `X-Forwarded-For`, раздел «E2E» в `development.md` |
+  | `d64eea6` | лог этапа в `tasks.md`: ревью и проход в браузере                                             |
+  
+  **Проверки:**
+  - `make stack-e2e` — 9 из 9 через nginx.
+  - Новый тест падает, если оборвать поток или перезагрузить панель.
+  - В браузере через шлюз «Пришло» во второй вкладке меняется за ~150 мс после клика. В консоли только ожидаемый 401 `me` до входа.
+  - По последнему коммиту `make stack-check` целиком зелёным не прошёл. В первом прогоне упали 4 теста Vitest, в повторном 1, всё на страницах, которые этот этап не трогал. Остальные проверки в повторе прошли, Vitest отдельно прошёл два раза подряд, `check-e2e` тоже. Похоже на уже записанную нестабильность Vitest под нагрузкой, отметил её в `tasks.md`.
+  
+  **Ваш процесс тормозит машину.** Нагрузку даёт ваш `make dev-backend` на слоте 0 (порт 8000): он ~20 минут держит 90 % CPU. Я его не трогал. Предполагаю, что `--reload` без пакета `watchfiles` постоянно обходит все файлы `backend/`, включая `.venv`, но это не проверял. Если причина в этом, поможет установить `watchfiles` или ограничить слежение папками кода.
+  
+  **Пункт «без заголовка — нет»** из задачи 2.1 не выполнен. Как договорились, это записано в spec (п. 3) и в лог решений.
+  
+  Сессию в `docs/decisions.md` я ещё не закрыл. Пушить ветку и открывать PR «Phase 4, stage 2: nginx gateway for e2e and live arrivals test»? Если да, закрою сессию в том же push.
+
+> остановил. watchfiles проверишь?
+
+⏺ Проверяю: стоит ли `watchfiles` в окружении backend и сколько CPU ест `--reload` с ним и без него.
+
+⏺ Bash(cd /home/raf/event-registration/backend && uv pip list 2>/dev/null | grep -iE 'watchfiles|uvicorn|uvloop|httptools'; grep -n 'uvicorn' pyproject.toml; find . -name '*.py' -not -path './.venv/*' | wc -)
+  ⎿  uvicorn                   0.54.0
+     11:    "uvicorn>=0.54.0",
+     60:# loop of a uvicorn process: the stats listener lives in it.
+     86
+     2188
+
+⏺ Bash(S=/tmp/claude-1000/-home-raf-event-registration/de6e37db-e2a8-4865-b30d-9390bac403d2/scratchpad)
+  ⎿  StatReload: 40% CPU over 15 s; reloader: using StatReload
+     watchfiles: 33% CPU over 15 s; reloader: using WatchFiles
+     0
+
+⏺ Bash(S=/tmp/claude-1000/-home-raf-event-registration/de6e37db-e2a8-4865-b30d-9390bac403d2/scratchpad)
+  ⎿  == no reload
+       0% uvicorn config.asgi:application --port
+       0% config.asgi:application --port 8011
+     == StatReload
+       0% uvicorn config.asgi:application --reload
+       40% config.asgi:application --reload --port
+     … +12 lines
+
+⏺ Bash(S=/tmp/claude-1000/-home-raf-event-registration/de6e37db-e2a8-4865-b30d-9390bac403d2/scratchpad; for d in $(ls -A); do [ -d "$d" ] && echo "$(find "$d" -type f | wc -l) $d"; done | sort -rn | head)
+  ⎿  8391 .venv
+     599 staticfiles
+     44 registrations
+     40 emails
+     34 events
+     32 accounts
+     … +6 lines
+
+⏺ Проверил: дело не в `watchfiles`. `--reload` без ограничения папок грузит CPU в любом варианте. Замер на порту 8011, 15 с без запросов, в процентах одного ядра:
+  
+  | Вариант                                                | CPU наблюдателя |
+  | ------------------------------------------------------ | --------------- |
+  | без `--reload`                                          | 0 %             |
+  | `--reload` (сейчас `StatReload`, `watchfiles` не стоит) | 40 %            |
+  | `--reload` с `watchfiles`                               | 33 %            |
+  | любой из двух с `--reload-exclude .venv`                | 40 % / 33 %     |
+  | `StatReload` с `--reload-dir` на папки кода             | 0 %             |
+  
+  CPU ест родительский процесс, который следит за файлами, а не сам сервер. Uvicorn следит за всем `backend/`, а там в `.venv` 8 391 файл против ~180 в коде. `--reload-exclude` нагрузку не снижает. Похоже, исключения применяются уже после обхода, но это моя догадка по замеру, в код uvicorn я не смотрел. `watchfiles` в WSL2 тоже не спасает: 33 %. Мой прошлый замер на вашем процессе показал 90 %. Сейчас он мог быть ниже, потому что процессы делили ядра, но это не проверено.
+  
+  Помогает только явный список папок кода, тогда 0 % даже со `StatReload`:
+  
+  ```make
+  uvicorn config.asgi:application --reload --port 8000 --timeout-graceful-shutdown 3 \
+  	--reload-dir config --reload-dir accounts --reload-dir events \
+  	--reload-dir registrations --reload-dir emails
+  ```
+  
+  Минус: новое приложение Django нужно дописать в этот список, иначе его код не будет перезагружаться. Ставить `watchfiles` смысла нет. Сделать это отдельным коммитом в этой ветке, с записью в `development.md` и логом решений? После этого — push и PR этапа 2, как предлагал выше.
+
+> сделай, но пока не коммить. я запущу процессы, а ты глянешь нагрузку
+
+⏺ Bash(cd /home/raf/event-registration && python3 - <<'EOF')
+  ⎿  backend/__pycache__/
+     backend/accounts/
+     backend/config/
+     backend/emails/
+     backend/events/
+     backend/registrations/
+     … +3 lines
+
+⏺ Готово, не закоммичено. `make dev-backend` теперь следит только за папками кода:
+  
+  ```
+  --reload-dir config --reload-dir accounts --reload-dir events --reload-dir registrations --reload-dir emails
+  ```
+  
+  Это все приложения из `backend/`, кроме служебных `__pycache__` и `staticfiles`. Список лежит в переменной `RELOAD_DIRS` в `Makefile`, рядом комментарий: новое приложение дописывать туда. То же записано в `docs/development.md` («Запуск»). `make help` эта переменная не затрагивает.
+  
+  Запускайте `make dev-backend` (и что ещё нужно). Напишите, когда поднимется: замерю CPU наблюдателя за 15 с.
+
+> запустил. worker тоже учитывал?
+
+⏺ Замеряю все процессы разработки за 15 с: наблюдатель и сервер uvicorn, worker и всё, что ещё запущено.
+
+⏺ Bash(S=/tmp/claude-1000/-home-raf-event-registration/de6e37db-e2a8-4865-b30d-9390bac403d2/scratchpad; snap() { ps -u "$USER" -o pid=,times=,etimes=,args= | grep -E 'uvicorn|run_worker|vite|manage.py' | gre)
+  ⎿  0%  447735    /bin/sh -c cd backend && uv run python manage.py run_worker
+       0%  447736    uv run python manage.py run_worker
+       0%  447739    /home/raf/event-registration/backend/.venv/bin/python manage.py run_worker
+       0%  447886    sh -c vite
+       0%  447887    node /home/raf/event-registration/frontend/node_modules/.bin/../vite/bin/vite.js
+       0%  448000    /bin/sh -c cd backend && uv run uvicorn config.asgi:application --reload --port 8000 \ ?--timeout-graceful-shutdown 3 --reload-dir config --
+     … +2 lines
+
+⏺ Замерил за 15 с, нагрузка в норме:
+  
+  | Процесс                              | CPU |
+  | ------------------------------------ | --- |
+  | uvicorn, наблюдатель `--reload`      | 6 % |
+  | uvicorn, сервер                      | в замер не попал |
+  | worker (`run_worker`)                | 0 % |
+  | Vite                                 | 0 % |
+  
+  **Worker** правка не касается: у него нет `--reload` и он не следит за файлами. Он раз в секунду проверяет outbox, это 0 %. Но и правки кода он не подхватывает, после изменений его нужно перезапускать руками. Так было и раньше.
+  
+  **Наблюдатель uvicorn:** 6 % вместо прежних 90 %. `StatReload` опрашивает ~180 файлов кода. У меня на 8011 выходило 0 % (там не было `emails`), но точность замера низкая, `ps` считает время с шагом 0,01 с.
+  
+  **Сервер uvicorn** в замер не попал. Строку его процесса фильтр, похоже, отбросил, процессы запущены через `multiprocessing.spawn`. Если нужно, домеряю.
+  
+  Правка лежит незакоммиченной (`Makefile`, `docs/development.md`). Закоммитить её с записью в лог решений, закрыть сессию и пушить ветку с PR этапа 2?
+
+> домеряй
+
+⏺ Bash(S=/tmp/claude-1000/-home-raf-event-registration/de6e37db-e2a8-4865-b30d-9390bac403d2/scratchpad; R=$(pgrep -f 'bin/uvicorn config.asgi:application --reload --port 8000' | head -1); echo "reloader $R";)
+  ⎿  reloader 448006
+      448010 /home/raf/event-registration/backend/.venv/bin/python -c from multiprocessing.resource_tracker import main;main(4)
+      448011 /home/raf/event-registration/backend/.venv/bin/python -c from multiprocessing.spawn import spawn_main; spawn_main(tracker_fd=5, pipe_handle=8) --multiprocessing-fork
+     0% pid 448006 /home/raf/event-registration/backend/.venv/bin/python /home/raf/event-registration/backend
+     0% pid 448010 /home/raf/event-registration/backend/.venv/bin/python -c from multiprocessing.resource_tra
+     0% pid 448011 /home/raf/event-registration/backend/.venv/bin/python -c from multiprocessing.spawn import
+
+⏺ Bash(R=$(pgrep -f 'bin/uvicorn config.asgi:application --reload --port 8000' | head -1); W=$(pgrep -f 'python manage.py run_worker' | tail -1); V=$(pgrep -f 'vite/bin/vite.js' | head -1); PIDS="$R $(ps --p)
+  ⎿  Exit code 1
+     awk: fatal: cannot open file `/proc/448006  448010
+      448011 448653 447887/stat' for reading: No such file or directory
+     awk: fatal: cannot open file `/proc/448006  448010
+      448011 448653 447887/stat' for reading: No such file or directory
+     (eval):1: bad math expression: operand expected at end of string
+
+⏺ Оболочка — zsh, она не делит строку на слова. Запускаю через `bash`.
+
+⏺ Bash(bash -c ')
+  ⎿  Exit code 1
+     awk: fatal: cannot open file `/proc/448933/stat' for reading: No such file or directory
+       1.8%  /home/raf/event-registration/backend/.venv/bin/python /home/raf/event-registrati
+         0%  /home/raf/event-registration/backend/.venv/bin/python -c from multiprocessing.re
+       1.4%  /home/raf/event-registration/backend/.venv/bin/python -c from multiprocessing.sp
+     awk: fatal: cannot open file `/proc/448933/stat' for reading: No such file or directory
+     … +1 lines
+
+⏺ Bash(bash -c ')
+  ⎿  worker 447739: .1%
+     vite 447887: 12.5%
+
+⏺ Bash(bash -c 'V=$(pgrep -f "^node .*vite/bin/vite.js" | head -1); HZ=$(getconf CLK_TCK); tick() { awk "{print \$14+\$15}" /proc/$1/stat; }; for i in 1 2 3; do a=$(tick $V); sleep 10; b=$(tick $V); echo "10)
+  ⎿  10 s: 2.4%
+     10 s: 11.7%
+     10 s: 0%
+     threads: 55
+     3
+     1
+
+⏺ Домерил по `/proc/<pid>/stat` (тики по 1/100 с): uvicorn после правки почти не грузит CPU, worker тоже.
+  
+  | Процесс                          | CPU               |
+  | -------------------------------- | ----------------- |
+  | uvicorn, наблюдатель `--reload`  | 1,8 %             |
+  | uvicorn, сервер                  | 1,4 %             |
+  | worker                           | 0,1 %             |
+  | Vite                             | всплесками: 2,4 %, 11,7 %, 0 % за три окна по 10 с |
+  
+  Прежние 6 % и 0 % — погрешность `ps -o times`, он считает целыми секундами.
+  
+  **Vite** грузит всплесками, а не постоянно, как раньше наблюдатель uvicorn. За файлами он следит через inotify, без опроса. У него 3 открытых TCP-соединения, видимо, ваша вкладка с HMR. Всплески похожи на обработку запросов, но это предположение, я не проверял.
+  
+  Правка `RELOAD_DIRS` по-прежнему не закоммичена. Коммитить её с записью в лог решений, закрыть сессию и пушить ветку с PR этапа 2?
+
+> да, это я пару раз обновил страницу. если не осталось открытых вопросов коммить и пуш
+
+⏺ Открытых вопросов нет. Коммичу правку вместе с записью в лог и закрытием сессии.
+
+⏺ Bash(T=$(date +%H:%M) && cat >> docs/decisions.md <<EOF)
+  ⎿  8846738 build: watch only the code directories in make dev-backend
+
+⏺ Bash(SLOT=1 git push -u origin feat/realtime-gateway 2>&1 | grep -vE '^\s*$' | tail -12)
+  ⎿  # fail 0
+     # cancelled 0
+     # skipped 0
+     # todo 0
+     # duration_ms 993.197536
+     remote: 
+     … +6 lines
+
+⏺ Ветка запушена, хук `pre-push` прошёл. Смотрю, как оформлен PR этапа 1, и открываю PR этапа 2 в том же стиле.
+
+⏺ Bash(gh pr view 17 --json title,body -q '.title + "\n---\n" + .body' | head -50)
+  ⎿  Phase 4, stage 1: live check-in counter on the organizer event panel
+     ---
+     The organizer's event panel updates «Пришло» live: a check-in in one tab changes the counter in another without a reload.
+     
+     ## What changed
+     
+     … +24 lines
+
+⏺ Bash(gh pr create --base main --head feat/realtime-gateway --title "Phase 4, stage 2: nginx gateway for e2e and a live arrivals test" --body-file - <<'EOF')
+  ⎿  https://github.com/rbikbov/event-registration/pull/18
+
+⏺ Коммит сделан, ветка запушена, PR открыт: https://github.com/rbikbov/event-registration/pull/18 (Phase 4, stage 2: nginx gateway for e2e and a live arrivals test).
+  
+  - **Последний коммит `8846738`.** `make dev-backend` теперь следит только за папками кода. В тот же коммит вошли запись в лог решений с замерами и закрытие сессии (`■ конец сессии`).
+  - **Push** прошёл с `SLOT=1`, хук `pre-push` пройден.
+  - **Описание PR** отдельно говорит о двух вещах: тест без заголовка `X-Accel-Buffering: no` не падает, и в одном прогоне `stack-check` падал Vitest под нагрузкой. Чем закончились повторы, там тоже написано.
+  
+  Стек слота 1 ещё поднят. Его можно убрать `make stack-down`, но удалятся и его тома с тестовыми данными. Следующий этап — 3: асинхронные потоки, уведомления при регистрации и отмене, публичный поток, постраничная таблица и макет события.

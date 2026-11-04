@@ -1,0 +1,778 @@
+> /clear
+
+> Делаем 3.1 в отдельной ветке
+
+⏺ Bash(date +%H:%M && git checkout -b feat/registration-model && tail -30 docs/decisions.md && cat docs/features/registration/tasks.md | head -80 && ls backend backend/*/)
+⏺ Skill(session-handoff)
+  ⎿  04:48
+     Switched to a new branch 'feat/registration-model'
+       подстановки уже не склеиваются руками. Правило 5 `frontend/AGENTS.md` обновлено. Цена:
+       ключи `t()` не проверяются типами — опечатку ловят тесты компонентов; `@` в сообщении —
+       `{'@'}`. Отклонено: глобальные файлы сообщений `ru.json` — текст оказывается далеко от
+       компонента; типизированные ключи через схему — настройка без потребителя.
+     … +162 lines
+
+  ⎿  Launching skill: session-handoff
+
+⏺ Bash(cat backend/AGENTS.md && cat docs/features/registration/spec.md && cat backend/events/{models,serializers,views,admin}.py backend/config/urls.py && ls backend/events/tests backend/events/migrations &&)
+⏺ Skill(api-change)
+  ⎿  <persisted-output>
+     Output too large (35.5KB). Full output saved to: /home/raf/.claude/projects/-home-raf-event-registration/cbeebb7e-981a-451c-8b10-f41baad083ab/tool-results/behf4au5m.txt
+     
+     Preview (first 2KB):
+     # backend/ — Django + DRF
+     
+     … +32 lines
+
+  ⎿  Launching skill: api-change
+
+⏺ Bash(sed -n 40,200p backend/AGENTS.md; cat docs/features/registration/spec.md; cd backend; cat events/models.py events/serializers.py events/views.py events/admin.py config/urls.py; ls events/tests events/)
+  ⎿  # Регистрация, лист ожидания, отказ: spec
+     
+     Фаза — `docs/roadmap.md`, фаза 1. Статус: черновик.
+     
+     ## Что и зачем
+     
+     … +236 lines
+
+⏺ Bash(cd /home/raf/event-registration && sed -n 30,80p backend/AGENTS.md; cat docs/rules/db-migrations.md; grep -n -i "registrations\|Registration\|ticket_code\|manage_token\|free_seats" docs/architecture.m)
+  ⎿  9. Каждая модель приложения регистрируется в админке в том же коммите, что и модель:
+        `config/tests/test_admin.py` падает на незарегистрированной. Модели, которые меняются
+        только через сервисы с блокировками и инвариантами (регистрации, письма), в админке —
+        только для чтения: `has_add_permission`, `has_change_permission`, `has_delete_permission`
+        возвращают `False`, и это проверено тестом.
+     10. Список и счётчики — без запроса на каждую строку: связанные объекты через
+     … +192 lines
+
+⏺ Bash(sed -n 25,125p docs/architecture.md; sed -n 60,200p backend/events/tests/test_org_events_api.py; git status --short)
+  ⎿  Vite остаётся для локальной разработки (`make dev-frontend`). Почему в фазе 4: буферизация
+       прокси ломает поток событий, и проверить это можно только за настоящим прокси.
+     
+     ## Аутентификация
+     
+     - **Реализовано:** своя модель `accounts.User` — вход по email, email хранится в нижнем
+     … +212 lines
+
+⏺ Bash(cat backend/accounts/models.py | head -40; cat backend/config/exceptions.py | head -50; grep -n "schema\|^check" Makefile | head; sed -n 1,40p backend/conftest.py)
+  ⎿  from typing import Any, ClassVar
+     
+     from django.contrib.auth.models import AbstractUser
+     from django.contrib.auth.models import UserManager as DjangoUserManager
+     from django.db import models
+     
+     … +85 lines
+
+⏺ Bash(cd /home/raf/event-registration/backend && mkdir -p registrations/tests && touch registrations/__init__.py registrations/tests/__init__.py && cat events/apps.py && cat > registrations/apps.py <<'EOF')
+  ⎿  from django.apps import AppConfig
+     
+     
+     class EventsConfig(AppConfig):
+         name = "events"
+     Migrations for 'registrations':
+     … +12 lines
+
+⏺ Bash(cat > registrations/tests/test_services.py <<'EOF')
+  ⎿  ................                                                         [100%]
+     16 passed in 4.39s
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  from typing import cast
+     
+     from django.contrib.auth import login, logout
+     from django.utils.decorators import method_decorator
+     from django.views.decorators.csrf import ensure_csrf_cookie
+     from drf_spectacular.utils import extend_schema
+     … +33 lines
+
+⏺ Bash(cat > events/tests/test_public_events_api.py <<'EOF')
+  ⎿  (Bash completed with no output)
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Found 1 error (1 fixed, 0 remaining).
+     ........................................................................ [ 90%]
+     ........                                                                 [100%]
+     80 passed in 22.09s
+
+⏺ Тесты backend зелёные (80). Теперь схема, типы, проверки и записи в docs.
+
+⏺ Bash(cd /home/raf/event-registration && make schema 2>&1 | tail -8; make check-backend 2>&1 | tail -25; git status --short)
+  ⎿  cd backend && uv run python manage.py spectacular --validate --fail-on-warn --file openapi.yaml
+     cd frontend && pnpm gen:api
+     
+     > frontend@0.0.0 gen:api /home/raf/event-registration/frontend
+     > openapi-typescript ../backend/openapi.yaml -o src/shared/api/schema.d.ts
+     
+     … +21 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  plugins: django-4.14.0
+     collected 80 items
+     
+     accounts/tests/test_auth_api.py ............                             [ 15%]
+     accounts/tests/test_create_demo_users.py ..                              [ 17%]
+     accounts/tests/test_user.py .....                                        [ 23%]
+     … +12 lines
+
+⏺ Bash(cat > backend/registrations/tests/test_admin.py <<'EOF')
+  ⎿  --- a/docs/architecture.md
+     +++ b/docs/architecture.md
+     -**Registration** — план (фаза 1):
+     +**Registration** — реализовано (фаза 1, этап 3; приложение `registrations`; `checked_in_at` — с фазы 3):
+     +**Реализовано — публичное (без сессии и CSRF):**
+     +
+     … +16 lines
+
+⏺ Bash(cat >> docs/decisions.md <<'EOF')
+  ⎿  registrations/tests/test_services.py ...............                     [ 98%]
+     config/tests/test_admin.py .                                             [100%]
+     
+     ============================= 81 passed in 23.37s ==============================
+     ⋯ Backing up original state…
+     ✔ Done backing up original state (cab0075)!
+     … +22 lines
+
+⏺ Задача 3.1 сделана и закоммичена в ветке `feat/registration-model` (80e7469). Все 81 тест backend проходят, `make check-backend` зелёный. Полный `make check` я не гонял: фронтенд проверен только `vue-tsc` (типы), e2e и `check-ci` не запускались.
+  
+  **Что появилось**
+  - **Модель:** `Registration` в новом приложении `registrations` с миграцией. В БД заданы `UNIQUE(event, email)` и `CHECK` на статус. `ticket_code` не содержит `0/O/1/I`, `manage_token` — длинный секрет. В админке модель только для чтения, это проверено тестом.
+  - **Сервис:** `registrations.services.register` блокирует строку события и ведёт регистрации по очереди. Email приводится к нижнему регистру (точки и `+tag` значимы). Повторная регистрация возвращает прежнюю запись.
+  - **API:**
+    - `GET /api/events/` и `GET /api/events/{id}/` показывают свободные места. Список содержит только будущие события.
+    - `POST /api/events/{id}/registrations/` отвечает 201 или 200 при повторе. В ответе только `{status}`, без кода билета и токена.
+    - В `GET /api/org/events/` добавлены `confirmed` и `waitlisted`. Число запросов не зависит от числа событий (тест).
+  - **Схема и типы:** `openapi.yaml` и `schema.d.ts` обновлены в том же коммите.
+  - **Доки:** `tasks.md` и `architecture.md` приведены к коду. Решения записаны в `decisions.md` вместе с отметкой начала сессии.
+  
+  **Отступления от spec, они записаны в лог решений**
+  - **Приложение `registrations`:** вместо `events`, как в tasks.
+  - **409 при нехватке мест:** пока нет листа ожидания (4.1), регистрация на заполненное событие даёт 409 вместо `waitlisted`. В 4.1 это заменится веткой листа.
+  - **Без сессии и CSRF:** публичные эндпоинты не проверяют сессию, иначе вошедший организатор получал бы 403 от CSRF при регистрации участника.
+  
+  Маркера `■ конец сессии` в логе пока нет: добавлю его в последний коммит, когда закончим. Дальше по плану 3.2, фронтенд (публичный список и страница события с формой).
+
+> делаем 3.2
+
+⏺ Skill(fsd-frontend)
+  ⎿  Launching skill: fsd-frontend
+
+⏺ Bash(cd /home/raf/event-registration/frontend && cat AGENTS.md | head -80; find src -type f | grep -v components/ui | sort; cat src/app/router.ts)
+  ⎿  # frontend/ — Vue 3 + Vite
+     
+     Команды и инструменты — `docs/development.md`, раздел «Frontend». Как писать код (слои, DI,
+     состояние, тесты) — skill `fsd-frontend`. Здесь — правила, которые действуют всегда.
+     
+     ## Карта
+     … +146 lines
+
+⏺ Bash(cd /home/raf/event-registration/frontend/src && cat entities/event/api/org-events.ts entities/event/index.ts shared/config/routes.ts pages/home/index.ts pages/home/ui/HomePage.vue pages/home/ui/HomePa)
+  ⎿  import { queryOptions } from "@tanstack/vue-query";
+     
+     import { api, unwrap } from "@/shared/api";
+     import type { components } from "@/shared/api";
+     
+     export type OrgEvent = components["schemas"]["Event"];
+     … +586 lines
+
+⏺ Bash(cd /home/raf/event-registration && cat frontend/src/shared/api/client.ts | head -60; grep -n "registrations" -B2 -A25 frontend/src/shared/api/schema.d.ts | sed -n 1,50p; grep -n "RegistrationResult\|P)
+  ⎿  import createClient from "openapi-fetch";
+     
+     import { AppError } from "./app-error";
+     import { csrfMiddleware } from "./csrf";
+     import type { paths } from "./schema";
+     
+     … +92 lines
+
+⏺ Bash(cat e2e/tests/smoke.spec.ts; sed -n 180,215p frontend/src/shared/api/schema.d.ts; sed -n 60,140p frontend/src/pages/org-event-new/ui/OrgEventNewPage.test.ts)
+  ⎿  import { expect, test } from "@playwright/test";
+     
+     test("frontend reaches the backend and the database through the proxy", async ({ page }) => {
+       await page.goto("/health");
+     
+       await expect(page.getByRole("heading", { name: "Состояние сервиса" })).toBeVisible();
+     … +101 lines
+
+⏺ Bash(cd /home/raf/event-registration/frontend/src && python3 - <<'EOF')
+  ⎿  export { routes } from "./routes";
+
+⏺ Пишу компоненты и тесты страниц; сейчас экспортирую `eventPath` и переписываю тест главной.
+
+⏺ Bash(echo 'export { eventPath, routes } from "./routes";' > shared/config/index.ts)
+  ⎿  |                   ^
+         201|     await wrapper.get("#name").setValue("Ann");
+         202|
+     
+     ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[9/10]⎯
+     
+     … +24 lines
+
+⏺ Bash(git status --short; sed -n 1,50p src/pages/org-events/ui/OrgEventsPage.test.ts)
+  ⎿  M src/app/router.ts
+      M src/entities/event/index.ts
+      M src/pages/home/ui/HomePage.test.ts
+      M src/pages/home/ui/HomePage.vue
+      M src/shared/api/schema.d.ts
+      M src/shared/config/index.ts
+     … +53 lines
+
+⏺ Bash(git checkout src/shared/api/schema.d.ts && sed -n 50,120p src/pages/org-events/ui/OrgEventsPage.test.ts | grep -n "vi\.\|waitFor\|flush" )
+  ⎿  Updated 1 path from the index
+     9:    await flushPromises();
+     22:    await flushPromises();
+     31:    await flushPromises();
+     48:    await flushPromises();
+
+⏺ Bash(pnpm exec vitest run src/pages/event src/pages/home 2>&1 | grep -E "FAIL|Error|✓|×" | head -30)
+  ⎿  × shows an error with a retry that loads the list 13ms
+          × shows 'not found' for an unknown event 12ms
+          × shows a load error with a retry 16ms
+          × registers, shows the result and refreshes the lists 49ms
+          × shows the same result for a repeated registration 8ms
+          × flags a malformed email 4ms
+     … +24 lines
+
+⏺ Bash(pnpm exec vitest run src/pages/event -t "not found" 2>&1 | sed -n 1,40p)
+  ⎿  (!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+       - import "./vite.config" without a file extension (vitest.config.ts:3:24). Add the file extension
+     Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+     
+      RUN  v5.0.5 /home/raf/event-registration/frontend
+     
+     … +5 lines
+
+⏺ Bash(cat src/shared/lib/test/setup.ts; pnpm exec vitest run src/pages/event 2>&1 | grep -E "✓|×|passed|failed")
+  ⎿  import { afterAll, afterEach, beforeAll } from "vitest";
+     
+     import { server } from "./msw";
+     
+     beforeAll(() => server.listen({ onUnhandledFrame: "error" }));
+     afterEach(() => server.resetHandlers());
+     … +13 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Test Files  14 passed (14)
+           Tests  104 passed (104)
+      Test Files  14 passed (14)
+           Tests  104 passed (104)
+      Test Files  14 passed (14)
+           Tests  104 passed (104)
+
+⏺ Bash(pnpm exec eslint src 2>&1 | tail -20; pnpm exec vue-tsc --noEmit 2>&1 | tail; (ss -ltnp 2>/dev/null | grep -E ":(5173|8000|5174|8001)\b"); grep -n "pages\|Фронтенд\|frontend" ../docs/architecture.md |)
+  ⎿  LISTEN 0      511         127.0.0.1:5173       0.0.0.0:*    users:(("node",pid=80185,fd=26))       
+     LISTEN 0      10          127.0.0.1:8000       0.0.0.0:*    users:(("python",pid=141904,fd=3))     
+     LISTEN 0      4096                *:5174             *:*                                           
+     LISTEN 0      4096                *:8001             *:*                                           
+     12:браузер ──► frontend (Vite, :5173) ──/api──► backend (Django + DRF под uvicorn, :8000) ──► PostgreSQL
+     17:- **Реализовано:** `frontend`, `backend`, `postgres` в docker compose; фронтенд и `/api` на
+     … +4 lines
+
+⏺ Bash(cd /home/raf/event-registration/backend && curl -s localhost:5173/api/events/ | head -c 300; echo; uv run python manage.py migrate 2>&1 | tail -2; curl -s localhost:5173/api/events/ | head -c 300; ech)
+  ⎿  <!DOCTYPE html>
+     <html lang="en">
+     <head>
+       <meta http-equiv="content-type" content="text/html; charset=utf-8">
+       <meta name="robots" content="NONE,NOARCHIVE">
+       <title>ProgrammingError
+     … +15 lines
+
+⏺ Bash(cd /home/raf/event-registration/e2e && cat > /tmp/claude-1000/-home-raf-event-registration/cbeebb7e-981a-451c-8b10-f41baad083ab/scratchpad/check.spec.ts <<'EOF')
+  ⎿  18 |
+             at /home/raf/event-registration/e2e/tests/zz-scratch.spec.ts:16:18
+     
+         Error Context: test-results/zz-scratch-participant-registers-in-the-browser-chromium/error-context.md
+     
+         attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+     … +9 lines
+
+⏺ Bash(cd /home/raf/event-registration/e2e && cp /tmp/claude-1000/-home-raf-event-registration/cbeebb7e-981a-451c-8b10-f41baad083ab/scratchpad/check.spec.ts tests/zz-scratch.spec.ts && E2E_BASE_URL=http://lo)
+  ⎿  1) [chromium] › tests/zz-scratch.spec.ts:3:1 › participant registers in the browser ──────────────
+     
+         Error: expect(received).toEqual(expected) // deep equality
+     
+         - Expected  - 1
+         + Received  + 3
+     … +9 lines
+
+⏺ Bash(cd /home/raf/event-registration && sed -n 160,182p docs/architecture.md; tail -12 docs/features/registration/tasks.md; date +%H:%M)
+  ⎿  - Повторная регистрация на тот же email писем не шлёт.
+     - Почта: Mailpit в compose, `locmem` в unit-тестах; e2e читает письма через API Mailpit.
+     - Создание письма — ровно один раз (`UNIQUE dedup_key`); доставка — «хотя бы один раз»:
+       падение воркера между SMTP и записью `sent` даёт повтор. Указать в README.
+     
+     ## Фронтенд: экраны
+     … +30 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  RUN  v5.0.5 /home/raf/event-registration/frontend
+     
+     
+      Test Files  14 passed (14)
+           Tests  104 passed (104)
+        Start at  05:01:44
+     … +1 lines
+
+⏺ Bash(git add -A && git commit -q -m "feat(frontend): add public event list and registration page)
+  ⎿  ✔ Done running tasks for staged files!
+     ⋯ Staging changes from tasks…
+     ✔ Done staging changes from tasks!
+     ⋯ Cleaning up temporary files…
+     ✔ Done cleaning up temporary files!
+     74f2b60 feat(frontend): add public event list and registration page
+     … +1 lines
+
+⏺ Задача 3.2 сделана и закоммичена в `feat/registration-model` (74f2b60). `make check-frontend` проходит: eslint, vue-tsc и 104 теста Vitest, три прогона подряд зелёные. Полный `make check` (e2e, `check-ci`) я не запускал.
+  
+  **Что появилось**
+  - **Главная `/`:** публичный список будущих событий. У каждого видны дата и «свободно N мест» или «мест нет», название ведёт на страницу события. Есть состояния загрузки, ошибки с кнопкой «Повторить» и пустого списка. Ссылка на `/health` с главной убрана, сама страница осталась по адресу.
+  - **Страница `/events/:id`:** описание, свободные места и форма email и имени. Пустые поля и неверный email ловятся на клиенте, ошибки полей с сервера показываются под своим полем. Кнопка блокируется на время запроса. После успеха форму заменяет «Место подтверждено», а списки событий перезапрашиваются. Если мест не осталось (409), показывается «Свободных мест не осталось», форма остаётся. 404 и ошибка загрузки обработаны отдельно.
+  - **Код:** публичные запросы лежат в `entities/event`, а запрос регистрации — в `pages/event`. В `shared/config` добавлены шаблон маршрута и функция `eventPath(id)`.
+  - **Тесты:** добавлены Vitest-тесты форм, страницы события и главной.
+  
+  **Проверка в браузере.** Я прогнал одноразовый сценарий Playwright на dev-стеке (`:5173`), в репозиторий он не попал. Путь такой: список, событие, пустая форма с ошибками, регистрация, «Место подтверждено». В консоли была только ошибка 401 от `GET /api/auth/me/`: guard роутера запрашивает `me` у каждого гостя. Для задачи 3.3 («в консоли нет ошибок») это помеха. Запись об этом и о том, как её обойти, лежит в «На потом» в `tasks.md`.
+  
+  **Остальное**
+  - **Миграция:** я применил `registrations.0001` к локальной dev-БД. Без неё dev-сервер отдавал `ProgrammingError`.
+  - **Список организатора:** `/org/events` пока не показывает `confirmed` и `waitlisted`, хотя API их уже отдаёт. Задача 3.2 про публичные экраны, поэтому это тоже записано в «На потом».
+  - **Решения:** в `docs/decisions.md` записаны шесть решений по 3.2. Среди них: общий текст «Регистрация принята» для всех статусов, кроме `confirmed`, и ожидание ответа в тестах через `vi.waitFor` вместо одного `flushPromises`. Одиночный flush давал плавающие падения.
+  
+  Дальше по плану 3.3, e2e-сценарий участника.
+
+> делаем 3.3
+
+⏺ Bash(cat e2e/tests/organizer-creates-event.spec.ts; cat e2e/playwright.config.ts; grep -n -i "e2e" docs/development.md | head -20; cat frontend/src/entities/session/api/me.ts; grep -n "requiresAuth" -r fro)
+  ⎿  import { expect, test } from "@playwright/test";
+     
+     // Created by `create_demo_users` when the backend starts (docs/architecture.md, "Окружение").
+     const ORGANIZER = { email: "demo@example.com", password: "demo" };
+     
+     test("organizer signs in, creates an event and sees it in the list", async ({ page }) => {
+     … +102 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  expect(router.currentRoute.value.path).toBe(routes.orgEvents);
+       });
+     
+       it("does not ask the server about the session on every navigation", async () => {
+         let calls = 0;
+         server.use(
+     … +28 lines
+
+⏺ Bash(cat > e2e/tests/participant-registers.spec.ts <<'EOF')
+  ⎿  Test Files  1 passed (1)
+           Tests  6 passed (6)
+     cd e2e && pnpm typecheck
+     
+     > e2e@0.0.0 typecheck /home/raf/event-registration/e2e
+     > tsc --noEmit
+     … +4 lines
+
+⏺ Bash(cd /home/raf/event-registration/e2e && E2E_BASE_URL=http://localhost:5174 pnpm exec playwright test 2>&1 | tail -15)
+  ⎿  at /home/raf/event-registration/e2e/tests/organizer-creates-event.spec.ts:16:77
+     
+         Error Context: test-results/organizer-creates-event-or-383b8-ent-and-sees-it-in-the-list-chromium/error-context.md
+     
+         attachment #2: trace (application/zip) ─────────────────────────────────────────────────────────
+         test-results/organizer-creates-event-or-383b8-ent-and-sees-it-in-the-list-chromium/trace.zip
+     … +9 lines
+
+⏺ Bash(E2E_BASE_URL=http://localhost:5174 pnpm exec playwright test organizer-creates 2>&1 | grep -B2 -A14 "Error:" | head -30)
+  ⎿  1) [chromium] › tests/organizer-creates-event.spec.ts:6:1 › organizer signs in, creates an event and sees it in the list 
+     
+         Error: expect(locator).toBeVisible() failed
+     
+         Locator: getByRole('heading', { name: 'События', exact: true })
+         Expected: visible
+     … +16 lines
+
+⏺ Bash(cat test-results/*organizer-creates*/error-context.md | head -30; git stash -q; git stash apply -q; cat ../frontend/src/pages/login/ui/LoginPage.vue | sed -n 1,50p)
+  ⎿  # Instructions
+     
+     - Following Playwright test failed.
+     - Explain why, be concise, respect Playwright best practices.
+     - Provide a snippet of code with the fix, if possible.
+     
+     … +74 lines
+
+⏺ Bash(cd /home/raf/event-registration && git status --short; grep -rn "Мои события" frontend/src e2e/tests | head)
+  ⎿  M frontend/src/app/router.test.ts
+      M frontend/src/app/router.ts
+      M frontend/src/pages/org-events/ui/OrgEventsPage.vue
+     ?? e2e/tests/participant-registers.spec.ts
+     frontend/src/pages/org-events/ui/OrgEventsPage.vue:55:  "title": "Мои события",
+
+⏺ Bash(git diff frontend/src/pages/org-events)
+  ⎿  diff --git a/frontend/src/pages/org-events/ui/OrgEventsPage.vue b/frontend/src/pages/org-events/ui/OrgEventsPage.vue
+     index adad36f..390fcde 100644
+     --- a/frontend/src/pages/org-events/ui/OrgEventsPage.vue
+     +++ b/frontend/src/pages/org-events/ui/OrgEventsPage.vue
+     @@ -52,7 +52,7 @@ function startsAt(iso: string): string {
+      
+     … +7 lines
+
+⏺ Bash(sed -i 's/{ name: "События", exact: true }/{ name: "Мои события" }/' e2e/tests/organizer-creates-event.spec.ts && grep -rn '"События"' frontend/src e2e/tests | grep -v "\.vue"; (cd frontend && pnpm ex)
+  ⎿  Test Files  14 passed (14)
+           Tests  105 passed (105)
+      Container event-registration-frontend-1 Healthy 
+       ✓  4 [chromium] › tests/organizer-creates-event.spec.ts:29:1 › organizer sees the field error from the form and stays on it (1.3s)
+     
+       4 passed (4.3s)
+     … +3 lines
+
+⏺ Bash(sed -i 's/свободно 1 место/свободно 2 места/' tests/participant-registers.spec.ts && E2E_BASE_URL=http://localhost:5174 pnpm exec playwright test participant 2>&1 | grep -E "Expected|Received|passed|f)
+  ⎿  1 passed (2.9s)
+     36:  await expect(card).toContainText("свободно 2 места");
+     50:  await expect(card).toContainText("свободно 2 места");
+
+⏺ Bash(sed -i '50s/свободно 2 места/свободно 1 место/' tests/participant-registers.spec.ts && sed -i '50s/свободно 1 место/свободно 5 мест/' tests/participant-registers.spec.ts && E2E_BASE_URL=http://localho)
+  ⎿  Error: expect(locator).toContainText(expected) failed
+         Expected substring: "свободно 5 мест"
+         Received string:    "Meetup 17933306464861 мая 2027 г., 18:00 · свободно 1 место"
+       1 failed
+       await expect(card).toContainText("свободно 1 место");
+     
+     … +1 lines
+
+⏺ Тест падает при неверном ожидании: он получил «свободно 1 место». Теперь документация, `make check` и коммит.
+
+⏺ Bash(cd /home/raf/event-registration && python3 - <<'EOF')
+  ⎿  05:24
+        Duration  4.53s (environment 65%, import 18%, tests 9%, setup 5%, transform 3%)
+     
+     cd e2e && pnpm lint
+     
+     > e2e@0.0.0 lint /home/raf/event-registration/e2e
+     … +6 lines
+
+⏺ Bash(sed -i 's/^- \*\*05:12\*\* — 3.3:/- **05:24** — 3.3:/' docs/decisions.md && git add -A && git commit -q -m "test(e2e): participant registers for an event the organizer created)
+  ⎿  ⋯ Cleaning up temporary files…
+     ✔ Done cleaning up temporary files!
+     a696cdb test(e2e): participant registers for an event the organizer created
+
+⏺ Задача 3.3 сделана и закоммичена в `feat/registration-model` (a696cdb), `make check` зелёный. Этап 3 закрыт: организатор создаёт событие, участник регистрируется.
+  
+  **Что сделано**
+  - **Сценарий:** новый файл `e2e/tests/participant-registers.spec.ts`. Организатор в одном контексте браузера входит и создаёт событие на 2 места. Участник во втором контексте, без сессии, находит событие в списке, регистрируется и видит «Место подтверждено». В списке после этого «свободно 1 место», в консоли ошибок нет.
+  - **Guard роутера:** он больше не вызывает `GET /api/auth/me/` на публичных маршрутах. Раньше гость получал на них 401 в консоли, и проверка «в консоли нет ошибок» упала бы. Добавлен тест роутера.
+  
+  **Проверка**
+  - Playwright на compose-стеке с портами 5174/8001: 4 теста зелёные в двух прогонах подряд.
+  - Если подставить неверное ожидание «свободно 5 мест», тест падает и получает «свободно 1 место».
+  - Мой первый вариант проверки на падение был слабым: ожидание «свободно 2 места» проходило, потому что список сначала показывает кэш. Итоговая проверка на «5 мест» нормальная.
+  
+  **Изменение, не моё:** заголовок страницы организатора в `OrgEventsPage.vue` кто-то переименовал в «Мои события» (правка лежала в рабочем дереве без коммита). Я её не откатывал и обновил под неё ожидание старого e2e-теста, иначе он падал. В коммит эта правка вошла.
+  
+  Все решения по 3.3 записаны в `docs/decisions.md`. В «На потом» осталась одна запись: счётчики `confirmed` и `waitlisted` в списке организатора. Дальше по плану 4.1, ветка `waitlisted` в `register`.
+
+> счётчики лучше сейчас сделать?
+
+⏺ Да, сделать сейчас. API уже отдаёт числа, spec требует их в списке организатора, правка небольшая. Лист ожидания пока всегда 0, но это правда, а 4.1 ничего менять не придётся. Делаю.
+
+⏺ Bash(cd /home/raf/event-registration/frontend && sed -n 50,140p src/pages/org-events/ui/OrgEventsPage.test.ts; grep -n "capacity" src/pages/org-events/ui/OrgEventsPage.vue)
+  ⎿  starts_at: "2030-06-01T18:00:00Z",
+                 capacity: 30,
+               },
+             ]),
+           ),
+         );
+     … +49 lines
+
+⏺ Bash(cd /home/raf/event-registration && python3 - <<'EOF')
+  ⎿  Test Files  14 passed (14)
+           Tests  105 passed (105)
+      Container event-registration-frontend-1 Healthy 
+     
+       4 passed (4.3s)
+
+⏺ Bash(cd /home/raf/event-registration && python3 - <<'EOF')
+  ⎿  ## Лог
+     
+     <!-- 2–3 строки находок исследования; где остановились, если сессия прервалась. -->
+     
+     ## На потом
+     
+     … +1 lines
+
+⏺ Bash(printf '\n<!-- Найденное вне задач: что, где, почему не сейчас. -->\n' >> docs/features/registration/tasks.md && cat >> docs/decisions.md <<'EOF')
+  ⎿  make: *** [Makefile:37: format-check] Error 1
+     ✔ Done cleaning up temporary files!
+     9d05b5a feat(frontend): show confirmed and waitlist counts in the organizer's event list
+
+⏺ Bash(make check 2>&1 | grep -E "FAIL|rror|passed|warn" | head; git status --short)
+  ⎿  # Subtest: an unclosed session is a warning and is not counted
+     ok 42 - an unclosed session is a warning and is not counted
+     # Subtest: a start while another session is open and an end without a start are warnings
+     ok 43 - a start while another session is open and an end without a start are warnings
+     # Subtest: an end before its start is a warning, not negative time
+     ok 44 - an end before its start is a warning, not negative time
+     … +4 lines
+
+⏺ Счётчики сделал и закоммитил (9d05b5a). В списке организатора у каждого события теперь «Занято N из M · в листе ожидания K».
+  
+  - **Лист ожидания:** пока всегда 0, но это реальное значение из API. Когда в 4.1 появится ветка `waitlisted`, интерфейс менять не придётся.
+  - **Тесты:** Vitest зелёный (105 тестов). e2e на compose-стеке — 4 теста, в organizer-тесте ожидание «30 мест» заменено на «Занято 0 из 30».
+  - **`make check`:** при первом запуске, до коммита, упал на `format-check`. Хук коммита переформатировал файлы. Повторный `make check` после коммита ошибок не показал, дерево чистое.
+  - **Docs:** запись о счётчиках добавлена в `docs/decisions.md`, пункт убран из «На потом» в `tasks.md`.
+  
+  Дальше по плану 4.1, ветка `waitlisted` в `register`.
+
+> есть смысл на главной добавить отображение об организаторе?
+
+⏺ Скорее нет. Я понимаю вопрос как «показывать на карточке события, кто организатор». Если вы имели в виду другое, скажите.
+  
+  - **В задании этого нет.** Ни в `docs/task.md`, ни в spec фазы 1 организатор на публичных экранах не упоминается. Правило 3 проекта говорит ничего не делать «на будущее».
+  - **Показывать нечего.** У `accounts.User` есть только email, имени нет. Публиковать чужой email на открытой странице нельзя: это утечка персональных данных, а спам-боты соберут адреса. Для отображения пришлось бы добавить поле «имя организатора» в модель, миграцию, форму и API ради украшения.
+  - **Для участника это почти ничего не даёт.** Он выбирает событие по названию, дате и описанию. Если ему важно, кто проводит, организатор может написать это в описании.
+  - **Вход для организатора уже на главной.** Ссылка «Вход для организатора» стоит в шапке списка.
+  
+  Это имело бы смысл, если бы у организаторов появились публичные профили или названия организаций (например, в фазе 6 про навигацию и layout). Тогда стоит сделать отдельной задачей с полем в модели.
+  
+  Если вы хотели что-то другое, например блок «Для организаторов» на главной или подпись «Организатор: …», уточните, и я прикину объём.
+
+> ты правильно понял, окей, не делаем. сделай ревью субагентом
+
+⏺ Agent(Review stage 3 commits)
+  ⎿  Async agent launched successfully. (This tool result is internal metadata — never quote or paste any part of it, including the agentId below, into a user-facing reply.)
+     agentId: af7b66a0085f2c669 (internal ID - do not mention to user. Use SendMessage with to: 'af7b66a0085f2c669', summary: '<5-10 word recap>' to continue this agent.)
+     The agent is working in the background. You will be notified automatically when it completes. You know nothing about its results until that notification arrives — do not report, assume, or predict the
+     Do not duplicate this agent's work — avoid working with the same files or topics it is using.
+     output_file: /tmp/claude-1000/-home-raf-event-registration/918a6b6a-25ea-4ef6-a092-934a58a83bc2/tasks/af7b66a0085f2c669.output
+     Do NOT Read or tail this file via the shell tool — it is the full subagent JSONL transcript and reading it will overflow your context. If the user asks for progress, say the agent is still running; yo
+
+⏺ Агент `reviewer` запущен в фоне. Он смотрит коммиты `962b687..HEAD`, то есть 3.1, 3.2, 3.3 и счётчики организатора. Результата пока нет. Когда он вернётся, я передам вам подтверждённые замечания.
+
+⏺ Ревью закончилось. Блокирующих замечаний нет, `make check` зелёный. Сам `make e2e` ревьюер не запускал, зато я прогонял Playwright на compose-стеке (4 теста зелёные). Нашлись два средних замечания и четыре низких. Я ничего не правил, кроме рабочих файлов, и сверил замечания с кодом.
+  
+  **Средние**
+  1. **Блокировка Event не покрыта тестом** (`registrations/services.py:33`). Если убрать `select_for_update()`, все тесты останутся зелёными. Конкурентные тесты уже запланированы на 6.1, поэтому это не новая находка, а известный пробел до 6.1. Предлагаю ничего не менять сейчас, но записать в `tasks.md`, что 3.1 блокировку не покрывает.
+  2. **Состояние формы не сбрасывается при смене `:id`** (`EventPage.vue`). Vue переиспользует компонент, когда вы переходите с события 1 на событие 2 через историю браузера. Сценарий: зарегистрировались на событие 1, нажали «назад», открыли событие 2, видите «Место подтверждено» без формы, но на событие 2 вы не записаны. Это настоящая ошибка, и я её воспроизводить пока не пробовал. Исправление: сбрасывать мутацию и форму через `watch(eventId, …)` или задать `:key` по `fullPath`, плюс тест на смену id. Чинить стоит сейчас.
+  
+  **Низкие**
+  3. В `events/views.py` строки 34 и 43 содержат `# type: ignore[no-untyped-def]` без причины, что нарушает п. 7 `backend/AGENTS.md`. Лучше типизировать `get_queryset -> QuerySet[Event]` и убрать ignore.
+  4. `architecture.md:102` пишет «будущие события» для детали события, но фильтр по дате стоит только у списка. Нужно уточнить текст. Заодно в spec у `POST …/registrations/` нет 409 и стоит `position?`, а в коде 409 временный.
+  5. Коллизия `ticket_code` теоретически возможна (32^8 вариантов) и даст 500. Действий не требует.
+  6. У детали события нет теста на число запросов. Риск низкий.
+  
+  Предлагаю исправить пункты 2, 3 и 4 одним коммитом, а пункт 1 записать в `tasks.md`, потому что 6.1 уже закрывает его по сути. Пункты 5 и 6 пропустить. Делать так?
+
+> ок
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  63:| `POST /api/events/{id}/registrations/`     | `{email, name}`                             | 201 / 200 (повтор) `{status, position?}`                           | 400 поля; 404            |
+     26:        return Event.objects.for_organizer(self.request.user).with_registration_counts()  # type: ignore[arg-type]
+     41:        return Event.objects.upcoming().with_registration_counts()
+     50:        return Event.objects.with_registration_counts()
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  05:37
+      ELIFECYCLE  Command failed with exit code 1.
+     make: *** [Makefile:37: format-check] Error 1
+
+⏺ Bash(make format-check 2>&1 | grep -E "warn|\[" | head)
+  ⎿  [warn] docs/features/registration/tasks.md
+     [warn] Code style issues found in the above file. Run Prettier with --write to fix.
+     make: *** [Makefile:37: format-check] Error 1
+
+⏺ Bash(pnpm exec prettier --write docs/features/registration/tasks.md >/dev/null && cp frontend/src/pages/event/ui/EventPage.vue /tmp/claude-1000/-home-raf-event-registration/cbeebb7e-981a-451c-8b10-f41baad0)
+  ⎿  ❯ src/pages/event/ui/EventPage.test.ts (13 tests | 1 failed) 1375ms
+          × forgets the result when the route moves to another event 170ms
+      Test Files  1 failed | 1 passed (2)
+           Tests  1 failed | 20 passed (21)
+     All checks passed!
+     ============================= 81 passed in 22.48s ==============================
+     … +2 lines
+
+⏺ Bash(cat >> docs/decisions.md <<'EOF')
+  ⎿  ✔ Done cleaning up temporary files!
+     a7302f3 fix(frontend): reset the registration form when the route moves to another event
+
+⏺ Исправления по ревью готовы и закоммичены (a7302f3), `make check` зелёный (backend 81 тест, Vitest 106).
+  
+  - **Смена события на странице** (замечание 2): `EventPage` теперь сбрасывает результат и поля формы при смене `:id`. Новый тест переходит с события 7 на 8 после регистрации и ждёт, что форма вернётся. Без исправления этот тест падает, я это проверил.
+  - **Типы** (замечание 3): у публичных view `get_queryset` типизирован как `QuerySet[Event]`, `type: ignore` убраны.
+  - **Документация** (замечание 4): `architecture.md` теперь говорит, что фильтр по дате стоит только у списка, а деталь отдаёт и прошедшее событие.
+  - **Тест блокировки** (замечание 1): в «На потом» в `tasks.md` записано, что блокировка Event тестами не покрыта до 6.1.
+  
+  Остальное я не трогал, причины записаны в `decisions.md`:
+  - **409 в spec:** он временный до 4.1, а spec описывает итоговый контракт.
+  - **Коллизия `ticket_code`:** вероятность пренебрежимо мала.
+  - **Тест числа запросов детали:** запрос один, риск низкий.
+  
+  Коммитов на ветке `feat/registration-model` теперь пять. В `main` она пока не влита, влить или открыть PR можно по вашей команде. Дальше по плану 4.1.
+
+> открой пр.
+  @docs/features/registration/tasks.md  - мы так и хотели чтобы всё было в одном файле?
+
+⏺ Bash(git remote -v && gh auth status 2>&1 | head -3; git log --oneline main..HEAD)
+  ⎿  origin	git@github.com:rbikbov/event-registration.git (fetch)
+     origin	git@github.com:rbikbov/event-registration.git (push)
+     github.com
+       ✓ Logged in to github.com account rbikbov (/home/raf/.config/gh/hosts.yml)
+       - Active account: true
+     a7302f3 fix(frontend): reset the registration form when the route moves to another event
+     … +4 lines
+
+⏺ Bash(git push -u origin feat/registration-model 2>&1 | tail -3 && gh pr create --base main --title "feat: participants register for events (phase 1, stage 3)" --body "$(cat <<'EOF')
+  ⎿  To github.com:rbikbov/event-registration.git
+      * [new branch]      feat/registration-model -> feat/registration-model
+     branch 'feat/registration-model' set up to track 'origin/feat/registration-model'.
+     https://github.com/rbikbov/event-registration/pull/1
+
+⏺ PR открыт: https://github.com/rbikbov/event-registration/pull/1. В нём пять коммитов этапа 3. В описании указано, что лист ожидания придёт на этапе 4 (пока при нехватке мест 409) и что тесты блокировки Event запланированы на 6.1.
+  
+  **Про `tasks.md`: да, всё в одном файле, так и задумано.** Так устроен skill `session-handoff`. Для крупной фазы в папке `docs/features/<slug>/` лежат два файла:
+  - `spec.md` описывает, что строим: модель, API, инварианты, UI.
+  - `tasks.md` описывает, как строим: задачи по одной на коммит с отметками `[x]` и критериями «готово, когда». Внутри него же «Лог» (где остановились) и «На потом» (находки вне задач).
+  
+  Один файл с задачами, логом и «На потом» удобен, потому что новая сессия по нему сразу видит следующий шаг, а хук `SessionStart` уже читает из него открытые задачи.
+  
+  Есть два недочёта:
+  - **Заглушка внизу:** HTML-комментарий «Найденное вне задач…» остался после моих записей. Это шаблонная подсказка, её лучше удалить.
+  - **Пустой «Лог»:** он пока содержит только шаблонную подсказку. Скажите, если хотите, чтобы я его чем-то заполнил.
+  
+  Если вы имели в виду другое, например что задачи этапов лучше разнести по отдельным файлам, скажите.
+
+> да, имел ввиду это, всё ок.
+  ок, почисти.
+  "Скажите, если хотите, чтобы я его чем-то заполнил." - не совсем понятно что должно быть в нем.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  <!-- 2–3 строки находок исследования; где остановились, если сессия прервалась. -->
+     
+     ## На потом
+     
+     - Блокировка Event в `register` (3.1) тестами не покрыта: без `select_for_update()` все тесты
+       зелёные. Конкурентные тесты — 6.1 (ревью этапа 3 это подтвердило).
+     … +3 lines
+
+⏺ Заглушку убрал, коммит 3c908b7 уже в PR #1.
+  
+  **Что такое «Лог»:** это короткая записка для следующей сессии. В шаблоне он назван «2–3 строки находок исследования; где остановились, если сессия прервалась». Пишется туда две вещи:
+  - **Находки, которые понадобятся в следующих задачах.** Например: «в 4.1 позицию считать запросом по `(queued_at, id)`, индекс не нужен». Эти факты ещё не решение и не код.
+  - **На чём прервались, если задача не закончена.** Например: «5.1: сервис `cancel` написан, тесты на повышение из листа ещё нет».
+  
+  Если сессия закрывается чисто, а задачи закоммичены, туда ничего писать не нужно. Поэтому он пуст: этап 3 прошёл без прерываний и без находок «на будущее». От «На потом» он отличается тем, что «На потом» хранит дела вне текущих задач, а «Лог» относится к текущей работе.
+  
+  Пустую строку-подсказку в «Логе» оставил: она объясняет назначение раздела. Если он вам не нужен, могу убрать, но тогда скилл `session-handoff` придётся поправить, иначе он будет на него ссылаться.
+
+> я начал сомневаться, я руками вообще должен делать /session-handoff ?
+
+⏺ Нет, вручную запускать не нужно. `AGENTS.md` велит применять его мне: в таблице skills он стоит на «начало и конец сессии, после задачи из roadmap, закрытие фазы». Хук `SessionStart` сам показывает состояние фазы и последние коммиты. Если вы вызовете `/session-handoff`, ничего не сломается, но это просто попросит меня выполнить то, что я и так обязан делать.
+  
+  В этой сессии я делал так:
+  - **Начало:** загрузил skill в начале и поставил маркер `▶ начало сессии` (04:48).
+  - **После каждой задачи:** отмечал `[x]` в `tasks.md` и записывал решения в `decisions.md` в том же коммите.
+  - **Конец сессии:** маркера `■ конец сессии` в `decisions.md` пока нет. По правилам его ставят в последнем коммите сессии, а я не знаю, когда вы закончите. Если ничего не добавлять, при следующем старте сессия будет считаться незакрытой. `make worktime` покажет предупреждение, и новая сессия закроет её временем последнего коммита.
+  
+  Когда решите заканчивать, скажите «заканчиваем», и я поставлю маркер, закоммичу и дам итог. Роль /session-handoff тогда выполню я, вручную вызывать его не придётся.
+
+> заканчиваем
+
+⏺ Bash(date +%H:%M && git status --short)
+  ⎿  05:51
+
+⏺ Bash(echo '- **05:51** — ■ конец сессии' >> docs/decisions.md && git add -A && git commit -q -m "docs: close work session)
+  ⎿  ✔ Done cleaning up temporary files!
+     pre-push: no checked parts changed, nothing to run
+     2026-10-30 01:01 → 2026-10-30 01:17  0 ч 16 мин
+     2026-10-30 01:21 → 2026-10-30 02:56  1 ч 35 мин
+     2026-10-30 02:58 → 2026-10-30 03:17  0 ч 19 мин
+     2026-10-30 03:19 → 2026-10-30 04:44  1 ч 25 мин
+     … +3 lines
+
+⏺ Сессия закрыта: маркер `■ конец сессии` (05:51) в последнем коммите b699001, всё запушено в `feat/registration-model`. Сессия длилась 1 ч 3 мин, `make worktime` показывает итого 12 ч 30 мин.
+  
+  **Сделано** (PR #1: https://github.com/rbikbov/event-registration/pull/1)
+  - **3.1 backend:** приложение `registrations` (модель, миграция, админка только для чтения), сервис `register` с блокировкой события, публичные `GET /api/events/`, `GET /api/events/{id}/`, `POST /api/events/{id}/registrations/`, счётчики в списке организатора.
+  - **3.2 frontend:** публичный список `/` и страница `/events/:id` с формой.
+  - **3.3 e2e:** организатор и участник в разных контекстах браузера; публичные маршруты больше не дают 401 в консоли.
+  - **Счётчики организатора** показаны в списке («Занято N из M · в листе ожидания K»).
+  - **Ревью агентом `reviewer`:** исправил сброс формы при смене события, типы `get_queryset` и текст в `architecture.md`.
+  
+  **Проверено**
+  - `make check` зелёный: backend 81 тест, Vitest 106.
+  - Playwright на compose-стеке (порты 5174/8001): 4 теста, падение при неверном ожидании проверено.
+  - Для проверки в браузере я гонял одноразовый сценарий Playwright. Миграцию `registrations.0001` я применил к локальной dev-БД.
+  
+  **Осталось**
+  - Этап 4: лист ожидания (4.1 backend, 4.2 frontend, 4.3 e2e). Пока при нехватке мест API отвечает 409.
+  - Конкурентные тесты блокировки Event — 6.1, записано в «На потом».
+  - PR ещё не влит в `main`. Это решаете вы.
+
+> там в pr упал job "checks (pull request)", можешь глянуть?
+
+⏺ Bash(gh pr checks 1 2>&1 | head; gh run list --branch feat/registration-model --limit 3 2>&1)
+  ⎿  checks	fail	1m35s	https://github.com/rbikbov/event-registration/actions/runs/40999708811/job/123880991982	
+     e2e	pass	1m22s	https://github.com/rbikbov/event-registration/actions/runs/40999708811/job/123880991737	
+     completed	failure	feat: participants register for events (phase 1, stage 3)	CI	feat/registration-model	pull_request	40999708811	1m39s	2026-10-30T03:51:48Z
+     completed	failure	feat: participants register for events (phase 1, stage 3)	CI	feat/registration-model	pull_request	40999452998	1m32s	2026-10-30T03:48:54Z
+     completed	failure	feat: participants register for events (phase 1, stage 3)	CI	feat/registration-model	pull_request	40998946299	1m43s	2026-10-30T03:43:17Z
+
+⏺ Bash(gh run view 40999708811 --job 123880991982 --log-failed 2>&1 | grep -vE "^\s*$" | tail -40)
+  ⎿  checks	Commit messages follow Conventional Commits	﻿2026-10-30T03:53:22.2426279Z ##[group]Run pnpm exec commitlint --from 962b687afddf1589d56d9416f50fff78499a3875 --to b699001af23f93ee2e5e029b1d5feb12
+     checks	Commit messages follow Conventional Commits	2026-10-30T03:53:22.2427327Z ^[[36;1mpnpm exec commitlint --from 962b687afddf1589d56d9416f50fff78499a3875 --to b699001af23f93ee2e5e029b1d5feb12de86d6
+     checks	Commit messages follow Conventional Commits	2026-10-30T03:53:22.2457679Z shell: /usr/bin/bash -e {0}
+     checks	Commit messages follow Conventional Commits	2026-10-30T03:53:22.2457956Z env:
+     checks	Commit messages follow Conventional Commits	2026-10-30T03:53:22.2458222Z   PNPM_HOME: /home/runner/setup-pnpm/node_modules/.bin
+     checks	Commit messages follow Conventional Commits	2026-10-30T03:53:22.2458645Z   UV_PYTHON_INSTALL_DIR: /home/runner/work/_temp/uv-python-dir
+     … +18 lines
+
+⏺ Bash(git fetch -q origin && git log --oneline -3 origin/main; git branch -vv | head -3; git merge-base origin/main HEAD; grep -n "commitlint" -B6 .github/workflows/ci.yml | head -40)
+  ⎿  962b687 docs: close work session
+     dd624f5 test(e2e): assert which form fields are flagged and match labels exactly
+     54f4956 test(e2e): organizer signs in and creates an event
+       e2e-admin-cleanup                      0f6979a test(e2e): clean up created events through the admin
+     * feat/registration-model                b699001 [origin/feat/registration-model] docs: close work session
+       main                                   962b687 docs: close work session
+     … +8 lines
+
+⏺ Bash(sed -n 1,45p .github/workflows/ci.yml; git log -1 --format=%H origin/main)
+  ⎿  name: CI
+     
+     on:
+       push:
+         branches: [main]
+       pull_request:
+     … +40 lines
+
+⏺ Bash(date +%H:%M; grep -n "CI\b" docs/development.md | head; grep -n "fetch-depth" -r .github | head)
+  ⎿  05:56
+     44:ошибки всплывут только в CI.
+     90:| `make check`                                                  | всё, кроме запуска e2e: форматирование, линтеры, типы, схема, тесты — то же, что CI      |
+     159:**8. Отправить.** `git push`: `pre-push` проверит затронутые части, затем CI — результат в
+     160:Actions на GitHub или `gh run watch`. Красный CI — первая задача, прежде чем брать следующую.
+     161:Сейчас работа идёт прямо в `main` (один разработчик); в команде — ветка и pull request, и CI
+     … +5 lines
+
+⏺ Bash(sed -n 255,272p docs/development.md)
+  ⎿  **CI** — `.github/workflows/ci.yml`, на push в `main` и на pull request. Команды те же, что
+     локально: отличий между «у меня проходит» и «в CI падает» быть не должно.
+     
+     | Job      | Что делает                                                                                                                  |
+     | -------- | --------------------------------------------------------------------------------------------------------------------------- |
+     | `checks` | `pnpm install --frozen-lockfile`, `uv sync --frozen`, `make dev-deps`, `make check`; на PR — commitlint по всем коммитам PR |
+     … +11 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  uvx --from actionlint-py actionlint
+     node scripts/check-action-refs.mjs
+     All action refs exist
+
+⏺ Bash(git add -A && git commit -q -m "ci: fetch full history so commitlint can see the PR base commit)
+  ⎿  ✔ Done cleaning up temporary files!
+     node scripts/check-action-refs.mjs
+     All action refs exist
+     
+     ANNOTATIONS
+     -   4 passed (5.3s)
+     … +4 lines
+
+⏺ Bash(gh pr checks 1 2>&1 | head -4)
+  ⎿  checks	pass	1m31s	https://github.com/rbikbov/event-registration/actions/runs/41000175834/job/123882496496	
+     e2e	pass	1m29s	https://github.com/rbikbov/event-registration/actions/runs/41000175834/job/123882496820
+
+⏺ Оба job'а в PR #1 теперь зелёные (`checks` и `e2e`).
+  
+  **Причина.** Падал только шаг commitlint. `make check` в том же job проходил. `actions/checkout` по умолчанию клонирует один коммит, поэтому базового коммита PR (`962b687`) в клоне не было. Commitlint не смог построить диапазон коммитов и вывел `Invalid revision range`. Мои коммиты и их сообщения тут ни при чём. Это ошибка workflow, и она проявилась на первом же PR.
+  
+  **Исправление.** В job `checks` добавлен `fetch-depth: 0` (коммит в этом же PR). Нюанс записан в `development.md`, решение и отклонённые варианты — в `decisions.md`. Отклонил отдельный `git fetch` базового коммита, потому что история нужна целиком. Отклонил проверку только последнего коммита: она пропускала бы остальные коммиты PR.
+  
+  **Маркеры сессии.** Я поставил `▶ начало сессии` (05:56) для этой правки, а `■ конец сессии` не ставил. Если вы на этом заканчиваете, скажите, и я закрою маркером и запушу. Иначе `make worktime` покажет её как незакрытую.

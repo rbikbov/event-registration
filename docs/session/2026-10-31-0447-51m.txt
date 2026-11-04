@@ -1,0 +1,765 @@
+> /clear
+
+> начинаем 4.1
+
+⏺ Skill(session-handoff)
+  ⎿  Launching skill: session-handoff
+
+⏺ Bash(date '+%Y-%m-%d %H:%M %Z' && make worktime 2>&1 | tail -5 && tail -15 docs/decisions.md && git status --short && cat docs/features/emails/tasks.md && wc -l docs/features/emails/spec.md)
+  ⎿  2026-10-31 04:48 EET
+     2026-10-30 22:55 → 2026-10-31 01:50  2 ч 55 мин
+     2026-10-31 01:56 → 2026-10-31 01:59  0 ч 3 мин
+     2026-10-31 02:06 → 2026-10-31 03:26  1 ч 20 мин
+     Итого: 19 ч 53 мин
+     Предупреждение: сессия с 2026-10-31 03:32 не закрыта и не учтена
+     … +98 lines
+
+⏺ Bash(git log -1 --format='%ad' --date=format:'%H:%M' && git fetch -q && git log --oneline main..HEAD | head; git log --oneline origin/main -3; gh pr list --state all --limit 3 2>&1)
+  ⎿  04:43
+     1030e6f docs: align the email invariants in the spec with the tests
+     1d6306b docs: name stage pull requests by phase and stage
+     004a1d3 test(backend): drop the rollback test that could not fail
+     d2f9061 refactor(backend): require the waitlist position by type
+     33a7cf6 test(e2e): promote the waitlist head by email after a cancellation
+     … +8 lines
+
+⏺ Bash(git log --oneline origin/main..HEAD; echo ---; git log --oneline origin/feat/waitlist-emails..HEAD; echo; git status -sb | head -1)
+  ⎿  1030e6f docs: align the email invariants in the spec with the tests
+     1d6306b docs: name stage pull requests by phase and stage
+     004a1d3 test(backend): drop the rollback test that could not fail
+     d2f9061 refactor(backend): require the waitlist position by type
+     33a7cf6 test(e2e): promote the waitlist head by email after a cancellation
+     1ca7d4b test(e2e): share the event setup and the Mailpit lookup between tests
+     … +4 lines
+
+⏺ Bash(git switch -c feat/email-retries && cat docs/features/emails/spec.md && ls backend/emails && cat backend/emails/models.py backend/emails/services.py && ls backend/emails/management/commands backend/em)
+  ⎿  Switched to a new branch 'feat/email-retries'
+     # Outbox, воркер, письма: spec
+     
+     Фаза — `docs/roadmap.md`, фаза 2. Статус: утверждён 2026-10-30.
+     
+     ## Что и зачем
+     … +318 lines
+
+⏺ Bash(cat backend/emails/tests/test_worker.py && grep -n "logging\|getLogger\|LOGGING" -r backend/config/settings.py backend/*/services.py | head -20 && cat backend/AGENTS.md | head -80)
+  ⎿  from datetime import timedelta
+     
+     import pytest
+     from django.core import mail
+     from django.utils import timezone
+     
+     … +137 lines
+
+⏺ Bash(cd /home/raf/event-registration/backend && sed -n 135,200p config/settings.py; f=$(uv run python -c "import django.core.mail.backends.smtp as m;print(m.__file__)"); sed -n '/def open/,/def _send/p' $f)
+  ⎿  "ENUM_NAME_OVERRIDES": {
+             "HealthStateEnum": "config.health.HEALTH_STATES",
+             # Shared by the registration result and the ticket, so it needs a name of its own.
+             "RegistrationStatusEnum": "registrations.models.Registration.Status",
+         },
+     }
+     … +141 lines
+
+⏺ Bash(cat emails/tests/test_admin.py | head -30; grep -n "pytest\|ruff\|BLE\|select" pyproject.toml | head -20; ls emails/tests; grep -rn "caplog\|monkeypatch\|settings\b" --include=test_*.py . | head -5)
+  ⎿  import pytest
+     from django.contrib import admin
+     from django.test import RequestFactory
+     
+     from emails.models import OutboxEmail
+     
+     … +26 lines
+
+⏺ Добавляю тесты в [test_worker.py](backend/emails/tests/test_worker.py) и отдельный файл для команды.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  (Bash completed with no output)
+
+⏺ Типы фикстуры сделаю нормальными вместо `type: ignore`.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  _________________ ERROR collecting emails/tests/test_worker.py _________________
+     ImportError while importing test module '/home/raf/event-registration/backend/emails/tests/test_worker.py'.
+     Hint: make sure your test modules/packages have valid Python names.
+     Traceback:
+     /usr/lib/python3.12/importlib/__init__.py:90: in import_module
+         return _bootstrap._gcd_import(name[level:], package, level)
+     … +9 lines
+
+⏺ Bash(grep -rn "class SettingsWrapper" .venv/lib/python3.12/site-packages/pytest_django/; grep -rln "settings:" --include=*.py */tests | head -3)
+  ⎿  (eval):1: no matches found: --include=*.py
+
+⏺ Bash(grep -rn "SettingsWrapper" .venv/lib/python3.12/site-packages/pytest_django/*.py | head -3; grep -rn "settings: \|override_settings" */tests/*.py | head -5)
+  ⎿  accounts/tests/test_create_demo_users.py:6:from django.test import override_settings
+     accounts/tests/test_create_demo_users.py:15:    with override_settings(DEBUG=True):
+     accounts/tests/test_create_demo_users.py:49:    with override_settings(DEBUG=False):
+     emails/tests/test_services.py:4:from django.test import override_settings
+     emails/tests/test_services.py:34:@override_settings(FRONTEND_URL="https://events.example")
+
+⏺ Проект использует `override_settings` — переделаю фикстуру на него.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  ImportError while importing test module '/home/raf/event-registration/backend/emails/tests/test_run_worker.py'.
+     E   ImportError: cannot import name 'DB_ERROR_PAUSE' from 'emails.management.commands.run_worker' (/home/raf/event-registration/backend/emails/management/commands/run_worker.py)
+     ImportError while importing test module '/home/raf/event-registration/backend/emails/tests/test_worker.py'.
+     E   ImportError: cannot import name 'MAX_ATTEMPTS' from 'emails.services' (/home/raf/event-registration/backend/emails/services.py)
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  15 passed in 3.84s
+
+⏺ Bash(cat > emails/tests/test_run_worker.py <<'EOF')
+  ⎿  2 passed in 1.01s
+             self.close_if_health_check_failed()
+     E           psycopg.OperationalError: the connection is closed
+     E           django.db.utils.OperationalError: the connection is closed
+     WARNING  emails.management.commands.run_worker:run_worker.py:32 Outbox poll failed: OperationalError
+     WARNING  emails.management.commands.run_worker:run_worker.py:32 Outbox poll failed: OperationalError
+     … +7 lines
+
+⏺ Bash(cp emails/services.py /tmp/claude-1000/-home-raf-event-registration/d9159d29-1275-4038-ba29-fc74029184f0/scratchpad/services.bak)
+  ⎿  5 failed, 5 passed in 3.34s
+     FAILED emails/tests/test_worker.py::test_pause_between_attempts_doubles_and_the_last_attempt_fails_the_email
+     1 failed, 9 passed in 3.19s
+      backend/emails/management/commands/run_worker.py |  26 ++++-
+      backend/emails/services.py                       |  53 +++++++---
+      backend/emails/tests/test_worker.py              | 123 ++++++++++++++++++++++-
+     … +1 lines
+
+⏺ Bash(cd /home/raf/event-registration && grep -n "^stack-\|STACK\|SLOT\|COMPOSE_PROJECT\|-p " Makefile | head -30)
+  ⎿  116:SLOT ?= 1
+     117:slot_port = $(shell echo $$(($(1) + $(SLOT))))
+     118:STACK_POSTGRES_PORT = $(call slot_port,5432)
+     119:STACK_FRONTEND_PORT = $(call slot_port,5173)
+     120:STACK_COMPOSE = POSTGRES_PORT=$(STACK_POSTGRES_PORT) BACKEND_PORT=$(call slot_port,8000) \
+     121:	FRONTEND_PORT=$(STACK_FRONTEND_PORT) MAILPIT_PORT=$(call slot_port,8025) \
+     … +15 lines
+
+⏺ Bash(make stack-up 2>&1 | tail -3 && docker compose -p event-registration-s1 stop mailpit 2>&1 | tail -1 && grep -n "path(" backend/config/urls.py backend/events/urls.py 2>/dev/null | head)
+  ⎿  Container event-registration-s1-frontend-1 Healthy 
+      Container event-registration-s1-worker-1 Healthy 
+      Container event-registration-s1-postgres-1 Healthy 
+      Container event-registration-s1-mailpit-1 Stopped 
+     10:    path("admin/", admin.site.urls),
+     11:    path("api/auth/login/", LoginView.as_view(), name="login"),
+     … +8 lines
+
+⏺ Регистрируюсь через API слота 1 (порт 8001), пока Mailpit остановлен.
+
+⏺ Bash(ev=$(curl -s localhost:8001/api/events/ | python3 -c "import sys,json;d=json.load(sys.stdin);d=d.get('results',d);print(d[0]['id'] if d else '')"); echo "event=$ev"; curl -s -X POST localhost:8001/api)
+  ⎿  Exit code 1
+     Traceback (most recent call last):
+       File "<string>", line 1, in <module>
+     AttributeError: 'list' object has no attribute 'get'
+     event=
+     <!DOCTYPE html>
+     … +189 lines
+
+⏺ В свежем стеке нет событий — создам одно через shell и повторю.
+
+⏺ Bash(C="docker compose -p event-registration-s1"; ev=$($C exec -T backend python manage.py shell -c ")
+  ⎿  event=
+     404
+     (eval):7: command not found: docker compose -p event-registration-s1
+
+⏺ Bash(C() { docker compose -p event-registration-s1 "$@"; }; ev=$(C exec -T backend python manage.py shell -c ")
+  ⎿  event=22
+     201
+     worker-1  | Worker started.
+     worker-1  | Email 24 not sent (attempt 1 of 5): gaierror
+     24 pending 1 2026-10-31 02:52:25.557075+00:00 gaierror: [Errno -5] No address associated with hostname
+
+⏺ Bash(C() { docker compose -p event-registration-s1 "$@"; }; C start mailpit >/dev/null 2>&1; for i in $(seq 1 15); do s=$(C exec -T backend python manage.py shell -c "from emails.models import OutboxEmail )
+  ⎿  sent 1
+     worker-1  | Email 24 not sent (attempt 1 of 5): gaierror
+     worker-1  | Sent email 24.
+     1 ['Билет: Retry check']
+
+⏺ Bash(C() { docker compose -p event-registration-s1 "$@"; }; C stop postgres >/dev/null 2>&1; sleep 8; C start postgres >/dev/null 2>&1; sleep 10; C ps worker --format '{{.Status}}'; C logs worker --since 1)
+  ⎿  Up About a minute
+     worker-1  | Email 24 not sent (attempt 1 of 5): gaierror
+     worker-1  | Sent email 24.
+     worker-1  | Outbox poll failed: OperationalError
+     201
+     worker-1  | Outbox poll failed: OperationalError
+     … +1 lines
+
+⏺ Воркер пережил остановку Postgres и после неё отправил новое письмо. Теперь доки и лог решений.
+
+⏺ Bash(grep -n -i "воркер\|worker\|mailpit" docs/development.md | head -20; grep -n "одно SMTP\|одном соединении\|соединени" docs/decisions.md docs/architecture.md | head)
+  ⎿  38:make dev-deps   # Postgres и Mailpit в Docker
+     51:make dev-deps       # Postgres и Mailpit
+     54:make dev-worker     # терминал 3, если нужны письма: outbox → Mailpit, http://localhost:8025
+     64:make up     # собрать и поднять postgres, backend, worker, mailpit, frontend; http://localhost:5173
+     77:- `worker` — тот же образ `backend` с командой `python manage.py run_worker`: берёт из outbox
+     78:  пачки до 20 писем подряд и отправляет их в Mailpit; если писем нет — ждёт 1 с. Стартует
+     … +14 lines
+
+⏺ Bash(sed -n 74,82p docs/development.md)
+  ⎿  в предупреждениях `django.request` («Not Found»). Оба access-лога поэтому описаны заново в
+       `LOGGING` (`config/settings.py`) со своими форматами: Django применяет его после uvicorn и
+       после своих настроек по умолчанию, а описание логгера заменяет его обработчики.
+     - `worker` — тот же образ `backend` с командой `python manage.py run_worker`: берёт из outbox
+       пачки до 20 писем подряд и отправляет их в Mailpit; если писем нет — ждёт 1 с. Стартует
+       после healthy `backend` (миграции применены) и Mailpit, после падения перезапускается
+     … +3 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  04:53
+
+⏺ Bash(cat backend/emails/admin.py | head -30)
+  ⎿  from typing import Any
+     
+     from django.contrib import admin
+     from django.http import HttpRequest
+     
+     from emails.models import OutboxEmail
+     … +18 lines
+
+⏺ Админка уже показывает `attempts` в списке, а остальные поля — на странице письма. Пишу лог решений.
+
+⏺ Bash(cat >> docs/decisions.md <<'EOF')
+  ⎿  Environment  jsdom was created 18 times · 27.13s total, 57% of tracked time
+                  create it once per worker with pool: 'vmThreads' (keeps per-file isolation) or isolate: false (shares it across files)
+                  learn more: https://vitest.dev/guide/improving-performance#test-environments
+     
+     cd e2e && pnpm lint
+     
+     … +9 lines
+
+⏺ Bash(echo "exit ok"; git status --short)
+  ⎿  exit ok
+      M backend/emails/management/commands/run_worker.py
+      M backend/emails/services.py
+      M backend/emails/tests/test_worker.py
+      M docs/decisions.md
+      M docs/development.md
+     … +2 lines
+
+⏺ Вывод выше обрезан `tail`, поэтому код выхода надо проверить отдельно. Перезапускаю backend-часть с `pipefail`.
+
+⏺ Bash(set -o pipefail; make stack-check-backend 2>&1 | grep -E "passed|failed|error|Success|Found" | tail -8; echo "exit=$?")
+  ⎿  All checks passed!
+     Success: no issues found in 66 source files
+     ============================= 162 passed in 43.43s =============================
+     exit=0
+
+⏺ Bash(git add -A && git commit -q -F - <<'EOF')
+  ⎿  ⋯ Backing up original state…
+     ✔ Done backing up original state (aa4c1ad)!
+     ⋯ Running tasks for staged files…
+         backend/**/*.py — 4 files
+           ⋯ uv run --project backend ruff check --fix
+           ⋯ uv run --project backend ruff format
+     … +13 lines
+
+⏺ Задача 4.1 готова, коммит `ab73af1` в новой ветке `feat/email-retries`. Я его не запушил.
+  
+  **Что изменилось**
+  - Если письмо не ушло, остальная пачка всё равно отправляется. Письму увеличивается `attempts`, записывается `last_error`, следующая попытка — через 30 с, 60 с, 120 с, 240 с. После 5-й неудачи статус становится `failed`. Письма пачки, ушедшие до ошибки, остаются `sent`.
+  - В лог пишутся только номер письма и класс ошибки, без адреса. Полный текст ошибки хранится в `last_error` в БД, его видно в админке.
+  - Если недоступен Postgres, воркер не падает: пишет в лог `Outbox poll failed`, закрывает сломанное соединение и через 5 с пробует снова.
+  - Теперь каждое письмо открывает своё SMTP-соединение. Раньше было одно на пачку, но после ошибки SMTP оно могло остаться сломанным и уронить остальные письма. Это отменяет решение из записи 2026-10-30 22:14, новая запись — в `docs/decisions.md`.
+  
+  **Как проверено**
+  - `make stack-check` прошёл, backend: 162 теста. Новые тесты проверил на падение: если перехватывать не ту ошибку, падают 5 тестов повторов; если пауза не удваивается, падает тест паузы. Тест с настоящим обрывом соединения с БД падает, если воркер не закрывает сломанное соединение.
+  - На стеке слота 1:
+    - остановил Mailpit → регистрация → письмо `pending`, `attempts=1`, в логе `Email 24 not sent (attempt 1 of 5): gaierror` → запустил Mailpit → письмо пришло;
+    - остановил и запустил Postgres → воркер не упал и отправил следующее письмо.
+  - Шаг из задачи «проверить в браузере и в админке» я прошёл через API и shell, в браузере не смотрел.
+  
+  **Тебе стоит знать**
+  - Прошлая сессия не была закрыта. Я закрыл её временем последнего коммита (04:43) и начал новую в 04:48.
+  - Ветку я создал от `feat/waitlist-emails`, а не от `main`: PR #9 с этапом 3 ещё не влит, а этап 4 правит те же файлы. После слияния #9 ветку нужно перебазировать на `main`. Решение записано в `docs/decisions.md`.
+  - Стек слота 1 оставил запущенным.
+  
+  Следующая задача — 4.2, тест гонки двух воркеров.
+
+> делаем 4.2
+
+⏺ Bash(cat docs/rules/concurrency.md; grep -rn "def run_together" backend; ls backend/*/tests/ | head -40)
+⏺ Bash(grep -rn "Barrier\|run_together\|concurrency" --include=*.py -l backend | grep -v .venv; grep -n "concurrency\|20 прогон\|count" docs/development.md | head)
+  ⎿  (eval):1: no matches found: --include=*.py
+     243:- backend: `cd backend && uv run pytest accounts/tests/test_user.py -k lowercase`;
+     342:  Django — папки рядом (`accounts/`). Python 3.12, Django 5.2 LTS, DRF.
+     350:- Своя модель пользователя `accounts.User`: вход по email, username нет. Email хранится в
+
+  ⎿  # Блокировки и тесты гонок
+     
+     Правила для кода, который меняет места, очередь или другие общие счётчики, и для тестов этого
+     кода. Пример — `backend/registrations/services.py` и `backend/registrations/tests/test_concurrency.py`.
+     
+     ## Код
+     … +80 lines
+
+⏺ Bash(sed -n 1,70p backend/registrations/tests/test_concurrency.py)
+  ⎿  import threading
+     from collections.abc import Callable, Sequence
+     from datetime import timedelta
+     from functools import partial
+     
+     import pytest
+     … +64 lines
+
+⏺ `run_together` нужен второму тесту — проверю, откуда его удобно импортировать.
+
+⏺ Bash(cd /home/raf/event-registration/backend && sed -n 38,70p pyproject.toml; ls; grep -rn "test_concurrency\|run_together" ../docs ../AGENTS.md AGENTS.md | grep -v decisions.md)
+  ⎿  [tool.ruff.lint.per-file-ignores]
+     # Tests: assert is how pytest checks things (S101); passwords are test data (S105, S106).
+     "**/tests/**" = ["S101", "S105", "S106"]
+     
+     [tool.mypy]
+     strict = true
+     … +35 lines
+
+⏺ Bash(cat conftest.py; git grep -n "conftest" -- ../docs | head -3)
+  ⎿  import pytest
+     from django.core.management import call_command
+     
+     
+     @pytest.fixture(scope="session", autouse=True)
+     def collected_static() -> None:
+     … +4 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  from datetime import timedelta
+     from functools import partial
+     
+     import pytest
+     from django.utils import timezone
+     
+     … +17 lines
+
+⏺ Bash(uv run ruff check registrations config 2>&1 | head -12)
+  ⎿  F821 Undefined name `Callable`
+       --> registrations/tests/test_concurrency.py:90:17
+        |
+     88 |     register(event.id, "b@x.io", "Bob")
+     89 |
+     90 |     calls: list[Callable[[], object]] = [
+     … +6 lines
+
+⏺ Теперь сам тест гонки.
+
+⏺ Bash(sed -i 's/^from datetime import timedelta$/from collections.abc import Callable\nfrom datetime import timedelta/' registrations/tests/test_concurrency.py && cat > emails/tests/test_concurrency.py <<'E)
+  ⎿  8 passed in 4.87s
+     8 passed in 4.79s
+     8 passed in 4.81s
+     8 passed in 4.78s
+     8 passed in 4.81s
+     85:            OutboxEmail.objects
+     … +12 lines
+
+⏺ Без `select_for_update` тест падает 10 из 10. Теперь 20 прогонов подряд с замком — по правилу.
+
+⏺ Bash(n=0; for i in $(seq 20); do POSTGRES_PORT=5433 uv run pytest emails/tests/test_concurrency.py -q >/dev/null 2>&1 || break; n=$i; done; echo "green runs: $n/20")
+  ⎿  green runs: 20/20
+
+⏺ 20 из 20 зелёные. Обновляю правило в `concurrency.md`, путь к `run_together` и команду для 20 прогонов.
+
+⏺ Bash(cd /home/raf/event-registration && python3 - <<'EOF')
+  ⎿  05:02
+
+⏺ Bash(cat >> docs/decisions.md <<'EOF')
+  ⎿  All checks passed!
+     Success: no issues found in 68 source files
+     ============================= 163 passed in 43.52s =============================
+     exit=0
+
+⏺ Backend зелёный. По правилу перед «готово» — полный `make stack-check`.
+
+⏺ Bash(set -o pipefail; make stack-check > /tmp/claude-1000/-home-raf-event-registration/d9159d29-1275-4038-ba29-fc74029184f0/scratchpad/check.log 2>&1; echo "exit=$?"; grep -E "passed|failed|Tests " /tmp/cl)
+  ⎿  exit=0
+     All checks passed!
+     ============================= 163 passed in 43.51s =============================
+      Test Files  18 passed (18)
+           Tests  130 passed (130)
+
+⏺ Bash(git add -A && git commit -q -F - <<'EOF')
+  ⎿  ⋯ Backing up original state…
+     ✔ Done backing up original state (063984a)!
+     ⋯ Running tasks for staged files…
+         backend/**/*.py — 3 files
+           ⋯ uv run --project backend ruff check --fix
+           ⋯ uv run --project backend ruff format
+     … +14 lines
+
+⏺ Задача 4.2 готова, коммит `85258cd`. Код воркера не менялся: тест подтвердил, что существующий замок `select_for_update(skip_locked=True)` работает.
+  
+  **Тест** — [emails/tests/test_concurrency.py](backend/emails/tests/test_concurrency.py): 40 писем (две пачки), два воркера стартуют одновременно. Проверяется, что каждое письмо отправлено ровно один раз и все стали `sent`.
+  - Без замка тест падает в 10 прогонах из 10, с замком 20 прогонов подряд зелёные.
+  - `make stack-check` прошёл: backend — 163 теста, фронтенд — 130.
+  
+  **Что ещё изменилось**
+  - Вспомогательная функция для тестов гонок `run_together` теперь используется в двух тестах, поэтому я перенёс её из тестов регистраций в общий [config/tests/concurrency.py](backend/config/tests/concurrency.py).
+  - В [concurrency.md](docs/rules/concurrency.md) добавил правило 6: очередь, которую разбирают несколько процессов, берётся с `SKIP LOCKED`, доставка — «хотя бы один раз». Там же обновил путь к `run_together` и команду на 20 прогонов, теперь она запускает оба теста гонок.
+  - Записи в `docs/decisions.md` и отметка `[x]` в `tasks.md` — в том же коммите.
+  
+  Этап 4 закончен. По правилу 6 этап не готов, пока его не проверил агент `reviewer` и ты не разобрал находки. Запустить ревью коммитов `ab73af1..85258cd`, а потом запушить ветку `feat/email-retries` и открыть PR «Phase 2, stage 4: …»? Сессию я не закрывал, стек слота 1 по-прежнему запущен.
+
+> забыл спросить "Теперь каждое письмо открывает своё SMTP-соединение" - звучит как будто не очень, или норм?
+
+⏺ Для этого проекта нормально. Для настоящего почтового сервера это был бы минус, но небольшой.
+  
+  **Чем плохо в общем случае.** Каждое соединение с SMTP — это подключение, TLS-рукопожатие и вход с паролем. У внешнего провайдера это десятки или сотни миллисекунд на письмо. Пачка из 20 писем отправлялась бы заметно дольше одного соединения, и всё это время строки outbox заблокированы. Кроме того, некоторые провайдеры ограничивают число подключений в минуту.
+  
+  **Почему здесь это не важно.**
+  - Mailpit локальный, без TLS и пароля: подключение стоит доли миллисекунды.
+  - Пачка — до 20 писем, нагрузка демонстрационная.
+  - Пока соединение открыто, замок Event не держится, держатся только строки outbox. Второй воркер их пропускает, а не ждёт.
+  
+  **Что я выиграл.** Если SMTP-сервер оборвёт общее соединение посреди пачки, все остальные письма этой пачки тоже упадут, и им зря добавится попытка. Чтобы держать одно соединение и не терять из-за этого письма, нужно:
+  1. открывать соединение явно. Иначе Django сам открывает и закрывает его на каждое письмо, и общего соединения не получится;
+  2. после ошибки закрывать его, причём закрытие сломанного соединения само может бросить исключение, его надо подавить;
+  3. добавить тест: соединение оборвалось посреди пачки, а следующие письма всё равно ушли.
+  
+  Это примерно 10 строк кода и тест.
+  
+  **Рекомендация:** оставить как есть. Ускорение, которое даёт общее соединение, на этом стенде не видно, а код с ним сложнее. Если почта пойдёт через настоящего провайдера, менять стоит иначе: отправлять через его HTTP API, а не SMTP. Тогда соединение по SMTP перестанет быть вопросом.
+  
+  Если хочешь вернуть одно соединение на пачку, сделаю отдельным коммитом с тестом на обрыв и запишу решение в `docs/decisions.md`.
+
+> оставь как есть. про то что это осознанно так и про HTTP API нужно дописать?
+
+⏺ Почти всё уже записано. В записи 04:53 сказано, что соединение на каждое письмо выбрано сознательно, и указано почему; комментарий в `process_batch` тоже объясняет причину. Не хватает двух вещей: что ты подтвердил решение и какой вариант отклонён. По правилам решение из обсуждения записывается сразу, поэтому добавлю короткую запись. Про HTTP API — одной фразой в этой же записи, как ориентир на случай настоящего провайдера, без пунктов в roadmap: правило 3 не велит делать что-то «на будущее».
+
+⏺ Bash(t=$(date '+%H:%M'); cat >> docs/decisions.md <<EOF)
+  ⎿  *.{mjs,json,md,yml,yaml} — 1 file
+     
+     
+     90814b7 docs: record keeping an SMTP connection per email
+
+⏺ Готово, коммит `90814b7`. В `docs/decisions.md` добавил запись: соединение на каждое письмо оставлено по твоему решению; одно соединение на пачку отклонено, потому что код сложнее, а с локальным Mailpit выигрыша не видно; с настоящим провайдером отправлять через его HTTP API.
+  
+  Отдельной задачи в roadmap и пометок в коде не заводил: комментарий в `process_batch` уже объясняет, почему соединение своё.
+  
+  Дальше по плану — ревью этапа 4 агентом `reviewer` по коммитам `ab73af1..90814b7`. Запускаю?
+
+> запускай ревью через агента
+
+⏺ Bash(sed -n '/^## Ревью/,/^## [^Р]/p' .claude/skills/feature-workflow/SKILL.md)
+  ⎿  ## Ревью
+     
+     Агент `reviewer` (`.claude/agents/reviewer.md`) с чистым контекстом, после каждого этапа.
+     Независимость ревью держится на промпте: агент знает только то, что в нём.
+     
+     Передать **только**:
+     … +37 lines
+
+⏺ Agent(Review phase 2 stage 4)
+  ⎿  Async agent launched successfully. (This tool result is internal metadata — never quote or paste any part of it, including the agentId below, into a user-facing reply.)
+     agentId: abbf4de82ead80bed (internal ID - do not mention to user. Use SendMessage with to: 'abbf4de82ead80bed', summary: '<5-10 word recap>' to continue this agent.)
+     The agent is working in the background. You will be notified automatically when it completes. You know nothing about its results until that notification arrives — do not report, assume, or predict the
+     Do not duplicate this agent's work — avoid working with the same files or topics it is using.
+     output_file: /tmp/claude-1000/-home-raf-event-registration/6bfbff52-1473-4ae2-9d53-24cad3d73fca/tasks/abbf4de82ead80bed.output
+     Do NOT Read or tail this file via the shell tool — it is the full subagent JSONL transcript and reading it will overflow your context. If the user asks for progress, say the agent is still running; yo
+
+⏺ Ревью этапа 4 запущено в фоне на коммитах `1030e6f..90814b7` (ветка `feat/email-retries`).
+  
+  Агенту передал только spec, текст задач 4.1 и 4.2, список того, что ещё не сделано (этап 5), и диапазон коммитов. Как реализовано и почему так решили, не объяснял: он читает это сам. Когда он закончит, покажу отчёт целиком, до своих правок.
+
+⏺ Bash(grep -n "EMAIL" backend/config/settings.py)
+  ⎿  112:EMAIL_HOST = env("EMAIL_HOST", "localhost")
+     113:EMAIL_PORT = int(env("EMAIL_PORT", "1025"))
+     114:DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", "events@example.com")
+
+⏺ Ревью этапа 4 закончено: блокирующих находок нет, но есть две, по которым нужно твоё решение. Ниже отчёт ревьюера целиком, мои факты отмечены отдельно. Файлы я пока не менял.
+  
+  ---
+  
+  **Находка 1. У SMTP нет таймаута** ([settings.py:112-114](backend/config/settings.py#L112-L114), используется в [services.py:93](backend/emails/services.py#L93))
+  
+  Тест и проверка на стеке закрывали только быстрые отказы: остановленный Mailpit и отказ получателя. Бывает и другое: сервер принял соединение и молчит. Тогда `send()` ждёт бесконечно, а транзакция пачки остаётся открытой со заблокированными строками. Счётчик попыток не растёт, письмо не становится `failed`, и все письма встают, потому что воркер в compose один.
+  
+  Ревьюер предлагает задать `EMAIL_TIMEOUT`, например 10 с, и добавить строку в `docs/development.md`. Ошибка таймаута — подкласс `OSError`, поэтому письмо пойдёт по уже готовой ветке повторов.
+  
+  *Мой факт:* в настройках действительно только `EMAIL_HOST`, `EMAIL_PORT` и `DEFAULT_FROM_EMAIL`, таймаута нет.
+  
+  **Находка 2. Ошибка не из сети откатывает всю пачку** ([services.py:92-101](backend/emails/services.py#L92-L101), [run_worker.py:28-35](backend/emails/management/commands/run_worker.py#L28-L35))
+  
+  Отправка одного письма перехватывает только `OSError`, а цикл воркера — только ошибки БД. Любое другое исключение (например, `ValueError` или `UnicodeError` из разбора адреса) откатывает транзакцию пачки, в том числе отметки `sent` у писем, которые уже ушли. Воркер падает, docker его перезапускает, и та же пачка выбирается снова. Получается бесконечная петля:
+  - до 19 уже доставленных писем отправляются повторно при каждом рестарте;
+  - у «ядовитого» письма счётчик попыток не растёт, поэтому оно никогда не станет `failed`;
+  - полный трейсбек с адресом в тексте уходит в stderr, а это нарушает правило 8 (`backend/AGENTS.md`) о персональных данных в логах.
+  
+  Конкретного адреса, который проходит проверку `EmailField` и падает при отправке, ревьюер не нашёл, поэтому оценил важность как среднюю или низкую. Он предлагает один из двух вариантов:
+  - **(а)** отправку и запись статуса каждого письма обернуть в отдельный `transaction.atomic()` (точку сохранения) и перехватывать `Exception` с записью неудачной попытки. Тогда ошибка в коде тоже приведёт письмо к `failed` за 5 попыток и не откатит соседей;
+  - **(б)** коммитить каждое отправленное письмо отдельно.
+  
+  В любом случае нужен тест: письмо, на котором отправка бросает `ValueError`, не откатывает `sent` у предыдущего. Ревьюер отдельно отметил, что моё решение 04:53, п. 2 («другие исключения — ошибка в коде, они откатывают пачку») этих последствий не учитывает.
+  
+  **Проверки ревьюера**
+  - `stack-check` на слоте 2: первый прогон упал на `frontend/src/pages/event/ui/EventPage.test.ts:197` (не найден `[role="status"]`), повтор зелёный — 163 pytest, 130 Vitest. Этот файл diff не трогает. Это **другой** нестабильный тест, не тот, что уже записан в «на потом» про страницу билета. Ревьюер советует завести его отдельно.
+  - Тесты гонок прогнаны 20 раз подряд — все зелёные. Без замка тест писем падает 10 из 10, это проверено через подмену, без правки файлов.
+  - Пауза 30/60/120/240 с, `failed` после пятой попытки, лог без адреса, переподключение к БД, перенос `run_together`, правило 6 — по коду и тестам без замечаний. SMTP-соединение на каждое письмо ревьюер принял как осознанный выбор.
+  
+  **Чего ревьюер не проверял:** браузер и проход с остановкой Mailpit (есть только мой отчёт), подвисший SMTP на стеке (находка 1 выведена из кода), мутацию с перехватом не того исключения (тоже только мой отчёт).
+  
+  ---
+  
+  **Что нужно решить тебе:**
+  1. **Таймаут.** Предлагаю 10 с константой в `settings.py` без переменной окружения, плюс тест: молчащий сервер ведёт к повтору, а не к зависанию.
+  2. **Ошибка не из сети.** Предлагаю вариант (а): дубли у других получателей хуже, чем «ошибка в коде тихо становится `failed`». Класс ошибки всё равно попадёт в лог и в `last_error`. Это отменяет моё решение 04:53, п. 2.
+  3. **Нестабильный тест `EventPage.test.ts`** — записать в «на потом» в `tasks.md`?
+
+> 1. ок
+  2. ок
+  3. запиши
+
+⏺ Делаю три шага отдельными коммитами: таймаут SMTP, перехват любой ошибки отправки, запись про нестабильный тест.
+
+⏺ Bash(cd /home/raf/event-registration/backend && sed -n 105,116p config/settings.py; sed -n 1,50p emails/tests/test_worker.py; grep -n "def test_failed_email_does_not_stop" -A 18 emails/tests/test_worker.py)
+  ⎿  "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
+         "staticfiles": {"BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage"},
+     }
+     
+     DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+     
+     … +115 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  E       assert None is not None
+     E        +  where None = <django.core.mail.backends.smtp.EmailBackend object at 0x74f57fd7b830>.timeout
+     E       AssertionError: assert False
+     E        +  where False = <built-in method startswith of str object at 0x74f57fdf3600>('TimeoutError')
+     E        +    where <built-in method startswith of str object at 0x74f57fdf3600> = 'SMTPServerDisconnected: Connection unexpectedly closed: timed out'.startswith
+     E        +      where 'SMTPServerDisconnected: Connection unexpectedly closed: timed out' = <OutboxEmail: ticket #1 (pending)>.last_error
+
+⏺ Bash(sed -i 's/    assert queued.last_error.startswith("TimeoutError")/    assert queued.last_error.endswith("timed out")/' emails/tests/test_worker.py && python3 - <<'EOF')
+  ⎿  18 passed in 5.12s
+     [This command modified 1 file you've previously read: config/settings.py. Call Read before editing.]
+
+⏺ Зелёные. Дописываю `development.md` и лог решений, затем коммит.
+
+⏺ Bash(cd /home/raf/event-registration && sed -n 338,346p docs/development.md)
+  ⎿  ## Backend
+     
+     - Структура: `backend/config/` — настройки, корневые URL, ASGI, `health.py`; приложения
+       Django — папки рядом (`accounts/`). Python 3.12, Django 5.2 LTS, DRF.
+     - Переменные окружения читаются только в `config/settings.py`. Значения по умолчанию
+       совпадают с сервисами `docker compose`, поэтому локально ничего задавать не нужно.
+     … +2 lines
+
+⏺ Bash(sed -n 346,350p docs/development.md)
+⏺ Bash(python3 - <<'EOF')
+  ⎿  `DEFAULT_FROM_EMAIL`, `FRONTEND_URL` — адрес фронтенда для ссылок в письмах (по умолчанию
+       `http://localhost:5173`). Письма не отправляются из запроса: сервис кладёт их в outbox
+       (`emails.services.enqueue_email`) в своей транзакции. В тестах pytest-django сам
+       подменяет backend почты на `locmem`.
+     - Своя модель пользователя `accounts.User`: вход по email, username нет. Email хранится в
+
+  ⎿  Traceback (most recent call last):
+       File "<stdin>", line 5, in <module>
+     AssertionError
+     Found 1 error in 1 file (checked 68 source files)
+     a4f7633 fix(backend): time out a silent SMTP server instead of waiting forever
+
+⏺ Bash(cd /home/raf/event-registration/backend && uv run mypy . 2>&1 | head -5)
+  ⎿  emails/tests/test_worker.py:215: error: "BaseEmailBackend" has no attribute "timeout"  [attr-defined]
+     Found 1 error in 1 file (checked 68 source files)
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Success: no issues found in 68 source files
+     18 passed in 5.18s
+     c012c2e fix(backend): time out a silent SMTP server instead of waiting forever
+      backend/config/settings.py          |  3 +++
+      backend/emails/tests/test_worker.py | 26 ++++++++++++++++++++++++++
+      docs/decisions.md                   |  1 +
+     … +2 lines
+
+⏺ Таймаут в коммите `c012c2e`. Теперь находка 2: тест на письмо, при котором backend бросает `ValueError`, — сначала красный.
+
+⏺ Bash(cd /home/raf/event-registration/backend && python3 - <<'EOF')
+  ⎿  __________ test_failed_email_does_not_stop_the_batch[invalid_address] __________
+         def test_failed_email_does_not_stop_the_batch(
+     FAILED emails/tests/test_worker.py::test_failed_email_does_not_stop_the_batch[invalid_address]
+     1 failed, 12 passed in 4.08s
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Success: no issues found in 68 source files
+     19 passed in 5.18s
+             )
+             sent = []
+             for email in emails:
+                 # A connection per email: after an SMTP error a shared one may be left broken.
+     … +11 lines
+
+⏺ Зелёные. Лог решений и коммит.
+
+⏺ Bash(cd /home/raf/event-registration && t=$(date '+%H:%M'); cat >> docs/decisions.md <<EOF)
+  ⎿  128c726 fix(backend): keep a batch's sent emails when one fails with a bug
+
+⏺ Теперь нестабильный тест — в «на потом».
+
+⏺ Bash(cat >> docs/features/emails/tasks.md <<'EOF')
+  ⎿  ## На потом
+     
+     - Чистка отправленных писем старше N дней (шаг 3 цикла воркера в `architecture.md`) —
+       Non-Goal фазы 2: объём outbox в демо мал.
+     - Vitest `TicketPage.test.ts` › «cancels, rereads the ticket and refreshes the events» один раз
+       упал у ревьюера этапа 3 (`No button "Да, отказаться"`) и прошёл при повторе; 12
+     … +11 lines
+
+⏺ Bash(git add -A && git commit -q -m "docs: note the flaky event page test from the stage 4 review)
+  ⎿  b084fa4 docs: note the flaky event page test from the stage 4 review
+     128c726 fix(backend): keep a batch's sent emails when one fails with a bug
+     c012c2e fix(backend): time out a silent SMTP server instead of waiting forever
+
+⏺ Все три пункта сделаны, три коммита. `make stack-check` прошёл: backend — 166 тестов, фронтенд — 130.
+  
+  1. **Таймаут SMTP** (`c012c2e`). В `settings.py` добавлена константа `EMAIL_TIMEOUT = 10`. Сервер, который принял соединение и молчит, теперь даёт обычную неудачную попытку с повтором, а не вечное ожидание с заблокированной пачкой. Тестов два:
+     - у SMTP-отправки в настройках задан таймаут — до правки тест падал;
+     - сервер, который не отвечает, ведёт к повтору: письмо `pending`, `attempts=1`. Здесь выяснилось, что smtplib отдаёт таймаут как `SMTPServerDisconnected: … timed out`.
+  
+     Строка про таймаут добавлена в `development.md`.
+  
+     *Моя ошибка в процессе:* первая версия этого коммита ушла без строки в `development.md` и с ошибкой mypy. Правка доки не применилась, а результат mypy спрятал `| tail`. Я поправил оба и дополнил тот же коммит через `--amend`: он не был запушен.
+  
+  2. **Любая ошибка отправки — неудачная попытка** (`128c726`). Ошибка в коде больше не откатывает письма, которые уже ушли в этой пачке, а «ядовитое» письмо станет `failed` после 5 попыток. Тест про пачку теперь проверяет и `ValueError`; до правки этот вариант падал.
+     - Точку сохранения на каждое письмо, которую предлагал ревьюер, я не делал: внутри `try` только отправка, запросов к БД там нет, и транзакция от такой ошибки не ломается.
+     - Решение 04:53, п. 2 отменено новой записью.
+  
+  3. **Нестабильный `EventPage.test.ts:197`** (`b084fa4`) записан в «на потом» в `tasks.md`.
+  
+  По правилам можно один раз повторить ревью — только на коммиты с исправлениями, `90814b7..b084fa4`. Запустить повторное ревью или сразу пушить ветку и открывать PR «Phase 2, stage 4: …»?
+
+> запусти агента
+
+⏺ Agent(Re-review phase 2 stage 4 fixes)
+  ⎿  Async agent launched successfully. (This tool result is internal metadata — never quote or paste any part of it, including the agentId below, into a user-facing reply.)
+     agentId: af25a4be8eb647b74 (internal ID - do not mention to user. Use SendMessage with to: 'af25a4be8eb647b74', summary: '<5-10 word recap>' to continue this agent.)
+     The agent is working in the background. You will be notified automatically when it completes. You know nothing about its results until that notification arrives — do not report, assume, or predict the
+     Do not duplicate this agent's work — avoid working with the same files or topics it is using.
+     output_file: /tmp/claude-1000/-home-raf-event-registration/6bfbff52-1473-4ae2-9d53-24cad3d73fca/tasks/af25a4be8eb647b74.output
+     Do NOT Read or tail this file via the shell tool — it is the full subagent JSONL transcript and reading it will overflow your context. If the user asks for progress, say the agent is still running; yo
+
+⏺ Повторное ревью запущено в фоне, только на коммиты с исправлениями: `90814b7..b084fa4`. Агенту передал spec, задачи этапа и три находки первого ревью, которые исправлялись. Как именно я их исправил, не объяснял. Это последний допустимый повтор: если останутся спорные места, решать будешь ты. Когда агент закончит, покажу отчёт целиком.
+
+> создай пр
+
+⏺ Bash(gh pr view 9 --json state,baseRefName -q '.state+" "+.baseRefName'; gh pr view 9 --json body -q .body | head -40)
+  ⎿  MERGED main
+     ## Зачем
+     
+     Этапы 1–2 дали письмо с билетом тому, кто получил место. Тот, кто встал в лист ожидания,
+     письма не получал, и когда освобождалось место, первый из листа узнавал об этом, только
+     открыв билет сам. Этап 3 фазы 2 закрывает требование задания «кто-то отказался — первый из
+     … +34 lines
+
+⏺ PR #9 уже влит в `main`, поэтому, как записано в решении, перебазирую ветку на `main` и открою PR в `main`.
+
+⏺ Bash(git fetch -q && git log --oneline -3 origin/main && git status --short | head)
+  ⎿  538f4d5 docs: align the email invariants in the spec with the tests
+     0a3d281 docs: name stage pull requests by phase and stage
+     1a62eb6 test(backend): drop the rollback test that could not fail
+
+⏺ `main` получил коммиты #9 с новыми SHA (rebase-merge), поэтому переношу только коммиты этапа 4: `--onto origin/main 1030e6f`.
+
+⏺ Bash(git diff --quiet 1030e6f origin/main && echo "main == old base tree" ; git rebase -q --onto origin/main 1030e6f feat/email-retries && git diff --quiet b084fa4 HEAD && echo "same tree as before rebase")
+  ⎿  main == old base tree
+     same tree as before rebase
+     7582eba docs: note the flaky event page test from the stage 4 review
+     e061854 fix(backend): keep a batch's sent emails when one fails with a bug
+     6250329 fix(backend): time out a silent SMTP server instead of waiting forever
+     e9b2805 docs: record keeping an SMTP connection per email
+     … +2 lines
+
+⏺ Дерево совпадает с проверенным до перебазирования. Пушу (хук `pre-push` проверит backend на Postgres слота 1).
+
+⏺ Bash(SLOT=1 git push -u origin feat/email-retries 2>&1 | grep -E "passed|failed|rror|->|branch" | tail -5)
+  ⎿  All checks passed!
+     ============================= 166 passed in 46.38s =============================
+      * [new branch]      feat/email-retries -> feat/email-retries
+     branch 'feat/email-retries' set up to track 'origin/feat/email-retries'.
+
+⏺ Bash(cat > /tmp/claude-1000/-home-raf-event-registration/d9159d29-1275-4038-ba29-fc74029184f0/scratchpad/pr.md <<'EOF')
+  ⎿  https://github.com/rbikbov/event-registration/pull/10
+
+⏺ PR открыт: https://github.com/rbikbov/event-registration/pull/10 — «Phase 2, stage 4: email retries and parallel workers», в `main`.
+  
+  - PR #9 уже был влит в `main`, поэтому я перебазировал ветку на `main`, как и планировали. Итоговые файлы совпадают с проверенными до перебазирования, так что `make stack-check` остаётся в силе. При пуше хук ещё раз прогнал backend на Postgres слота 1: 166 тестов зелёные.
+  - Повторное ревью ещё идёт, в описании PR это указано. Ревьюер смотрит коммиты со старыми SHA (до перебазирования), но содержимое то же. По правилу 6 этап не считается готовым, пока его находки не разобраны. Влить PR лучше после отчёта: если в нём что-то будет, исправления лягут в эту же ветку.
+
+⏺ Повторное ревью закончено: все три находки первого ревью закрыты, появилась одна новая, низкой важности. Ниже отчёт целиком, мой комментарий отмечен отдельно.
+  
+  ---
+  
+  **Находка: ошибка в коде неотличима от сбоя сети** ([services.py:96](backend/emails/services.py#L96), `_record_failure`)
+  
+  Теперь `except Exception` ловит и ошибки программы (`TypeError`, `AttributeError`, `ValueError`). В лог они попадают тем же `WARNING`, что и отказ SMTP: только id письма и класс, без стека. Полный текст остаётся лишь в `last_error`. Письмо, на котором падает код, через 5 попыток тихо станет `failed`, и найти место ошибки будет нельзя.
+  
+  Ревьюер предлагает: ошибки не из `OSError` писать отдельной веткой на уровне `ERROR`, со стеком, но без текста сообщения (`traceback.format_tb(error.__traceback__)`). В кадрах стека адреса нет. `OSError` оставить как сейчас. Решение 05:28, по его мнению, этого не снимает: запрет на текст сообщения не запрещает стек.
+  
+  **Проверки ревьюера:** `stack-check` на слоте 2 зелёный (pytest 166, Vitest 130); `EventPage.test.ts` в этот раз не упал. e2e не запускал: API, UI и e2e в диапазоне не менялись.
+  
+  **Сняли решения:** отказ от точки сохранения (в `try` нет запросов к БД) и `EMAIL_TIMEOUT` константой — не находки.
+  
+  **Проверено, находок нет:**
+  - таймаут: оба теста проверяют настоящее поведение, худший случай — 20 писем × 10 с, а другой воркер эти строки пропускает;
+  - `ValueError` в пачке: проверяется поведение, адреса в логе нет;
+  - нестабильный тест записан;
+  - миграции, API, фронтенд не менялись, мусора и персональных данных в логах нет, коммиты по одному изменению.
+  
+  **Не проверял:** что новые тесты падают без правки (есть только мой отчёт), браузер, 20 прогонов гонки (блокировки в диапазоне не менялись).
+  
+  ---
+  
+  *Мой комментарий.* `format_tb` выводит только файл, строку, функцию и строку исходника, без значений переменных и без текста исключения. Значит, адрес туда может попасть только из самого исходного кода, а таких строк в нём нет. Доводы ревьюера верны. Исправление небольшое: ветка `if not isinstance(error, OSError)` в `_record_failure` и тест «ошибка в коде → `ERROR` со стеком, адреса в логе нет». Предлагаю принять.
+  
+  Это был последний допустимый повтор ревью, дальше решаешь ты. Делать это исправление в ветку PR #10 или оставить как есть и записать решение?
+
+> добавь исправление и запуш
+
+⏺ Сначала тест: ошибка в коде должна дать `ERROR` со стеком, без адреса и текста ошибки.
+
+⏺ Bash(cd /home/raf/event-registration/backend && grep -n "def test_failure_is_logged" -A 14 emails/tests/test_worker.py)
+  ⎿  214:def test_failure_is_logged_with_the_email_id_and_error_class_only(
+     215-    event: Event,
+     216-    refuse: Refuse,
+     217-    caplog: pytest.LogCaptureFixture,
+     218-) -> None:
+     219-    refuse("secret@x.io")
+     … +9 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  # A failing network is expected; a failing code needs the place it failed at.
+     E       AssertionError: assert 'WARNING' == 'ERROR'
+     E         
+     E         - ERROR
+     E         + WARNING
+
+⏺ Красный. Реализую ветку в `_record_failure`.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Success: no issues found in 68 source files
+     20 passed in 5.28s
+     ERROR    emails.services:services.py:123 Email 1 not sent (attempt 1 of 5): ValueError
+       File "/home/raf/event-registration/backend/emails/services.py", line 94, in process_batch
+         EmailMessage(email.subject, email.body, to=[email.to]).send()
+       File "/home/raf/event-registration/backend/.venv/lib/python3.12/site-packages/django/core/mail/message.py", line 307, in send
+     … +4 lines
+
+⏺ Работает: в логе класс и стек, адреса и текста ошибки нет. Лог решений, коммит, пуш.
+
+⏺ Bash(cd /home/raf/event-registration && t=$(date '+%H:%M'); cat >> docs/decisions.md <<EOF)
+  ⎿  057a44c fix(backend): log the stack of a bug in sending, without its message
+     All checks passed!
+     ============================= 167 passed in 44.32s =============================
+        7582eba..057a44c  feat/email-retries -> feat/email-retries
+
+⏺ Обновлю в описании PR строку про повторное ревью.
+
+⏺ Bash(f=/tmp/claude-1000/-home-raf-event-registration/d9159d29-1275-4038-ba29-fc74029184f0/scratchpad/pr.md && python3 - "$f" <<'EOF')
+  ⎿  21:  стек (`ERROR`); текст ошибки — только в `last_error`, его видно в админке.
+     34:- `make stack-check` (слот 1): backend 167 тестов, frontend 130 — зелёные. Тесты проверены на
+     43:  Повторное ревью: одна находка — ошибка в коде выглядела в логе как сбой сети; теперь она
+     44:  пишется как `ERROR` со стеком, без текста сообщения.
+
+⏺ Исправление внесено и запушено в PR #10, коммит `057a44c`.
+  
+  Ошибка в коде при отправке теперь пишется в лог как `ERROR`: id письма, класс ошибки и стек, без текста сообщения, в котором может быть адрес. Ошибки SMTP и сети по-прежнему пишутся как `WARNING` с одним классом. Тест на это до правки падал, а пример вывода в логе показывает строку и функцию, без адреса.
+  
+  **Проверка:** при пуше хук прогнал backend на Postgres слота 1, 167 тестов зелёные. Полный `make stack-check` после этого коммита я не повторял: изменения только в backend, фронтенд не затронут.
+  
+  **Документы:**
+  - решение записано в `docs/decisions.md` с пометкой, что повторное ревью этапа 4 пройдено и находки разобраны;
+  - в описании PR обновлены строки про лог, ревью и число тестов.
+  
+  Этап 4 готов к слиянию. Дальше — этап 5: README, `architecture.md`, финальное ревью фазы и проход в браузере. Сессию я не закрывал. Если заканчиваем, поставлю `■ конец сессии` и закоммичу отдельным коммитом в эту же ветку.

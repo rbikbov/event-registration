@@ -1,0 +1,267 @@
+> /clear
+
+> переходим к фазе 5
+
+⏺ Skill(session-handoff)
+  ⎿  Launching skill: session-handoff
+
+⏺ Bash(make worktime 2>&1 | tail -5; date '+%Y-%m-%d %H:%M'; tail -20 docs/decisions.md; ls docs/features/; git log -3 --format='%h %ci %s')
+  ⎿  2026-10-31 21:11 → 2026-10-31 22:29  1 ч 18 мин
+     2026-11-02 03:44 → 2026-11-02 05:57  2 ч 13 мин
+     2026-11-02 06:02 → 2026-11-02 08:09  2 ч 7 мин
+     Итого: 42 ч 1 мин
+     Предупреждение: сессия с 2026-11-02 08:24 не закрыта и не учтена
+     2026-11-02 08:29
+     … +28 lines
+
+⏺ Bash(git status -sb | head -3; gh pr list --head feat/ticket-used-notice 2>&1 | head; sed -n '/Фаза 5/,/Фаза 6/p' docs/roadmap.md; ls docs/features/_template)
+  ⎿  ## feat/ticket-used-notice...origin/feat/ticket-used-notice
+     ## Фаза 5. Напоминания и перенос события — в работе
+     
+     Критерии: ровно одно напоминание на каждую дату события; письмо о переносе `confirmed` и
+     `waitlisted`; правило «место получено внутри 24 часов — без напоминания».
+     
+     … +6 lines
+
+⏺ Skill(feature-workflow)
+  ⎿  Launching skill: feature-workflow
+
+⏺ Bash(cat docs/task.md; echo ----; grep -n -i -E 'напомин|перенос|reschedul|remind|seed|celery|cron|beat|планиров' docs/architecture.md | head -60; echo; wc -l docs/architecture.md)
+⏺ Bash(cat docs/features/_template/spec.md docs/features/_template/tasks.md; echo ----; cat docs/features/emails/spec.md | head -150; ls backend backend/*/)
+  ⎿  # Тестовое задание: регистрация на мероприятия
+     
+     Текст задания: общие требования, ожидаемый результат и задание.
+     
+     # Требования
+     
+     … +71 lines
+
+  ⎿  # <Фича>: spec
+     
+     Фаза — `docs/roadmap.md`, фаза N. Статус: черновик | утверждён ГГГГ-ММ-ДД.
+     
+     <!-- До 150 строк. Процесс — skill feature-workflow. -->
+     
+     … +278 lines
+
+⏺ Bash(sed -n 40,100p docs/architecture.md; sed -n 170,277p docs/architecture.md)
+⏺ Bash(cat backend/events/models.py backend/events/services.py backend/emails/models.py backend/emails/services.py; ls backend/emails/templates/emails backend/emails/management/commands backend/accounts/mana)
+  ⎿  from typing import ClassVar, Self
+     
+     from django.conf import settings
+     from django.core.validators import MaxValueValidator, MinValueValidator
+     from django.db import models
+     from django.db.models import Count, F, Q
+     … +342 lines
+
+  ⎿  регистрациями админка не удаляет: каскад задел бы регистрации, а они только для чтения.
+     - **Реализовано:** вход организатора (`/api/auth/login|logout|me/`) — сессия Django + CSRF
+       (`SessionAuthentication`). Фронтенд читает cookie `csrftoken` и передаёт её значение в
+       заголовке `X-CSRFToken` у изменяющих запросов — в `shared/api/csrf.ts`, одним местом для
+       всех вызовов. Кто вошёл, знает `entities/session` (`GET me`, гость — `null`); guard роутера
+       (`app/router.ts`) отправляет гостя с маршрутов `requiresAuth` на `/login`, а вошедшего с
+     … +163 lines
+
+⏺ Bash(cat backend/registrations/services.py | head -200; cat backend/events/serializers.py | head -80; cat backend/emails/management/commands/run_worker.py)
+⏺ Bash(grep -n -i -E 'напомин|перенос|фаз[аеуы] 5|seed|schedule_version' docs/decisions.md | cut -c1-400; ls frontend/src/pages frontend/src/features frontend/src/entities 2>/dev/null; ls e2e/tests 2>/dev/nu)
+  ⎿  from dataclasses import dataclass
+     from datetime import datetime, timedelta
+     
+     from django.db import transaction
+     from django.db.models import Case, F, Max, Q, QuerySet, When, Window
+     from django.db.models.functions import RowNumber
+     … +300 lines
+
+  ⎿  40:- **20:07** — напоминание «ровно одно» считается на каждую дату события: ключ дедупликации
+     41:  включает `schedule_version`, после переноса перед новой датой уходит новое напоминание.
+     42:  Почему: напоминание о старой дате бесполезно. Отклонено: одно напоминание на регистрацию
+     43:  навсегда — после переноса участник остался бы без напоминания о новой дате.
+     44:- **20:07** — письмо о переносе события получают `confirmed` и `waitlisted`. Почему: для
+     47:- **20:07** — напоминание не отправляется, если место получено уже внутри 24-часового окна
+     … +38 lines
+
+⏺ Bash(sed -n 36,52p docs/decisions.md; sed -n 300,312p docs/decisions.md | cut -c1-600; sed -n 515p docs/decisions.md; cat backend/events/admin.py; ls frontend/src/pages/org-event-new frontend/src/pages/org)
+  ⎿  Exit code 2
+       `CLAUDE.md`). Отменяет правило о русских сообщениях коммитов из записи от 19:05.
+     - **19:13** — история переписана (`git filter-branch`, удалённого репозитория ещё нет): сообщение
+       коммита с `CLAUDE.md` переведено на английский по правилу от 19:10, в `docs/task.md` убрано
+       упоминание источника задания. Даты коммитов сохранены.
+     - **20:07** — напоминание «ровно одно» считается на каждую дату события: ключ дедупликации
+     … +72 lines
+
+⏺ Bash(find frontend/src/pages/org-event-new frontend/src/pages/org-event frontend/src/entities/event -type f | grep -v test; cat frontend/src/app/router.ts | grep -n -E 'path|routes\.' | head -30; grep -n -)
+  ⎿  frontend/src/pages/org-event-new/index.ts
+     frontend/src/pages/org-event/index.ts
+     frontend/src/entities/event/index.ts
+     frontend/src/pages/org-event-new/model/event-form.ts
+     frontend/src/pages/org-event-new/ui/OrgEventNewPage.vue
+     frontend/src/pages/org-event-new/api/create-event.ts
+     … +30 lines
+
+⏺ Bash(date '+%H:%M'; grep -n "kind" frontend/src/shared/api/*.ts | head -20; cat frontend/src/pages/org-event-new/model/event-form.ts | head -60; cat docs/rules/db-migrations.md | head -40)
+  ⎿  08:30
+     frontend/src/shared/api/app-error.test.ts:16:  ] as const)("maps %i to %s", (status, kind) => {
+     frontend/src/shared/api/app-error.test.ts:19:    expect(error.kind).toBe(kind);
+     frontend/src/shared/api/app-error.ts:1:// The only error type above shared/api. Code decides by `kind`, never by message text.
+     frontend/src/shared/api/app-error.ts:13:  readonly kind: AppErrorKind;
+     frontend/src/shared/api/app-error.ts:19:    kind: AppErrorKind,
+     … +92 lines
+
+⏺ Bash(cat >> docs/decisions.md <<'EOF')
+  ⎿  - **08:24** — страница билета: отметка на входе — плашка «Билет использован» с временем и пояснением, что повторно пройти по коду и отказаться от регистрации нельзя (раньше — одна строка «Вы отмечены 
+     - **08:27** — ■ конец сессии (сессия не была закрыта; время последнего коммита)
+     - **08:30** — ▶ начало сессии
+
+⏺ Пишу черновик spec фазы 5 (`docs/features/reschedule/spec.md`) по разделам архитектуры о напоминаниях и переносе.
+
+⏺ Write(/home/raf/event-registration/docs/features/reschedule/spec.md)
+  ⎿  File created successfully at: /home/raf/event-registration/docs/features/reschedule/spec.md (file state is current in your context — no need to Read it back)
+
+⏺ Bash(wc -l docs/features/reschedule/spec.md)
+  ⎿  124 docs/features/reschedule/spec.md
+
+⏺ Фаза 5 начата, и я остановился на утверждении spec, как требует процесс.
+  
+  **Сессия.** Прошлая сессия (с 08:24) осталась без `■`. Я закрыл её в `docs/decisions.md` временем последнего коммита (08:27) и открыл новую в 08:30. Пока ничего не закоммичено.
+  
+  **Ветка.** Сейчас мы на `feat/ticket-used-notice`: коммит `ae1e639` (плашка «Билет использован») отправлен на GitHub, но PR для него нет, и в `main` его тоже нет. Фазе 5 нужна своя ветка от `main`. Варианты:
+  - (а) сначала PR для `feat/ticket-used-notice`, потом ветка фазы от `main`;
+  - (б) ветка фазы от `main` сейчас. Тогда при слиянии почти наверняка будет конфликт в `docs/decisions.md`: обе ветки дописывают в конец файла.
+  
+  Что выбираете?
+  
+  **Черновик spec:** `docs/features/reschedule/spec.md`, 124 строки. Главное, что я решил сам (раздел «Допущения»), — проверьте:
+  
+  1. **Перенос.** Перенос и изменение лимита — `PATCH /api/org/events/{id}/` через сервис `update_event` под замком события. Если дата изменилась, номер версии даты у события (`schedule_version`) растёт на 1, а письмо `rescheduled` получают и подтверждённые, и стоящие в листе ожидания. Номер места в листе в этом письме не пишем: он быстро устаревает, текущий видно по ссылке.
+  2. **Лимит.**
+     - Лимит меньше числа подтверждённых — ответ 400 `below_confirmed`. Никого не переводим в лист ожидания.
+     - Если лимит вырос, первые из листа получают места и письмо `promoted`.
+  3. **Напоминания.** Воркер раз в 30 с ищет события, до начала которых меньше 24 ч. Пока он их обрабатывает, эти события заблокированы: занятое событие пропускается до следующего прохода. Поэтому напоминание с уже перенесённой датой не уйдёт. Ключ письма включает `schedule_version`: одно напоминание на каждую дату события. Кто получил место уже внутри этих 24 ч, напоминания не получает.
+  4. **Экран.** Вкладка «Редактирование» (`/org/events/:id/edit`) в макете события. Форму берём от экрана создания: её модель переезжает в `entities/event`. Отправляются только изменённые поля. Перед переносом даты — подтверждение со счётом получателей писем.
+  5. **`make seed`.** Каждый запуск добавляет у демо-организатора два события:
+     - через неделю на 2 места: 2 подтверждено, 1 в листе;
+     - через ~23 ч, с участниками, которым время получения места сдвинуто на 2 дня назад. Через ~30 с их напоминания видны в Mailpit.
+  6. **E2E:** перенос приводит к письмам подтверждённому и стоящему в листе в Mailpit; рост лимита — к письму `promoted`. Второй тест — сверх roadmap, его можно убрать.
+  
+  **Non-Goals:** отмена и удаление события, письма отказавшимся, часовой пояс события, изменение даты и лимита из админки.
+  
+  После ответа про ветку и правок spec составлю `tasks.md` и закоммичу оба файла вместе с записями в лог решений.
+
+> перенеси коммит в main и создай от main ветку под 5 фазу.
+  1. ок
+  2. ок
+  3. ок
+  4. редактирование можно тоже вкладкой как чекин и участников. остальное ок.
+  5. ок
+  6. второй тест это какой?
+  non goals - ок
+
+⏺ Bash(git fetch origin && git log --oneline -1 origin/main && git checkout main && git merge --ff-only feat/ticket-used-notice && SLOT=1 git push origin main 2>&1 | tail -5)
+  ⎿  Exit code 1
+     0da71bf Merge pull request #20 from rbikbov/feat/realtime-reconnect
+     error: Your local changes to the following files would be overwritten by checkout:
+     	docs/decisions.md
+     Please commit your changes or stash them before you switch branches.
+     Aborting
+
+⏺ Bash(git stash push docs/decisions.md -m session-markers && git checkout main && git merge --ff-only feat/ticket-used-notice && git stash pop && git status -s && SLOT=1 git push origin main 2>&1 | tail -5)
+  ⎿  Saved working directory and index state On feat/ticket-used-notice: session-markers
+     Switched to branch 'main'
+     Your branch is up to date with 'origin/main'.
+     Updating 0da71bf..ae1e639
+     Fast-forward
+      docs/decisions.md                               |  2 ++
+     … +25 lines
+
+⏺ Bash(git checkout -b feat/reschedule-reminders && git branch -d feat/ticket-used-notice && git status -sb | head -3)
+  ⎿  Switched to a new branch 'feat/reschedule-reminders'
+     Deleted branch feat/ticket-used-notice (was ae1e639).
+     ## feat/reschedule-reminders
+      M docs/decisions.md
+     ?? docs/features/reschedule/
+
+⏺ Готово: `main` перемотан до `ae1e639` без merge-коммита и отправлен на GitHub. Ветка фазы — `feat/reschedule-reminders` от `main`. Локальную `feat/ticket-used-notice` я удалил, на GitHub она осталась: удалить?
+  
+  **П. 4.** Так и задумано: «Редактирование» — третья вкладка рядом с «Участники» и «Чекин», в том же макете события, со своим адресом `/org/events/:id/edit`. В spec это сказано, менять ничего не нужно.
+  
+  **П. 6, второй e2e.** Организатор увеличивает лимит заполненного события, и первый из листа ожидания получает в Mailpit письмо «Освободилось место» с кодом. Roadmap требует только e2e переноса. Повышение при росте лимита и так проверит pytest, но путь «форма → `PATCH` → повышение → письмо» насквозь проверит только этот e2e. Я бы его оставил: он короткий, а в форме изменение лимита — второе по важности действие после переноса. Оставляем или убираем?
+  
+  После ответа запишу решения в лог, составлю `tasks.md` и закоммичу spec и задачи.
+
+> оставляем, удали ветку на гитхабе
+
+⏺ Bash(git push origin --delete feat/ticket-used-notice 2>&1 | tail -2; date '+%H:%M')
+  ⎿  To github.com:rbikbov/event-registration.git
+      - [deleted]         feat/ticket-used-notice
+     08:47
+
+⏺ Write(/home/raf/event-registration/docs/features/reschedule/tasks.md)
+⏺ Bash(sed -i 's/Статус: черновик\./Статус: утверждён 2026-11-02./' docs/features/reschedule/spec.md && cat >> docs/decisions.md <<'EOF')
+  ⎿  File created successfully at: /home/raf/event-registration/docs/features/reschedule/tasks.md (file state is current in your context — no need to Read it back)
+
+  ⎿  ⋯ Backing up original state…
+     ✔ Done backing up original state (5331875)!
+     ⋯ Running tasks for staged files…
+         *.{mjs,json,md,yml,yaml} — 3 files
+           ⋯ prettier --write
+     
+     … +9 lines
+
+⏺ Prettier разорвал inline-код в задаче 1.1 — поправлю, чтобы путь был на одной строке.
+
+⏺ Read(/home/raf/event-registration/docs/features/reschedule/tasks.md)
+  ⎿  1	# Напоминания и перенос события: задачи
+     2	
+     3	Spec — `spec.md`. Одна задача — один коммит; отметка `[x]` — в том же коммите.
+     4	
+     5	## Этап 1. Перенос и изменение лимита
+     6	
+     … +6 lines
+
+⏺ Edit(/home/raf/event-registration/docs/features/reschedule/tasks.md)
+⏺ Bash(npx prettier --check docs/features/reschedule/ && sed -n 7,12p docs/features/reschedule/tasks.md && git diff --stat docs/features/reschedule/spec.md)
+  ⎿  The file /home/raf/event-registration/docs/features/reschedule/tasks.md has been updated successfully.
+
+  ⎿  Checking formatting...
+     All matched files use Prettier code style!
+     - [ ] 1.1. Tracer bullet: перенос даты насквозь — `Event.schedule_version`, вид письма
+           `rescheduled` (миграции), `update_event` только для `starts_at`,
+           `PATCH /api/org/events/{id}/`, `openapi.yaml` и типы, вкладка «Редактирование» с полем
+           даты.
+     … +2 lines
+
+⏺ Bash(git add docs/features/reschedule/tasks.md && git commit -q --amend --no-edit && git log --oneline -1 && git status -s)
+  ⎿  ⋯ Backing up original state…
+     ✔ Done backing up original state (c5e1db5)!
+     ⋯ Running tasks for staged files…
+         *.{mjs,json,md,yml,yaml} — 1 file
+           ⋯ prettier --write
+     
+     … +8 lines
+
+⏺ Ветка `feat/ticket-used-notice` удалена с GitHub. Второй e2e (рост лимита → письмо первому из листа) остаётся, это решение записано в лог.
+  
+  Spec и задачи закоммичены (`29885f9`) в ветку `feat/reschedule-reminders`. Spec помечен утверждённым, ваши ответы записаны в `docs/decisions.md`.
+  
+  **Задачи** (`docs/features/reschedule/tasks.md`), по одному коммиту на задачу. По процессу их тоже утверждаете вы.
+  
+  Этап 1. Перенос и изменение лимита:
+  - **1.1. Первый сквозной сценарий** (tracer bullet) — перенос даты:
+    - миграции: номер версии даты у события (`schedule_version`) и новый вид письма `rescheduled`;
+    - `update_event` пока только для даты, `PATCH` события, схема API и типы фронтенда;
+    - вкладка «Редактирование» с полем даты;
+    - проверка — тестом бэкенда и в браузере (письма в Mailpit).
+  - **1.2.** `PATCH` остальных полей: название, описание, лимит. Если лимит вырос, первые из листа получают места; если он меньше подтверждённых — ответ 400. Плюс ошибки доступа и дата в прошлом.
+  - **1.3.** Форма целиком:
+    - модель формы переезжает в `entities/event`;
+    - отправляются только изменённые поля;
+    - перед переносом — подтверждение с числом получателей;
+    - ошибки полей и сети.
+  - **1.4.** Два e2e: письма о переносе и письмо «Освободилось место» при росте лимита.
+  
+  Этап 2. Напоминания и демо-данные:
+  - **2.1.** Постановка напоминаний в очередь и вызов из воркера раз в 30 с. Тесты: правило 24 ч, новое напоминание после переноса, перенос во время прохода воркера.
+  - **2.2.** `make seed` и `make stack-seed`, документация к ним.
+  - **2.3.** Закрытие фазы.
+  
+  Ревью агентом `reviewer` и проход в браузере — после каждого этапа. Если задачи подходят, начинаю 1.1.

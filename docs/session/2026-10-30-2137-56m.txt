@@ -1,0 +1,562 @@
+> /clear
+
+> создай новую ветку под следующую задачу фазы 2 - 1.1
+
+⏺ Bash(git branch -a && git log --oneline --merges -5 && sed -n '/1.1/,/1.2/p' docs/features/emails/tasks.md | head -20)
+  ⎿  e2e-admin-cleanup
+       feat/cancel
+       feat/registration-model
+       feat/waitlist
+       fix/stage-1-2-review
+     * main
+     … +17 lines
+
+⏺ Bash(git switch -c feat/outbox-email && git branch --show-current)
+  ⎿  Switched to a new branch 'feat/outbox-email'
+     feat/outbox-email
+
+⏺ I created the branch `feat/outbox-email` from `main` and switched to it. The name follows the existing `feat/...` branches.
+  
+  It's for task 1.1: the `emails` app with the `OutboxEmail` model, a migration and a read-only admin; `enqueue_email` with the `ticket` template; queuing the `ticket` email inside `register`; and the `EMAIL_*`, `DEFAULT_FROM_EMAIL` and `FRONTEND_URL` settings.
+  
+  Should I start the task? Following the session rules, I'll first add a session-start entry to `docs/decisions.md`.
+
+> Начинай
+
+⏺ Skill(session-handoff)
+  ⎿  Launching skill: session-handoff
+
+⏺ Bash(make worktime 2>&1 | tail -5; date '+%Y-%m-%d %H:%M %Z'; tail -15 docs/decisions.md; git log -1 --format='%ci')
+  ⎿  2026-10-30 05:56 → 2026-10-30 05:57  0 ч 1 мин
+     2026-10-30 06:04 → 2026-10-30 07:05  1 ч 1 мин
+     2026-10-30 07:32 → 2026-10-30 08:05  0 ч 33 мин
+     Итого: 14 ч 5 мин
+     Предупреждение: сессия с 2026-10-30 20:56 не закрыта и не учтена
+     2026-10-30 21:38 EET
+     … +16 lines
+
+⏺ Предыдущая сессия (с 20:56) не закрыта — закрываю её временем последнего коммита (21:36) и открываю новую.
+
+⏺ Bash(printf -- '- **21:36** — ■ конец сессии\n- **21:38** — ▶ начало сессии\n' >> docs/decisions.md && tail -3 docs/decisions.md && cat docs/features/emails/spec.md docs/features/emails/tasks.md backend/AG)
+  ⎿  <persisted-output>
+     Output too large (29.3KB). Full output saved to: /home/raf/.claude/projects/-home-raf-event-registration/12417012-39c9-411e-a940-30751d83d207/tool-results/b4g95htxa.txt
+     
+     Preview (first 2KB):
+     - **21:29** — правила админки и сигналов записаны в `backend/AGENTS.md` (п. 9 дополнен, п. 11 новый) и в чек-лист агента `reviewer`: изменение, требующее замка или побочных эффектов, админка делает че
+     - **21:36** — ■ конец сессии
+     … +25 lines
+
+⏺ Read(/home/raf/.claude/projects/-home-raf-event-registration/12417012-39c9-411e-a940-30751d83d207/tool-results/b4g95htxa.txt)
+  ⎿  1	- **21:29** — правила админки и сигналов записаны в `backend/AGENTS.md` (п. 9 дополнен, п. 11 новый) и в чек-лист агента `reviewer`: изменение, требующее замка или побочных эффектов, админка делает 
+     2	- **21:36** — ■ конец сессии
+     3	- **21:38** — ▶ начало сессии
+     4	# Outbox, воркер, письма: spec
+     5	
+     6	Фаза — `docs/roadmap.md`, фаза 2. Статус: утверждён 2026-10-30.
+     … +304 lines
+
+⏺ Bash(cd /home/raf/event-registration/backend && ls; ls registrations registrations/tests events; cat registrations/services.py registrations/models.py registrations/admin.py; cat ../docs/rules/db-migration)
+⏺ Bash(grep -n -i -A40 '### OutboxEmail' docs/architecture.md | head -60; grep -n -i -B2 -A40 'Фоновые задачи и письма' docs/architecture.md | head -70)
+  ⎿  AGENTS.md
+     CLAUDE.md
+     Dockerfile
+     __pycache__
+     accounts
+     config
+     … +260 lines
+
+  ⎿  153-  организатора — индикатор «соединение потеряно, переподключаюсь».
+     154-
+     155:## Фоновые задачи и письма
+     156-
+     157-План (фазы 2 и 5). Отдельный процесс `manage.py run_worker`, цикл:
+     158-
+     … +37 lines
+
+⏺ Bash(grep -n -i -B2 -A25 'OutboxEmail' ../docs/architecture.md | head -50; cat config/settings.py; cat config/tests/test_admin.py; sed -n 1,60p registrations/tests/test_services.py; cat registrations/tests)
+  ⎿  70-  новой регистрацией.
+     71-
+     72:**OutboxEmail** — очередь писем в Postgres, план (фаза 2):
+     73-
+     74-- `kind`: `ticket` / `waitlisted` / `promoted` / `reminder` / `rescheduled`
+     75-- `registration` (FK), `dedup_key UNIQUE`, `status` (`pending` / `sent` / `failed`),
+     … +299 lines
+
+⏺ Bash(cd /home/raf/event-registration && make help 2>&1 | head -40; docker compose ps 2>&1 | head; cat backend/registrations/apps.py; sed -n 1,40p backend/registrations/migrations/0001_create_registration.p)
+  ⎿  help                 List targets
+       up                   Build and start the whole stack; open http://localhost:5173
+       down                 Stop the stack (data in the postgres-data volume is kept)
+       logs                 Follow logs of all services
+       dev-deps             Start services needed for local development and tests (Postgres)
+       install              Install all dependencies, the Playwright browser and git hooks
+     … +68 lines
+
+⏺ Postgres работает. Сначала каркас приложения: модель, админка, миграция.
+
+⏺ Bash(mkdir -p emails/tests emails/migrations emails/templates/emails && touch emails/__init__.py emails/tests/__init__.py emails/migrations/__init__.py && cat > emails/apps.py <<'EOF')
+  ⎿  44:    "emails",
+     Migrations for 'emails':
+       emails/migrations/0001_create_outbox_email.py
+         + Create model OutboxEmail
+     BEGIN;
+     --
+     … +8 lines
+
+⏺ Миграция чистая. Теперь тесты — до реализации.
+
+⏺ Bash(cat > emails/tests/test_admin.py <<'EOF')
+  ⎿  ==================================== ERRORS ====================================
+     ________________ ERROR collecting emails/tests/test_services.py ________________
+     ImportError while importing test module '/home/raf/event-registration/backend/emails/tests/test_services.py'.
+     Hint: make sure your test modules/packages have valid Python names.
+     Traceback:
+     /usr/lib/python3.12/importlib/__init__.py:90: in import_module
+     … +9 lines
+
+⏺ Падает, как и ожидалось (сервиса ещё нет). Проверяю, что тесты `register` падают по делу:
+
+⏺ Bash(uv run pytest registrations/tests/test_emails.py emails/tests/test_admin.py config/tests/test_admin.py -q 2>&1 | grep -E 'passed|failed|Error|DoesNotExist' | tail -8)
+  ⎿  raise NotSupportedError(
+     >           raise self.model.DoesNotExist(
+     E           emails.models.OutboxEmail.DoesNotExist: OutboxEmail matching query does not exist.
+     .venv/lib/python3.12/site-packages/django/db/models/query.py:635: DoesNotExist
+     registrations/tests/test_emails.py:45: AssertionError
+     2 failed, 3 passed in 2.75s
+
+⏺ Теперь реализация: настройки, шаблон, `enqueue_email`, вызов в `register`.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  def register(
+         event_id: int, email: str, name: str, *, now: datetime | None = None
+     ) -> RegisterResult:
+         """Register an email for an event; a repeat returns the existing registration.
+     
+         A new registration is confirmed while seats remain, otherwise it joins the waitlist.
+     … +11 lines
+
+⏺ 7 зелёных. Проверка на падение: без `ignore_conflicts` тест «тот же ключ — одна строка» должен упасть.
+
+⏺ Bash(sed -i 's/\[email\], ignore_conflicts=True/[email]/' emails/services.py && uv run pytest emails/tests/test_services.py -q 2>&1 | grep -E 'IntegrityError|passed|failed' | tail -2; git checkout -p -- 2>)
+  ⎿  .venv/lib/python3.12/site-packages/psycopg/cursor.py:117: IntegrityError
+     1 failed, 1 passed in 2.43s
+     diff --git a/backend/config/settings.py b/backend/config/settings.py
+     index abc6da8..8dc42e9 100644
+     --- a/backend/config/settings.py
+     +++ b/backend/config/settings.py
+     … +35 lines
+
+⏺ Случайно запустил интерактивный `git checkout -p` — проверяю, что ничего не откатилось:
+
+⏺ Bash(cd /home/raf/event-registration && git status --short && git diff --stat && grep -n 'enqueue_email\|seat comes' backend/registrations/services.py && tail -2 docs/decisions.md)
+  ⎿  M backend/config/settings.py
+      M backend/registrations/services.py
+      M docs/decisions.md
+     ?? backend/emails/
+     ?? backend/registrations/tests/test_emails.py
+      backend/config/settings.py        | 8 ++++++++
+     … +8 lines
+
+⏺ Всё на месте. Проверяю, где в `development.md` описаны переменные окружения:
+
+⏺ Bash(grep -n -i 'POSTGRES_HOST\|DJANGO_\|переменн\|env' docs/development.md | head -20)
+  ⎿  58:переменная `API_PROXY_TARGET` (по умолчанию `http://localhost:8000`).
+     74:  или поменять порты переменными `FRONTEND_PORT`, `BACKEND_PORT`, `POSTGRES_PORT`.
+     210:`DJANGO_DEBUG=false` команда ничего не создаёт и не меняет паролей, только пишет предупреждение:
+     211:известные пароли и суперпользователь не должны попасть в развёртывание без DEBUG. При `DJANGO_DEBUG=false`
+     317:- Переменные окружения читаются только в `config/settings.py`. Значения по умолчанию
+     326:  `pytest.mark.django_db`.
+     … +3 lines
+
+⏺ Bash(sed -n 312,330p docs/development.md)
+  ⎿  ## Backend
+     
+     - Структура: `backend/config/` — настройки, корневые URL, ASGI, `health.py`; приложения
+       Django — папки рядом (`accounts/`). Python 3.12, Django 5.2 LTS, DRF.
+     - Переменные окружения читаются только в `config/settings.py`. Значения по умолчанию
+       совпадают с сервисами `docker compose`, поэтому локально ничего задавать не нужно.
+     … +12 lines
+
+⏺ Edit(/home/raf/event-registration/docs/development.md)
+  ⎿  The file /home/raf/event-registration/docs/development.md has been updated successfully.
+
+⏺ Теперь `make check`:
+
+⏺ Bash(make check 2>&1 | grep -E -i 'error|fail|passed|warning|✗|Found' | grep -v -i 'no error' | tail -30)
+  ⎿  # Subtest: an unclosed session is a warning and is not counted
+     ok 42 - an unclosed session is a warning and is not counted
+     # Subtest: a start while another session is open and an end without a start are warnings
+     ok 43 - a start while another session is open and an end without a start are warnings
+     # Subtest: an end before its start is a warning, not negative time
+     ok 44 - an end before its start is a warning, not negative time
+     … +13 lines
+
+⏺ Нужно отформатировать миграцию (ruff format), затем снова проверить:
+
+⏺ Bash(cd /home/raf/event-registration/backend && uv run ruff format emails registrations && cd .. && make check 2>&1 | grep -E -i 'error|failed|[0-9]+ passed|Tests +[0-9]|make: \*\*\*' | tail -20)
+  ⎿  2 files reformatted, 24 files left unchanged
+     # tests 46
+     ============================= 127 passed in 35.87s =============================
+      Test Files  16 passed (16)
+           Tests  116 passed (116)
+        Duration  4.86s (environment 62%, import 19%, tests 10%, setup 5%, transform 4%)
+
+⏺ Bash(date '+%H:%M' && git status --short && python3 - <<'EOF')
+  ⎿  21:42
+      M backend/config/settings.py
+      M backend/registrations/services.py
+      M docs/decisions.md
+      M docs/development.md
+     ?? backend/emails/
+     … +2 lines
+
+⏺ Bash(cat >> docs/decisions.md <<'EOF')
+  ⎿  ⋯ Backing up original state…
+     ✔ Done backing up original state (c0f208e)!
+     ⋯ Running tasks for staged files…
+         backend/**/*.py — 13 files
+           ⋯ uv run --project backend ruff check --fix
+           ⋯ uv run --project backend ruff format
+     … +13 lines
+
+⏺ Задача 1.1 готова, коммит `7a3b9fa` в ветке `feat/outbox-email`. `make check` проходит: 127 тестов backend, 116 frontend, линтеры, миграции и схема.
+  
+  Предыдущая сессия (с 20:56) осталась незакрытой. Я закрыл её временем последнего коммита (21:36) и открыл новую в 21:38.
+  
+  **Что сделано:**
+  - **Приложение `emails`:** модель OutboxEmail с проверками в БД на `kind` и `status`, уникальным `dedup_key` и индексом `(status, next_attempt_at)` для будущего воркера. Миграция `0001_create_outbox_email`, админка только для чтения.
+  - **`enqueue_email`** в [emails/services.py](backend/emails/services.py): тема и текст письма сохраняются в момент изменения регистрации. Текст включает имя, название события, дату в UTC, код билета и ссылку `{FRONTEND_URL}/tickets/{manage_token}`. Вставка — `ON CONFLICT DO NOTHING` по ключу `ticket:{id}:{код}`, поэтому одно изменение даёт одно письмо.
+  - **`register`** ставит письмо `ticket` в той же транзакции и под тем же замком Event, но только если участник получил место. Письмо для листа ожидания — по плану в задаче 3.1.
+  - **Настройки** `EMAIL_HOST`, `EMAIL_PORT`, `DEFAULT_FROM_EMAIL`, `FRONTEND_URL` описаны в [docs/development.md](docs/development.md).
+  
+  **Тесты из критерия задачи:** «одно письмо с кодом и ссылкой», «повтор — без письма», «откат — без письма», «тот же ключ — одна строка». Плюс тест на то, что админка только читает, и тест на то, что имя вроде `O'Neil` попадает в текст без HTML-экранирования. Тест на ключ я проверил на падение: без `ON CONFLICT DO NOTHING` он падает с `IntegrityError`.
+  
+  Решения по ходу записаны в `docs/decisions.md` (21:42).
+  
+  Следующая задача — 1.2: функция `process_batch()`, команда `run_worker`, сервисы `mailpit` и `worker` в compose.
+
+> начинай 1.2
+
+⏺ Bash(cat docker-compose.yml && cat backend/Dockerfile && sed -n 60,110p docs/development.md && grep -rn 'manage.py\|management' backend --include=*.py -l | grep -v .venv | head; ls backend/*/management 2>/)
+  ⎿  services:
+       postgres:
+         image: postgres:17-alpine
+         environment:
+           POSTGRES_DB: event_registration
+           POSTGRES_USER: postgres
+     … +124 lines
+
+⏺ Bash(cd /home/raf/event-registration/backend && ls */management/commands; cat accounts/management/commands/*.py | head -60; grep -n -i 'logging\|LOGGING' config/settings.py; grep -rn 'logger\|logging' --in)
+  ⎿  __init__.py
+     __pycache__
+     create_demo_users.py
+     from typing import Any
+     
+     from django.conf import settings
+     … +27 lines
+
+⏺ Bash(cd /home/raf/event-registration && grep -n -B1 -A6 '^dev-deps\|^dev-backend\|^up:\|^e2e' Makefile; sed -n 30,58p docs/development.md; grep -rn 'E2E_\|5174\|8001' e2e/playwright.config.ts Makefile .git)
+  ⎿  10-.PHONY: up
+     11:up: ## Build and start the whole stack; open http://localhost:5173
+     12-	docker compose up -d --build --wait
+     13-
+     14-.PHONY: down
+     15-down: ## Stop the stack (data in the postgres-data volume is kept)
+     … +58 lines
+
+⏺ Проверяю актуальный тег образа Mailpit и наличие в нём healthcheck:
+
+⏺ Bash(curl -s 'https://hub.docker.com/v2/repositories/axllent/mailpit/tags?page_size=8&ordering=last_updated' | python3 -c 'import json,sys; [print(t["name"], t["last_updated"][:10]) for t in json.load(sys.)
+  ⎿  edge 2026-10-30
+     v1.32 2026-10-22
+     v1 2026-10-22
+     v1.32.0 2026-10-22
+     latest 2026-10-22
+     v1.31 2026-10-15
+     … +2 lines
+
+⏺ Bash(docker pull -q axllent/mailpit:v1.31.6 && docker image inspect axllent/mailpit:v1.31.6 --format '{{json .Config.Healthcheck}} {{json .Config.ExposedPorts}}')
+  ⎿  docker.io/axllent/mailpit:v1.31.6
+     {"Test":["CMD","/mailpit","readyz"],"Interval":15000000000,"StartPeriod":10000000000,"StartInterval":1000000000} {"1025/tcp":{},"1110/tcp":{},"8025/tcp":{}}
+
+⏺ Встроенный healthcheck есть. Сначала тесты `process_batch`:
+
+⏺ Bash(cd /home/raf/event-registration/backend && cat > emails/tests/test_worker.py <<'EOF')
+  ⎿  ImportError while importing test module '/home/raf/event-registration/backend/emails/tests/test_worker.py'.
+     E   ImportError: cannot import name 'BATCH_SIZE' from 'emails.services' (/home/raf/event-registration/backend/emails/services.py)
+
+⏺ Падает, как ожидалось. Реализация `process_batch` и команды:
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  .......                                                                  [100%]
+     7 passed in 2.46s
+
+⏺ 7 зелёных. Теперь compose, Makefile и документация:
+
+⏺ Bash(cd /home/raf/event-registration && python3 - <<'EOF')
+  ⎿  dev-deps             Start services needed for local development and tests (Postgres, Mailpit)
+       test-backend         Backend: pytest (needs `make dev-deps`)
+       dev-frontend         Frontend dev server on :5173, proxies /api to localhost:8000
+       dev-backend          Backend dev server on :8000 (needs `make dev-deps`)
+       dev-worker           Email worker: sends the outbox to Mailpit, http://localhost:8025 (needs `make dev-deps`)
+
+⏺ Bash(grep -rn 'dev-deps\|compose\|make up\|make e2e' .github/ | head)
+  ⎿  .github/workflows/ci.yml:34:      - run: make dev-deps
+     .github/workflows/ci.yml:56:      - run: make e2e
+     .github/workflows/ci.yml:59:        run: docker compose logs
+
+⏺ Обновляю `development.md`: запуск, стек в Docker, таблица команд.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  64:make up     # собрать и поднять postgres, backend, worker, mailpit, frontend; http://localhost:5173
+     69:- `make up` = `docker compose up -d --build --wait`: ждёт healthcheck всех сервисов.
+     79:- `make up` и `make dev-*` занимают одни и те же порты (5173, 8000): не запускать одновременно
+     
+     **Весь стек в Docker** — как его запускает проверяющий:
+     
+     … +4 lines
+
+⏺ Теперь проверка на живом стеке. Смотрю, свободны ли порты:
+
+⏺ Bash(ss -ltnp 2>/dev/null | grep -E ':(5173|5174|8000|8001|8025|1025) ' ; docker compose ps --format '{{.Service}} {{.Status}}')
+  ⎿  LISTEN 0      10          127.0.0.1:8000       0.0.0.0:*    users:(("python",pid=31776,fd=3))    
+     LISTEN 0      511         127.0.0.1:5173       0.0.0.0:*    users:(("node",pid=5945,fd=24))      
+     postgres Up About an hour (healthy)
+
+⏺ Локальные dev-серверы заняли 5173 и 8000 — поднимаю стек на 5174/8001, как в фазе 1:
+
+⏺ Bash(FRONTEND_PORT=5174 BACKEND_PORT=8001 docker compose up -d --build --wait 2>&1 | tail -8; docker compose ps --format '{{.Service}} {{.Status}}')
+  ⎿  Container event-registration-worker-1 Waiting 
+      Container event-registration-frontend-1 Waiting 
+      Container event-registration-postgres-1 Waiting 
+      Container event-registration-backend-1 Healthy 
+      Container event-registration-postgres-1 Healthy 
+      Container event-registration-mailpit-1 Healthy 
+     … +7 lines
+
+⏺ Bash(grep -n 'path(' backend/config/urls.py backend/*/urls.py 2>/dev/null; curl -s localhost:8001/api/events/ | head -c 400)
+  ⎿  backend/config/urls.py:10:    path("admin/", admin.site.urls),
+     backend/config/urls.py:11:    path("api/auth/login/", LoginView.as_view(), name="login"),
+     backend/config/urls.py:12:    path("api/auth/logout/", LogoutView.as_view(), name="logout"),
+     backend/config/urls.py:13:    path("api/auth/me/", MeView.as_view(), name="me"),
+     backend/config/urls.py:14:    path("api/org/events/", OrgEventListView.as_view(), name="org-events"),
+     backend/config/urls.py:15:    path("api/events/", PublicEventListView.as_view(), name="events"),
+     … +15 lines
+
+⏺ Bash(cd /home/raf/event-registration/e2e && ls; ls tests 2>/dev/null; grep -rn -A12 'getByLabel' tests/*.spec.ts 2>/dev/null | grep -i -B2 -A10 'Имя\|register' | head -30)
+  ⎿  AGENTS.md
+     CLAUDE.md
+     eslint.config.js
+     node_modules
+     package.json
+     playwright.config.ts
+     … +36 lines
+
+⏺ Bash(S=/tmp/claude-1000/-home-raf-event-registration/12417012-39c9-411e-a940-30751d83d207/scratchpad && mkdir -p $S && cat > $S/check-mail.mjs <<'EOF')
+  ⎿  node:internal/modules/package_json_reader:314
+       throw new ERR_MODULE_NOT_FOUND(packageName, fileURLToPath(base), null);
+             ^
+     
+     Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'playwright' imported from /home/raf/event-registration/e2e/.check-mail.mjs
+         at Object.getPackageJSONURL (node:internal/modules/package_json_reader:314:9)
+     … +12 lines
+
+⏺ Bash(S=/tmp/claude-1000/-home-raf-event-registration/12417012-39c9-411e-a940-30751d83d207/scratchpad && sed 's#from "playwright"#from "@playwright/test"#' $S/check-mail.mjs > ./.check-mail.mjs && node ./.c)
+  ⎿  status: Место подтверждено
+     subject: Билет: First 
+     from: events@example.com 
+     ---
+     Здравствуйте, Анна!
+     
+     … +12 lines
+
+⏺ Bash(cd /home/raf/event-registration && python3 - <<'EOF')
+  ⎿  0000040   e   _   u   r   l       }   }   {   %       e   n   d   a   u
+     0000060   t   o   e   s   c   a   p   e       %   }  \n
+     0000074
+     # tests 46
+     ============================= 131 passed in 38.15s =============================
+      Test Files  16 passed (16)
+     … +2 lines
+
+⏺ Всё зелёное. Отмечаю задачу, записываю решения, коммичу:
+
+⏺ Bash(T=$(date '+%H:%M') && sed -i 's/^- \[ \] 1.2 backend + инфраструктура/- [x] 1.2 backend + инфраструктура/' docs/features/emails/tasks.md && grep -c '\[x\] 1.2' docs/features/emails/tasks.md && cat >> )
+  ⎿  1
+     ⋯ Backing up original state…
+     ✔ Done backing up original state (5a44df8)!
+     ⋯ Running tasks for staged files…
+         backend/**/*.py — 5 files
+           ⋯ uv run --project backend ruff check --fix
+     … +14 lines
+
+⏺ Задача 1.2 готова, коммит `38c69e5`. Этап 1 (письмо с билетом доходит до Mailpit) закрыт. `make check` проходит: 131 тест backend, 116 frontend.
+  
+  **Что сделано:**
+  - **`process_batch()`** в [emails/services.py](backend/emails/services.py) берёт до 20 писем, которым пора уйти, по порядку `next_attempt_at, id` и с `FOR UPDATE SKIP LOCKED`. Пачка отправляется через одно SMTP-соединение, письма помечаются `sent` с временем отправки. Функция возвращает `id` отправленных писем.
+  - **Команда `run_worker`** вызывает `process_batch()` в цикле, при пустой очереди ждёт секунду. В лог пишет только `id` писем, без адресов и токенов.
+  - **compose:** добавлены `mailpit` (v1.31.6, веб и API на :8025, SMTP на :1025) и `worker` (образ `backend`, стартует после healthy `backend` и `mailpit`). `FRONTEND_URL` берётся из `FRONTEND_PORT`.
+  - **Makefile:** `make dev-deps` теперь поднимает и Mailpit, новая цель `make dev-worker` запускает воркер локально. Всё описано в [docs/development.md](docs/development.md).
+  
+  **Тесты:** письмо из очереди уходит в `mail.outbox` и помечается `sent`; отправленное не уходит повторно; письмо с будущим `next_attempt_at` ждёт своего времени; пачка ограничена 20 письмами.
+  
+  **Проверено вживую** на стеке с портами 5174/8001, потому что 5173 и 8000 заняты вашими dev-серверами. Регистрация в браузере дала письмо в Mailpit: тема «Билет: First», код билета и ссылка `http://localhost:5174/tickets/…`. В логе воркера `Sent email 1.`, ошибок в консоли нет. После проверки остановил `backend`, `worker` и `frontend`; Postgres и Mailpit оставил работать.
+  
+  **Два отступления от spec** (записаны в `docs/decisions.md`):
+  - Добавил переменную `MAILPIT_SMTP_PORT` и цель `make dev-worker`, чтобы письма работали при локальной разработке без `make up`.
+  - Пока ошибка SMTP откатывает всю пачку, и письма остаются в очереди. Повторы с паузой и счётчиком попыток будут в задаче 4.1.
+  
+  Следующая задача — 2.1, эндпоинт `GET /api/tickets/{manage_token}/`.
+
+> сделай ревью субагентом  @.claude/agents/reviewer.md   первого этапа
+
+⏺ Agent(Review phase 2 stage 1)
+  ⎿  Async agent launched successfully. (This tool result is internal metadata — never quote or paste any part of it, including the agentId below, into a user-facing reply.)
+     agentId: a00b806e0c138ede2 (internal ID - do not mention to user. Use SendMessage with to: 'a00b806e0c138ede2', summary: '<5-10 word recap>' to continue this agent.)
+     The agent is working in the background. You will be notified automatically when it completes. You know nothing about its results until that notification arrives — do not report, assume, or predict the
+     Do not duplicate this agent's work — avoid working with the same files or topics it is using.
+     output_file: /tmp/claude-1000/-home-raf-event-registration/efaf606d-1a62-4443-94b3-3d4e4fb35ba7/tasks/a00b806e0c138ede2.output
+     Do NOT Read or tail this file via the shell tool — it is the full subagent JSONL transcript and reading it will overflow your context. If the user asks for progress, say the agent is still running; yo
+
+⏺ Агент `reviewer` запущен в фоне и проверяет коммиты `7cd2518..HEAD` (задачи 1.1 и 1.2) по [docs/features/emails/spec.md](docs/features/emails/spec.md) и `docs/decisions.md`. Он запустит `make check`, а при необходимости поднимет стек и e2e на портах 5174/8001: 5173 и 8000 заняты вашими dev-серверами. Когда он закончит, приду с его замечаниями: что подтверждаю, что нет и что предлагаю исправить.
+
+⏺ Проверяю первую находку сам, тестом ревьюера:
+
+⏺ Bash(cd /home/raf/event-registration/backend && cat /tmp/claude-1000/-home-raf-event-registration/12417012-39c9-411e-a940-30751d83d207/scratchpad/probe/test_probe.py | head -40; cp /tmp/claude-1000/-home-r)
+  ⎿  from datetime import timedelta
+     
+     import pytest
+     from django.core import mail
+     from django.utils import timezone
+     
+     … +25 lines
+
+⏺ Агент `reviewer` нашёл три проблемы, все три подтверждаю. Остальное у него прошло без замечаний: `make check` зелёный, `make e2e` — 5 из 5, письмо сквозным путём дошло до Mailpit. Проверку двух воркеров и повторы при ошибке он не смотрел — это этап 4.
+  
+  **1. Перевод строки в названии события останавливает всю очередь писем.** Воспроизвёл его тестом. Название события попадает в тему письма как есть, а API принимает название с `\n`. При отправке Django падает с `BadHeaderError`, и вся пачка откатывается. Это письмо стоит первым в очереди, поэтому каждая следующая пачка падает на нём же. В итоге письма не получает никто, в том числе участники других событий.
+  - Предлагаю в `enqueue_email` заменять переводы строк в теме на пробел: так защищены письма всех видов в одном месте. Сначала тест: событие с `\n` в названии, письмо уходит, тема в одну строку.
+  - Дополнительно можно запретить переводы строк в названии в API и в админке. На мой взгляд, это отдельный выбор, для этой ошибки он не нужен.
+  
+  **2. Воркер умирает на первой же ошибке и сам не поднимается.** Ошибка SMTP или БД (например, перезапуск Mailpit или Postgres) завершает процесс, а у сервиса `worker` в compose нет `restart:`. Отсюда ещё два следствия:
+  - Письма пачки, ушедшие до ошибки, после отката снова ждут отправки, и после перезапуска уйдут повторно.
+  - Текст ошибки SMTP может содержать адрес получателя, а он попадёт в `docker compose logs`. Это нарушает правило «нет персональных данных в логах».
+  
+  Предлагаю сейчас добавить `restart: unless-stopped` и дописать в задачу 4.1: ошибка одного письма обрабатывается внутри пачки, в лог пишется только `id` письма и тип ошибки без текста, ошибка БД в цикле — пауза, а не падение. В записи от 22:14 в `docs/decisions.md` написано только «письма остаются `pending`» — добавлю новую запись с уточнением про повторную отправку.
+  
+  **3. Неточность в [docs/development.md](docs/development.md).** Там написано «раз в секунду берёт пачку». На деле пачки идут подряд, пока в очереди есть письма, а секунду воркер ждёт, только когда очередь пуста. Исправлю формулировку.
+  
+  Исправить всё три? Сделаю двумя коммитами: первый пункт — `fix(backend)`, второй и третий — `fix(infra)` вместе с правкой задачи 4.1 и записями в `docs/decisions.md`.
+
+> делай
+
+⏺ Пункт 1, сначала тест:
+
+⏺ Bash(cat >> emails/tests/test_worker.py <<'EOF')
+  ⎿  .venv/lib/python3.12/site-packages/django/core/mail/message.py:61: BadHeaderError
+     1 failed, 4 passed in 2.08s
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  8 passed in 2.37s
+
+⏺ Bash(cd /home/raf/event-registration && make check-backend 2>&1 | grep -E -i 'error|failed|[0-9]+ passed|make: \*\*\*' | tail -4 && T=$(date '+%H:%M') && cat >> docs/decisions.md <<EOF)
+  ⎿  ============================= 132 passed in 38.08s =============================
+     ⋯ Backing up original state…
+     ✔ Done backing up original state (da5a36d)!
+     ⋯ Running tasks for staged files…
+         backend/**/*.py — 2 files
+           ⋯ uv run --project backend ruff check --fix
+     … +14 lines
+
+⏺ Пункты 2 и 3: `restart`, формулировка в документации, уточнение задачи 4.1.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  72:- `worker` — тот же образ `backend` с командой `python manage.py run_worker`: раз в секунду
+     73-  берёт из outbox пачку до 20 писем и отправляет их в Mailpit. Стартует после healthy
+     74-  `backend` (миграции применены) и Mailpit. В логе — только `id` писем, без адресов и ссылок.
+     75-- Mailpit — SMTP-ловушка: письма не уходят наружу, их видно в веб-интерфейсе
+     49:- [ ] 4.1 backend: ошибка SMTP → `attempts`, `last_error`, `next_attempt_at` с нарастающей
+     50-      паузой; после 5 попыток — `failed`; ошибка одного письма не останавливает пачку.
+     … +4 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  All matched files use Prettier code style!
+     ok
+
+⏺ Bash(export FRONTEND_PORT=5174 BACKEND_PORT=8001 && docker compose up -d --build --wait >/dev/null 2>&1; docker compose stop mailpit >/dev/null 2>&1; E=restart-check-$(date +%s)@example.com; curl -s -X POS)
+  ⎿  {"status":"confirmed"}
+     restarts: 2 running
+           3 Worker started
+     mailpit messages for restart-check-1793392025@example.com: 1
+     worker-1  | Worker started.
+     worker-1  | Sent email 3.
+
+⏺ Bash(docker compose logs worker 2>&1 | grep -c 'restart-check'; docker compose logs worker 2>&1 | grep -E '^worker-1  \| [a-z.]*(Error|error)' | sort | uniq -c; docker compose stop backend worker frontend )
+  ⎿  0
+           3 worker-1  | socket.gaierror: [Errno -5] No address associated with hostname
+     mailpit Up 15 seconds (healthy)
+     postgres Up 2 hours (healthy)
+
+⏺ Bash(make check 2>&1 | grep -E -i 'error|failed|[0-9]+ passed|Tests +[0-9]|make: \*\*\*' | tail -6 && T=$(date '+%H:%M') && cat >> docs/decisions.md <<EOF)
+  ⎿  # tests 46
+     ============================= 132 passed in 38.20s =============================
+      Test Files  16 passed (16)
+           Tests  116 passed (116)
+        Duration  5.09s (environment 54%, import 24%, tests 9%, setup 6%, transform 6%)
+     ⋯ Backing up original state…
+     … +15 lines
+
+⏺ Все три замечания исправлены двумя коммитами в ветке `feat/outbox-email`. `make check` проходит: 132 теста backend, 116 frontend.
+  
+  **`54af8e2` — тема письма в одну строку.** Переводы строк и лишние пробелы в названии события теперь заменяются одним пробелом при постановке письма в очередь. Новый тест (событие с `\r\n` в названии, письмо уходит с темой «Билет: Meetup after work») до правки падал с `BadHeaderError`. Запрещать переводы строк в названии в API и админке пока не стал: для этой ошибки это не нужно.
+  
+  **`beceb5c` — воркер перезапускается после падения.**
+  - У сервиса `worker` в compose теперь `restart: unless-stopped`.
+  - Проверил на стеке с портами 5174/8001. Остановил Mailpit и зарегистрировал участника. Воркер дважды упал на ошибке соединения (`socket.gaierror`), и docker оба раза его поднял. После запуска Mailpit письмо пришло. Адреса в логе нет.
+  - Задачу 4.1 дополнил:
+    - ошибка одного письма не откатывает уже отправленные в той же пачке;
+    - в лог пишется только `id` письма и тип ошибки, без её текста;
+    - ошибка БД в цикле — запись в лог и пауза, а не падение процесса.
+  - В [docs/development.md](docs/development.md) описание цикла приведено к коду: пачки идут подряд, секунду воркер ждёт, только когда очередь пуста.
+  
+  Решения записаны в `docs/decisions.md`. Новая запись уточняет прежнюю от 22:14: до задачи 4.1 письма пачки, ушедшие до ошибки, после перезапуска могут уйти ещё раз.
+  
+  После проверки остановил `backend`, `worker` и `frontend`, а Postgres и Mailpit оставил работать.
+  
+  Следующая задача — 2.1, эндпоинт `GET /api/tickets/{manage_token}/`.
+
+> запуш и сделай pr
+
+⏺ Bash(gh pr list --state all --limit 3 && gh pr view $(gh pr list --state all --limit 1 --json number -q '.[0].number') --json title,body,baseRefName -q '.title, .baseRefName, .body' | head -40)
+  ⎿  5	Stage 6: race tests, offline fixes and closing phase 1	test/stage-6-races	MERGED	2026-10-30T06:09:06Z
+     4	fix: review findings for stages 1 and 2 (login and event creation)	fix/stage-1-2-review	MERGED	2026-10-30T05:07:30Z
+     3	feat(backend): cancel a registration and promote the waitlist (task 5.1)	feat/cancel	MERGED	2026-10-30T04:49:03Z
+     Stage 6: race tests, offline fixes and closing phase 1
+     main
+     ## Summary
+     … +13 lines
+
+⏺ Bash(git push -u origin feat/outbox-email 2>&1 | tail -3 && gh pr create --base main --title "Phase 2, stage 1: ticket email through the outbox and a worker to Mailpit" --body "$(cat <<'EOF')
+  ⎿  To github.com:rbikbov/event-registration.git
+      * [new branch]      feat/outbox-email -> feat/outbox-email
+     branch 'feat/outbox-email' set up to track 'origin/feat/outbox-email'.
+     Warning: 1 uncommitted change
+     https://github.com/rbikbov/event-registration/pull/6
+
+⏺ В выводе было предупреждение о незакоммиченном изменении — проверяю:
+
+⏺ Bash(git status --short && git diff --stat)
+  ⎿  ?? review-setup-notes.md
+
+⏺ Bash(ls -la review-setup-notes.md && head -30 review-setup-notes.md)
+  ⎿  -rw-r--r-- 1 raf raf 10421 Oct 30 22:49 review-setup-notes.md
+     # Настройка ревью через субагента `reviewer`: что изменить
+     
+     Репозиторий: Django + DRF, Vue 3 + TypeScript. Используются Claude Code (`.claude/`) и другие
+     агенты — Codex, Antigravity (`.agents/`).
+     
+     … +25 lines
+
+⏺ Ветку запушил, PR открыт: https://github.com/rbikbov/event-registration/pull/6
+  
+  В нём пять коммитов ветки `feat/outbox-email`: задачи 1.1 и 1.2 и два исправления по ревью. Описание сделал в формате прошлых PR: что изменено и как проверено. Пункт «CI on this PR» в плане проверок оставил неотмеченным: CI ещё не прогонялся.
+  
+  В рабочей папке лежит неотслеживаемый файл `review-setup-notes.md` (создан в 22:49). Это не моё: заметки о настройке субагента `reviewer` и скилов. В PR он не попал, я его не трогал.
