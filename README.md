@@ -10,7 +10,8 @@
 ## Состояние
 
 Готовы фаза 0 (каркас), фаза 1 (регистрация, лист ожидания, отказ), фаза 2 (письма), фаза 3
-(чекин и панель организатора), фаза 4 (живые счётчики) и фаза 5 (перенос и напоминания).
+(чекин и панель организатора), фаза 4 (живые счётчики), фаза 5 (перенос и напоминания) и
+фаза 6 (доводка фронтенда).
 Работают:
 вход организатора (демо: `demo@example.com` / `demo`), создание события, публичный список и
 страница события с регистрацией, лист ожидания с номером, защита от гонок за последнее место и
@@ -28,6 +29,11 @@
 лимита отдаёт места первым из листа, лимит ниже числа подтверждённых не принимается. За сутки
 до события каждому, кто получил место раньше, приходит ровно одно напоминание — после
 переноса новое, о новой дате. `make seed` добавляет демо-события с участниками.
+Все экраны — в общем макете с шапкой: вход и выход организатора, возврат после входа на
+открытую страницу, одинаковые загрузка, ошибка с повтором и ссылкой на состояние сервиса,
+«не найдено» для неизвестного адреса; без сети — плашка под шапкой. Списки событий — по 20 на
+страницу, с вкладками «Предстоящие» и «Прошедшие». Каждый экран помещается в ширину телефона
+(360 px).
 
 Линтеры, проверки типов и тесты настроены и проходят локально (`make check`, `make e2e`).
 Соответствие требований тестам — в таблице ниже.
@@ -86,6 +92,13 @@
 | После переноса — новое напоминание о новой дате, не о старой                                             | `test_reminders.py::test_reschedule_brings_a_reminder_about_the_new_date`, `::test_reschedule_out_of_the_window_waits_for_the_new_one`; `test_concurrency.py::test_reminders_during_a_reschedule_are_not_about_the_old_date`                                                                                                                                  |
 | Сбой прохода напоминаний не останавливает рассылку                                                       | `test_run_worker.py::test_failed_reminder_pass_does_not_stop_the_outbox`, `::test_lost_connection_in_the_reminder_pass_reconnects_for_the_outbox`                                                                                                                                                                                                             |
 | `make seed`: демо-события, через ~30 с — три напоминания                                                 | `registrations/tests/test_seed_demo.py::test_seeds_a_full_event_and_one_that_is_due_for_reminders`                                                                                                                                                                                                                                                            |
+| Общая шапка: гость — «Вход для организатора», организатор — «Мои события» и «Выйти»                      | `app/ui/AppLayout.test.ts` («offers a guest to sign in», «shows the organizer their events, email and sign-out»)                                                                                                                                                                                                                                              |
+| Выход ведёт на `/`, повторный вход — обратно на запрошенную страницу                                     | e2e `organizer-logs-out.spec.ts`; `AppLayout.test.ts` («signs out, forgets the organizer's data …», «sends one request when sign-out is clicked twice»); `app/router.test.ts` («sends a guest from an event panel to /login with the way back»); `shared/lib/safe-next.test.ts`                                                                               |
+| Загрузка, ошибка с повтором, ошибка при прежних данных — одинаково на всех экранах                       | `shared/ui/query-state/QueryState.test.ts`; аудит экранов — «Лог» в `docs/features/frontend-polish/tasks.md`, 2.2                                                                                                                                                                                                                                             |
+| Неизвестный адрес — «Страница не найдена»                                                                | `app/router.test.ts` («an address no route matches»); `app/App.test.ts`                                                                                                                                                                                                                                                                                       |
+| Каждый экран помещается в ширину телефона                                                                | e2e `screens-fit-phone.spec.ts`, `page-bar-fits.spec.ts`                                                                                                                                                                                                                                                                                                      |
+| Списки событий постранично, с общим числом; при одном времени — полный порядок                           | `events/tests/test_event_lists_api.py::test_pages_go_on_in_order_with_the_total_count`, `::test_page_past_the_end_is_empty_with_the_count`, `::test_past_mirrors_the_upcoming_order_at_the_same_start`; `PageNav.test.ts`; e2e `lists-are-paged.spec.ts`                                                                                                      |
+| Прошедшие события — только на вкладке «Прошедшие», недавние первыми                                      | `test_event_lists_api.py::test_past_has_only_started_events_most_recent_first`; `HomePage.test.ts`; e2e `past-events-tab.spec.ts`                                                                                                                                                                                                                             |
 
 Один email — одно место. Адреса, отличающиеся только регистром, — один участник; разные адреса
 одного ящика (точки и `+tag` в Gmail) считаются разными (`test_services.py::test_email_differing_by_dot_or_tag_is_a_different_registration`).
@@ -95,6 +108,14 @@
 отправки, но до записи `sent`, письмо уйдёт повторно. Неудачная попытка повторяется через
 30 с, 1, 2 и 4 мин; после 5-й письмо остаётся в outbox со статусом `failed` — его видно в
 админке (<http://localhost:8000/admin/>, `admin@example.com` / `admin`).
+
+## Что дальше
+
+- Регистрация пользователей (экран и эндпоинт): сейчас события создаёт демо-организатор.
+- Дробление страниц на `features` (FSD): сейчас код экрана — на странице, пока у него один
+  потребитель.
+- Время окончания события и запрет регистрации на начавшееся: сейчас на начавшееся событие
+  можно зарегистрироваться, и оно видно на вкладке «Прошедшие».
 
 ## Запуск
 

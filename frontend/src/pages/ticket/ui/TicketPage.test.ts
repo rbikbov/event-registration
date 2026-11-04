@@ -229,6 +229,9 @@ describe("TicketPage", () => {
     await confirmCancel(wrapper);
 
     await vi.waitFor(() => expect(wrapper.text()).toContain("Регистрация отменена"));
+    // The text shows from the cancel answer, before the rereads: the lists are reset only after
+    // the ticket is reread, so wait for the mutation to finish.
+    await vi.waitFor(() => expect(queryClient.isMutating()).toBe(0));
     expect(cancels).toBe(1);
     expect(queryClient.getQueryState(listPage)?.isInvalidated).toBe(true);
     expect(queryClient.getQueryState(publicEventQuery(event.id).queryKey)?.isInvalidated).toBe(
