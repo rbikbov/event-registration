@@ -433,6 +433,12 @@ test_…` и `django.test.AsyncClient`. Цикл событий — один н�
 - Тесты: Vitest + `@vue/test-utils` в jsdom, сеть — MSW. Каждый тест объявляет свою сеть через
   `server.use()`; запрос без обработчика роняет тест. Пример —
   `src/pages/health/ui/HealthPage.test.ts`.
+  Ответ MSW приходит позже одного тика: после действия ждать результат (`vi.waitFor`,
+  `queryClient.isMutating()` для конца мутации с её сбросами), а не `flushPromises()`.
+  Нестабильный тест проверять повтором в одном процессе
+  (`pnpm vitest run <файл> -t "<тест>" --repeats 30 --maxWorkers 2`), а не несколькими
+  `pnpm test` сразу: у каждого — до ~12 воркеров с jsdom, три параллельных прогона уронили
+  WSL с 16 ГБ памяти.
 - ESLint с правилами на типах: `no-floating-promises`, `no-misused-promises`,
   `switch-exhaustiveness-check`, `consistent-type-imports`, запрет `any`.
 - UI-компоненты — shadcn-vue (Reka UI + Tailwind CSS v4). Код компонентов лежит в
