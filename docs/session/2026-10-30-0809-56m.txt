@@ -1,0 +1,490 @@
+> /clear
+
+> переключись на main, обнови ветку и будем разбивать фазу 2 на этапы так же как фазу 1
+
+⏺ Bash(git switch main && git pull --ff-only && git log --oneline -5 && date '+%H:%M %Z')
+⏺ Skill(session-handoff)
+  ⎿  Exit code 1
+     Switched to branch 'main'
+     From github.com:rbikbov/event-registration
+        e82f15d..237362f  main       -> origin/main
+     There is no tracking information for the current branch.
+     Please specify which branch you want to merge with.
+     … +7 lines
+
+  ⎿  Launching skill: session-handoff
+
+⏺ Bash(git branch --set-upstream-to=origin/main main && git pull --ff-only && git log --oneline -8 && git status --short && make worktime 2>&1 | tail -5; date '+%H:%M %Z'; tail -15 docs/decisions.md)
+  ⎿  branch 'main' set up to track 'origin/main'.
+     Updating e82f15d..237362f
+     Fast-forward
+      AGENTS.md                                       |   2 +-
+      README.md                                       |  36 +++++-
+      backend/events/views.py                         |   2 +-
+     … +47 lines
+
+⏺ Skill(feature-workflow)
+  ⎿  Launching skill: feature-workflow
+
+⏺ Bash(cat docs/roadmap.md && echo ===== && cat docs/features/_template/spec.md docs/features/_template/tasks.md && echo ===== && cat docs/features/registration/tasks.md && echo ===== && wc -l docs/features/)
+  ⎿  Exit code 1
+     # Дорожная карта
+     
+     Фазы работы до сдачи (2026-11-05). Статус фазы — в заголовке: `не начата`, `в работе`,
+     `готова`. Фаза готова, когда выполнены критерии, `make check` и CI проходят, разделы фазы в
+     `docs/architecture.md` приведены к коду, а строки таблицы «требование → тест» в README для
+     … +125 lines
+
+⏺ Bash(ls docs/features docs/features/*; cat docs/features/_template/*; echo -----; cat docs/features/registration/tasks.md)
+  ⎿  docs/features:
+     _template
+     registration
+     
+     docs/features/_template:
+     spec.md
+     … +161 lines
+
+⏺ Bash(cat docs/architecture.md; echo =====; cat docs/task.md)
+  ⎿  Exit code 1
+     # Архитектура
+     
+     Как устроена система и почему. У каждого раздела — статус: **реализовано** (описание
+     совпадает с кодом) или **план (фаза N)** — согласованный проект, который уточняется в spec
+     фазы. При закрытии фазы её разделы приводятся к коду и получают статус «реализовано».
+     … +166 lines
+
+⏺ Bash(sed -n '/^## Инварианты/,/^## Realtime/p' docs/architecture.md | sed -n '15,60p'; echo; cat docs/task.md; echo; cat docs/features/registration/spec.md)
+  ⎿  - **Лимит мест:** увеличение повышает людей из листа; уменьшение ниже числа `confirmed` → 400.
+     - **Чекин:** один атомарный
+       `UPDATE … WHERE ticket_code = ? AND event = ? AND status = 'confirmed' AND checked_in_at IS NULL`;
+       при 0 строк — выяснение причины (уже отмечен / не найден / отменён / в листе ожидания).
+     - **Тесты гонок** — на настоящем Postgres, N потоков с `threading.Barrier`; фаза 1 —
+       `registrations/tests/test_concurrency.py`.
+     … +222 lines
+
+⏺ Bash(cat backend/registrations/services.py docs/rules/concurrency.md; cat docker-compose.yml; ls backend backend/registrations backend/config e2e e2e/*; grep -n -i "email\|mail" backend/config/settings*.py)
+  ⎿  from dataclasses import dataclass
+     from datetime import datetime
+     
+     from django.db import transaction
+     from django.db.models import Q
+     from django.utils import timezone
+     … +290 lines
+
+⏺ Bash(grep -n "TIME_ZONE\|USE_TZ\|INSTALLED_APPS" -A0 backend/config/settings.py; sed -n '1,80p' backend/registrations/models.py; cat backend/Dockerfile | tail -8; cat e2e/playwright.config.ts | head -40; g)
+  ⎿  29:INSTALLED_APPS = [
+     96:TIME_ZONE = "UTC"
+     98:USE_TZ = True
+     import secrets
+     from typing import ClassVar
+     
+     … +85 lines
+
+⏺ Пишу маркер начала сессии, затем spec и задачи.
+
+⏺ Bash(printf -- '- **%s** — ▶ начало сессии\n' "$(date +%H:%M)" >> docs/decisions.md && tail -2 docs/decisions.md && grep -n "EMAIL\|FRONTEND" backend/config/settings.py; grep -rn "manage_token\|tickets" fr)
+  ⎿  - **08:05** — ■ конец сессии
+     - **20:56** — ▶ начало сессии
+     (eval):1: no matches found: --include=*.ts
+
+⏺ Write(/home/raf/event-registration/docs/features/emails/spec.md)
+  ⎿  File created successfully at: /home/raf/event-registration/docs/features/emails/spec.md (file state is current in your context — no need to Read it back)
+
+⏺ Write(/home/raf/event-registration/docs/features/emails/tasks.md)
+  ⎿  File created successfully at: /home/raf/event-registration/docs/features/emails/tasks.md (file state is current in your context — no need to Read it back)
+
+⏺ Bash(sed -i 's/по путь api-change/по пути api-change/' docs/features/emails/tasks.md && wc -l docs/features/emails/*.md && git status --short)
+  ⎿  134 docs/features/emails/spec.md
+        74 docs/features/emails/tasks.md
+       208 total
+      M docs/decisions.md
+     ?? docs/features/emails/
+     [This command modified 1 file you've previously read: docs/features/emails/tasks.md. Call Read before editing.]
+
+⏺ Я написал черновики spec и задач для фазы 2 по образцу фазы 1. Пока ничего не закоммичено: жду твоего утверждения, после него закоммичу вместе с записями в `docs/decisions.md`.
+  
+  - [docs/features/emails/spec.md](docs/features/emails/spec.md) — 134 строки.
+  - [docs/features/emails/tasks.md](docs/features/emails/tasks.md) — задачи.
+  
+  Что сделал до этого: переключился на main и подтянул изменения. У локального main не было upstream, поэтому привязал его к `origin/main`. Прошлая сессия была закрыта корректно, начало новой (20:56) я записал.
+  
+  **Этапы:**
+  1. **Письмо с билетом в Mailpit (tracer bullet).** Задача 1.1: модель OutboxEmail и `enqueue_email`, `register` ставит письмо `ticket` в той же транзакции. Задача 1.2: воркер `run_worker`, сервисы `mailpit` и `worker` в compose.
+  2. **Страница билета по ссылке.** Задача 2.1: `GET /api/tickets/{token}/`. Задача 2.2: страница `/tickets/:token` с кнопкой отказа. Задача 2.3: e2e «регистрация → письмо → билет → отказ».
+  3. **Лист ожидания и повышение.** Задача 3.1: письма `waitlisted` и `promoted`. Задача 3.2: e2e «первый отказался → второй получил письмо».
+  4. **Повторы и несколько воркеров.** Задача 4.1: повторы при ошибке SMTP с растущей паузой, после 5 попыток — `failed`. Задача 4.2: тест гонки двух воркеров (`SKIP LOCKED`).
+  5. **Закрытие фазы.** README и `architecture.md`, ревью, проход в браузере.
+  
+  **Чем spec отличается от `architecture.md` (нужно твоё согласие):**
+  - **Текст письма фиксируется в момент изменения.** Тема и текст рендерятся внутри транзакции, поэтому номер в листе и код билета в письме такие, какими были при регистрации или отказе.
+  - **`dedup_key = {kind}:{registration_id}:{ticket_code}`.** При повторной регистрации после отказа выдаётся новый код, поэтому придёт новое письмо. Повтор того же запроса письма не даст.
+  - **Чистки старых писем в этой фазе нет.** Я перенёс её в «На потом».
+  
+  **Что решил сам, проверь в разделе «Допущения»:**
+  - Дата в письме — в UTC с пометкой «UTC». Страница по ссылке показывает время в часовом поясе браузера.
+  - 5 попыток отправки, пауза 30 с · 2ⁿ (от 30 с до 8 мин).
+  - Воркер берёт до 20 писем за раз и опрашивает очередь раз в секунду, без `LISTEN/NOTIFY`.
+  - Письма — простой текст на русском, без HTML.
+  
+  Если согласен, отмечу spec как утверждённый и закоммичу. Следующая задача — 1.1.
+
+> создай и переключись на новую ветку.
+  план - ок
+
+⏺ Bash(git switch -c docs/phase-2-plan && sed -i 's/Статус: черновик\./Статус: утверждён 2026-10-30./' docs/features/emails/spec.md && T=$(date +%H:%M) && cat >> docs/decisions.md <<EOF)
+  ⎿  Switched to a new branch 'docs/phase-2-plan'
+     ⋯ Backing up original state…
+     ✔ Done backing up original state (fb53c7d)!
+     ⋯ Running tasks for staged files…
+         *.{mjs,json,md,yml,yaml} — 3 files
+           ⋯ prettier --write
+     … +10 lines
+
+⏺ Создал ветку `docs/phase-2-plan` и закоммитил план фазы 2 (628652f, рабочее дерево чистое):
+  - spec помечен как утверждённый 2026-10-30;
+  - в `docs/decisions.md` записал, на какие этапы разбита фаза, чем spec уточняет архитектуру и какие допущения принято.
+  
+  Следующая задача — 1.1: приложение `emails`, модель OutboxEmail и `enqueue_email`. В том же коммите `register` начнёт ставить письмо `ticket` в своей транзакции. Начинать в этой ветке или завести отдельную под этап 1?
+
+> я передумал вернись на main, перенеси коммит
+
+⏺ Bash(git switch main && git merge --ff-only docs/phase-2-plan && git branch -d docs/phase-2-plan && git log --oneline -3 && git status -sb | head -1)
+  ⎿  Switched to branch 'main'
+     Your branch is up to date with 'origin/main'.
+     Updating 237362f..628652f
+     Fast-forward
+      docs/decisions.md             |   2 +
+      docs/features/emails/spec.md  | 134 ++++++++++++++++++++++++++++++++++++++++++
+     … +9 lines
+
+⏺ Я вернулся на `main` и перенёс туда коммит плана (628652f, fast-forward). Ветку `docs/phase-2-plan` удалил: коммит теперь есть в `main`. Локальный `main` на 1 коммит впереди `origin/main`, я его не пушил.
+  
+  Следующая задача — 1.1 из [tasks.md](docs/features/emails/tasks.md): модель OutboxEmail и `enqueue_email`. Работать над ней в `main` или завести ветку под этап 1?
+
+> проверь правила создания события из админки
+
+⏺ Bash(cd /home/raf/event-registration/backend && cat events/admin.py events/models.py events/serializers.py; ls events/tests; grep -n "admin" -i events/tests/*.py | head -20; sed -n '/9\./,/^[0-9]*\./p' AGE)
+  ⎿  from django.contrib import admin
+     
+     from events.models import Event
+     
+     
+     @admin.register(Event)
+     … +104 lines
+
+⏺ Bash(cat > /tmp/claude-1000/-home-raf-event-registration/efaf606d-1a62-4443-94b3-3d4e4fb35ba7/scratchpad/admin_form.py <<'EOF')
+  ⎿  8 objects imported automatically (use -v 2 for details).
+     
+     fields: ['organizer', 'title', 'description', 'starts_at', 'capacity']
+     valid              valid=True 
+     past starts_at     valid=True 
+     capacity 0         valid=False {'capacity': ['Ensure this value is greater than or equal to 1.']}
+     … +4 lines
+
+⏺ Bash(grep -rn "signal\|post_save\|pre_save\|def save" --include=*.py events registrations | grep -v tests; grep -n "Event" config/tests/test_admin.py | head)
+  ⎿  (eval):1: no matches found: --include=*.py
+
+⏺ Bash(grep -rnE "signal|post_save|pre_save|def save" events registrations | grep -v -e tests -e pycache; grep -n "Event\|read_only\|READ" config/tests/test_admin.py | head)
+  ⎿  (Bash completed with no output)
+
+⏺ Если **создавать** событие в админке, правила совпадают с API почти во всём: не проверяется только то, что дата в будущем. Если же **менять или удалять** существующее событие, админка обходит инварианты регистраций, и это серьёзнее.
+  
+  Проверил так: прогнал форму админки на граничных значениях без сохранения в базу и прочитал код.
+  
+  **Создание: форма админки против `EventSerializer`**
+  
+  | Правило | API | Админка |
+  | --- | --- | --- |
+  | `title` обязателен, не больше 200 символов, пробелы обрезаются | да | да |
+  | `description` не больше 2000 символов | да | да |
+  | `capacity` от 1 до 10000 (плюс CHECK в базе) | да | да |
+  | `starts_at` в будущем | да (`validate_starts_at`) | **нет**: событие на 2000-01-01 проходит |
+  
+  Проверка даты есть только в сериализаторе, у модели её нет. Поэтому админка создаёт событие в прошлом. Оно не попадёт в публичный список, но страница `/events/:id` откроется, и на него можно зарегистрироваться.
+  
+  **Изменение и удаление: что ломается**
+  
+  В [events/admin.py](backend/events/admin.py) обычный `ModelAdmin`, а сигналов и переопределённого `save` нет. Значит, сохранение из админки пишет строку напрямую, мимо блокировки Event:
+  - **`capacity` вверх.** Места освобождаются, но из листа ожидания никого не повышает. Получаются свободные места при живой очереди.
+  - **`capacity` ниже числа `confirmed`.** Свободных мест становится меньше нуля. По плану фазы 5 на это должна быть ошибка 400.
+  - **Изменение во время регистрации.** Админка не берёт `select_for_update`, поэтому её сохранение может перезаписать строку параллельно с `register`.
+  - **`starts_at`.** Перенос события проходит без писем. Письма о переносе появятся в фазе 5, но эта лазейка останется.
+  - **Удаление.** Регистрации удаляются каскадом, без писем участникам. С фазой 2 вместе с ними удалятся и письма в очереди.
+  
+  Сейчас Event в админке полностью редактируемый, так решили в spec фазы 1. Но правило 9 в `backend/AGENTS.md` требует, чтобы модели, которые меняются через сервисы с блокировками, в админке были только для чтения. С фазы 5 Event как раз такой.
+  
+  **Что предлагаю:** при создании проверять, что дата в будущем. У существующего события сделать `capacity`, `starts_at` и `organizer` только для чтения и запретить удаление события, на которое есть регистрации. Когда в фазе 5 появятся сервисы изменения события, админка сможет вызывать их. Каждое изменение проверю тестом.
+  
+  Исправить сейчас отдельным коммитом в `main` или записать в «На потом»?
+
+> давай сейчас
+
+⏺ Bash(cat config/tests/test_admin.py conftest.py; cat ../docs/rules/db-migrations.md | head -60; ls events/migrations registrations/migrations; grep -rn "\.delete()" --include="*.py" . 2>/dev/null | grep -v)
+  ⎿  from pathlib import Path
+     
+     from django.apps import apps
+     from django.conf import settings
+     from django.contrib import admin
+     
+     … +57 lines
+
+⏺ Bash(ls registrations/tests events/tests; grep -rln "admin" registrations/tests events/tests accounts/tests 2>/dev/null; sed -n '1,60p' registrations/tests/test_admin.py 2>/dev/null; cat registrations/admi)
+  ⎿  events/tests:
+     __init__.py
+     __pycache__
+     test_org_events_api.py
+     test_public_events_api.py
+     
+     … +91 lines
+
+⏺ Write(/home/raf/event-registration/backend/events/tests/test_admin.py)
+⏺ Bash(uv run pytest events/tests/test_admin.py -q 2>&1 | grep -E "passed|failed|FAILED|Error" | head)
+  ⎿  File created successfully at: /home/raf/event-registration/backend/events/tests/test_admin.py (file state is current in your context — no need to Read it back)
+
+  ⎿  events/tests/test_admin.py:56: AssertionError
+     events/tests/test_admin.py:80: AssertionError
+     FAILED events/tests/test_admin.py::test_add_rejects_a_start_in_the_past - ass...
+     FAILED events/tests/test_admin.py::test_change_keeps_capacity_start_and_organizer
+     2 failed, 3 passed in 6.94s
+
+⏺ Bash(cp registrations/admin.py /tmp/claude-1000/-home-raf-event-registration/efaf606d-1a62-4443-94b3-3d4e4fb35ba7/scratchpad/radmin.bak && python3 - <<'EOF')
+  ⎿  1 failed, 4 deselected in 2.61s
+
+⏺ Write(/home/raf/event-registration/backend/events/admin.py)
+⏺ Bash(uv run pytest events/tests/test_admin.py -q 2>&1 | tail -3)
+  ⎿  The file /home/raf/event-registration/backend/events/admin.py has been updated successfully. (file state is current in your context — no need to Read it back)
+
+  ⎿  .....                                                                    [100%]
+     5 passed in 6.78s
+
+⏺ Bash(cd /home/raf/event-registration && grep -n "Админка\|админк" docs/features/registration/spec.md docs/architecture.md README.md docs/development.md | head)
+  ⎿  docs/features/registration/spec.md:40:- Админка: Event — полная, Registration — только чтение (`backend/AGENTS.md`, п. 9).
+     docs/features/registration/spec.md:98:- Когда появится `/api/org/events/{id}/`: чужое событие → 403 (событие публично, существование не секрет); несуществующее → 404. Список `/api/org/events/` содержи
+     docs/development.md:206:**Создать организатора** (вход в админку и экраны организатора):
+     docs/development.md:335:- Статику (админка) раздаёт WhiteNoise — одинаково под uvicorn, `runserver`
+     docs/development.md:340:- Админка — <http://localhost:8000/admin/> (напрямую на backend: Vite проксирует только
+     docs/development.md:342:  зарегистрирована в админке — это проверяет тест.
+     … +3 lines
+
+⏺ Bash(sed -n 32,36p docs/architecture.md; sed -n 340,343p docs/development.md)
+  ⎿  - **Реализовано:** админка Django (`/admin/`) — вход по email для `is_staff`; статику
+       раздаёт WhiteNoise во всех окружениях. Каждая модель наших приложений зарегистрирована в
+       админке (проверяет тест); модели, которые меняются только через сервисы, — только для
+       чтения.
+     - **Реализовано:** вход организатора (`/api/auth/login|logout|me/`) — сессия Django + CSRF
+     - Админка — <http://localhost:8000/admin/> (напрямую на backend: Vite проксирует только
+     … +3 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  ELIFECYCLE  Command failed with exit code 1.
+     make: *** [Makefile:37: format-check] Error 1
+
+⏺ Bash(make format-check 2>&1 | tail -8)
+  ⎿  > event-registration@0.0.0 format:check /home/raf/event-registration
+     > prettier --check .
+     
+     Checking formatting...
+     [warn] docs/features/emails/tasks.md
+     [warn] Code style issues found in the above file. Run Prettier with --write to fix.
+     … +2 lines
+
+⏺ Bash(git status --short && npx prettier --write docs/features/emails/tasks.md >/dev/null && git diff docs/features/emails/tasks.md)
+  ⎿  M backend/events/admin.py
+      M docs/architecture.md
+      M docs/decisions.md
+      M docs/features/registration/spec.md
+     ?? backend/events/tests/test_admin.py
+     diff --git a/docs/features/emails/tasks.md b/docs/features/emails/tasks.md
+     … +13 lines
+
+⏺ Bash(git checkout docs/features/emails/tasks.md && python3 - <<'EOF')
+  ⎿  Exit code 1
+     Updated 1 path from the index
+     Traceback (most recent call last):
+       File "<stdin>", line 7, in <module>
+     AssertionError
+     Checking formatting...
+     … +2 lines
+
+⏺ Bash(grep -n "docker compose stop" -A1 docs/features/emails/tasks.md | cat -A | cut -c1-120)
+  ⎿  51:      M-PM-^SM-PM->M-QM-^BM-PM->M-PM-2M-PM->, M-PM-:M-PM->M-PM-3M-PM-4M-PM-0: M-QM-^BM-PM-5M-QM-^AM-QM-^BM-QM-^K M-QM
+     52-  mailpit` M-bM-^FM-^R M-QM-^@M-PM-5M-PM-3M-PM-8M-QM-^AM-QM-^BM-QM-^@M-PM-0M-QM-^FM-PM-8M-QM-^O M-bM-^FM-^R M-PM-2 M-
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Checking formatting...
+     All matched files use Prettier code style!
+     Command did not complete within its 120s timeout and was moved to the background (ID: boifazmpf). Output is being written to: /tmp/claude-1000/-home-raf-event-registration/efaf606d-1a62-4443-94b3-3d4e
+
+⏺ Жду завершения `make check`.
+
+⏺ ToolSearch(select:Monitor)
+  ⎿  (no output)
+
+⏺ `make check` идёт в фоне. Когда он закончится, проверю результат и закоммичу.
+
+⏺ Bash(cat /tmp/claude-1000/-home-raf-event-registration/efaf606d-1a62-4443-94b3-3d4e4fb35ba7/tasks/boifazmpf.output | tail -15; git status --short)
+  ⎿  Checking formatting...
+     All matched files use Prettier code style!
+     All checks passed!
+     ======================== 121 passed in 65.15s (0:01:05) ========================
+      Test Files  16 passed (16)
+           Tests  116 passed (116)
+     … +8 lines
+
+⏺ `make check` прошёл: backend 121 тест, frontend 116. Коммичу двумя коммитами: правку форматирования `tasks.md` отдельно от админки.
+
+⏺ Bash(git add docs/features/emails/tasks.md && git commit -q -m "docs: keep inline code on one line in the phase 2 tasks so Prettier is stable)
+  ⎿  ⋯ Backing up original state…
+     ✔ Done backing up original state (4bd5f7b)!
+     ⋯ Running tasks for staged files…
+         *.{mjs,json,md,yml,yaml} — 1 file
+           ⋯ prettier --write
+     
+     … +29 lines
+
+⏺ Я исправил админку событий и закоммитил в `main` (ecd0b32). `make check` прошёл: backend — 121 тест, frontend — 116.
+  
+  **Что изменилось в [events/admin.py](backend/events/admin.py):**
+  - **Создание.** Дата события теперь должна быть в будущем, как в API. Раньше админка создавала событие в прошлом.
+  - **Изменение существующего события.** Поля `capacity`, `starts_at` и `organizer` теперь только для чтения. Раньше сохранение из админки обходило блокировку Event: рост лимита не повышал людей из листа ожидания, уменьшение давало отрицательное число свободных мест, перенос проходил без писем. Менять дату и лимит будут сервисы фазы 5. Название и описание по-прежнему редактируются.
+  - **Удаление.** Здесь исправлять ничего не пришлось: событие с регистрациями админка уже не удаляет. Чтобы удалить событие, ей нужно удалить и его регистрации, а удаление регистраций в админке запрещено. Это касается и кнопки на странице события, и массового удаления из списка. Закрепил тестом и проверил, что без этого запрета он падает. Поэтому отказался от миграции на `on_delete=PROTECT`: этот путь уже закрыт.
+  
+  Тесты — в [events/tests/test_admin.py](backend/events/tests/test_admin.py), 5 штук. Тесты на дату и на поля только для чтения падали до правки. Обновил [architecture.md](docs/architecture.md) и spec фазы 1: там было «Event — полная». Решение записал в `decisions.md`.
+  
+  **Что ещё нашёл:** в коммите плана `tasks.md` остался неотформатированным, и `make check` на нём падал. Причина — inline-код, разорванный переносом строки: Prettier каждый раз переносит его по-новому. Исправил отдельным коммитом (1e9820a).
+  
+  Локальный `main` на 3 коммита впереди `origin/main`, я его не пушил.
+
+> запуш
+
+⏺ Bash(git push 2>&1 | tail -5; git status -sb | head -1)
+  ⎿  config/tests/test_admin.py .                                             [100%]
+     
+     ======================== 121 passed in 65.95s (0:01:05) ========================
+     To github.com:rbikbov/event-registration.git
+        237362f..ecd0b32  main -> main
+     ## main...origin/main
+
+⏺ Запушил `main` на GitHub, все 3 коммита (`237362f..ecd0b32`). Хук `pre-push` перед отправкой прогнал проверки backend, 121 тест прошёл. Ветка совпадает с `origin/main`.
+  
+  Следующая задача фазы 2 — 1.1: модель OutboxEmail и письмо `ticket` в транзакции `register`.
+
+> у нас где-то уже должна быть инфа о подключении моделей в админку, поищи, и если надо добавь заметку о сигналах и тп
+
+⏺ Bash(grep -rniE "админк|admin|сигнал|signal" --include=*.md . 2>/dev/null | grep -v node_modules | grep -v "docs/decisions.md" | grep -v "docs/session" | cut -c1-200)
+  ⎿  (eval):1: no matches found: --include=*.md
+
+⏺ Bash(grep -rniE "админк|admin|сигнал|signal" --include='*.md' . | grep -v node_modules | grep -v "docs/decisions.md" | cut -c1-220)
+  ⎿  .claude/skills/feature-workflow/SKILL.md:48:- **Non-Goals обязательны:** то, что захочется сделать «заодно» (кэширование, админка,
+     .claude/agents/reviewer.md:32:- **Админка:** новая модель зарегистрирована; модели, которые меняют только сервисы
+     docs/roadmap.md:60:  `admin@example.com` / `admin` для админки (`architecture.md`, «Окружение»);
+     docs/roadmap.md:61:- Event и Registration в админке; Registration — только для чтения (`backend/AGENTS.md`,
+     docs/development.md:206:**Создать организатора** (вход в админку и экраны организатора):
+     docs/development.md:208:`demo` и `admin@example.com` / `admin` создаёт `python manage.py create_demo_users` (идемпотентна,
+     … +39 lines
+
+⏺ Bash(sed -n 28,40p .claude/agents/reviewer.md)
+  ⎿  - **Транзакции и побочные эффекты:** письма и уведомления создаются в той же транзакции, что и
+       изменение, и не уходят при откате.
+     - **API и контракт:** изменение API сопровождается `openapi.yaml` и `schema.d.ts`; ошибки
+       имеют осмысленные статусы; фронтенд различает их по `AppError.kind`.
+     - **Админка:** новая модель зарегистрирована; модели, которые меняют только сервисы
+       (регистрации, письма), — только для чтения, и это покрыто тестом.
+     … +7 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Checking formatting...
+     All matched files use Prettier code style!
+      .claude/agents/reviewer.md |  4 +++-
+      backend/AGENTS.md          | 13 +++++++++++++
+      docs/decisions.md          |  1 +
+      3 files changed, 17 insertions(+), 1 deletion(-)
+     … +1 lines
+
+⏺ Edit(/home/raf/event-registration/backend/AGENTS.md)
+⏺ Bash(npx prettier --check backend/AGENTS.md && git add -A && git commit -q -m "docs(backend): add admin rules for partly editable models and ban signals for side effects)
+  ⎿  The file /home/raf/event-registration/backend/AGENTS.md has been updated successfully. (file state is current in your context — no need to Read it back)
+
+  ⎿  Checking formatting...
+     All matched files use Prettier code style!
+     ⋯ Backing up original state…
+     ✔ Done backing up original state (640abf9)!
+     ⋯ Running tasks for staged files…
+         *.{mjs,json,md,yml,yaml} — 3 files
+     … +11 lines
+
+⏺ Правило о моделях в админке уже было: п. 9 в [backend/AGENTS.md](backend/AGENTS.md#L30), а также пункт в чек-листе агента `reviewer`. Но оно знало только два варианта: модель редактируется целиком или только читается. Про сигналы нигде ничего не было. Дополнил и закоммитил в `main` (48b4cf2), не пушил.
+  
+  - **Дополнил п. 9.** Сохранение из админки — простой `save()`: без блокировки и без того, что делает сервис. Поэтому у модели, которую админка правит частично (как Event), поля, требующие блокировки или побочных эффектов, у существующего объекта только для чтения. Проверки, которые есть только в сериализаторе, повторяются в форме админки. Запрет удалять регистрации заодно не даёт удалить событие с регистрациями, и это закреплено тестом.
+  - **Добавил п. 11.** Побочные эффекты (письма, повышение из листа ожидания, уведомления) вызываются явно внутри сервиса, а не сигналами `pre_save`/`post_save`/`post_delete`. Причины: сигнал срабатывает вне блокировки сервиса, не срабатывает на `QuerySet.update()` и `bulk_create` и прячет порядок действий в транзакции. Путь в обход сервиса (админку) закрывают права и поля только для чтения, а не сигнал. Для фазы 2 это значит, что письма создаёт `register` или `cancel`, а не сигнал на Registration.
+  - **Чек-лист `reviewer`.** Добавил оба пункта.
+  - **Лог решений.** Записал решение и отклонённый вариант с сигналами.
+  
+  Пушить?
+
+> именно так принято в django сообществе?
+
+⏺ В основном да, но с оговорками.
+  
+  **Сигналы.** Здесь правило совпадает с официальной позицией Django. В документации, в разделе Signals, есть прямое предупреждение: сигналы создают видимость слабой связанности, но код с ними трудно понимать, менять и отлаживать, поэтому по возможности лучше вызывать обработчик напрямую. Там же сказано, что `QuerySet.update()` и `bulk_create()` не вызывают `save()` и не шлют `pre_save`/`post_save`. Книга «Two Scoops of Django» и стайлгайд HackSoft тоже советуют сигналы как крайнее средство, а не способ вешать бизнес-логику.
+  
+  Нормальным использованием сигналов считается:
+  - реакция на модели чужих приложений, которые нельзя поправить (сторонний пакет, `auth`);
+  - инвалидация кэша, аудит, интеграции, от которых бизнес-операция не зависит.
+  
+  У нас ни того, ни другого нет: Registration и Event наши, а письма — часть операции, а не наблюдатель за ней. Так что п. 11 укладывается в общепринятое.
+  
+  **Сервисный слой — уже не консенсус.** Сам Django исторически продвигает «толстые модели»: логику в методах моделей и менеджерах. Отдельный `services.py` (стиль HackSoft) — популярная школа, но не официальная. Мы выбрали сервисы ещё в фазе 0 (п. 1 `backend/AGENTS.md`), и п. 11 из этого выбора следует. На суть правила это не влияет: при толстых моделях письмо тоже вызывали бы явно из метода модели, а не сигналом.
+  
+  **Админка — тут правило строже обычного.** Чаще всего делают так: переопределяют `ModelAdmin.save_model()` или `delete_model()` и вызывают в нём тот же сервис. Тогда админка не обходит логику, а проходит через неё. Поля только для чтения — тоже обычный приём, но обычно его выбирают, когда сервиса для изменения ещё нет. У нас сейчас именно так: сервисов переноса и смены лимита нет до фазы 5. Когда они появятся, для админки разумнее будет вызывать их из `save_model`, а не держать поля закрытыми.
+  
+  Если хочешь, допишу это в п. 9: «если сервис для изменения есть — админка вызывает его из `save_model`; поля только для чтения — пока сервиса нет». Это точнее отражает принятую практику. Коммит пока не запушен, так что поправлю в нём же.
+
+> да, допиши
+
+⏺ Edit(/home/raf/event-registration/backend/AGENTS.md)
+⏺ Bash(sed -n 30,42p backend/AGENTS.md && python3 - <<'EOF')
+  ⎿  The file /home/raf/event-registration/backend/AGENTS.md has been updated successfully. (file state is current in your context — no need to Read it back)
+
+  ⎿  9. Каждая модель приложения регистрируется в админке в том же коммите, что и модель:
+        `config/tests/test_admin.py` падает на незарегистрированной. Модели, которые меняются
+        только через сервисы с блокировками и инвариантами (регистрации, письма), в админке —
+        только для чтения: `has_add_permission`, `has_change_permission`, `has_delete_permission`
+        возвращают `False`, и это проверено тестом.
+        Сохранение из админки — простой `save()`: без замка, сервиса и его побочных эффектов.
+     … +26 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  ⋯ Backing up original state…
+     ✔ Done backing up original state (77058c8)!
+     ⋯ Running tasks for staged files…
+         *.{mjs,json,md,yml,yaml} — 1 file
+           ⋯ prettier --write
+     
+     … +9 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  191cbd0 docs(backend): add admin rules for partly editable models and ban signals for side effects
+     backend/AGENTS.md: 50
+
+⏺ Bash(sed -n 47,53p backend/AGENTS.md)
+  ⎿  11. Побочные эффекты бизнес-операций (письма, повышение из листа ожидания, уведомления) —
+         явным вызовом внутри сервиса, а не сигналами `pre_save` / `post_save` / `post_delete`.
+         Сигнал срабатывает вне замка сервиса (сохранение из админки, `create` в тесте), не
+         срабатывает на `QuerySet.update()` и `bulk_create` и прячет порядок действий в транзакции. Путь, который обходит сервис (админка), закрывается
+         правами и полями только для чтения, а не сигналом.
+
+⏺ Заодно уточняю последнюю фразу п. 11 под новую формулировку п. 9 и выравниваю переносы.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  .claude/agents/reviewer.md: 3
+     7cd2518 docs(backend): add admin rules for partly editable models and ban signals for side effects
+     ## main...origin/main [ahead 1]
+
+⏺ Дописал в п. 9 [backend/AGENTS.md](backend/AGENTS.md#L35-L42), как обычно делают в Django. Правку внёс в тот же незапушенный коммит (7cd2518).
+  
+  - **П. 9.** Если изменению нужна блокировка или побочные эффекты, админка вызывает сервис из `save_model`/`delete_model`. Пока такого сервиса нет, эти поля у существующего объекта только для чтения. У Event так будет с лимитом, датой и организатором до сервисов фазы 5.
+  - **П. 11.** Последнюю фразу привёл к той же формулировке: путь в обход сервиса закрывается вызовом сервиса из `save_model` или полями только для чтения, а не сигналом.
+  - **Чек-лист `reviewer` и запись в `decisions.md`** поправлены так же.
+  
+  Ещё выровнял переносы строк в обоих пунктах. Коммит пока не запушен.

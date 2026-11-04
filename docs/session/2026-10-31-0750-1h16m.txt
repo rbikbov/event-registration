@@ -1,0 +1,972 @@
+> /clear
+
+> начинаем этап 2 в новой ветке от текущей
+
+⏺ Skill(session-handoff)
+  ⎿  Launching skill: session-handoff
+
+⏺ Bash(make worktime 2>&1 | tail -5; date '+%Y-%m-%d %H:%M'; tail -15 docs/decisions.md; git log -1 --format='%ci'; git branch -a | head -20)
+⏺ Bash(cat docs/features/checkin/spec.md docs/features/checkin/tasks.md)
+  ⎿  2026-10-31 03:32 → 2026-10-31 04:43  1 ч 11 мин
+     2026-10-31 04:48 → 2026-10-31 05:37  0 ч 49 мин
+     2026-10-31 05:39 → 2026-10-31 05:53  0 ч 14 мин
+     Итого: 22 ч 7 мин
+     Предупреждение: сессия с 2026-10-31 06:03 не закрыта и не учтена
+     2026-10-31 07:51
+     … +36 lines
+
+  ⎿  # Чекин и статистика организатора: spec
+     
+     Фаза — `docs/roadmap.md`, фаза 3. Статус: утверждён 2026-10-31.
+     
+     ## Что и зачем
+     
+     … +183 lines
+
+⏺ Bash(git switch -c feat/checkin-once && python3 - <<'EOF')
+⏺ Skill(feature-workflow)
+  ⎿  Switched to a new branch 'feat/checkin-once'
+     - **07:42** — по повторному ревью этапа 1 фазы 3, находка 2 (решение человека): ответ чекина показывается на месте формы, пока организатор не нажмёт «Следующий»; кнопка получает фокус, Enter её нажима
+     - **07:42** — ■ конец сессии
+     - **07:51** — ▶ начало сессии
+
+  ⎿  Launching skill: feature-workflow
+
+⏺ Bash(sed -i 's/^- База этапа 1 — `d4a390c` (`main` после слияния PR #11)\.$/&\n- База этапа 2 — `552a2a5`, ветка `feat\/checkin-once` от `feat\/checkin`./' docs/features/checkin/tasks.md && grep -n "База" )
+  ⎿  51:- База этапа 1 — `d4a390c` (`main` после слияния PR #11).
+     52:- База этапа 2 — `552a2a5`, ветка `feat/checkin-once` от `feat/checkin`.
+     backend:
+     AGENTS.md
+     CLAUDE.md
+     Dockerfile
+     … +132 lines
+
+⏺ Bash(cd /home/raf/event-registration/backend && cat registrations/services.py registrations/models.py; ls registrations/tests events/tests config/tests; cat docs 2>/dev/null; cat ../docs/rules/concurrency.)
+  ⎿  from dataclasses import dataclass
+     from datetime import datetime
+     
+     from django.db import transaction
+     from django.db.models import Q
+     from django.utils import timezone
+     … +307 lines
+
+⏺ Сессия открыта, ветка `feat/checkin-once` создана от `feat/checkin`. Начинаю задачу 2.1 — смотрю текущие тесты чекина.
+
+⏺ Bash(cat registrations/tests/test_checkin.py registrations/tests/test_checkin_api.py config/tests/concurrency.py; sed -n 1,60p registrations/tests/test_concurrency.py; cat events/views.py; grep -n "checkin)
+  ⎿  from collections.abc import Callable
+     from datetime import timedelta
+     
+     import pytest
+     from django.db import IntegrityError
+     from django.utils import timezone
+     … +385 lines
+
+⏺ Bash(cat registrations/views.py; sed -n 1,60p registrations/serializers.py; cat config/exceptions.py | head -80; grep -rn "conflict\|409" --include=*.py . | grep -v tests | grep -v .venv | head)
+  ⎿  from typing import Any
+     
+     from drf_spectacular.utils import OpenApiResponse, extend_schema
+     from rest_framework import status
+     from rest_framework.exceptions import NotFound
+     from rest_framework.permissions import AllowAny
+     … +215 lines
+
+⏺ Bash(cd /home/raf/event-registration && make help 2>&1 | head -60; cat .claude/skills/api-change/SKILL.md | head -60)
+  ⎿  help                     List targets
+       up                       Build and start the whole stack; open http://localhost:5173
+       down                     Stop the stack (data in the postgres-data volume is kept)
+       logs                     Follow logs of all services
+       dev-deps                 Start services needed for local development and tests (Postgres, Mailpit)
+       install                  Install all dependencies, the Playwright browser and git hooks
+     … +89 lines
+
+⏺ Тесты вперёд: сервис и API.
+
+⏺ Bash(cd /home/raf/event-registration/backend && python3 - <<'EOF')
+  ⎿  33:def test_parallel_registrations_for_the_last_seat_confirm_exactly_one(event: Event) -> None:
+     46:def test_parallel_registrations_never_exceed_capacity(event: Event) -> None:
+     57:def test_parallel_registrations_of_one_email_make_one_registration(event: Event) -> None:
+     65:def test_parallel_registrations_differing_only_by_case_make_one_registration(
+     75:def test_parallel_cancels_of_one_token_promote_exactly_one(event: Event) -> None:
+     85:def test_cancel_in_parallel_with_a_registration_keeps_the_seat_for_the_queue(
+     … +2 lines
+
+⏺ Bash(docker ps --format '{{.Names}} {{.Ports}}' | grep -i postgres; POSTGRES_PORT=5433 uv run pytest registrations/tests/test_checkin.py registrations/tests/test_checkin_api.py registrations/tests/test_con)
+  ⎿  event-registration-s1-postgres-1 0.0.0.0:5433->5432/tcp, [::]:5433->5432/tcp
+     event-registration-postgres-1 0.0.0.0:5432->5432/tcp, [::]:5432->5432/tcp
+     ==================================== ERRORS ====================================
+     _____________ ERROR collecting registrations/tests/test_checkin.py _____________
+     ImportError while importing test module '/home/raf/event-registration/backend/registrations/tests/test_checkin.py'.
+     Hint: make sure your test modules/packages have valid Python names.
+     … +11 lines
+
+⏺ Bash(POSTGRES_PORT=5433 uv run pytest registrations/tests/test_checkin_api.py registrations/tests/test_concurrency.py -q 2>&1 | grep -E "FAILED|passed|failed|Error" | head)
+  ⎿  registrations/tests/test_checkin_api.py:75: AssertionError
+     registrations/tests/test_checkin_api.py:93: AssertionError
+     registrations/tests/test_checkin_api.py:93: AssertionError
+     FAILED registrations/tests/test_checkin_api.py::test_a_repeat_checkin_is_200_with_the_first_time
+     FAILED registrations/tests/test_checkin_api.py::test_checkin_of_a_ticket_that_is_not_confirmed_is_409[waitlisted]
+     FAILED registrations/tests/test_checkin_api.py::test_checkin_of_a_ticket_that_is_not_confirmed_is_409[cancelled]
+     … +2 lines
+
+⏺ Падают по ожидаемой причине (404 вместо 200/409, сервис бросает DoesNotExist). Теперь реализация.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  ...................................                                      [100%]
+     35 passed in 12.61s
+
+⏺ Проверка теста гонки на падение — временно убираю условие `checked_in_at IS NULL`:
+
+⏺ Bash(cp registrations/services.py /tmp/claude-1000/-home-raf-event-registration/a7089b24-5fbc-4a3a-850f-a6a081ae1a67/scratchpad/services.py.bak && sed -i 's/status=Registration.Status.CONFIRMED, checked_in)
+  ⎿  backend/registrations/services.py | 27 ++++++++++++++++++++-------
+      1 file changed, 20 insertions(+), 7 deletions(-)
+     >       assert sorted(r.already_checked_in for r in results) == [False] + [True] * 7
+     E       assert [False, False...e, False, ...] == [False, True,...ue, True, ...]
+     1 failed, 7 deselected in 1.52s
+     1
+
+⏺ Без условия тест падает, условие возвращено. Гоняю тесты гонок 20 раз, затем схема и полная проверка.
+
+⏺ Bash(for i in $(seq 20); do POSTGRES_PORT=5433 uv run pytest registrations/tests/test_concurrency.py emails/tests/test_concurrency.py -q -p no:cacheprovider 2>&1 | tail -1 | grep -q "passed" && ! POSTGRES_)
+  ⎿  fail 1
+     done
+     
+     ✨ openapi-typescript 7.13.0
+     🚀 ../backend/openapi.yaml → src/shared/api/schema.d.ts [52.6ms]
+      M backend/config/exceptions.py
+     … +10 lines
+
+⏺ Мой цикл был записан с ошибкой (условие всегда ложное) — перезапускаю нормально:
+
+⏺ Bash(cd /home/raf/event-registration/backend && for i in $(seq 20); do POSTGRES_PORT=5433 uv run pytest registrations/tests/test_concurrency.py emails/tests/test_concurrency.py -q -p no:cacheprovider >/tmp)
+  ⎿  fail on run 11
+             for i in range(2 * BATCH_SIZE):
+                 registration = Registration.objects.create(
+                     event=event, email=f"u{i}@x.io", name="Ann", status=Registration.Status.CONFIRMED
+                 )
+                 enqueue_email(OutboxEmail.Kind.TICKET, registration)
+     … +17 lines
+
+⏺ Упал тест очереди писем, который я не трогал. Смотрю, нестабилен ли он сам по себе:
+
+⏺ Bash(sed -n 1,60p emails/tests/test_concurrency.py; grep -n "def process_batch" -A40 emails/services.py)
+  ⎿  from datetime import timedelta
+     
+     import pytest
+     from django.core import mail
+     from django.utils import timezone
+     
+     … +75 lines
+
+⏺ Bash(f=0; for i in $(seq 40); do POSTGRES_PORT=5433 uv run pytest emails/tests/test_concurrency.py -q -p no:cacheprovider >/dev/null 2>&1 || f=$((f+1)); done; echo "emails race failures: $f/40"; f=0; for i)
+  ⎿  emails race failures: 0/40
+     registrations race failures: 0/20
+
+⏺ Bash(f=0; for i in $(seq 30); do POSTGRES_PORT=5433 uv run pytest registrations/tests/test_concurrency.py emails/tests/test_concurrency.py -q -p no:cacheprovider >/dev/null 2>&1 || f=$((f+1)); done; echo ")
+  ⎿  combined failures: 2/30
+
+⏺ Воспроизводится только в совместном прогоне. Проверяю, есть ли это без моего нового теста:
+
+⏺ Bash(f=0; for i in $(seq 30); do POSTGRES_PORT=5433 uv run pytest registrations/tests/test_concurrency.py emails/tests/test_concurrency.py -q -p no:cacheprovider -k "not check_ins" >/dev/null 2>&1 || f=$(()
+  ⎿  combined without the new test: 1/30
+
+⏺ Нестабильность была и до задачи. Быстро гляну гипотезу, чтобы записать её в «на потом»:
+
+⏺ Bash(grep -n "next_attempt_at" emails/models.py emails/services.py | head; grep -n "TIME_ZONE\|USE_TZ\|CONN_MAX_AGE\|ATOMIC" config/settings.py)
+  ⎿  emails/services.py:87:            .filter(status=OutboxEmail.Status.PENDING, next_attempt_at__lte=now)
+     emails/services.py:88:            .order_by("next_attempt_at", "id")[:BATCH_SIZE]
+     emails/services.py:113:        email.next_attempt_at = now + FIRST_RETRY_DELAY * 2 ** (email.attempts - 1)
+     emails/services.py:114:    email.save(update_fields=["attempts", "last_error", "status", "next_attempt_at"])
+     emails/models.py:34:    next_attempt_at = models.DateTimeField(default=timezone.now)
+     emails/models.py:52:            models.Index(fields=["status", "next_attempt_at"], name="outboxemail_due_idx"),
+     … +2 lines
+
+⏺ Bash(cd /home/raf/event-registration && date '+%H:%M' && python3 - <<'EOF')
+  ⎿  08:08
+     20:- [x] 2.1 backend: `already_checked_in` с временем первой отметки, 409 для `waitlisted` /
+     �й же транзакции; `UPDATE` ничего не отметил — значит билет уже отмечен (время первой отметки из строки) или не `confirmed` → `TicketNotConfirmed`, view отдаёт 409. Для 409 — `Conflict(APIException)` 
+
+⏺ Bash(make stack-check > /tmp/claude-1000/-home-raf-event-registration/a7089b24-5fbc-4a3a-850f-a6a081ae1a67/scratchpad/check.log 2>&1; echo "exit $?"; grep -nE "error|Error|FAILED|failed|passed|✖|would refo)
+  ⎿  exit 2
+     329:6 | | from rest_framework.exceptions import APIException, ValidationError
+     339:5 | from rest_framework.exceptions import APIException, ValidationError
+     353:Found 2 errors.
+     355:make[1]: *** [Makefile:57: lint-backend] Error 1
+     357:make: *** [Makefile:134: stack-check] Error 2
+
+⏺ Bash(cd /home/raf/event-registration/backend && sed -n 315,355p /tmp/claude-1000/-home-raf-event-registration/a7089b24-5fbc-4a3a-850f-a6a081ae1a67/scratchpad/check.log)
+  ⎿  # todo 0
+     # duration_ms 529.755134
+     uvx --from actionlint-py actionlint
+     node scripts/check-action-refs.mjs
+     All action refs exist
+     cd backend && uv run ruff check .
+     … +35 lines
+
+⏺ Bash(uv run ruff check --fix . -q; uv run ruff format . -q; cd .. && make stack-check > /tmp/claude-1000/-home-raf-event-registration/a7089b24-5fbc-4a3a-850f-a6a081ae1a67/scratchpad/check.log 2>&1; echo "e)
+  ⎿  E501 Line too long (102 > 100)
+       --> registrations/tests/test_checkin.py:91:101
+        |
+     89 |     event: Event, status: str
+     90 | ) -> None:
+     91 |     registration = Registration.objects.create(event=event, email="a@x.io", name="Ann", status=status)
+     … +10 lines
+
+⏺ Bash(sed -n 318,328p /tmp/claude-1000/-home-raf-event-registration/a7089b24-5fbc-4a3a-850f-a6a081ae1a67/scratchpad/check.log; sed -n 85,95p backend/registrations/tests/test_checkin.py)
+  ⎿  node scripts/check-action-refs.mjs
+     All action refs exist
+     cd backend && uv run ruff check .
+     All checks passed!
+     cd backend && uv run ruff format --check .
+     82 files already formatted
+     … +16 lines
+
+⏺ Bash(cd /home/raf/event-registration/backend && sed -n 68,82p registrations/tests/test_checkin_api.py)
+  ⎿  client: APIClient, event: Event, registration: Registration
+     ) -> None:
+         client.post(url(event.id), {"code": registration.ticket_code}, format="json")
+         registration.refresh_from_db()
+     
+         response = client.post(url(event.id), {"code": registration.ticket_code}, format="json")
+     … +8 lines
+
+⏺ Исправляю ошибку mypy в новом тесте и перезапускаю `make stack-check`.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  exit 0
+     321:All checks passed!
+     363:============================= 195 passed in 51.26s =============================
+     386: Test Files  19 passed (19)
+     387:      Tests  138 passed (138)
+
+⏺ `make stack-check` зелёный. API изменился — по процессу ещё `make stack-e2e`:
+
+⏺ Bash(make stack-e2e > /tmp/claude-1000/-home-raf-event-registration/a7089b24-5fbc-4a3a-850f-a6a081ae1a67/scratchpad/e2e.log 2>&1; echo "exit $?"; grep -nE "passed|failed|flaky|✘" /tmp/claude-1000/-home-raf)
+  ⎿  exit 0
+     226:  7 passed (15.9s)
+
+⏺ Bash(git add -A && git status --short && git commit -q -F - <<'EOF')
+  ⎿  M  backend/config/exceptions.py
+     M  backend/openapi.yaml
+     M  backend/registrations/serializers.py
+     M  backend/registrations/services.py
+     M  backend/registrations/tests/test_checkin.py
+     M  backend/registrations/tests/test_checkin_api.py
+     … +29 lines
+
+⏺ Задача 2.1 закоммичена (`86f231f`). Перехожу к 2.2 — отказ отмеченного билета → 409 и `checked_in_at` в ответе билета.
+
+⏺ Bash(cd /home/raf/event-registration/backend && sed -n 1,60p registrations/tests/test_cancel.py; grep -n "^def test" registrations/tests/test_cancel.py registrations/tests/test_ticket.py; sed -n 1,50p regi)
+  ⎿  from datetime import timedelta
+     
+     import pytest
+     from django.utils import timezone
+     from rest_framework.test import APIClient
+     
+     … +183 lines
+
+⏺ Тесты вперёд для 2.2: сервис, API отказа, поле в билете, гонка чекина против отказа.
+
+⏺ Bash(sed -n 55,110p registrations/tests/test_ticket.py; sed -n 170,200p registrations/tests/test_cancel.py)
+  ⎿  "title": "Meetup",
+             "starts_at": event.starts_at.isoformat().replace("+00:00", "Z"),
+         }
+     
+     
+     def test_ticket_api_confirmed_shows_the_code(event: Event) -> None:
+     … +71 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  ERROR registrations/tests/test_cancel.py
+     !!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+     1 error in 0.17s
+
+⏺ Ошибка импорта ожидаема. Реализую `cancel` с замком строки и поле билета:
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  backend/registrations/serializers.py            |  3 +-
+      backend/registrations/services.py               | 12 +++++--
+      backend/registrations/tests/test_cancel.py      | 23 +++++++++++++-
+      backend/registrations/tests/test_concurrency.py | 42 ++++++++++++++++++++++++-
+      backend/registrations/tests/test_ticket.py      | 23 ++++++++++++--
+      backend/registrations/views.py                  | 10 +++++-
+     … +4 lines
+
+⏺ Зелёные. Проверка на падение — убираю `select_for_update()` у строки регистрации:
+
+⏺ Bash(S=/tmp/claude-1000/-home-raf-event-registration/a7089b24-5fbc-4a3a-850f-a6a081ae1a67/scratchpad; cp registrations/services.py $S/services.py.bak && sed -i 's/registration = Registration.objects.select)
+  ⎿  0
+     failures without row lock: 9/10
+     E           assert True != True
+     1
+
+⏺ Без замка тест падает в 9 прогонах из 10 (оба вызова «успешны»). Попробую поднять вероятность — 16 пар вместо 8:
+
+⏺ Bash(S=/tmp/claude-1000/-home-raf-event-registration/a7089b24-5fbc-4a3a-850f-a6a081ae1a67/scratchpad; sed -i 's/    event.capacity = 8\n/X/' registrations/tests/test_concurrency.py && python3 - <<'EOF')
+  ⎿  failures without row lock: 16/20
+     1
+
+⏺ Bash(S=/tmp/claude-1000/-home-raf-event-registration/a7089b24-5fbc-4a3a-850f-a6a081ae1a67/scratchpad; python3 - <<'EOF')
+  ⎿  registrations race failures: 0/20
+     🚀 ../backend/openapi.yaml → src/shared/api/schema.d.ts [40.3ms]
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  exit 2
+     321:All checks passed!
+     363:============================= 199 passed in 52.98s =============================
+     374:src/pages/ticket/ui/TicketPage.vue(39,7): error TS2769: No overload matches this call.
+     384: ELIFECYCLE  Command failed with exit code 2.
+     385:make[1]: *** [Makefile:97: typecheck-frontend] Error 2
+     … +1 lines
+
+⏺ Bash(sed -n 370,384p /tmp/claude-1000/-home-raf-event-registration/a7089b24-5fbc-4a3a-850f-a6a081ae1a67/scratchpad/check.log; sed -n 1,70p frontend/src/pages/ticket/ui/TicketPage.vue; ls frontend/src/pages)
+  ⎿  > frontend@0.0.0 typecheck /home/raf/event-registration/frontend
+     > vue-tsc -b
+     
+     src/pages/ticket/ui/TicketPage.vue(39,7): error TS2769: No overload matches this call.
+       Overload 1 of 2, '(queryKey: MaybeRefOrGetter<string[]> & string[] & { [dataTagSymbol]: { status: "confirmed" | "waitlisted" | "cancelled"; ticket_code?: string | undefined; position?: number | unde
+         Argument of type '(old: NoInfer<{ status: "confirmed" | "waitlisted" | "cancelled"; ticket_code?: string | undefined; position?: number | undefined; name: string; checked_in_at: string | null; eve
+     … +91 lines
+
+⏺ Edit(/home/raf/event-registration/frontend/src/pages/ticket/ui/TicketPage.vue)
+⏺ Bash(make stack-check > /tmp/claude-1000/-home-raf-event-registration/a7089b24-5fbc-4a3a-850f-a6a081ae1a67/scratchpad/check.log 2>&1; echo "exit $?"; grep -nE "FAILED|failed|passed|Found [0-9]+ error|error)
+  ⎿  The file /home/raf/event-registration/frontend/src/pages/ticket/ui/TicketPage.vue has been updated successfully.
+
+  ⎿  exit 0
+     321:All checks passed!
+     363:============================= 199 passed in 52.00s =============================
+     386: Test Files  19 passed (19)
+     387:      Tests  138 passed (138)
+
+⏺ Bash(make stack-e2e > /tmp/claude-1000/-home-raf-event-registration/a7089b24-5fbc-4a3a-850f-a6a081ae1a67/scratchpad/e2e.log 2>&1; echo "exit $?"; grep -nE "passed|failed|flaky" /tmp/claude-1000/-home-raf-e)
+  ⎿  exit 0
+     205:  7 passed (13.5s)
+
+⏺ Bash(git add -A && git commit -q -F - <<'EOF')
+  ⎿  ⋯ Backing up original state…
+     ✔ Done backing up original state (7b3db2a)!
+     ⋯ Running tasks for staged files…
+         backend/**/*.py — 6 files
+           ⋯ uv run --project backend ruff check --fix
+           ⋯ uv run --project backend ruff format
+     … +20 lines
+
+⏺ 2.2 закоммичена (`6e15722`). Перехожу к 2.3 — фронтенд. Загружаю правила фронтенда и смотрю экраны.
+
+⏺ Skill(fsd-frontend)
+  ⎿  Launching skill: fsd-frontend
+
+⏺ Bash(cd /home/raf/event-registration/frontend && ls src/pages/checkin src/pages/checkin/*; cat src/pages/checkin/ui/CheckInPage.vue src/pages/checkin/api/*.ts)
+  ⎿  Exit code 1
+     (eval):1: no matches found: src/pages/checkin/*
+     (eval):1: no matches found: src/pages/checkin/api/*.ts
+
+⏺ Bash(cd /home/raf/event-registration/frontend && ls src/pages; grep -rl "checkin\|check-in\|CheckIn" src --include=*.vue --include=*.ts | grep -v schema.d.ts)
+  ⎿  event
+     health
+     home
+     login
+     org-checkin
+     org-event-new
+     … +3 lines
+
+⏺ Bash(cd /home/raf/event-registration/frontend && find src/pages/org-checkin -type f; cat src/pages/org-checkin/ui/*.vue; cat src/pages/org-checkin/api/*.ts 2>/dev/null; cat src/pages/org-checkin/model/*.ts)
+  ⎿  Exit code 1
+     src/pages/org-checkin/index.ts
+     src/pages/org-checkin/ui/OrgCheckinPage.vue
+     src/pages/org-checkin/ui/OrgCheckinPage.test.ts
+     src/pages/org-checkin/api/checkin.ts
+     <script setup lang="ts">
+     … +139 lines
+
+⏺ Bash(cd /home/raf/event-registration/frontend && cat src/pages/org-checkin/ui/OrgCheckinPage.test.ts; cat src/shared/api/app-error.ts | head -50)
+  ⎿  import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
+     import { flushPromises, mount } from "@vue/test-utils";
+     import { http, HttpResponse } from "msw";
+     import { afterEach, describe, expect, it } from "vitest";
+     import { createMemoryHistory, createRouter } from "vue-router";
+     
+     … +218 lines
+
+⏺ Bash(grep -rn "TZ\|timeZone" vite.config.ts vitest.config.* package.json src/shared/lib/i18n* src/shared/lib/test 2>/dev/null | head; grep -rln "HttpResponse.error()" src | head -3; sed -n 70,200p src/page)
+  ⎿  src/shared/api/client.test.ts
+     src/pages/ticket/ui/TicketPage.test.ts
+     src/pages/event/ui/EventPage.test.ts
+       <main class="mx-auto max-w-xl px-4 py-8">
+         <p v-if="isPending" class="text-muted-foreground" role="status">{{ t("loading") }}</p>
+         <Alert v-else-if="notFound" role="alert">
+     … +82 lines
+
+⏺ Делаю 2.3: смотрю тесты страницы билета, чтобы понять, как в них проверяется время.
+
+⏺ Bash(sed -n 1,80p src/pages/ticket/ui/TicketPage.test.ts; grep -n "it(\|starts_at\|2030\|toLocale\|Intl" src/pages/ticket/ui/TicketPage.test.ts | head -40)
+  ⎿  import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
+     import { mount } from "@vue/test-utils";
+     import { http, HttpResponse } from "msw";
+     import { describe, expect, it, vi } from "vitest";
+     import { createMemoryHistory, createRouter } from "vue-router";
+     
+     … +86 lines
+
+⏺ Пишу тесты вперёд для экрана чекина:
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  × says a repeat ticket was already let in, and when 29ms
+          × says a waitlisted or cancelled ticket is not confirmed 21ms
+          × says there is no connection and keeps the code for a retry 23ms
+     ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+      FAIL  src/pages/org-checkin/ui/OrgCheckinPage.test.ts > OrgCheckinPage > says a repeat ticket was already let in, and when
+      FAIL  src/pages/org-checkin/ui/OrgCheckinPage.test.ts > OrgCheckinPage > says a waitlisted or cancelled ticket is not confirmed
+     … +2 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Tests  12 passed (12)
+
+⏺ Зелёные. Проверка теста двойного Enter на падение — убираю `isPending` из `submit()`:
+
+⏺ Bash(S=/tmp/claude-1000/-home-raf-event-registration/a7089b24-5fbc-4a3a-850f-a6a081ae1a67/scratchpad; f=src/pages/org-checkin/ui/OrgCheckinPage.vue; cp $f $S/page.bak; sed -i 's/  if (isPending.value || co)
+  ⎿  Files src/pages/org-checkin/ui/OrgCheckinPage.vue and /tmp/claude-1000/-home-raf-event-registration/a7089b24-5fbc-4a3a-850f-a6a081ae1a67/scratchpad/page.bak differ
+     ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+     AssertionError: expected 2 to be 1 // Object.is equality
+           Tests  1 failed | 11 skipped (12)
+     restored
+
+⏺ Тест ловит двойную отправку. Теперь страница билета — тесты вперёд:
+
+⏺ Bash(sed -n 140,230p src/pages/ticket/ui/TicketPage.test.ts)
+  ⎿  expect(wrapper.text()).not.toContain("Отказаться от регистрации?");
+         expect(wrapper.get("[data-ticket-code]").text()).toBe("ABCD2345");
+       });
+     
+       it("cancels, rereads the ticket and refreshes the events", async () => {
+         ticketIs(confirmed, cancelled);
+     … +65 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  × says a checked-in ticket was let in, and offers no cancel 61ms
+          × rereads the ticket when it was checked in while the page was open 1060ms
+     ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+           Tests  2 failed | 11 passed (13)
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Tests  25 passed (25)
+
+⏺ Файл страницы билета изменился на диске помимо моих правок — посмотрю, что там:
+
+⏺ Bash(git diff src/pages/ticket/ui/TicketPage.vue)
+  ⎿  diff --git a/frontend/src/pages/ticket/ui/TicketPage.vue b/frontend/src/pages/ticket/ui/TicketPage.vue
+     index 8ecbfcb..2c76930 100644
+     --- a/frontend/src/pages/ticket/ui/TicketPage.vue
+     +++ b/frontend/src/pages/ticket/ui/TicketPage.vue
+     @@ -44,6 +44,13 @@ const {
+          // A freed seat changes the free seats of the event and of the list.
+     … +51 lines
+
+⏺ Там только мои правки. Лог решений, отметка задачи, полная проверка:
+
+⏺ Bash(cd /home/raf/event-registration && python3 - <<'EOF')
+  ⎿  e: "short" })`: часовой пояс окружения тестов не закреплён. Тест «двойной Enter — один запрос» проходил сразу (защита есть с этапа 1) — проверен на падение без `isPending` в `submit()`.
+     exit 0
+     321:All checks passed!
+     363:============================= 199 passed in 52.53s =============================
+     386: Test Files  19 passed (19)
+     387:      Tests  144 passed (144)
+
+⏺ Bash(grep -o 'timeStyle: "short" })' docs/decisions.md | head -2; make stack-e2e > /tmp/claude-1000/-home-raf-event-registration/a7089b24-5fbc-4a3a-850f-a6a081ae1a67/scratchpad/e2e.log 2>&1; echo "exit $?")
+  ⎿  timeStyle: "short" })
+     exit 0
+     196:  7 passed (11.6s)
+
+⏺ Bash(git add -A && git commit -q -F - <<'EOF' 2>&1 | tail -1)
+  ⎿  ✔ Done cleaning up temporary files!
+     48e6b27 feat(frontend): show repeat and unconfirmed check-ins and checked-in tickets
+     6e15722 feat(backend): refuse to cancel a checked-in ticket
+     86f231f feat(backend): report a repeat check-in and refuse an unconfirmed ticket
+     552a2a5 fix(frontend): show the check-in answer in place of the form until Next
+
+⏺ Agent(Review phase 3 stage 2)
+  ⎿  Async agent launched successfully. (This tool result is internal metadata — never quote or paste any part of it, including the agentId below, into a user-facing reply.)
+     agentId: a8845dd8691f0ace1 (internal ID - do not mention to user. Use SendMessage with to: 'a8845dd8691f0ace1', summary: '<5-10 word recap>' to continue this agent.)
+     The agent is working in the background. You will be notified automatically when it completes. You know nothing about its results until that notification arrives — do not report, assume, or predict the
+     Do not duplicate this agent's work — avoid working with the same files or topics it is using.
+     output_file: /tmp/claude-1000/-home-raf-event-registration/6bfbff52-1473-4ae2-9d53-24cad3d73fca/tasks/a8845dd8691f0ace1.output
+     Do NOT Read or tail this file via the shell tool — it is the full subagent JSONL transcript and reading it will overflow your context. If the user asks for progress, say the agent is still running; yo
+
+⏺ Все три задачи этапа 2 сделаны на новой ветке `feat/checkin-once` (от `feat/checkin`, база `552a2a5`). Ревьюер ещё работает; когда он закончит, покажу его отчёт целиком, до каких-либо правок. Решения по находкам — ваши.
+  
+  **Коммиты:**
+  - `86f231f` (2.1): повторный чекин возвращает 200 `already_checked_in` со временем первой отметки. На билет из листа ожидания или отменённый — 409. Тест гонки: 8 потоков с одним кодом, отмечает ровно один.
+  - `6e15722` (2.2): отказ от отмеченного билета получает 409 и регистрацию не меняет. Отказ теперь берёт строку регистрации с замком (`FOR UPDATE`). В ответе билета появилось поле `checked_in_at`.
+  - `48e6b27` (2.3): экран чекина показывает «Уже отмечен в ЧЧ:ММ» (жёлтым) и «Билет не подтверждён» (красным). Без сети — сообщение «Нет связи, повторите», код остаётся в поле. Страница билета показывает «Вы отмечены на входе в ЧЧ:ММ» и не показывает кнопку отказа. Если отказ получил 409, билет перечитывается.
+  
+  **Проверки:**
+  - `make stack-check` и `make stack-e2e` (7 из 7) прошли после каждой задачи.
+  - Тест гонки чекинов без условия `checked_in_at IS NULL` падает.
+  - Тест гонки «чекин против отказа» без замка строки падает только в 9 прогонах из 10: гонка вероятностная. Детерминированного теста нет — остановить отказ между чтением и записью без хука в коде нельзя. С замком 20 прогонов подряд прошли без падений.
+  - Тест «двойной Enter — один запрос» прошёл сразу: защита есть с этапа 1. Без неё он падает.
+  
+  **Нестабильный тест, к этапу не относится.** `emails/tests/test_concurrency.py::test_two_workers_send_each_email_once` падает 1–2 раза из 30, когда идёт вместе с тестами гонок регистраций (это команда из `docs/rules/concurrency.md`). Отдельно он не упал ни разу из 40. Падает и без новых тестов, то есть проблема была и до этапа. Причину я не нашёл и записал случай в «На потом» в `tasks.md`.
+  
+  **Одно место на странице билета, которое стоит знать.** Если после 409 перечитать билет не удалось, на странице останется алерт «Не удалось обновить билет» и старое состояние с кнопкой отказа. Повторный отказ снова получит 409 и перечитает билет. Это записано в логе решений.
+  
+  Сессия открыта в `docs/decisions.md`: прошлую незакрытую сессию я закрыл временем её последнего коммита (07:42). Браузерный проход этапа будет после ревью.
+
+⏺ Ревьюер закончил. Отчёт целиком, без моих правок:
+  
+  ---
+  
+  ## Ревью этапа 2 фазы 3 (диапазон 552a2a5..48e6b27)
+  
+  Нашёл одну находку, низкой важности. Остальное по задачам 2.1–2.3 соответствует spec, проверки зелёные.
+  
+  ### Находки
+  
+  ```text
+  backend/registrations/services.py:159 — Корректность / гонка
+  Что: `check_in` решает «повтор или не подтверждён» по `registration.status` из второго запроса
+    (`tickets.get()`), а не по `checked_in_at`. `check_in` не берёт замок Event, поэтому между
+    условным `UPDATE` и `get()` может завершиться `cancel` с повышением (`_promote_first_waitlisted`,
+    services.py:187). Повышение оставляет прежний `ticket_code` (spec, «Крайние случаи»). Тогда
+    `UPDATE` видит `waitlisted` и не отмечает строку, а `get()` уже видит `confirmed` с
+    `checked_in_at = NULL`. Условие на строке 159 не срабатывает, и функция возвращает
+    `already_checked_in=True` при `checked_in_at=None`.
+  Почему важно: на входе экран покажет жёлтое «Уже отмечен в …» человеку, который не отмечен.
+    `new Date(null)` в `OrgCheckinPage.vue` (`time(answer.checkedInAt)`) даёт время из 1970 года.
+    Ответ к тому же не совпадает с контрактом: `CheckInResultSerializer.checked_in_at` объявлен
+    как не-null в openapi.yaml и schema.d.ts. На практике окно узкое, а человек в листе ожидания
+    своего кода не видит. Но docstring обещает, что не отмеченный `UPDATE` означает либо повтор,
+    либо `TicketNotConfirmed`, а это не так.
+  Исправление: решать по полю, которое `UPDATE` и проверял:
+    `if not marked and registration.checked_in_at is None: raise TicketNotConfirmed`.
+    По `CHECK` у отмеченного билета статус всегда `confirmed`, так что одно условие закрывает
+    оба случая. Другой вариант — повторить `UPDATE` один раз. Тест: строка `waitlisted`, `UPDATE`
+    выполнен, затем статус сменён на `confirmed` до `get()`. Без хука в коде это можно
+    проверить только юнит-тестом условия.
+  ```
+  
+  ### Проверки
+  
+  - `make -C .claude/worktrees/review stack-check SLOT=2` прошёл: ruff и линтеры «All checks passed!», pytest 199 passed, Vitest 144 passed (19 файлов), lint и typecheck для e2e без ошибок.
+  - `stack-e2e SLOT=2` прошёл: 7 passed. Сценариев чекина в e2e пока нет, это задача 4.1.
+  - `stack-down SLOT=2` и `review-worktree-remove` выполнены, оба с кодом 0.
+  
+  ### Решения из `docs/decisions.md`
+  
+  Ни одна находка не снята. Запись 08:08 описывает логику «`UPDATE` ничего не отметил — значит уже отмечен или не `confirmed`». Повышение между `UPDATE` и чтением в ней не рассмотрено, поэтому аргумент находку не опровергает.
+  
+  Запись 08:16 честно признаёт, что тест гонки «чекин против отказа» вероятностный: без замка строки он падал в 9 прогонах из 10. Поэтому слабость теста я в находки не включил. Сам замок проверил по коду. Без `FOR UPDATE` `save()` перезаписал бы `checked_in_at` старым `NULL`, и тогда сработала бы проверка `t.status == "confirmed" if checked_in`.
+  
+  ### Проверено, находок нет
+  
+  - **2.1.** Повтор отдаёт 200 `already_checked_in` со временем первой отметки, строка не меняется. `waitlisted` и `cancelled` дают 409 и не отмечаются. Тест гонки на 8 потоков настоящий: потоки, `transaction=True`, `run_together` с барьером. Без `checked_in_at IS NULL` он падает, все восемь вызовов получают `False`.
+  - **2.2.**
+    - `cancel` берёт `select_for_update` строки после замка Event. Отказ от уже отменённого билета по-прежнему 200: проверка `cancelled` стоит раньше `checked_in_at`.
+    - 409 приходит через `Conflict`. Класс используют два места (чекин и отказ), так что лишней абстракцией он не является.
+    - `checked_in_at` есть в ответе билета, тесты на `null` обновлены.
+    - `openapi.yaml` и `schema.d.ts` обновлены в тех же коммитах, что и view.
+  - **2.3.**
+    - Экран чекина: жёлтое «Уже отмечен в ЧЧ:ММ — Имя», красное «Билет не подтверждён…» вместо формы. `network` даёт алерт «Нет связи, повторите», код остаётся в поле. Двойной submit отправляет один запрос: в тесте второй submit вызывается в обход disabled-кнопки.
+    - Страница билета: «Вы отмечены на входе в ЧЧ:ММ», кнопки отказа нет. 409 при отказе приводит к `reset` и перечитыванию без алерта.
+    - Пустых `catch` нет. Ошибки различаются по `AppError.kind`, а не по тексту.
+  - **Безопасность.** Авторизация `CheckInView` осталась через `get_org_event`. Персональных данных в логах нет, `v-html` и `mark_safe` в diff нет.
+  - **Прочее.** Миграций в диапазоне нет, админка не затронута. Non-Goals не нарушены: снятия отметки, окна чекина, SSE нет. Лишних комментариев, мёртвых опций и остатков шаблонов в diff не нашёл.
+  
+  ### Не проверялось
+  
+  - Страницы в браузере не открывал, браузера у меня нет: цвета, крупный шрифт, фокус на «Следующий» вживую.
+  - Не делал мутационный прогон теста гонки «чекин против отказа» без `FOR UPDATE`, потому что не меняю файлы. Опирался на запись 08:16 и разбор кода.
+  - Письма в Mailpit не смотрел: этап писем не затрагивает.
+  
+  ---
+  
+  **Что я проверил по коду.** Сценарий находки реален:
+  - `_promote_first_waitlisted` меняет `status` и `confirmed_at`, а `ticket_code` не трогает.
+  - `check_in` замок Event не берёт.
+  - После `UPDATE`, который ничего не отметил, условие смотрит только на `status`. Если повышение успело закоммититься между `UPDATE` и `get()`, функция вернёт `already_checked_in` с `checked_in_at = None`.
+  
+  Предложенное исправление — решать по `checked_in_at is None` вместо `status`. Оно опирается на `CHECK` в базе: отмеченный билет всегда `confirmed`.
+  
+  В этом сценарии ответ будет «не подтверждён», хотя к моменту ответа участника уже повысили и следующая попытка пройдёт. Вариант с повтором `UPDATE` сразу отметил бы его, но это лишний код ради узкого окна. Я бы взял исправление через `checked_in_at` с юнит-тестом условия.
+  
+  Как поступить с находкой: исправить так, исправить через повтор `UPDATE` или оставить в «На потом»? После вашего решения и правок по процессу — одно повторное ревью на коммит с исправлением, затем проход в браузере на слоте 1.
+
+> исправить так
+
+⏺ Пишу тест вперёд. Окно между `UPDATE` и чтением воспроизвожу детерминированно через `connection.execute_wrapper` — публичный хук Django для запросов: сразу после условного `UPDATE` переводит билет в `confirmed`, как это сделало бы повышение.
+
+⏺ Bash(cd /home/raf/event-registration/backend && python3 - <<'EOF')
+  ⎿  E       Failed: DID NOT RAISE TicketNotConfirmed
+     1 failed, 15 deselected in 2.71s
+
+⏺ Падает по ожидаемой причине: повтор вместо отказа. Исправляю:
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  107 passed in 51.69s
+     Success: no issues found in 17 source files
+
+⏺ Зелёное. Запись в лог решений, `make stack-check`, коммит:
+
+⏺ Bash(cd /home/raf/event-registration && python3 - <<'EOF')
+  ⎿  exit 0
+     321:All checks passed!
+     363:======================== 200 passed in 97.61s (0:01:37) ========================
+     386: Test Files  19 passed (19)
+     387:      Tests  144 passed (144)
+
+⏺ Bash(git add -A && git commit -q -F - <<'EOF' 2>&1 | tail -1)
+  ⎿  ✔ Done cleaning up temporary files!
+     257911b fix(backend): decide a repeat check-in by checked_in_at, not by status
+
+⏺ Исправление закоммичено (`257911b`). Запускаю повторное ревью только на этот коммит:
+
+⏺ Agent(Re-review phase 3 stage 2 fix)
+  ⎿  Async agent launched successfully. (This tool result is internal metadata — never quote or paste any part of it, including the agentId below, into a user-facing reply.)
+     agentId: a5e541aa5f0f38e69 (internal ID - do not mention to user. Use SendMessage with to: 'a5e541aa5f0f38e69', summary: '<5-10 word recap>' to continue this agent.)
+     The agent is working in the background. You will be notified automatically when it completes. You know nothing about its results until that notification arrives — do not report, assume, or predict the
+     Do not duplicate this agent's work — avoid working with the same files or topics it is using.
+     output_file: /tmp/claude-1000/-home-raf-event-registration/6bfbff52-1473-4ae2-9d53-24cad3d73fca/tasks/a5e541aa5f0f38e69.output
+     Do NOT Read or tail this file via the shell tool — it is the full subagent JSONL transcript and reading it will overflow your context. If the user asks for progress, say the agent is still running; yo
+
+⏺ Исправил, как вы решили, коммит `257911b`. Теперь `check_in` после `UPDATE`, который ничего не отметил, проверяет `checked_in_at` вместо `status`. Повышение из листа ожидания, попавшее между `UPDATE` и чтением, теперь даёт «не подтверждён» вместо «уже отмечен» без времени отметки.
+  
+  Новый тест воспроизводит это окно без гонки потоков, поэтому срабатывает в каждом прогоне. Хук Django `connection.execute_wrapper` сразу после `UPDATE` переводит билет в `confirmed`. До исправления тест падал. После исправления `make stack-check` прошёл: pytest 200, Vitest 144. Решение с отклонённым вариантом (повторять `UPDATE`) записал в `docs/decisions.md`.
+  
+  Повторное ревью на диапазон `48e6b27..257911b` уже идёт. Когда оно закончится, покажу отчёт целиком, потом пройду этап в браузере на слоте 1.
+
+⏺ Повторное ревью закончилось. Отчёт целиком:
+  
+  ---
+  
+  ## Повторное ревью этапа 2 фазы 3, диапазон 48e6b27..257911b (один коммит: 257911b)
+  
+  Находок нет.
+  
+  ### Что проверено
+  Исправление находки первого ревью закрывает её. Файлы:
+  - backend/registrations/services.py:162
+  - backend/registrations/tests/test_checkin.py:102-125
+  
+  **Как теперь решается исход в `check_in`.** Если `UPDATE` ничего не отметил, исход определяется по `checked_in_at` из последующего чтения, а не по `status`. Ограничение `registration_checked_in_is_confirmed` (`CHECK`, models.py:51-53) гарантирует, что `checked_in_at IS NOT NULL` бывает только у `confirmed`. Поэтому `already_checked_in` больше не может прийти с `checked_in_at = null`, и ответ остаётся в рамках контракта.
+  
+  **Чередования в READ COMMITTED, разобранные по коду:**
+  - **Повышение из листа после `UPDATE`.** Возвращается `TicketNotConfirmed`, хотя следующая попытка пройдёт. Это осознанный компромисс, он описан в решении 09:06.
+  - **Отказ, закоммиченный под `FOR UPDATE` строки.** `UPDATE` ждёт снятия замка, заново проверяет WHERE и видит `cancelled`, поэтому отмечает 0 строк. Результат — `TicketNotConfirmed`, это верно.
+  - **Параллельный чекин.** Второй запрос ждёт коммита первого, отмечает 0 строк и читает `checked_in_at` первой отметки. Результат — `already_checked_in` с временем, это верно.
+  
+  **Тест детерминированный.** `connection.execute_wrapper` сразу после `UPDATE` переводит билет в `confirmed`. Флаг `promoted` ставится до вложенного запроса, поэтому рекурсии через тот же wrapper нет. `assert promoted` проверяет, что точка вмешательства действительно сработала.
+  
+  **Тест ловит старую ошибку.** Со старым условием (`status != CONFIRMED`) после повышения статус `confirmed`, исключения нет, и `pytest.raises(TicketNotConfirmed)` падает. Я установил это чтением кода, тест на старом коде не запускал.
+  
+  **Мусор.**
+  - Комментарий в services.py объясняет, почему решение принимается по `checked_in_at`, а не пересказывает код.
+  - `# type: ignore[no-untyped-def]` сопровождён причиной (сигнатура `execute_wrapper` в Django), это соответствует п. 2 корневого `AGENTS.md`.
+  - Поиск кандидатов (TODO, `except`, логи с персональными данными, эмодзи) по diff совпадений не дал.
+  
+  **API и контракт.** Diff не меняет API, поэтому `openapi.yaml` и `schema.d.ts` не затронуты. e2e не запускал, потому что API, UI и сценарии `e2e/` в диапазоне не менялись.
+  
+  ### Результаты проверок
+  - `stack-check` (слот 2, копия на 257911b) проходит: ruff "All checks passed!", pytest 200 passed, Vitest 144 passed (19 файлов). Lint и typecheck frontend и e2e прошли без ошибок.
+  - После проверки выполнены `stack-down SLOT=2` и `review-worktree-remove`, рабочая папка чистая.
+  
+  ### Снятые находки
+  Ни одну находку не снимал по решениям из `docs/decisions.md`. Запись 09:06 соответствует коду: повтор `UPDATE` отклонён, а ответ «не подтверждён» в узком окне повышения признан допустимым. Я считаю это приемлемым, потому что ответ не ложный: в момент `UPDATE` билет действительно не был подтверждён.
+  
+  ### Что не проверялось
+  - Тест на старом условии не запускал (его падение установлено чтением кода и подтверждается записью 09:06).
+  - Страницы в браузере не смотрел.
+  - Этапы 3–4 вне объёма ревью.
+  
+  ---
+  
+  К отчёту один факт: тест на старом условии я запускал до исправления, он падал с `DID NOT RAISE TicketNotConfirmed`.
+  
+  Перехожу к проходу в браузере на слоте 1. Как проходили этап 1:
+
+⏺ Bash(grep -n -i "браузер\|chromium\|playwright" docs/development.md | head -30; ls e2e e2e/tests 2>/dev/null | head -30)
+  ⎿  37:make install    # зависимости Node и backend, браузер Playwright, git-хуки
+     103:| `make install`                                                | зависимости Node и backend, браузер Playwright (chromium), git-хуки                      |
+     120:| `make e2e`                                                    | поднять стек (`make up`) и прогнать Playwright против него                               |
+     162:тест, он должен упасть по ожидаемой причине, потом код. Разметку и стили проверяют браузер и
+     169:- руками в браузере (`make dev-backend` + `make dev-frontend`): сценарий задачи и негативные
+     291:| `e2e`    | браузер Playwright, `make e2e` (весь стек в Docker); при падении — логи сервисов и отчёт Playwright в артефактах            |
+     … +24 lines
+
+⏺ Bash(cd /home/raf/event-registration/e2e && cat tests/helpers.ts; cat tests/participant-opens-ticket.spec.ts | head -60; sed -n 410,445p ../docs/development.md)
+  ⎿  import { expect, type APIRequestContext, type Browser } from "@playwright/test";
+     
+     // Created by `create_demo_users` when the backend starts (docs/architecture.md, "Окружение").
+     export const ORGANIZER = { email: "demo@example.com", password: "demo" };
+     const MAILPIT_URL = process.env.E2E_MAILPIT_URL ?? "http://localhost:8025";
+     
+     … +128 lines
+
+⏺ Bash(cd /home/raf/event-registration && cat frontend/src/shared/config/routes.ts 2>/dev/null || ls frontend/src/shared/config; grep -n "Чекин" -r frontend/src/pages/org-events/ui/*.vue | head -3; grep -n ")
+  ⎿  // Every in-app path lives here: pages cannot import app/router.ts, and a path typed twice
+     // is a silent 404 after one of them changes.
+     export const routes = {
+       home: "/",
+       event: "/events/:id(\\d+)",
+       health: "/health",
+     … +22 lines
+
+⏺ Bash(mkdir -p /tmp/claude-1000/-home-raf-event-registration/a7089b24-5fbc-4a3a-850f-a6a081ae1a67/scratchpad/browser && cat > /tmp/claude-1000/-home-raf-event-registration/a7089b24-5fbc-4a3a-850f-a6a081ae1a)
+  ⎿  stack-up exit 0
+      Container event-registration-s1-mailpit-1 Healthy 
+      Container event-registration-s1-worker-1 Healthy 
+      Container event-registration-s1-frontend-1 Healthy
+
+⏺ Bash(S=/tmp/claude-1000/-home-raf-event-registration/a7089b24-5fbc-4a3a-850f-a6a081ae1a67/scratchpad/browser; cd $S && timeout 180 node stage2.mjs /home/raf/event-registration/e2e $S 2>&1 | tail -40)
+  ⎿  C cancelled
+     1 first: "Пропущен\n\nАнна\n\na-***@example.com" requests: 1
+       focus on Next: Следующий
+       after Enter focus id: code
+     2 repeat: "Уже отмечен в 09:15\n\nАнна"
+       focus on Next: Следующий
+     … +18 lines
+
+⏺ Read(/tmp/claude-1000/-home-raf-event-registration/a7089b24-5fbc-4a3a-850f-a6a081ae1a67/scratchpad/browser/2-already.png)
+  ⎿  (no output)
+
+⏺ Read(/tmp/claude-1000/-home-raf-event-registration/a7089b24-5fbc-4a3a-850f-a6a081ae1a67/scratchpad/browser/3-not-confirmed.png)
+  ⎿  (no output)
+
+⏺ Read(/tmp/claude-1000/-home-raf-event-registration/a7089b24-5fbc-4a3a-850f-a6a081ae1a67/scratchpad/browser/6-ticket-checked-in.png)
+  ⎿  (no output)
+
+⏺ Всё выглядит как в spec. Останавливаю стек и записываю проход в лог `tasks.md`:
+
+⏺ Bash(make stack-down >/dev/null 2>&1; echo "stack-down $?"; python3 - <<'EOF')
+  ⎿  stack-down 0
+     ✔ Done cleaning up temporary files!
+     bcf2b45 docs: record the review and browser pass of check-in stage 2
+
+⏺ Этап 2 готов: повторное ревью без находок, проход в браузере прошёл, итог записан в лог `tasks.md` (коммит `bcf2b45`). Стек слота 1 остановлен.
+  
+  **Проход в Chromium на слоте 1.** Экран чекина:
+  - Код, набранный строчными с дефисом, и двойной Enter дали один запрос и ответ «Пропущен — Анна, a-\*\*\*@example.com».
+  - Повторный ввод того же кода — жёлтое «Уже отмечен в 09:15».
+  - Код участника, который отказался, — красное «Билет не подтверждён: лист ожидания или отказ».
+  - Неизвестный код — «Билет не найден».
+  - Без сети — «Нет связи, повторите», код остаётся в поле; когда сеть вернулась, повтор прошёл.
+  - После каждого ответа фокус на «Следующий», Enter возвращает в пустое поле.
+  
+  Страницу билета участника открыли до чекина, с открытым подтверждением отказа. После чекина «Да, отказаться» получил 409, и страница показала «Вы отмечены на входе в 09:15» без кнопки отказа и без алерта. После перезагрузки — то же.
+  
+  В консоли только сетевые сообщения браузера об ожидаемых ответах: 401 до входа, 404, 409 и обрыв сети. Ошибок JS нет.
+  
+  Ответ «не подтверждён» в браузере я проверил только на отменённом билете. Билет из листа ожидания вживую не проверял: участника из листа к этому моменту повысили. Он идёт тем же путём (409) и покрыт pytest и Vitest.
+  
+  **Ветка `feat/checkin-once`:** коммиты `86f231f`, `6e15722`, `48e6b27`, исправление по ревью `257911b` и запись `bcf2b45`. Ветка не запушена, PR нет. По правилам название будет «Phase 3, stage 2: …». Ветка сделана от `feat/checkin`, поэтому если PR этапа 1 ещё не слит, PR этапа 2 покажет и его коммиты.
+  
+  Маркер конца сессии не ставил, так как вы, возможно, продолжаете. Дальше по плану этап 3: панель события со счётчиками, начиная с задачи 3.1. Могу запушить ветку и открыть PR этапа 2, начать этап 3 или закрыть сессию.
+
+> допиши на потом что если дата отличается от текущей (или может лучше условие придумаешь) то формат ЧЧ:ММ меняется на более наглядный
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  ✔ Done cleaning up temporary files!
+     0246126 docs: note a fuller check-in time format for another day
+
+⏺ Записал в «На потом» в [tasks.md](docs/features/checkin/tasks.md), коммит `0246126`.
+  
+  Условие предложил другое: полный формат нужен, когда календарный день отметки (в часовом поясе браузера) не совпадает с сегодняшним. Порог «прошло больше 24 часов» не подходит: отметка вчера в 23:50 через 10 минут уже относится к другому дню, а показала бы только «в 23:50».
+  
+  Формат:
+  - сегодня — «09:15»;
+  - другой день этого года — «31 окт. в 09:15»;
+  - другой год — дата с годом.
+  
+  Это касается двух мест: экрана чекина («Уже отмечен в …») и страницы билета («Вы отмечены на входе в …»). Поэтому в записи предложена одна чистая функция в `shared/lib` с тестами на смене суток.
+  
+  Это пока только запись, решения по ней не принимали, поэтому в лог решений не вносил.
+
+> дай инструкцию по воспроизведению проблем с тестом test_two_workers_send_each_email_once (это же он?)
+
+⏺ Да, это `emails/tests/test_concurrency.py::test_two_workers_send_each_email_once`.
+  
+  ## Как воспроизвести
+  
+  Тест падает 1–2 раза из 30, причём только в совместном прогоне с тестами гонок регистраций. Отдельно он не упал ни разу из 40.
+  
+  **1. Поднять Postgres.** Для вас это слот 0, порт 5432:
+  
+  ```sh
+  make dev-deps
+  ```
+  
+  Если проверяете на слоте 1, Postgres поднимает `make stack-check-backend`, а перед каждой командой ниже нужен `POSTGRES_PORT=5433`.
+  
+  **2. Прогнать оба файла 30 раз подряд и сохранить лог каждого падения:**
+  
+  ```sh
+  cd backend
+  mkdir -p /tmp/race-logs
+  f=0
+  for i in $(seq 30); do
+    uv run pytest registrations/tests/test_concurrency.py emails/tests/test_concurrency.py \
+      -q -p no:cacheprovider > /tmp/race-logs/run-$i.log 2>&1 \
+      || { f=$((f+1)); echo "fail on run $i"; }
+  done
+  echo "failures: $f/30"
+  ```
+  
+  Логи прогонов без падений можно удалить, нужны только `run-N.log` с упавших.
+  
+  **3. Контрольные прогоны**, которые показывают, где проблема:
+  
+  ```sh
+  # Только тест писем: у меня 0 падений из 40
+  for i in $(seq 40); do uv run pytest emails/tests/test_concurrency.py -q -p no:cacheprovider >/dev/null 2>&1 || echo "fail $i"; done
+  
+  # Оба файла без тестов фазы 3: у меня 1 падение из 30, то есть проблема была и до этапа 2
+  for i in $(seq 30); do uv run pytest registrations/tests/test_concurrency.py emails/tests/test_concurrency.py -q -p no:cacheprovider -k "not check_ins" >/dev/null 2>&1 || echo "fail $i"; done
+  ```
+  
+  ## Как выглядит падение
+  
+  ```text
+  >       assert sorted(sent[0] + sent[1]) == all_ids
+  E       assert [53, 54, 55, 56, 57, 58, ...] == [36, 37, 38, 39, 40, 41, ...]
+  E         Right contains 17 more items, first extra item: 59
+  emails/tests/test_concurrency.py:36: AssertionError
+  ```
+  
+  Тест создаёт две пачки писем (`2 * BATCH_SIZE`), и два воркера (`process_batch`) запускаются одновременно. В упавшем прогоне ни в один `sent` не попала первая пачка, id 36–52; отправилась только вторая, id 53 и дальше. Похоже, один воркер вернул пустой список или его письма не отметились как отправленные. Что именно вернул каждый воркер, из ассерта не видно.
+  
+  ## Что я не выяснял
+  
+  Причину не искал: тест к этапу не относится, поэтому я только записал случай в «На потом». Чтобы понять, что произошло, нужно временно вывести в тесте `sent[0]`, `sent[1]`, статусы писем и `len(mail.outbox)` до ассерта. Тогда станет видно, какой из двух случаев: воркер пачку не взял, или взял, но письма не записались как отправленные.
+  
+  Если хотите, разберусь с причиной отдельной задачей.
+
+> дай эту информацию в виде промпта для новой сессии
+
+⏺ Для: новой сессии агента в этом репозитории, без контекста этого разговора.
+  
+  ````text
+  Разберись с нестабильным тестом `backend/emails/tests/test_concurrency.py::test_two_workers_send_each_email_once`: найди причину и исправь её. Это задача вне фаз roadmap. Ветку сделай от `main`: `fix/flaky-email-workers-test` или другое подходящее имя.
+  
+  ## Что известно
+  
+  Тест падает только в совместном прогоне с тестами гонок регистраций. Это та команда, которой `docs/rules/concurrency.md` велит гонять тесты гонок 20 раз перед закрытием задачи:
+  
+  - `registrations/tests/test_concurrency.py` + `emails/tests/test_concurrency.py` вместе — 1–2 падения из 30;
+  - только `emails/tests/test_concurrency.py` — 0 падений из 40;
+  - оба файла без тестов фазы 3 (`-k "not check_ins"`) — 1 падение из 30. Значит, проблема старше фазы 3.
+  
+  Как выглядит падение:
+  
+  ```text
+  >       assert sorted(sent[0] + sent[1]) == all_ids
+  E       assert [53, 54, 55, 56, 57, 58, ...] == [36, 37, 38, 39, 40, 41, ...]
+  E         Right contains 17 more items, first extra item: 59
+  emails/tests/test_concurrency.py:36: AssertionError
+  ```
+  
+  Тест создаёт `2 * BATCH_SIZE` писем и запускает два `process_batch` (`backend/emails/services.py`) одновременно через `run_together` (`backend/config/tests/concurrency.py`). В упавшем прогоне ни в один `sent` не попала первая пачка (id 36–52), отправилась только вторая. Из ассерта не видно, что вернул каждый воркер: либо один воркер ничего не взял, либо взял, но письма не записались как отправленные. Причину раньше не искали. Запись о тесте есть в «На потом» в `docs/features/checkin/tasks.md`.
+  
+  ## Как воспроизвести (слот 1 агента, Postgres на 5433)
+  
+  Postgres слота 1 поднимает `make stack-check-backend` (или `make stack-check`). Слот 0 (`make dev-deps`, порт 5432) принадлежит человеку, его не трогай.
+  
+  ```sh
+  cd backend
+  mkdir -p "$SCRATCH/race-logs"   # SCRATCH — твой scratchpad
+  f=0
+  for i in $(seq 30); do
+    POSTGRES_PORT=5433 uv run pytest registrations/tests/test_concurrency.py emails/tests/test_concurrency.py \
+      -q -p no:cacheprovider > "$SCRATCH/race-logs/run-$i.log" 2>&1 \
+      || { f=$((f+1)); echo "fail on run $i"; }
+  done
+  echo "failures: $f/30"
+  ```
+  
+  Контрольные прогоны:
+  
+  ```sh
+  for i in $(seq 40); do POSTGRES_PORT=5433 uv run pytest emails/tests/test_concurrency.py -q -p no:cacheprovider >/dev/null 2>&1 || echo "fail $i"; done
+  for i in $(seq 30); do POSTGRES_PORT=5433 uv run pytest registrations/tests/test_concurrency.py emails/tests/test_concurrency.py -q -p no:cacheprovider -k "not check_ins" >/dev/null 2>&1 || echo "fail $i"; done
+  ```
+  
+  ## Порядок работы
+  
+  1. Сначала воспроизведи падение у себя и запиши частоту.
+  2. Временно выведи перед ассертом `sent[0]`, `sent[1]`, статусы и `next_attempt_at` писем, `attempts` и `last_error`, `len(mail.outbox)`. Задача — понять, какой из двух случаев: воркер не взял пачку, или взял, но письма не стали `sent`. Отладочный вывод в коммит не попадает.
+  3. Сформулируй гипотезу и проверь её фактами: вывод, план запроса, лог. Догадка — ещё не причина.
+  4. Отдельно реши, где ошибка: в тесте (порядок тестов, общий `mail.outbox`, время, данные от предыдущего теста) или в `process_batch`. Если ошибка в `process_batch`, это баг воркера в production. Тогда сначала тест, который падает по этой причине, потом исправление.
+  5. Готово, когда совместный прогон проходит 30 раз из 30 и ещё 20 раз командой из `docs/rules/concurrency.md`, а `make stack-check` проходит.
+  
+  ## Правила (подробно — AGENTS.md и docs/rules/concurrency.md)
+  
+  - Начало сессии — по skill `session-handoff`: маркер `▶ начало сессии` в `docs/decisions.md`, время из `date`.
+  - Тест не ослаблять: без ретраев, без `flaky`-маркеров, без увеличения таймаутов как «исправления» и без пропуска теста.
+  - Причину и выбранное исправление записать в `docs/decisions.md` в том же коммите. Удалить запись о тесте из «На потом» в `docs/features/checkin/tasks.md`.
+  - Три неудачные попытки исправить — остановиться и описать человеку, что пробовал и какая гипотеза.
+  - Найденное по пути, но не относящееся к задаче — в «На потом», не в этот коммит.
+  - Ревью — агент `reviewer` (skill `feature-workflow`, «Ревью»). Вместо spec передай описание задачи из этого промпта, без своих выводов о причине.
+  - Коммиты по Conventional Commits, по-английски. Push — `SLOT=1 git push`, только когда человек попросит.
+  ````
+
+> сделай пр
+
+⏺ Bash(git fetch -q origin && git branch -r | grep -E "checkin|main"; git merge-base --is-ancestor 552a2a5 origin/main && echo "stage1 in main" || echo "stage1 NOT in main"; gh pr list --state all --limit 5 )
+  ⎿  origin/feat/checkin
+       origin/main
+     stage1 NOT in main
+     12	Phase 3, stage 1: check a ticket in by its code	feat/checkin	MERGED	2026-10-31T05:49:41Z
+     11	Phase 2, stage 5: close the email phase	feat/phase-2-close	MERGED	2026-10-31T04:00:24Z
+     10	Phase 2, stage 4: email retries and parallel workers	feat/email-retries	MERGED	2026-10-31T03:33:07Z
+     … +2 lines
+
+⏺ PR этапа 1 (#12) слит, но `552a2a5` не в `main` — проверяю, как он слит:
+
+⏺ Bash(git log --oneline -4 origin/main; git log --oneline origin/main..552a2a5 | wc -l; git diff --stat origin/main 552a2a5 | tail -3; gh pr view 12 --json mergeCommit,headRefOid -q '.mergeCommit.oid+" head)
+  ⎿  c96405a fix(frontend): show the check-in answer in place of the form until Next
+     28e9072 fix(frontend): drop the check-in session message the app never shows
+     22fcc34 fix(frontend): keep the check-in field read-only while a code is checked
+     225e5a3 test(frontend): count the requests in the empty check-in code test
+     10
+     c96405ad386043f0bc8935cfcf7f41b673162c41 head=552a2a5a767f79709bf45401c9915f3a1639c9db
+
+⏺ Bash(git rebase -q --onto origin/main 552a2a5 feat/checkin-once && git log --oneline origin/main~1..HEAD)
+  ⎿  04004e8 docs: note a fuller check-in time format for another day
+     6b37f9b docs: record the review and browser pass of check-in stage 2
+     b49ca49 fix(backend): decide a repeat check-in by checked_in_at, not by status
+     1aa0d64 feat(frontend): show repeat and unconfirmed check-ins and checked-in tickets
+     ff78c79 feat(backend): refuse to cancel a checked-in ticket
+     e66303c feat(backend): report a repeat check-in and refuse an unconfirmed ticket
+     … +1 lines
+
+⏺ SHA в логе `tasks.md` устарели после переноса — поправлю:
+
+⏺ Bash(sed -i 's/^- База этапа 2 — `552a2a5`, ветка `feat\/checkin-once` от `feat\/checkin`\./- База этапа 2 — `c96405a` (`main` после слияния PR #12), ветка `feat\/checkin-once`./; s/исправление `257911b`/и)
+  ⎿  docs/features/checkin/tasks.md | 4 ++--
+      1 file changed, 2 insertions(+), 2 deletions(-)
+     52:- База этапа 2 — `c96405a` (`main` после слияния PR #12), ветка `feat/checkin-once`.
+     53:- Этап 2: ревью — одна находка (решение по ней — `decisions.md`, исправление `b49ca49`), повторное
+     ✔ Done cleaning up temporary files!
+
+⏺ Пушу (хук `pre-push` проверит backend на Postgres слота 1) и смотрю, как оформлен PR этапа 1:
+
+⏺ Bash(SLOT=1 git push -u origin feat/checkin-once 2>&1 | tail -6; gh pr view 12 --json body -q .body | head -40)
+  ⎿  remote: Create a pull request for 'feat/checkin-once' on GitHub by visiting:        
+     remote:      https://github.com/rbikbov/event-registration/pull/new/feat/checkin-once        
+     remote: 
+     To github.com:rbikbov/event-registration.git
+      * [new branch]      feat/checkin-once -> feat/checkin-once
+     branch 'feat/checkin-once' set up to track 'origin/feat/checkin-once'.
+     … +40 lines
+
+⏺ Bash(gh pr create --base main --head feat/checkin-once --title "Phase 3, stage 2: check a ticket in only once" --body-file - <<'EOF')
+  ⎿  https://github.com/rbikbov/event-registration/pull/13
+
+⏺ Для: тех, кто будет ревьюить и сливать PR в репозитории.
+  
+  Открыл PR: https://github.com/rbikbov/event-registration/pull/13 — «Phase 3, stage 2: check a ticket in only once».
+  
+  Что сделал перед PR:
+  - **Перенёс ветку на `origin/main`.** PR этапа 1 (#12) слит перебазированием: содержимое в `main` то же, а SHA другие. Без переноса PR показал бы и коммиты этапа 1. Ветка не была запушена, поэтому переписывать её было безопасно.
+  - **Поправил SHA в логе `tasks.md`.** После переноса там остались старые хэши базы и исправления, отдельным коммитом заменил их на новые (`c96405a`, `b49ca49`).
+  - **Запушил с `SLOT=1`.** Хук `pre-push` проверил backend на Postgres слота 1 и прошёл.
+  
+  Сам текст PR: что изменилось по задачам 2.1–2.3, как проверено (тесты, гонки, браузер, ревью) и известная проблема — нестабильный тест писем.
+  
+  Маркер конца сессии в `docs/decisions.md` пока не ставил. Если закрываем сессию, поставлю его отдельным коммитом в эту ветку.

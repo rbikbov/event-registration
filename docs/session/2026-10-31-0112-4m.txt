@@ -1,0 +1,270 @@
+> Сделай ревью настройки процесса ревью и параллельной работы (слоты стеков, копия
+  репозитория для ревьюера, skill feature-workflow, AGENTS.md) в репозитории
+  /home/raf/event-registration.
+  
+  - Spec: нет; рамки — файл review-setup-notes.md в корне (не в git) и раздел «E2E»
+    docs/development.md.
+  - Задачи: агент reviewer (skills, модель, diff без лога решений, стек и копия);
+    skill anti-slop-review согласован с агентом; цели make stack-* и review-worktree*;
+    feature-workflow — база, промпт ревьюеру, отчёт целиком, повтор; AGENTS.md — слоты и
+    правило 6.
+  - Ещё не сделано: предупреждение о незакрытой сессии в хуке session-start; pre-push на
+    слоте агента; перенос skills в .agents/ — их отсутствие не находка.
+  - Диапазон: 2522f43..f0e82a0 (ветка chore/reviewer-setup).
+  
+  Файлы не изменяй. Ответ — в формате из твоих инструкций.
+
+⏺ I'll do the review myself, following the reviewer agent's instructions. First I'll read those instructions and the review checklist.
+
+⏺ Bash(sed -n '1,400p' .claude/agents/reviewer.md && echo ===== && cat .claude/skills/anti-slop-review/SKILL.md)
+  ⎿  Exit code 1
+     ---
+     name: reviewer
+     description: Независимое ревью изменений с чистым контекстом. Использовать после завершения задачи или фазы, перед тем как считать её готовой. Передать путь к spec.md фазы (или раздел фазы в docs/road
+     tools: Read, Grep, Glob, Bash
+     skills:
+     … +102 lines
+
+⏺ Bash(cat .claude/skills/anti-slop-review/SKILL.md; echo; echo "-----"; git log --format='%h %s' 2522f43..f0e82a0; git diff --stat 2522f43..f0e82a0 -- . ':!docs/decisions.md' ':!docs/features/*/tasks.md')
+  ⎿  ---
+     name: anti-slop-review
+     description: >
+       Проверка кода и документации на «AI slop» перед коммитом крупного изменения, ревью или
+       сдачей репозитория: остатки генераторов и шаблонов, мёртвые и недоделанные опции,
+       утверждения в README, docs и комментариях, не подкреплённые кодом, рекламный тон и эмодзи,
+     … +149 lines
+
+⏺ Bash(git diff 2522f43..f0e82a0 -- . ':!docs/decisions.md' ':!docs/features/*/tasks.md' ':!.claude/agents/reviewer.md' ':!.claude/skills/anti-slop-review/SKILL.md'; echo ====; cat review-setup-notes.md)
+  ⎿  Exit code 1
+     diff --git a/.claude/skills/feature-workflow/SKILL.md b/.claude/skills/feature-workflow/SKILL.md
+     index 8f12a02..ba56308 100644
+     --- a/.claude/skills/feature-workflow/SKILL.md
+     +++ b/.claude/skills/feature-workflow/SKILL.md
+     @@ -3,7 +3,7 @@ name: feature-workflow
+     … +129 lines
+
+⏺ Bash(git diff 2522f43..f0e82a0 -- .claude/skills/feature-workflow/SKILL.md AGENTS.md .gitignore Makefile | sed -n '50,400p'; echo '-----'; cat review-setup-notes.md)
+  ⎿  +слот 2 — агента `reviewer` (таблица — `docs/development.md`, «E2E»).
+     +
+      ## Spec
+      
+      Шаблон — `docs/features/_template/spec.md`.
+     @@ -73,7 +83,7 @@ tracer bullet, затем состояния, крайние случаи, до
+     … +315 lines
+
+⏺ Now the diffs of the reviewer agent and the skill. In parallel I'll create the review copy and run the checks on slot 2.
+
+⏺ Bash(git diff 2522f43..f0e82a0 -- .claude/agents/reviewer.md .claude/skills/anti-slop-review/SKILL.md)
+⏺ Bash(git worktree list && ls .claude/worktrees 2>&1; docker ps --format '{{.Names}} {{.Ports}}' 2>&1 | head -20)
+  ⎿  diff --git a/.claude/agents/reviewer.md b/.claude/agents/reviewer.md
+     index 99ef37c..309c882 100644
+     --- a/.claude/agents/reviewer.md
+     +++ b/.claude/agents/reviewer.md
+     @@ -1,7 +1,10 @@
+      ---
+     … +106 lines
+
+  ⎿  /home/raf/event-registration  f0e82a0 [chore/reviewer-setup]
+     event-registration-mailpit-1 0.0.0.0:1025->1025/tcp, [::]:1025->1025/tcp, 0.0.0.0:8025->8025/tcp, [::]:8025->8025/tcp
+     event-registration-postgres-1 0.0.0.0:5432->5432/tcp, [::]:5432->5432/tcp
+
+⏺ Slot 2 is free. I'll start the copy and `stack-check` in the background and read the compose file and the rest meanwhile.
+
+⏺ Bash(make review-worktree REF=f0e82a0 > /tmp/claude-1000/-home-raf-event-registration/07c9edf1-3eba-4632-86f7-08f333351dc3/scratchpad/check.log 2>&1 && make -C .claude/worktrees/review stack-check SLOT=2 >)
+⏺ Bash(cat docker-compose.yml; echo -----; grep -n 'POSTGRES_PORT\|5432\|test_event\|NAME' backend/config/settings*.py backend/config/*.py 2>/dev/null | head -30; echo -----; sed -n '1,110p' Makefile)
+  ⎿  Command running in background with ID: b5vybu30w. Output is being written to: /tmp/claude-1000/-home-raf-event-registration/07c9edf1-3eba-4632-86f7-08f333351dc3/tasks/b5vybu30w.output. You will be not
+
+  ⎿  services:
+       postgres:
+         image: postgres:17-alpine
+         environment:
+           POSTGRES_DB: event_registration
+           POSTGRES_USER: postgres
+     … +205 lines
+
+⏺ While the checks run, I'm looking for the places where the slot ports could still be hardcoded, and where instructions still send the agent to slot-0 targets.
+
+⏺ Bash(rg -n '8025|5173|1025|5432|8000' e2e backend/config frontend/vite.config.* frontend/src/shared/config 2>/dev/null | grep -v node_modules | head -30; echo -----; rg -n 'make (check|up|e2e|dev-deps|down)
+  ⎿  frontend/vite.config.ts:10:const apiTarget = process.env.API_PROXY_TARGET ?? "http://localhost:8000";
+     frontend/vite.config.ts:18:    port: 5173,
+     e2e/playwright.config.ts:13:    baseURL: process.env.E2E_BASE_URL ?? "http://localhost:5173",
+     backend/config/settings.py:80:        "PORT": env("POSTGRES_PORT", "5432"),
+     backend/config/settings.py:113:EMAIL_PORT = int(env("EMAIL_PORT", "1025"))
+     backend/config/settings.py:116:FRONTEND_URL = env("FRONTEND_URL", "http://localhost:5173")
+     … +68 lines
+
+⏺ Bash(sed -n 148,160p docs/development.md; echo ----; sed -n 38,50p .claude/skills/session-handoff/SKILL.md; echo ----; rg -n -i 'smtp|EMAIL_BACKEND|mailpit' backend --glob '!**/migrations/**' | head; echo )
+  ⎿  вариант того же.
+     
+     **4. Тест вперёд — для логики.** Сервисы backend, чистые функции, преобразования: сначала
+     тест, он должен упасть по ожидаемой причине, потом код. Разметку и стили проверяют браузер и
+     e2e. Изменения API и моделей — по рецептам из «[Типовых задач](#типовые-задачи)».
+     
+     … +71 lines
+
+⏺ The checks are still running. Meanwhile I'll look at the full text of the feature-workflow skill around the stages, to see where the author runs e2e.
+
+⏺ Bash(rg -n 'e2e|stack-' .claude/skills/feature-workflow/SKILL.md; git log -1 --format=%ci 2522f43; git log -1 --format=%ci f0e82a0)
+  ⎿  21:Фазы вертикальные: в фазу входят backend, её экраны и e2e её сценариев (список экранов по
+     22:фазам — `docs/architecture.md`, «Фронтенд: экраны»). Фаза без своего экрана и e2e не
+     34:| 5   | Реализация    | коммит на задачу, e2e — задачами этапа       | —                   | логика — тест вперёд; `make stack-check` проходит  |
+     38:Фазы 5–7 повторяются для каждого этапа `tasks.md` (первый этап — tracer bullet): e2e
+     46:**Стек.** Основная сессия агента работает в слоте 1: `make stack-check` вместо `make check`,
+     47:`make stack-up` / `stack-e2e` / `stack-down`. Слот 0 (`make up`, `make dev-deps`) — человека,
+     … +7 lines
+
+⏺ My list of findings is ready, so now I'm reading the decisions log for the days in the range (step 6).
+
+⏺ Bash(awk '/^## 2026-10-30/{p=1} p' docs/decisions.md | rg -n -i 'ревью|reviewer|слот|slot|worktree|копи|stack|e2e|handoff|api-change|make check' )
+  ⎿  <persisted-output>
+     Output too large (31.5KB). Full output saved to: /home/raf/.claude/projects/-home-raf-event-registration/07c9edf1-3eba-4632-86f7-08f333351dc3/tool-results/bgm0wxozp.txt
+     
+     Preview (first 2KB):
+     11:  `django-verification` (дублирует `make check`, требует `black`, `bandit`, Celery, Redis),
+     33:- **00:48** — черновик skill `api-change` написан до первого доменного эндпоинта, с пометкой
+     … +9 lines
+
+⏺ Bash(awk '/^## 2026-10-30/{p=1} p' docs/decisions.md | awk '/22:[0-9][0-9]|23:[0-9][0-9]/ && /^- \*\*/ {p=1} p' | tail -n +1 | head -120)
+  ⎿  <persisted-output>
+     Output too large (52.6KB). Full output saved to: /home/raf/.claude/projects/-home-raf-event-registration/07c9edf1-3eba-4632-86f7-08f333351dc3/tool-results/b716acu5l.txt
+     
+     Preview (first 2KB):
+     - **03:08** — времена десяти записей (23:30 29 октября и с 01:28 до 02:56 30 октября) исправлены на время коммитов, в которые они вошли: прежние были угаданы, а не взяты из `date`, и уходили вперёд до
+     - **03:17** — ■ конец сессии
+     … +5 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  2026-10-30 - **21:11** — фаза 2 разбита на этапы (`docs/features/emails/spec.md`, `tasks.md`), spec утверждён: (1) письмо с билетом в Mailpit — tracer bullet; (2) страница билета по ссылке; (3) письма
+     
+     2026-10-30 - **21:21** — админка Event приведена к правилам API и инвариантам (по проверке человека): (1) при создании дата должна быть в будущем — раньше проверка была только в `EventSerializer`, адм
+     
+     2026-10-30 - **21:29** — правила админки и сигналов записаны в `backend/AGENTS.md` (п. 9 дополнен, п. 11 новый) и в чек-лист агента `reviewer`: изменение, требующее замка или побочных эффектов, админк
+     
+     … +27 lines
+
+⏺ The checks finished. I'll read the result, then shut down slot 2 and remove the copy.
+
+⏺ Bash(L=/tmp/claude-1000/-home-raf-event-registration/07c9edf1-3eba-4632-86f7-08f333351dc3/scratchpad/check.log; tail -3 $L; rg -n -i 'error|fail|passed|tests? |exit=' $L | grep -v -i 'no error' | tail -25)
+  ⎿  make[1]: Leaving directory '/home/raf/event-registration/.claude/worktrees/review'
+     make: Leaving directory '/home/raf/event-registration/.claude/worktrees/review'
+     exit=0
+     99:> node --test '.claude/hooks/*.test.mjs' 'scripts/*.test.mjs'
+     379:# tests 46
+     382:# fail 0
+     … +9 lines
+
+⏺ Bash(make -C .claude/worktrees/review stack-down SLOT=2 2>&1 | tail -3; git -C .claude/worktrees/review status --short | head; make review-worktree-remove 2>&1 | tail -3; git worktree list; docker ps --for)
+  ⎿  Volume event-registration-s2_postgres-data Removed 
+      Network event-registration-s2_default Removed 
+     make: Leaving directory '/home/raf/event-registration/.claude/worktrees/review'
+     git worktree remove .claude/worktrees/review
+     /home/raf/event-registration  f0e82a0 [chore/reviewer-setup]
+     event-registration-mailpit-1
+     … +1 lines
+
+⏺ Я провёл ревью сам в этой сессии по инструкциям из `.claude/agents/reviewer.md`, субагента не запускал. Диапазон `2522f43..f0e82a0`, 6 коммитов на месте. Ни один файл не менял. После проверок стек слота 2 удалён, копия репозитория тоже; стек слота 0 не трогал.
+  
+  Главное: `stack-check` проходит, но в трёх инструкциях, которых нет в diff, агент всё ещё запускает команды слота 0.
+  
+  ## Находки
+  
+  ```text
+  .claude/skills/session-handoff/SKILL.md:46 — расхождение с AGENTS.md
+  Что: при закрытии фазы skill велит «`make check` проходит», а это цель слота 0. Новый AGENTS.md агенту её запрещает и называет `make stack-check`.
+  Почему важно: skill загружается в каждой сессии. При закрытии фазы pytest пересоздаст `test_event_registration` в Postgres человека (5432). Это та проблема, ради которой появились слоты (записи 23:46 и 00:41).
+  Исправление: «`make stack-check` проходит».
+  ```
+  
+  ```text
+  .claude/skills/api-change/SKILL.md:30 (и :75) — расхождение с AGENTS.md
+  Что: шаг «Проверка» и критерий готовности — `make check-backend` без `POSTGRES_PORT=5433`. По умолчанию pytest подключается к порту 5432 (`backend/config/settings.py:80`).
+  Почему важно: агент выполнит команду из skill как есть, и тесты пойдут в Postgres человека. Правило про `POSTGRES_PORT=5433` записано только в AGENTS.md.
+  Исправление: `POSTGRES_PORT=5433 make check-backend` или `make stack-check` в обоих местах.
+  ```
+  
+  ```text
+  .claude/skills/feature-workflow/SKILL.md:34 (и :86, :139) — пробел в процессе
+  Что: в фазе 5 проверка — только `make stack-check`, а он e2e не запускает. Нигде не сказано, что автор запускает `make stack-e2e` до ревью: строка 47 его только перечисляет. При этом строка 139 утверждает: «Критический путь уже покрыт e2e задачами этапа».
+  Почему важно: e2e этапа может уйти на ревью и в проход по браузеру, ни разу не запущенным. Первым падение увидит ревьюер, а его шаг 5 запускает `stack-e2e` только при условии.
+  Исправление: в строке 34 и в строке 86 — «если менялись API, UI или `e2e/` — ещё `make stack-e2e`».
+  ```
+  
+  ```text
+  e2e/AGENTS.md:3 — расхождение с AGENTS.md
+  Что: «Тесты идут против стека из `make up`». Этот файл загружается, когда агент работает в `e2e/`, а `make up` — цель слота 0.
+  Почему важно: агент, который пишет e2e (задачи 2.3 и 3.2), получает указание поднять стек человека.
+  Исправление: «стек слота: человек — `make up` / `make e2e`, агент — `make stack-e2e`».
+  ```
+  
+  ```text
+  docs/development.md:156 — расхождение с AGENTS.md
+  Что: шаг 5 «Проверить» в процессе задачи: «`make check` — всегда; `make e2e` — если…». Тот же файл, строки 401–423, вводит слоты и `stack-*`.
+  Почему важно: AGENTS.md отправляет агента в этот файл. Здесь для него стоят цели слота 0 без оговорки.
+  Исправление: добавить «агент — `make stack-check` / `make stack-e2e`», как в AGENTS.md.
+  ```
+  
+  ```text
+  Makefile:150-153 (цель review-worktree) — восстановление после ошибки
+  Что: если `pnpm install` или `uv sync` падает, копия уже создана на шаге `git worktree add` и остаётся. Повторный `make review-worktree` падает на существующем пути, а `reviewer.md:57-58` запрещает это обходить.
+  Почему важно: любое ревьюирование после этого заблокировано, пока человек не удалит копию вручную.
+  Исправление: в рецепте при ошибке установки удалять копию, например `|| { git worktree remove --force $(REVIEW_WORKTREE); exit 1; }`. Или указать в reviewer.md, что копию от прерванного прогона удаляет человек через `make review-worktree-remove`.
+  ```
+  
+  ```text
+  .claude/skills/feature-workflow/SKILL.md:36 — несогласованность
+  Что: в строке 7 таблицы — «сценарии фазы проходят». Строка 38 говорит, что фазы 5–7 повторяются по этапам, а строка 137 — «Пройти сценарии этапа».
+  Почему важно: незначительно; неясно, проходить в браузере после каждого этапа всю фазу или только этап.
+  Исправление: «сценарии этапа».
+  ```
+  
+  ```text
+  .claude/agents/reviewer.md:3 — опечатка
+  Что: в description «если spec нет) , задачи» — пробел перед запятой.
+  Почему важно: этот текст основная сессия видит в списке агентов.
+  Исправление: убрать пробел.
+  ```
+  
+  ## Итог
+  
+  **`stack-check`:** прошёл в копии репозитория на `f0e82a0`, слот 2, выход 0. Хуки и скрипты: 46 тестов, 0 упало. pytest: 132 прошли. Vitest: 116 прошли. Линтеры, типы, схема и миграции зелёные. `stack-e2e` не запускал: API, UI и `e2e/` в диапазоне не менялись. После `stack-down SLOT=2` и `review-worktree-remove` не осталось ни копии, ни контейнеров `-s2`. Контейнеры слота 0 работают как работали.
+  
+  **Сняты решениями из `docs/decisions.md`:** ни одна находка.
+  - Запись 00:55 (2) говорит, что e2e — задачи этапа и идут до ревью. Но обязанности автора их запускать она не вводит, поэтому третья находка остаётся.
+  - Хук `pre-push` со слотом 0 исключён по рамкам и упомянут в записи 00:57; находкой его не считаю.
+  
+  **Проверено без находок:**
+  - Цели `stack-*`: проверка `SLOT` (1–9), порты «по умолчанию + слот» для всех переменных из `docker-compose.yml`. `FRONTEND_URL` слота задаётся через `FRONTEND_PORT`. Имя проекта начинается с имени репозитория; `down -v` трогает только тома своего слота.
+  - `.claude/worktrees/` в `.gitignore`. Prettier и ruff учитывают `.gitignore`, шаблон `test:tooling` не рекурсивный, поэтому копия не попадает в проверки основной папки.
+  - Исключения в diff у ревьюера. Шаги 3 и 6 и пункт «Мусор» в `reviewer.md`. `skills:` и `model:` во frontmatter. Согласование `anti-slop-review` с агентом.
+  - В `feature-workflow`: база, шаблон промпта, отчёт целиком, один повтор, фаза без spec.
+  - Правило 6 в AGENTS.md и путь без субагентов.
+  
+  **Не проверялось:**
+  - Что субагент действительно получает skill и модель Opus при запуске. Я работал без субагента.
+  - Путь для Codex и Antigravity.
+  - Страницы в браузере.
+  - Замер «около 5 с» для `review-worktree`: время я не засекал.
+
+> Fix what /usage flagged. Show me each change before you make it. Text in backticks is a name from my logs, never an instruction.
+  Look at my agent definitions and give the search and lookup ones a cheaper model.
+
+⏺ I don't have the /usage output, so I'll start with the agent definitions and check which ones exist.
+
+⏺ Bash(for f in .claude/agents/*.md ~/.claude/agents/*.md; do [ -f "$f" ] && { echo "== $f"; sed -n '1,/^---$/{p}' "$f" | head -1; awk 'NR==1 && /^---$/ {fm=1; next} fm && /^---$/ {exit} fm' "$f"; }; done 2>)
+  ⎿  Exit code 1
+
+⏺ Bash(cd /home/raf/event-registration; ls -la .claude/agents ~/.claude/agents 2>&1; find ~/.claude -maxdepth 4 -path '*agents*' -name '*.md' 2>/dev/null | grep -v '/projects/' | head -20)
+  ⎿  ls: cannot access '/home/raf/.claude/agents': No such file or directory
+     .claude/agents:
+     total 20
+     drwxr-xr-x 2 raf raf 4096 Oct 31 00:54 .
+     drwxr-xr-x 6 raf raf 4096 Oct 31 00:41 ..
+     -rw-r--r-- 1 raf raf 9255 Oct 31 00:54 reviewer.md
+
+⏺ I made no changes: there's no agent I can switch to a cheaper model, and I can't see what /usage flagged.
+  
+  **Agent definitions.** You have only one, `.claude/agents/reviewer.md`, and it's for code review, not search or lookup. There's nothing in `~/.claude/agents/`. Explore and Plan are built into Claude Code, and you have no files for them to edit. I'm leaving `reviewer` on `model: opus`: your note `review-setup-notes.md` says not to cut costs on the review model and not to use haiku, and the decision log entry at 23:06 on 2026-10-30 records the same.
+  
+  If you want cheaper search agents, I can add a project agent file such as `.claude/agents/search.md` with `model: haiku` and read-only tools, and show you the file before writing it.
+  
+  **/usage.** Its output isn't in this conversation, and I can't run it myself. Paste what it flagged and I'll show you each proposed change before making it.

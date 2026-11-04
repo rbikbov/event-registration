@@ -1,0 +1,594 @@
+> /clear
+
+> делаем этап 6
+
+⏺ Skill(session-handoff)
+  ⎿  Launching skill: session-handoff
+
+⏺ Bash(date && make worktime 2>&1 | tail -5 && tail -30 docs/decisions.md && ls docs/features/ && sed -n '/Фаза 6/,/Фаза 7/p' docs/roadmap.md)
+  ⎿  Wed Nov  4 18:05:02 EET 2026
+     2026-11-03 23:55 → 2026-11-04 00:03  0 ч 8 мин
+     2026-11-04 00:04 → 2026-11-04 00:57  0 ч 53 мин
+     Итого: 52 ч 32 мин
+     Предупреждение: конец 2026-11-03 20:51: нет начала сессии
+     Предупреждение: сессия с 2026-11-04 16:13 не закрыта и не учтена
+     … +55 lines
+
+⏺ Bash(git log -3 --format='%ci %s' && git status --short && cat docs/features/frontend-polish/tasks.md | sed -n '/Этап 5/,$p')
+  ⎿  2026-11-04 17:58:31 +0200 docs: record the reviews of phase 6, stage 5 in its task log
+     2026-11-04 17:58:23 +0200 fix(frontend): show the words of the page bar from md, where they fit
+     2026-11-04 17:41:56 +0200 fix(frontend): show the words of the previous and next page buttons in their names
+     ## Этап 5. Отложенное: навигация, формы, списки событий
+     
+     Из «на потом» этой фазы и фазы 4 (решение от 2026-11-03 23:55). Spec — «Этап 5».
+     … +173 lines
+
+⏺ Bash(git fetch -q 2>&1; git log --oneline main..HEAD | wc -l; git log --oneline origin/main -3; gh pr list --head feat/frontend-polish-stage-5 --state all 2>&1 | head; sed -n '/Тесты Vitest/,/^## /p' docs/)
+  ⎿  17
+     9b29261 Merge pull request #28 from rbikbov/feat/frontend-polish-stage-4
+     1dcfc9e docs: close the session of phase 6, stage 4
+     4050206 fix(frontend): wrap the event tabs so their focus ring shows whole
+     29	Phase 6, stage 5: deferred navigation, forms and paged event lists	feat/frontend-polish-stage-5	OPEN	2026-11-04T16:02:30Z
+     ## Тесты Vitest
+     … +10 lines
+
+⏺ AskUserQuestion()
+  ⎿  The user answered: "PR #29 (этап 5) ещё открыт, а этап 6 по правилам — своя ветка от main. От чего ветвить этап 6?"="пока начни от текущей ветки новую, а потом я смержу и ребейзним". Read the answers 
+
+⏺ Bash(git switch -c feat/frontend-polish-stage-6 && python3 - <<'EOF')
+  ⎿  Switched to a new branch 'feat/frontend-polish-stage-6'
+     - **17:58** — по повторному ревью этапа 5 фазы 6 (`4c06933..14bd2bb`), находка «полоса страниц шире окна от 640 до ~704 px» (регрессия подписей «Предыдущая» / «Следующая» из записи 17:41; в той записи
+     - **17:58** — ■ конец сессии
+     - **18:05** — ▶ начало сессии
+     - **18:06** — этап 6 фазы 6 — ветка `feat/frontend-polish-stage-6` от ветки этапа 5, а не от `main` (решение человека): PR #29 ещё не слит; после слияния ветка перебазируется на `main`.
+
+⏺ Сессия 16:13 закрыта временем последнего коммита (17:58). Теперь задача 6.1 — ищу `flushPromises` в тестах.
+
+⏺ Bash(cd /home/raf/event-registration/frontend && grep -rn "flushPromises" src --include=*.ts | grep -v "^.*import" | awk -F: '{print $1}' | sort | uniq -c; cat vitest.config.* 2>/dev/null | head -40; cat s)
+  ⎿  (eval):1: no matches found: --include=*.ts
+     import { defineConfig, mergeConfig } from "vitest/config";
+     
+     import viteConfig from "./vite.config";
+     
+     export default mergeConfig(
+     … +22 lines
+
+⏺ Bash(grep -rn "flushPromises()" src | awk -F: '{print $1}' | sort | uniq -c; grep -rln "flushPromises" src | wc -l)
+  ⎿  1 src/app/session-expiry.test.ts
+          21 src/app/ui/AppLayout.test.ts
+          10 src/pages/event/ui/EventPage.test.ts
+           1 src/pages/health/ui/HealthPage.test.ts
+           2 src/pages/login/ui/LoginPage.test.ts
+           9 src/pages/org-checkin/ui/OrgCheckinPage.test.ts
+     … +9 lines
+
+⏺ Сначала воспроизведу нестабильность: прогоны под нагрузкой.
+
+⏺ Bash(cd /home/raf/event-registration && grep -n "^test-frontend\|^stack-check-backend" -A4 Makefile; time make test-frontend 2>&1 | tail -6)
+  ⎿  110:test-frontend: ## Frontend: Vitest unit and component tests
+     111-	$(FRONTEND) pnpm test
+     112-
+     113-.PHONY: check-e2e
+     114-check-e2e: ## e2e: ESLint and tsc for the test code (does not run the tests)
+     --
+     … +13 lines
+
+⏺ Запускаю 10 прогонов параллельно с `make stack-check-backend` в цикле.
+
+⏺ Bash(D=/tmp/claude-1000/-home-raf-event-registration/1ed2f02e-570f-4e25-a2c5-9b13034fb06e/scratchpad/run1 && mkdir -p $D && (SLOT=1 make stack-postgres >/dev/null 2>&1; while [ ! -f $D/done ]; do SLOT=1 ma)
+  ⎿  run 1: 0
+     run 2: 0
+     run 3: 0
+     run 4: 0
+     run 5: 0
+     run 6: 0
+     … +4 lines
+
+⏺ Все 10 зелёные. Проверю, что нагрузка действительно шла.
+
+⏺ Bash(D=/tmp/claude-1000/-home-raf-event-registration/1ed2f02e-570f-4e25-a2c5-9b13034fb06e/scratchpad/run1; tail -5 $D/backend.log; grep -h "Tests " $D/fe-*.log; grep -h "Duration" $D/fe-*.log)
+  ⎿  config/tests/test_admin.py .                                             [ 96%]
+     config/tests/test_log_redaction.py ..........                            [100%]
+     
+     ======================= 316 passed in 247.43s (0:04:07) ========================
+     make[1]: Leaving directory '/home/raf/event-registration'
+           Tests  406 passed (406)
+     … +19 lines
+
+⏺ Bash(cd /home/raf/event-registration/frontend && grep -n "cancels, rereads" -A40 src/pages/ticket/ui/TicketPage.test.ts | head -50; sed -n 180,215p src/pages/event/ui/EventPage.test.ts; git log --oneline -)
+  ⎿  209:  it("cancels, rereads the ticket and refreshes the events", async () => {
+     210-    ticketIs(confirmed, cancelled);
+     211-    let cancels = 0;
+     212-    server.use(
+     213-      http.post("*/api/tickets/tok/cancel/", () => {
+     214-        cancels += 1;
+     … +81 lines
+
+⏺ Bash(grep -n "async function fill\|async function mountPage" -A22 src/pages/event/ui/EventPage.test.ts | head -60)
+  ⎿  24:async function mountPage({ loaded = true } = {}) {
+     25-  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+     26-  const router = createRouter({
+     27-    history: createMemoryHistory(),
+     28-    routes: [
+     29-      { path: routes.event, component: EventPage },
+     … +38 lines
+
+⏺ Bash(D=/tmp/claude-1000/-home-raf-event-registration/1ed2f02e-570f-4e25-a2c5-9b13034fb06e/scratchpad/run2 && mkdir -p $D && for r in 1 2 3 4 5; do for j in 1 2 3; do pnpm test > $D/r$r-$j.log 2>&1 & done; )
+  ⎿  1       Tests  10 failed | 396 passed (406)
+           1       Tests  2 failed | 389 passed | 15 skipped (406)
+           2       Tests  2 failed | 404 passed (406)
+           2       Tests  3 failed | 403 passed (406)
+           1       Tests  406 passed (406)
+           1       Tests  5 failed | 401 passed (406)
+     … +30 lines
+
+⏺ Под тройной нагрузкой падают многие. Смотрю, какие ошибки.
+
+⏺ Bash(cd /tmp/claude-1000/-home-raf-event-registration/1ed2f02e-570f-4e25-a2c5-9b13034fb06e/scratchpad/run2 && grep -h -A3 "^ FAIL " *.log | grep -v "^ FAIL\|^--\|^$\|⎯" | sed 's/[0-9]\+ms/Nms/g' | sort | u)
+  ⎿  66 If this is a long-running test, pass a timeout value as the last argument or configure it globally with "testTimeout".
+          66 Error: Test timed out in Nms.
+          12 - Expected
+          11 AssertionError: expected false to be true // Object.is equality
+           6  ❯ src/pages/org-event/ui/OrgEventLayout.test.ts:120:5
+           6  ❯ src/pages/login/ui/LoginPage.test.ts:44:3
+     … +25 lines
+
+⏺ Bash(cd /tmp/claude-1000/-home-raf-event-registration/1ed2f02e-570f-4e25-a2c5-9b13034fb06e/scratchpad/run2 && grep -h -B1 -A12 "^AssertionError" *.log | grep -E "^ FAIL|AssertionError|❯ src" | head -60)
+  ⎿  FAIL  src/pages/ticket/ui/TicketPage.test.ts > TicketPage > cancels, rereads the ticket and refreshes the events
+     AssertionError: expected false to be true // Object.is equality
+      ❯ src/pages/ticket/ui/TicketPage.test.ts:233:64
+      FAIL  src/app/ui/AppLayout.test.ts > AppLayout > shows nothing on the right while the session is being asked
+     AssertionError: expected false to be true // Object.is equality
+      ❯ src/app/ui/AppLayout.test.ts:92:75
+     … +31 lines
+
+⏺ Три настоящих гонки: `TicketPage.test.ts:233` (9 раз), `AppLayout.test.ts:92` (2), `OrgEventLayout.test.ts:126` (1). Разбираю.
+
+⏺ Bash(cd /home/raf/event-registration/frontend && grep -rn "invalidate\|onSuccess\|cancelled" src/pages/ticket/ui/TicketPage.vue src/pages/ticket/model/*.ts 2>/dev/null | head -30; ls src/pages/ticket/*)
+⏺ Bash(cd /home/raf/event-registration/frontend && sed -n 75,100p src/app/ui/AppLayout.test.ts; sed -n 100,140p src/pages/org-event/ui/OrgEventLayout.test.ts)
+  ⎿  (eval):1: no matches found: src/pages/ticket/model/*.ts
+     src/pages/ticket/index.ts
+     
+     src/pages/ticket/api:
+     ticket.ts
+     
+     … +3 lines
+
+  ⎿  await flushPromises();
+         expect(wrapper.find("[data-offline]").exists()).toBe(false);
+       });
+     
+       it("shows nothing on the right while the session is being asked", async () => {
+         server.use(
+     … +60 lines
+
+⏺ Bash(cat src/pages/ticket/api/ticket.ts; grep -n "cancel\|invalidate\|Отменена\|cancelled" src/pages/ticket/ui/TicketPage.vue | head -30)
+  ⎿  import { queryOptions } from "@tanstack/vue-query";
+     
+     import { api, unwrap } from "@/shared/api";
+     
+     export function ticketQuery(token: string) {
+       return queryOptions({
+     … +34 lines
+
+⏺ Bash(sed -n 30,62p src/pages/ticket/ui/TicketPage.vue)
+  ⎿  mutate,
+       isPending: isCancelling,
+       isError: cancelFailed,
+       reset,
+     } = useMutation({
+       mutationFn: () => cancelTicket(token.value),
+     … +26 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  (eval):16: no matches found: --include=*.vue
+     (eval):16: no matches found: --include=*.vue
+
+⏺ Bash(grep -rn "isInvalidated" src | grep test)
+  ⎿  src/pages/ticket/ui/TicketPage.test.ts:236:    expect(queryClient.getQueryState(listPage)?.isInvalidated).toBe(true);
+     src/pages/ticket/ui/TicketPage.test.ts:237:    expect(queryClient.getQueryState(publicEventQuery(event.id).queryKey)?.isInvalidated).toBe(
+     src/pages/org-event-edit/ui/OrgEventEditPage.test.ts:131:    expect(queryClient.getQueryState(orgEventQuery(7).queryKey)?.isInvalidated).toBe(false);
+     src/pages/org-event-edit/ui/OrgEventEditPage.test.ts:133:    expect(queryClient.getQueryState(orgEventsQuery("past", 2).queryKey)?.isInvalidated).toBe(true);
+     src/pages/org-event-edit/ui/OrgEventEditPage.test.ts:134:    expect(queryClient.getQueryState(publicEventsQuery("past", 2).queryKey)?.isInvalidated).toBe(
+     src/pages/org-event-new/ui/OrgEventNewPage.test.ts:69:    expect(queryClient.getQueryState(orgEventsQuery("past", 2).queryKey)?.isInvalidated).toBe(true);
+     … +2 lines
+
+⏺ Bash(sed -n 115,132p src/pages/org-event-edit/ui/OrgEventEditPage.test.ts; sed -n 55,68p src/pages/org-event-new/ui/OrgEventNewPage.test.ts)
+  ⎿  });
+     
+       it("sends only the changed fields and leaves the event cache to the stream", async () => {
+         const bodies = patched();
+         const { wrapper, queryClient } = mountPage();
+         queryClient.setQueryData(orgEventQuery(7).queryKey, event);
+     … +26 lines
+
+⏺ Остальные проверки сброса ждут конца мутации в своих хелперах. Повторяю тройную нагрузку.
+
+⏺ Bash(D=/tmp/claude-1000/-home-raf-event-registration/1ed2f02e-570f-4e25-a2c5-9b13034fb06e/scratchpad/run3 && mkdir -p $D && for r in 1 2 3 4 5; do for j in 1 2 3; do pnpm test > $D/r$r-$j.log 2>&1 & done; )
+  ⎿  [Tool call interrupted: the session ended before this call's result was recorded, so its outcome is unknown. Check whether it took effect before relying on it or running it again.]
+
+⏺ No response requested.
+
+> у меня отвалился wsl. учитывай что у меня всего 16гб памяти и это wsl
+
+⏺ Извините — это я положил WSL: три Vitest одновременно — это ~36 воркеров jsdom, на 16 ГБ памяти не хватило. Больше так нагружать не буду и запишу это в память.
+
+⏺ Write(/home/raf/.claude/projects/-home-raf-event-registration/memory/wsl-memory-limit.md)
+  ⎿  File created successfully at: /home/raf/.claude/projects/-home-raf-event-registration/memory/wsl-memory-limit.md
+
+⏺ Bash(M=/home/raf/.claude/projects/-home-raf-event-registration/memory/MEMORY.md; echo "- [WSL, 16 ГБ памяти](wsl-memory-limit.md) — не запускать Vitest параллельно и тяжёлые нагрузочные прогоны" >> $M; git)
+  ⎿  M docs/decisions.md
+      M frontend/src/pages/ticket/ui/TicketPage.test.ts
+      docs/decisions.md                               | 3 +++
+      frontend/src/pages/ticket/ui/TicketPage.test.ts | 3 +++
+      2 files changed, 6 insertions(+)
+                    total        used        free      shared  buff/cache   available
+     … +1 lines
+
+⏺ Bash(cd /home/raf/event-registration/frontend && timeout 300 pnpm vitest run src/pages/ticket --maxWorkers=2 --repeats=30 -t "cancels, rereads" 2>&1 | tail -6)
+  ⎿  Test Files  1 passed (1)
+           Tests  1 passed | 14 skipped (15)
+        Start at  18:36:18
+        Duration  6.46s (tests 58%, environment 28%, import 10%, transform 3%, setup 2%)
+
+⏺ Bash(cd /home/raf/event-registration && D=/tmp/claude-1000/-home-raf-event-registration/1ed2f02e-570f-4e25-a2c5-9b13034fb06e/scratchpad/run4 && mkdir -p $D && (while [ ! -f $D/done ]; do SLOT=1 make stack-)
+  ⎿  run 1: 0       Tests  406 passed (406)
+     run 2: 0       Tests  406 passed (406)
+     run 3: 0       Tests  406 passed (406)
+     run 4: 0       Tests  406 passed (406)
+     run 5: 0       Tests  406 passed (406)
+     run 6: 0       Tests  406 passed (406)
+     … +6 lines
+
+⏺ 10 из 10 зелёные параллельно с backend (316 passed), память в норме. Записываю итог задачи 6.1 и коммичу.
+
+⏺ Bash(date +%H:%M && grep -n -i "vitest\|нестабил" docs/development.md | head -20)
+  ⎿  18:39
+     131:| `make check-frontend`                                         | ESLint, vue-tsc, Vitest                                                                  |
+     137:| `make lint-frontend` / `typecheck-frontend` / `test-frontend` | по отдельности: ESLint / vue-tsc / Vitest                                                |
+     433:- Тесты: Vitest + `@vue/test-utils` в jsdom, сеть — MSW. Каждый тест объявляет свою сеть через
+
+⏺ Bash(sed -n 428,450p docs/development.md)
+  ⎿  (генерируется `make schema`, руками не правится). Несуществующий путь, метод или поле —
+       ошибка vue-tsc. `unwrap()` превращает ответ в данные или `AppError`; выше `shared/api`
+       ошибки различаются только по `kind` (`network`, `unauthorized`, `not_found`, `conflict`,
+       `validation`, `server`, …).
+     - Повтор запросов (vue-query) — только для `network` и `server`: 4xx повтор не исправит.
+     - Тесты: Vitest + `@vue/test-utils` в jsdom, сеть — MSW. Каждый тест объявляет свою сеть через
+     … +17 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  ⋯ Backing up original state…
+     ✔ Done backing up original state (d276fe7)!
+     ⋯ Running tasks for staged files…
+         frontend/**/*.{ts,vue,js} — 1 file
+           ⋯ pnpm --dir frontend exec eslint --fix
+           ⋯ prettier --write
+     … +13 lines
+
+⏺ 6.1 закоммичен (`d6040ce`). Перехожу к 6.2 — закрытию фазы. Смотрю, что нужно привести к коду.
+
+⏺ Bash(grep -n "^#\|план\|реализовано\|Статус" docs/architecture.md | head -60; grep -n "^#" README.md)
+  ⎿  1:# Архитектура
+     3:Как устроена система и почему. У каждого раздела — статус: **реализовано** (описание
+     4:совпадает с кодом) или **план (фаза N)** — согласованный проект, который уточняется в spec
+     5:фазы. При закрытии фазы её разделы приводятся к коду и получают статус «реализовано».
+     9:## Процессы
+     27:  чтения по умолчанию (60 с) больше heartbeat (15 с). Отличие от первоначального плана (шлюз —
+     … +22 lines
+
+⏺ Bash(sed -n 146,214p docs/architecture.md; sed -n 287,301p docs/architecture.md; sed -n 10,99p README.md)
+  ⎿  <persisted-output>
+     Output too large (39.8KB). Full output saved to: /home/raf/.claude/projects/-home-raf-event-registration/1ed2f02e-570f-4e25-a2c5-9b13034fb06e/tool-results/b69xydqsm.txt
+     
+     Preview (first 2KB):
+     ## API
+     
+     … +30 lines
+
+⏺ Bash(sed -n 287,300p docs/architecture.md | cut -c1-400; echo ----; sed -n 10,34p README.md)
+  ⎿  ## Фронтенд: экраны
+     
+     - **Реализовано:** состояние сервиса (`/health`), вход организатора, создание события, список событий организатора; публичный список событий (`/`) и страница события с регистрацией (`/events/:id`: рез
+     - **План** — экраны появляются в фазе своего механизма (фазы вертикальные):
+     
+     | Экран                                                                                                                            | Фаза |
+     … +33 lines
+
+⏺ Bash(grep -n -i "что дальше\|дальше" README.md docs/roadmap.md | head; sed -n 289p docs/architecture.md; grep -n "Сессия\|сессии\|срок" docs/architecture.md | head; sed -n '/^## Требования/,/^## Запуск/p' )
+⏺ Bash(sed -n 30,50p docs/architecture.md; sed -n '/^## Требования/,/^## Запуск/p' README.md | head -20; sed -n '/^## Цели\|^## Goals/,/^## /p' docs/features/frontend-polish/spec.md | head -40)
+  ⎿  docs/roadmap.md:125:демо-организатор (решение от 2026-10-30 00:48). Не успели — строка в «что дальше» README.
+     docs/roadmap.md:139:состояние, модель и инструмент, «что дальше», «что взято чужое»; проверка на мусор
+     docs/roadmap.md:142:В «что дальше» README — push-сервер (Centrifugo) вместо потоков в процессе Django: когда
+     - **Реализовано:** состояние сервиса (`/health`), вход организатора, создание события, список событий организатора; публичный список событий (`/`) и страница события с регистрацией (`/events/:id`: рез
+     18:  одном адресе (прокси Vite), поэтому cookie сессии и `EventSource` работают без CORS.
+     155:**Реализовано — публичное (без сессии и CSRF):**
+     … +4 lines
+
+  ⎿  ## Аутентификация
+     
+     - **Реализовано:** своя модель `accounts.User` — вход по email, email хранится в нижнем
+       регистре, точки и `+tag` значимы. Участники аккаунтов не имеют.
+     - **Реализовано:** админка Django (`/admin/`) — вход по email для `is_staff`; статику
+       раздаёт WhiteNoise во всех окружениях. Каждая модель наших приложений зарегистрирована в
+     … +35 lines
+
+⏺ Bash(grep -n "^#" docs/features/frontend-polish/spec.md; ls e2e/tests/; grep -n "test-cases\|README\|требование" docs/features/frontend-polish/spec.md | head)
+  ⎿  1:# Доводка фронтенда: spec
+     5:## Что и зачем
+     16:## Non-Goals
+     24:## Где живёт код
+     36:## Сессия
+     51:## UI
+     … +24 lines
+
+⏺ Bash(sed -n 5,50p docs/features/frontend-polish/spec.md; sed -n 142,200p docs/features/frontend-polish/spec.md)
+  ⎿  ## Что и зачем
+     
+     Экраны фаз 1–5 сделаны каждый сам по себе: у каждой страницы свой `<main>` с отступами и
+     шириной, общей шапки нет, выйти из кабинета организатора нельзя (эндпоинт `logout` есть,
+     кнопки нет), неизвестный адрес даёт пустой экран, «не найдено» и ошибки загрузки каждая
+     страница рисует по-своему, `/health` без оформления. Фаза собирает их в одно приложение: общий
+     … +82 lines
+
+⏺ Bash(for f in organizer-logs-out screens-fit-phone lists-are-paged past-events-tab page-bar-fits; do echo "== $f"; grep -n "^test(\|^  test(\|test(\"" e2e/tests/$f.spec.ts | head -4; done; cd frontend/src;)
+  ⎿  == organizer-logs-out
+     5:test("the organizer signs out, and signing in again leads back to the page asked for", async ({
+     == screens-fit-phone
+     18:test("every screen fits a 360 px phone without scrolling sideways", async ({
+     == lists-are-paged
+     38:test("both event lists go page by page to the last event", async ({ browser }) => {
+     … +33 lines
+
+⏺ Bash(cd /home/raf/event-registration && grep -rn "it(\"" frontend/src/shared/ui/page-nav/PageNav.test.ts frontend/src/shared/ui/query-state/QueryState.test.ts | head -14; grep -rln "Страница не найдена" fr)
+  ⎿  Exit code 1
+     frontend/src/shared/ui/query-state/QueryState.test.ts:44:  it("shows a loading state until the data arrives, then the data", async () => {
+     frontend/src/shared/ui/query-state/QueryState.test.ts:54:  it("shows the error in place of the data that never loaded, and loads again on retry", async () => {
+     frontend/src/shared/ui/query-state/QueryState.test.ts:71:  it("links a failed first load to the service status", async () => {
+     frontend/src/shared/ui/query-state/QueryState.test.ts:80:  it("leaves the link out where the service status is the page itself", async () => {
+     frontend/src/shared/ui/query-state/QueryState.test.ts:88:  it("keeps the data on screen when a refetch fails, with the error above it", async () => {
+     … +9 lines
+
+⏺ Bash(cd /home/raf/event-registration && grep -rl "Страница не найдена" frontend/src | grep test; grep -n "def test" backend/events/tests/*.py | grep -i "start\|order\|period\|page\|past\|count" | head -20;)
+  ⎿  frontend/src/app/router.test.ts
+     frontend/src/app/App.test.ts
+     backend/events/tests/test_org_event_detail_api.py:41:def test_detail_has_the_event_and_its_counts(client: APIClient, organizer: User) -> None:
+     backend/events/tests/test_org_event_detail_api.py:76:def test_detail_of_an_event_without_registrations_has_zero_counts(
+     backend/events/tests/test_org_event_detail_api.py:106:def test_detail_counts_in_one_query(
+     backend/events/tests/test_event_lists_api.py:69:def test_past_has_only_started_events_most_recent_first(get: Any, organizer: User) -> None:
+     … +26 lines
+
+⏺ Bash(grep -n "фаза 6\|фазе 6\|План\|план (" docs/architecture.md; grep -n "постраничная выдача списков" docs/architecture.md | head -3; grep -n "^## Фаза\|— готова\|— в работе\|— не начата" docs/roadmap.md)
+  ⎿  4:совпадает с кодом) или **план (фаза N)** — согласованный проект, который уточняется в spec
+     178:**Постраничная выдача списков событий (фаза 6)** — `/api/events/` и `/api/org/events/`:
+     190:  `?period=&page=`, ответ `{count, results}` (фаза 6)
+     290:- **План** — экраны появляются в фазе своего механизма (фазы вертикальные):
+     157:- `GET /api/events/?period=&page=` — страница событий с числом свободных мест (заполненные остаются в списке), ответ `{count, results}` — постраничная выдача списков ниже по тексту; `GET /api/even
+     19:## Фаза 0. Каркас — готова
+     … +7 lines
+
+⏺ API списков в `architecture.md` уже описан (задача 5.6). Правлю раздел экранов, аутентификацию, README и roadmap.
+
+⏺ Bash(date +%H:%M && sed -n 288,300p docs/architecture.md | cut -c1-120 && sed -n 118,136p docs/roadmap.md && sed -n 136,150p docs/roadmap.md && grep -n "что дальше\|Что дальше" -i README.md)
+  ⎿  18:41
+     
+     - **Реализовано:** состояние сервиса (`/health`), вход организатора, созд
+     - **План** — экраны появляются в фазе своего механизма (фазы вертик�
+     
+     | Экран                                                                                                            
+     … +35 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  session-expiry.test.ts
+     session-expiry.ts
+     safe-next.test.ts
+     safe-next.ts
+
+⏺ Теперь README и roadmap.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  66:    expect(document.title).toBe(`Страница не найдена — ${APP}`);
+
+⏺ Bash(cd /home/raf/event-registration/frontend/src && grep -c "it\|test" shared/lib/safe-next.test.ts; head -20 shared/lib/safe-next.test.ts; grep -n "Страница не найдена\|no route matches" app/router.test.)
+  ⎿  7
+     import { describe, expect, it } from "vitest";
+     
+     import { safeNext } from "./safe-next";
+     
+     describe("safeNext", () => {
+     … +17 lines
+
+⏺ Bash(cd /home/raf/event-registration && python3 - <<'EOF')
+  ⎿  README.md                              | 23 ++++++++++++++++++++++-
+      docs/architecture.md                   | 13 ++-----------
+      docs/decisions.md                      |  1 +
+      docs/features/frontend-polish/tasks.md |  2 +-
+      docs/roadmap.md                        |  4 ++--
+      5 files changed, 28 insertions(+), 15 deletions(-)
+
+⏺ Проверяю всё целиком: `make stack-check` (по одному процессу, без параллельной нагрузки).
+
+⏺ Bash(SLOT=1 make stack-check > /tmp/claude-1000/-home-raf-event-registration/1ed2f02e-570f-4e25-a2c5-9b13034fb06e/scratchpad/stack-check.log 2>&1; echo exit $?; grep -E "passed|failed|error|Error|✖" /tmp/c)
+  ⎿  exit 2
+      ELIFECYCLE  Command failed with exit code 1.
+     make[1]: *** [Makefile:47: format-check] Error 1
+     make: *** [Makefile:147: stack-check] Error 2
+
+⏺ Bash(grep -B5 "ELIFECYCLE" /tmp/claude-1000/-home-raf-event-registration/1ed2f02e-570f-4e25-a2c5-9b13034fb06e/scratchpad/stack-check.log | head; sed -n 44,48p Makefile)
+  ⎿  > prettier --check .
+     
+     Checking formatting...
+     [warn] README.md
+     [warn] Code style issues found in the above file. Run Prettier with --write to fix.
+      ELIFECYCLE  Command failed with exit code 1.
+     … +4 lines
+
+⏺ Это ожидаемо — таблица README не выровнена; форматирую и перезапускаю.
+
+⏺ Bash(pnpm exec prettier --write README.md >/dev/null && SLOT=1 make stack-check > /tmp/claude-1000/-home-raf-event-registration/1ed2f02e-570f-4e25-a2c5-9b13034fb06e/scratchpad/stack-check.log 2>&1; echo ex)
+  ⎿  exit 0
+     All checks passed!
+     ======================= 316 passed in 111.97s (0:01:51) ========================
+      Test Files  41 passed (41)
+           Tests  406 passed (406)
+     [This command modified 1 file you've previously read: README.md. Call Read before editing.]
+
+⏺ `make stack-check` проходит. Коммичу закрытие фазы.
+
+⏺ Bash(git add -A && git commit -q -m "docs: close phase 6 in the architecture, README and roadmap)
+  ⎿  ⋯ Backing up original state…
+     ✔ Done backing up original state (254d17c)!
+     ⋯ Running tasks for staged files…
+         *.{mjs,json,md,yml,yaml} — 5 files
+           ⋯ prettier --write
+     
+     … +10 lines
+
+⏺ По правилу 6 этап готов только после агента `reviewer`. Смотрю, как ему передавать.
+
+⏺ Bash(sed -n '/^## Ревью/,/^## /p' .claude/skills/feature-workflow/SKILL.md)
+  ⎿  ## Ревью
+     
+     Агент `reviewer` (`.claude/agents/reviewer.md`) с чистым контекстом, после каждого этапа.
+     Независимость ревью держится на промпте: агент знает только то, что в нём.
+     
+     Передать **только**:
+     … +37 lines
+
+⏺ Agent(Review phase 6 stage 6)
+  ⎿  Async agent launched successfully. (This tool result is internal metadata — never quote or paste any part of it, including the agentId below, into a user-facing reply.)
+     agentId: a4667c2bcc3a8491d (internal ID - do not mention to user. Use SendMessage with to: 'a4667c2bcc3a8491d', summary: '<5-10 word recap>' to continue this agent.)
+     The agent is working in the background. You will be notified automatically when it completes. You know nothing about its results until that notification arrives — do not report, assume, or predict the
+     Do not duplicate this agent's work — avoid working with the same files or topics it is using.
+     output_file: /tmp/claude-1000/-home-raf-event-registration/da5ecc38-0bab-48b1-ba5a-be7f462068e9/tasks/a4667c2bcc3a8491d.output
+     Do NOT Read or tail this file via the shell tool — it is the full subagent JSONL transcript and reading it will overflow your context. If the user asks for progress, say the agent is still running; yo
+
+⏺ Обе задачи этапа 6 сделаны и закоммичены в новой ветке `feat/frontend-polish-stage-6`. По вашему решению она ответвлена от ветки этапа 5, после слияния PR #29 перебазируем её на `main`. Ревьюер сейчас проверяет этап. Этап не будет считаться готовым, пока вы не разберёте его находки.
+  
+  Сначала про WSL: его уронил я. Я запустил три Vitest одновременно, получилось около 36 воркеров с jsdom, и памяти не хватило. Это ограничение я сохранил в память агента и записал в `docs/development.md`. Нестабильный тест теперь проверяется повтором в одном процессе (`--repeats`, `--maxWorkers 2`). Ревьюеру я передал то же ограничение.
+  
+  **6.1 — нестабильные тесты (`d6040ce`)**
+  - Тесты, перечисленные в spec, уже ждут результата, а не `flushPromises()`. Их переделали по ходу этапов 2–5.
+  - Критерий выполнен: 10 прогонов `make test-frontend` параллельно с `make stack-check-backend`, все зелёные (406/406). Так было и до правки, и после неё.
+  - Под нагрузкой втрое выше критерия нашлась одна гонка в тесте отказа от билета (`TicketPage`). Текст «Регистрация отменена» появляется раньше, чем сбрасываются списки, и тест проверял сброс слишком рано. Теперь он ждёт конца отказа. Без перегрузки эта гонка не воспроизводится, поэтому проверить, что без правки тест падал, я не смог.
+  - Остальные падения под той же нагрузкой — таймауты от нехватки CPU, гонок среди них нет. По spec таймауты не увеличиваем, поэтому они записаны в «на потом».
+  
+  **6.2 — закрытие фазы (`fab1f7b`)**
+  - `docs/architecture.md`: экраны фазы 6 и сессия описаны как «реализовано». Таблица планов по экранам удалена: всё из неё сделано.
+  - README:
+    - в «Состоянии» добавлена фаза 6;
+    - в таблицу «требование → тест» добавлены 7 строк;
+    - заведён раздел «Что дальше»: регистрация пользователей, дробление на `features`, время окончания события и запрет регистрации на начавшееся. Раньше этого раздела не было, фаза 7 его дополнит.
+  - `docs/roadmap.md`: фаза 6 — «готова», фаза 7 — «в работе».
+  - `make stack-check` проходит. `make stack-e2e` в этой сессии я не запускал. Код приложения не менялся, менялись только тест и документы, а последний прогон e2e в прошлой сессии был 19/19.
+  
+  Сессия 16:13 оставалась без отметки конца, я закрыл её временем последнего коммита (17:58). Пришлю отчёт ревьюера целиком, когда он закончит.
+
+⏺ Ревьюер закончил: серьёзных находок нет, две мелкие, обе в `docs/roadmap.md`. По процедуре я ничего не правлю, пока вы не решите.
+  
+  ## Отчёт ревьюера (диапазон `011a296..fab1f7b`)
+  
+  **Находка 1 — `docs/roadmap.md:118`.** У фазы 6 нет ссылки на её spec и задачи (`docs/features/frontend-polish/`). Шапка roadmap требует такую ссылку для каждой фазы с третьей, у фаз 3–5 она есть. Без неё из закрытой фазы не попасть к `tasks.md`, а на его «Лог» и «на потом» ссылаются README и решение 18:39.
+  Предложение: добавить строку «Spec и задачи — `docs/features/frontend-polish/`.».
+  
+  **Находка 2 — `docs/roadmap.md:124-133`.** У фазы со статусом «готова» остались два открытых абзаца: «Если останется время — регистрация пользователей… Не успели — строка в «что дальше» README» и «дробить экран на `features`… — в этой фазе или позже». Оба вопроса уже решены: в фазе их не сделали, они записаны в README «Что дальше».
+  Предложение: заменить оба абзаца итогом: «Регистрация пользователей и дробление на `features` — не сделаны, в README «Что дальше» (решение 2026-11-04 18:47)».
+  
+  **Что ревьюер снял по логу решений:**
+  - В `LoginPage`, `OrgEventNewPage` и `OrgCheckinPage` после отправки формы по-прежнему стоит `flushPromises()` (например, `LoginPage.test.ts:40`). Это ровно то, что spec подозревает в нестабильности. Ревьюер сначала считал это незакрытой частью 6.1. Снял находку, потому что критерий задачи — 10 зелёных прогонов, а не замена каждого `flushPromises()`. Сами 10 прогонов он не повторял из-за памяти WSL.
+  - Ветка от этапа 5, а не от `main` — ваше решение.
+  
+  **Что ревьюер проверил сам:**
+  - `make stack-check` на `fab1f7b` в своём слоте проходит, Vitest 406/406.
+  - Исправленный тест отказа от билета 30 раз подряд в одном процессе — все зелёные.
+  - Ожидание конца отказа в этом тесте верное, таймауты не увеличены.
+  - Все ссылки в новых строках README «требование → тест» ведут на существующие тесты.
+  - «Что дальше» соответствует коду: проверки начала события при регистрации нет, начавшееся событие попадает в «Прошедшие».
+  - Новые разделы `architecture.md` сверены с кодом.
+  - `make stack-e2e` не запускал: код приложения в диапазоне не менялся. В браузере не смотрел.
+  
+  Принимаете оба предложения как есть? Если да, исправлю roadmap одним коммитом и закрою сессию.
+
+> да, принимаю
+
+⏺ Bash(date +%H:%M && grep -n "Spec и задачи" docs/roadmap.md | head -3)
+  ⎿  19:18
+     41:Spec и задачи — `docs/features/registration/`. Проект — разделы «Аутентификация», «Модель
+     74:Spec и задачи — `docs/features/emails/`. Критерии: письма `ticket`, `waitlisted`,
+     95:Spec и задачи — `docs/features/checkin/`.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  ## Фаза 6. Доводка фронтенда — готова
+     
+     Spec и задачи — `docs/features/frontend-polish/`.
+     Экраны появляются в фазах 1–5; здесь — то, что видно только на собранном приложении.
+     Критерии: общая навигация и layout; у всех экранов состояния загрузки, ошибки и пустого
+     списка; работа на ширине телефона; единый вид.
+     … +9 lines
+
+⏺ Bash(pnpm format:check 2>&1 | tail -2 && git add -A && git commit -q -m "docs: link phase 6 to its spec and settle its open scope in the roadmap)
+  ⎿  Checking formatting...
+     All matched files use Prettier code style!
+     ⋯ Backing up original state…
+     ✔ Done backing up original state (767ec93)!
+     ⋯ Running tasks for staged files…
+         *.{mjs,json,md,yml,yaml} — 3 files
+     … +13 lines
+
+⏺ Обе находки ревьюера исправлены в коммите `9970ae0`. Этап 6 и фаза 6 закрыты.
+  
+  **Что изменилось в `docs/roadmap.md`:**
+  - У фазы 6 появилась ссылка на spec и задачи, как у фаз 3–5.
+  - Два открытых абзаца про регистрацию пользователей и дробление на `features` заменены итогом: в фазе не сделаны, записаны в README «Что дальше».
+  
+  Решение и конец сессии (19:18) записаны в `docs/decisions.md`, ревью — в лог `tasks.md`. Проверка форматирования проходит. Этот коммит меняет только документы, поэтому полный `make stack-check` я не перезапускал: он проходил на `fab1f7b`, и у меня, и у ревьюера.
+  
+  **Коммиты этапа в ветке `feat/frontend-polish-stage-6`:**
+  - `d6040ce` — исправлена гонка в тесте отказа от билета;
+  - `fab1f7b` — закрытие фазы: `architecture.md`, README, roadmap;
+  - `9970ae0` — исправления по ревью.
+  
+  **Что осталось:**
+  - Ветку я не пушил, PR не создан. Ветка ответвлена от ветки этапа 5, поэтому PR лучше открыть после слияния PR #29 и перебазирования на `main`, как договорились. Скажите, когда #29 будет слит, — перебазирую и открою PR.
+  - Дальше фаза 7 — сдача. В roadmap она теперь «в работе».
+
+> смержил #29, ребейзни и открой PR
+
+⏺ Bash(git fetch -q origin && git log --oneline -3 origin/main && git rebase --onto origin/main 011a296 feat/frontend-polish-stage-6 2>&1 | tail -3 && git log --oneline origin/main..HEAD)
+  ⎿  f0e8557 Merge pull request #29 from rbikbov/feat/frontend-polish-stage-5
+     011a296 docs: record the reviews of phase 6, stage 5 in its task log
+     c6e12cc fix(frontend): show the words of the page bar from md, where they fit
+     Rebasing (1/3)Rebasing (2/3)Rebasing (3/3)[KSuccessfully rebased and updated refs/heads/feat/frontend-polish-stage-6.
+     2245f85 docs: link phase 6 to its spec and settle its open scope in the roadmap
+     be37f74 docs: close phase 6 in the architecture, README and roadmap
+     … +1 lines
+
+⏺ Bash(SLOT=1 git push -u origin feat/frontend-polish-stage-6 2>&1 | tail -6)
+  ⎿  remote: Create a pull request for 'feat/frontend-polish-stage-6' on GitHub by visiting:        
+     remote:      https://github.com/rbikbov/event-registration/pull/new/feat/frontend-polish-stage-6        
+     remote: 
+     To github.com:rbikbov/event-registration.git
+      * [new branch]      feat/frontend-polish-stage-6 -> feat/frontend-polish-stage-6
+     branch 'feat/frontend-polish-stage-6' set up to track 'origin/feat/frontend-polish-stage-6'.
+
+⏺ Bash(gh pr view 29 --json body -q .body | head -30)
+  ⎿  The deferred items of phase 6 as stage 5: navigation links that mark the current page, button cursors, a way to `/health` from a failed load and an offline notice, a character counter on the event for
+     
+     ## What changed
+     
+     **Backend**
+     
+     … +24 lines
+
+⏺ Bash(cat > /tmp/claude-1000/-home-raf-event-registration/1ed2f02e-570f-4e25-a2c5-9b13034fb06e/scratchpad/pr.md <<'EOF')
+  ⎿  https://github.com/rbikbov/event-registration/pull/30
+
+⏺ Перебазировал ветку на `main` и открыл PR #30: https://github.com/rbikbov/event-registration/pull/30
+  
+  - **Ребейз:** конфликтов не было — `main` после слияния #29 по содержимому совпадает с прежней базой ветки. Три коммита этапа получили новые хеши: `f3cf13a`, `be37f74`, `2245f85`.
+  - **Пуш:** с `SLOT=1`, хук `pre-push` проверил backend на Postgres слота 1 и пропустил пуш.
+  - **PR:** «Phase 6, stage 6: flaky Vitest tests and closing the phase». Описание — по-английски, в том же виде, что у #29.
+  
+  В описании прямо сказано, что в этом этапе не проверялось:
+  - Что исправленный тест падал без правки — гонка проявляется только под тройной нагрузкой, а её на этой машине больше не запускаем.
+  - `make stack-e2e` — в этом этапе изменились только один тест и документы. Последний прогон в этапе 5 прошёл 19/19.

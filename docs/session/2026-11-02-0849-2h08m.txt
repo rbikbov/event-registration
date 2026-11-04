@@ -1,0 +1,1303 @@
+> /clear
+
+> начинай 1.1
+
+⏺ Skill(session-handoff)
+  ⎿  Launching skill: session-handoff
+
+⏺ Bash(make worktime 2>&1 | tail -5; date '+%Y-%m-%d %H:%M'; tail -15 docs/decisions.md; ls docs/features/)
+  ⎿  2026-11-02 03:44 → 2026-11-02 05:57  2 ч 13 мин
+     2026-11-02 06:02 → 2026-11-02 08:09  2 ч 7 мин
+     2026-11-02 08:24 → 2026-11-02 08:27  0 ч 3 мин
+     Итого: 42 ч 4 мин
+     Предупреждение: сессия с 2026-11-02 08:30 не закрыта и не учтена
+     2026-11-02 08:49
+     … +21 lines
+
+⏺ Bash(git log -1 --format='%ci' && cat docs/features/reschedule/tasks.md && cat docs/features/reschedule/spec.md)
+  ⎿  2026-11-02 08:48:04 +0200
+     # Напоминания и перенос события: задачи
+     
+     Spec — `spec.md`. Одна задача — один коммит; отметка `[x]` — в том же коммите.
+     
+     ## Этап 1. Перенос и изменение лимита
+     … +159 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  - **08:47** — spec фазы 5 утверждён человеком (`docs/features/reschedule/spec.md`). Перенос и лимит — `PATCH` события через `update_event` под замком Event: смена даты — `schedule_version + 1` и письм
+     - **08:48** — ■ конец сессии (сессия не была закрыта; время последнего коммита)
+     - **08:49** — ▶ начало сессии
+
+⏺ Предыдущая сессия (с 08:30) была не закрыта — закрыл её временем последнего коммита (08:48). Теперь feature-workflow.
+
+⏺ Skill(feature-workflow)
+  ⎿  Launching skill: feature-workflow
+
+⏺ Bash(cat backend/AGENTS.md && ls backend backend/*/ && cat docs/rules/db-migrations.md docs/rules/concurrency.md | head -150)
+  ⎿  # backend/ — Django + DRF
+     
+     Команды и инструменты — `docs/development.md`, раздел «Backend». Здесь — правила для кода.
+     
+     ## Структура
+     
+     … +216 lines
+
+⏺ Bash(cd /home/raf/event-registration/backend && cat events/models.py emails/models.py registrations/services.py events/views.py events/serializers.py; ls events/migrations emails/migrations events/tests re)
+  ⎿  from typing import ClassVar, Self
+     
+     from django.conf import settings
+     from django.core.validators import MaxValueValidator, MinValueValidator
+     from django.db import models
+     from django.db.models import Count, F, Q
+     … +633 lines
+
+⏺ Bash(cat emails/services.py emails/templates/emails/*.txt events/services.py; grep -n "events" config/urls.py; cat registrations/views.py | head -80; sed -n 1,80p registrations/tests/test_emails.py)
+  ⎿  import logging
+     import traceback
+     from datetime import UTC, datetime, timedelta
+     from typing import Literal
+     
+     from django.conf import settings
+     … +334 lines
+
+⏺ Bash(cd /home/raf/event-registration/frontend && cat AGENTS.md 2>/dev/null | head -60; find src -type f | grep -v node_modules | sort; cat src/app/router* 2>/dev/null | head -5)
+⏺ Bash(cat registrations/admin.py | head -30; sed -n 1,60p events/admin.py; grep -n "kind\|add_argument\|def poll\|def handle" -n emails/management/commands/*.py | head -30)
+  ⎿  from typing import Any
+     
+     from django.contrib import admin
+     from django.http import HttpRequest
+     
+     from registrations.models import Registration
+     … +57 lines
+
+  ⎿  # frontend/ — Vue 3 + Vite
+     
+     Команды и инструменты — `docs/development.md`, раздел «Frontend». Как писать код (слои, DI,
+     состояние, тесты) — skill `fsd-frontend`. Здесь — правила, которые действуют всегда.
+     
+     ## Карта
+     … +175 lines
+
+⏺ Bash(cat src/pages/org-event/ui/OrgEventLayout.vue src/shared/config/routes.ts src/app/router.ts src/entities/event/api/org-events.ts src/entities/event/index.ts src/pages/org-event-new/api/create-event.ts)
+  ⎿  <script setup lang="ts">
+     import { useQuery, useQueryClient } from "@tanstack/vue-query";
+     import { computed, ref, watch } from "vue";
+     import { useI18n } from "vue-i18n";
+     import { useRoute } from "vue-router";
+     
+     … +315 lines
+
+⏺ Bash(cat src/pages/org-event-new/ui/OrgEventNewPage.vue src/pages/org-event-new/model/event-form.ts; sed -n 1,60p src/pages/org-event-participants/ui/OrgEventParticipantsPage.vue)
+  ⎿  <script setup lang="ts">
+     import { useMutation, useQueryClient } from "@tanstack/vue-query";
+     import { computed, reactive, ref, watch } from "vue";
+     import { useI18n } from "vue-i18n";
+     import { useRouter } from "vue-router";
+     
+     … +308 lines
+
+⏺ Bash(cd /home/raf/event-registration/backend && sed -n 1,60p events/tests/test_org_event_detail_api.py; grep -n "def test\|readonly" events/tests/test_admin.py; cat emails/migrations/0001_create_outbox_ema)
+  ⎿  from datetime import timedelta
+     
+     import pytest
+     from django.utils import timezone
+     from pytest_django.fixtures import DjangoAssertNumQueries
+     from rest_framework.test import APIClient
+     … +88 lines
+
+⏺ Bash(sed -n 40,100p events/tests/test_admin.py)
+  ⎿  def form_data(organizer: User, starts_at: Any, **overrides: Any) -> dict[str, Any]:
+         local = timezone.localtime(starts_at)
+         data = {
+             "organizer": organizer.pk,
+             "title": "Meetup",
+             "description": "",
+     … +53 lines
+
+⏺ Начинаю с тестов `update_event` (тест вперёд).
+
+⏺ Write(/home/raf/event-registration/backend/registrations/tests/test_update_event.py)
+  ⎿  File created successfully at: /home/raf/event-registration/backend/registrations/tests/test_update_event.py (file state is current in your context — no need to Read it back)
+
+⏺ Справедливо — это была мусорная строка. Убираю.
+
+⏺ Edit(/home/raf/event-registration/backend/registrations/tests/test_update_event.py)
+⏺ Edit(/home/raf/event-registration/backend/registrations/tests/test_update_event.py)
+  ⎿  The file /home/raf/event-registration/backend/registrations/tests/test_update_event.py has been updated successfully. (file state is current in your context — no need to Read it back)
+
+  ⎿  The file /home/raf/event-registration/backend/registrations/tests/test_update_event.py has been updated successfully. (file state is current in your context — no need to Read it back)
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  from datetime import UTC, timedelta
+     
+     import pytest
+     All checks passed!
+
+⏺ Bash(cd /home/raf/event-registration && grep -n "^stack-[a-z-]*:" Makefile; grep -n "5433" Makefile docs/development.md | head)
+  ⎿  133:stack-slot:
+     137:stack-postgres: stack-slot
+     141:stack-check: stack-postgres ## make check against the Postgres of slot SLOT (default 1)
+     145:stack-check-backend: stack-postgres ## make check-backend against the Postgres of slot SLOT
+     149:stack-up: stack-slot ## Stack of slot SLOT: frontend on 5173+SLOT, Mailpit on 8025+SLOT
+     153:stack-demo-users: stack-slot ## make demo-users in the stack of slot SLOT
+     … +2 lines
+
+⏺ Bash(make stack-postgres 2>&1 | tail -3 && cd backend && POSTGRES_PORT=5433 uv run pytest registrations/tests/test_update_event.py -q 2>&1 | tail -5)
+  ⎿  Container event-registration-s1-postgres-1 Running 
+      Container event-registration-s1-postgres-1 Waiting 
+      Container event-registration-s1-postgres-1 Healthy 
+     E   ImportError: cannot import name 'update_event' from 'registrations.services' (/home/raf/event-registration/backend/registrations/services.py)
+     =========================== short test summary info ============================
+     ERROR registrations/tests/test_update_event.py
+     … +2 lines
+
+⏺ Падает по ожидаемой причине. Теперь модель и миграции.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Migrations for 'events':
+       events/migrations/0002_add_event_schedule_version.py
+         + Add field schedule_version to event
+     Migrations for 'emails':
+       emails/migrations/0002_add_rescheduled_kind.py
+         - Remove constraint outboxemail_kind_valid from model outboxemail
+     … +50 lines
+
+⏺ SQL нормальный: увеличение `varchar` и `ADD COLUMN` с константой таблицу не переписывают. Теперь сервисы писем.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  (Bash completed with no output)
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  ....                                                                     [100%]
+     4 passed in 2.06s
+
+⏺ Сервис готов. Дальше — API-тесты на `PATCH`, затем serializer и view.
+
+⏺ Bash(sed -n 60,200p events/tests/test_org_event_detail_api.py)
+  ⎿  assert response.status_code == 200
+         assert response.json() == {
+             "id": event.id,
+             "title": "Meetup",
+             "description": "Talks and pizza",
+             "starts_at": event.starts_at.isoformat().replace("+00:00", "Z"),
+     … +49 lines
+
+⏺ Bash(cd /home/raf/event-registration && grep -rn "import-linter\|importlinter\|contracts" backend/pyproject.toml | head; grep -n "events.*registrations\|registrations.*events" docs/architecture.md | head)
+  ⎿  142:- `POST /api/events/{id}/registrations/` `{email, name}` → 201 (в том числе повторная регистрация после отказа) / 200 (повтор) `{status, position?}`; кода
+     170:  - `GET /api/org/events/{id}/registrations/?status=&page=` — регистрации в порядке очереди
+
+⏺ Write(/home/raf/event-registration/backend/registrations/tests/test_org_event_update_api.py)
+⏺ Bash(cd /home/raf/event-registration/backend && POSTGRES_PORT=5433 uv run pytest registrations/tests/test_org_event_update_api.py -q 2>&1 | tail -3; sed -n 80,200p registrations/views.py; grep -n "registra)
+  ⎿  File created successfully at: /home/raf/event-registration/backend/registrations/tests/test_org_event_update_api.py (file state is current in your context — no need to Read it back)
+
+  ⎿  =========================== short test summary info ============================
+     FAILED registrations/tests/test_org_event_update_api.py::test_patch_reschedules_and_answers_with_the_event_and_counts
+     1 failed in 1.22s
+         )
+         def get(self, request: Request, manage_token: str) -> Response:
+             try:
+     … +107 lines
+
+⏺ Тест падает (405). Пишу serializer, view и URL.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  I001 [*] Import block is un-sorted or un-formatted
+       --> config/urls.py:1:1
+        |
+      1 | / from django.contrib import admin
+      2 | | from django.urls import path
+      3 | |
+     … +66 lines
+
+⏺ Тесты проходят. Сортирую импорты и закрываю `schedule_version` в админке.
+
+⏺ Bash(uv run ruff check --fix -q . ; python3 - <<'EOF')
+  ⎿  35:        starts_at=timezone.now() + timedelta(days=7),
+     40:def form_data(organizer: User, starts_at: Any, **overrides: Any) -> dict[str, Any]:
+     41:    local = timezone.localtime(starts_at)
+     .....                                                                    [100%]
+     5 passed in 3.85s
+     [This command modified 1 file you've previously read: events/tests/test_admin.py. Call Read before editing.]
+
+⏺ Проверяю, что тест админки падает без этой защиты:
+
+⏺ Bash(cp events/admin.py /tmp/claude-1000/-home-raf-event-registration/58adccf1-dd3a-460e-ba0b-d13cc016196f/scratchpad/admin.bak && sed -i 's/return ("schedule_version",)/return ()/; s/"capacity", "schedule)
+  ⎿  FAILED events/tests/test_admin.py::test_add_accepts_a_start_in_the_future - a...
+     FAILED events/tests/test_admin.py::test_change_keeps_capacity_start_organizer_and_schedule_version
+     2 failed, 3 passed in 3.75s
+      backend/events/admin.py | 7 ++++---
+      1 file changed, 4 insertions(+), 3 deletions(-)
+
+⏺ Оба падают без защиты. Генерирую схему и типы.
+
+⏺ Bash(cd /home/raf/event-registration && grep -n "^schema" -A6 Makefile | head -12; POSTGRES_PORT=5433 make schema 2>&1 | tail -5; git diff --stat)
+  ⎿  78:schema: ## Regenerate the OpenAPI schema and frontend API types after an API change
+     79-	$(BACKEND) $(SPECTACULAR) --file openapi.yaml
+     80-	$(FRONTEND) pnpm gen:api
+     81-
+     82-.PHONY: schema-check
+     83:schema-check: ## Fail if openapi.yaml or frontend API types are out of date, or a view is undocumented
+     … +24 lines
+
+⏺ Bash(git diff backend/openapi.yaml | grep "^+" | head -60)
+  ⎿  +++ b/backend/openapi.yaml
+     +      description: |-
+     +        The organizer's event: read it with the counts (events), change it (here).
+     +
+     +        Here and not in events: a change of the date emails the participants, and events cannot
+     +        import registrations.
+     … +52 lines
+
+⏺ Bash(cd /home/raf/event-registration/backend && python3 - <<'EOF')
+  ⎿  -      description: 'The organizer''s event panel: the event with its registration
+     +      description: |-
+     +          description: ''
+     +          description: Another organizer's event
+     +          description: No such event
+     +      description: |-
+     … +2 lines
+
+⏺ Backend готов. Теперь фронтенд: маршрут, вкладка и страница редактирования с полем даты.
+
+⏺ Bash(cd /home/raf/event-registration/frontend && sed -n 1,80p src/pages/org-event/ui/OrgEventLayout.test.ts; cat src/pages/org-checkin/index.ts; grep -n "datetime\|toLocal" -r src --include=*.ts | head)
+  ⎿  import { focusManager, onlineManager, QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
+     import { flushPromises, mount } from "@vue/test-utils";
+     import { http, HttpResponse } from "msw";
+     import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+     import { h, type FunctionalComponent } from "vue";
+     import { createMemoryHistory, createRouter, RouterView } from "vue-router";
+     … +76 lines
+
+⏺ Bash(sed -n 1,40p src/pages/org-event-new/model/event-form.test.ts; cat vitest.config.* 2>/dev/null | head -30; grep -n "TZ\|timezone" package.json vite.config.ts 2>/dev/null)
+  ⎿  import { describe, expect, it } from "vitest";
+     
+     import { parseEventForm, serverFormErrors, type EventFormInput } from "./event-form";
+     
+     const now = new Date("2030-01-01T00:00:00Z");
+     
+     … +49 lines
+
+⏺ Тест вперёд для перевода даты в значение `datetime-local`:
+
+⏺ Bash(mkdir -p src/pages/org-event-edit/{model,api,ui} && cat > src/pages/org-event-edit/model/local-input.test.ts <<'EOF')
+  ⎿  Tests  no tests
+        Start at  08:53:53
+        Duration  740ms (environment 92%, setup 7%, transform 1%, worker 1%)
+
+⏺ Bash(pnpm exec vitest run src/pages/org-event-edit 2>&1 | grep -i "error\|fail" | head -3; cat > src/pages/org-event-edit/model/local-input.ts <<'EOF')
+  ⎿  ⎯⎯⎯⎯⎯⎯ Failed Suites 1 ⎯⎯⎯⎯⎯⎯⎯
+      FAIL  src/pages/org-event-edit/model/local-input.test.ts [ src/pages/org-event-edit/model/local-input.test.ts ]
+     Error: Failed to resolve import "./local-input" from "src/pages/org-event-edit/model/local-input.test.ts". Does the file exist?
+           Tests  2 passed (2)
+
+⏺ Теперь маршрут, запрос, страница и вкладка.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  src/shared/config/index.ts:1:export { checkinPath, eventPath, orgEventPath, routes, ticketPath } from "./routes";
+     src/shared/config/routes.ts:12:  orgEventEdit: "/org/events/:id(\\d+)/edit",
+     src/shared/config/routes.ts:32:export function orgEventEditPath(id: number): string {
+
+⏺ Bash(sed -i 's/export { checkinPath, eventPath, orgEventPath, routes, ticketPath } from ".\/routes";/export {\n  checkinPath,\n  eventPath,\n  orgEventEditPath,\n  orgEventPath,\n  routes,\n  ticketPath,\n)
+  ⎿  export {
+       checkinPath,
+       eventPath,
+       orgEventEditPath,
+       orgEventPath,
+       routes,
+     … +2 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  import { Alert, AlertDescription } from "@/shared/ui/shadcn/alert";
+     import { Button } from "@/shared/ui/shadcn/button";
+     
+     // The event of the organizer: read and kept live here, once for every tab under it, so switching
+     // tabs keeps the stream. Nothing of the event is shown before its GET has answered: until then it
+     // may be someone else's. The participants and the edit form get the loaded event as the `event`
+     … +3 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  10:    "lint": "eslint .",
+     11:    "typecheck": "vue-tsc -b",
+     12:    "test": "vitest run",
+     13:    "test:watch": "vitest",
+
+⏺ Bash(pnpm typecheck 2>&1 | tail -5 && pnpm lint 2>&1 | tail -8 && pnpm test 2>&1 | grep -E "Tests|FAIL|✗|×" | head)
+  ⎿  > frontend@0.0.0 typecheck /home/raf/event-registration/frontend
+     > vue-tsc -b
+     
+     
+     > frontend@0.0.0 lint /home/raf/event-registration/frontend
+     > eslint .
+     … +2 lines
+
+⏺ Всё зелёное. Добавлю в тест макета проверку третьей вкладки — посмотрю, как проверяются существующие:
+
+⏺ Bash(grep -n "it(\|currentTab\|data-tab" src/pages/org-event/ui/OrgEventLayout.test.ts | head -30)
+  ⎿  32:  h("p", { "data-tab": "participants" }, props.event.title);
+     34:const Checkin: FunctionalComponent = () => h("form", { "data-tab": "checkin" });
+     72:function currentTab(wrapper: Wrapper) {
+     124:    expect(wrapper.find("[data-tab]").exists()).toBe(false);
+     129:  it("shows the event, its counters and gives it to the participants tab", async () => {
+     141:    expect(currentTab(wrapper)).toBe("Участники");
+     … +24 lines
+
+⏺ Bash(sed -n 125,160p src/pages/org-event/ui/OrgEventLayout.test.ts; sed -n 345,368p src/pages/org-event/ui/OrgEventLayout.test.ts)
+  ⎿  backend.release();
+         await flushPromises();
+       });
+     
+       it("shows the event, its counters and gives it to the participants tab", async () => {
+         server.use(http.get(EVENT, () => HttpResponse.json(event)));
+     … +54 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Tests  100 passed (100)
+
+⏺ Обновляю карту фронтенда, лог задач и решения, затем `make stack-check`.
+
+⏺ Bash(cd /home/raf/event-registration && python3 - <<'EOF')
+  ⎿  08:55
+
+⏺ Bash(cat >> docs/decisions.md <<'EOF')
+  ⎿  9  |     ]
+     10 |
+     11 |     operations = [
+     12 |         migrations.AddField(
+        -             model_name='event',
+        -             name='schedule_version',
+     … +9 lines
+
+⏺ Свежие миграции не отформатированы (их создал `makemigrations`, мимо хука) — форматирую, они ещё не закоммичены.
+
+⏺ Bash(cd /home/raf/event-registration/backend && uv run ruff format events/migrations/0002_add_event_schedule_version.py emails/migrations/0002_add_rescheduled_kind.py && cd .. && make stack-check 2>&1 | gr)
+  ⎿  2 files reformatted
+     All checks passed!
+     registrations/tests/test_org_event_update_api.py:43: error: Returning Any from function declared to return "str"  [no-any-return]
+     Found 1 error in 1 file (checked 81 source files)
+     make[1]: *** [Makefile:67: typecheck-backend] Error 1
+     make: *** [Makefile:142: stack-check] Error 2
+
+⏺ Bash(cd /home/raf/event-registration/backend && python3 - <<'EOF')
+  ⎿  All checks passed!
+     ======================== 258 passed in 79.15s (0:01:19) ========================
+      Test Files  28 passed (28)
+           Tests  254 passed (254)
+
+⏺ Bash(make stack-check > /tmp/claude-1000/-home-raf-event-registration/58adccf1-dd3a-460e-ba0b-d13cc016196f/scratchpad/check.log 2>&1; echo exit=$?; tail -5 /tmp/claude-1000/-home-raf-event-registration/58a)
+  ⎿  exit=0
+     
+     > e2e@0.0.0 typecheck /home/raf/event-registration/e2e
+     > tsc --noEmit
+     
+     make[1]: Leaving directory '/home/raf/event-registration'
+
+⏺ `make stack-check` проходит целиком. Теперь браузер: поднимаю стек слота 1 и проверяю перенос → письма в Mailpit.
+
+⏺ Bash(make stack-up 2>&1 | tail -3 && make stack-demo-users 2>&1 | tail -2; grep -n "demo" README.md | head -5)
+  ⎿  Container event-registration-s1-mailpit-1 Healthy 
+      Container event-registration-s1-worker-1 Healthy 
+      Container event-registration-s1-frontend-1 Healthy 
+     POSTGRES_PORT=5433 BACKEND_PORT=8001 FRONTEND_PORT=5174 MAILPIT_PORT=8026 MAILPIT_SMTP_PORT=1026 docker compose -p event-registration-s1 exec backend python manage.py create_demo_users
+     Demo users are ready.
+     14:вход организатора (демо: `demo@example.com` / `demo`), создание события, публичный список и
+     … +2 lines
+
+⏺ Bash(cd /home/raf/event-registration/e2e && ls; grep -n "baseURL\|5174" playwright.config.ts | head; ls tests 2>/dev/null | head)
+  ⎿  AGENTS.md
+     CLAUDE.md
+     eslint.config.js
+     node_modules
+     package.json
+     playwright.config.ts
+     … +14 lines
+
+⏺ Bash(S=/tmp/claude-1000/-home-raf-event-registration/58adccf1-dd3a-460e-ba0b-d13cc016196f/scratchpad && cat > $S/browse.mjs <<'EOF')
+  ⎿  register 201 {"status":"confirmed"}
+     register 201 {"status":"waitlisted","position":1}
+     field: 2031-03-10T18:00
+     header before: 10 марта 2031 г. в 18:00
+     header after: 12 марта 2031 г. в 19:30
+     --- wait1793602874043@example.com | Событие перенесено: Перенос 1793602874043 
+     … +47 lines
+
+⏺ Read(/tmp/claude-1000/-home-raf-event-registration/58adccf1-dd3a-460e-ba0b-d13cc016196f/scratchpad/edit.png)
+  ⎿  (no output)
+
+⏺ Всё на месте. Менялись API и UI, поэтому прогоняю ещё `make stack-e2e`:
+
+⏺ Bash(cd /home/raf/event-registration && make stack-e2e 2>&1 | grep -E "passed|failed|flaky|Error" | tail -5)
+  ⎿  12 passed (18.8s)
+
+⏺ Bash(make stack-down >/dev/null 2>&1; git add -A && git status --short && git commit -q -F - <<'EOF')
+  ⎿  M  backend/config/urls.py
+     A  backend/emails/migrations/0002_add_rescheduled_kind.py
+     M  backend/emails/models.py
+     M  backend/emails/services.py
+     A  backend/emails/templates/emails/rescheduled.txt
+     M  backend/events/admin.py
+     … +47 lines
+
+⏺ Задача 1.1 (сквозной первый вариант переноса даты) готова, коммит `f9cf721` на ветке `feat/reschedule-reminders`.
+  
+  **Что сделано:**
+  - **Backend.** У события появился номер версии даты: каждый перенос увеличивает его на 1. Новый вид письма — «Событие перенесено». Миграции две, ни одна не переписывает таблицу целиком. Сервис `update_event` меняет дату под замком события, поднимает версию и ставит письмо каждому подтверждённому и стоящему в листе ожидания. Подтверждённому письмо приходит с кодом билета, стоящему в листе — без кода и без номера в очереди. Если прислана та же дата, ничего не меняется и писем нет.
+  - **API.** `PATCH /api/org/events/{id}/` отвечает событием со счётчиками. Схема `openapi.yaml` и типы фронтенда обновлены.
+  - **Админка.** Номер версии в ней только для чтения, и при создании события тоже.
+  - **Frontend.** В макете события третья вкладка «Редактирование» с полем «Начало». Поле заполнено текущей датой, после сохранения появляется «Сохранено» и сразу меняется дата в шапке.
+  
+  **Проверено:**
+  - `make stack-check` проходит: pytest 258, Vitest 254.
+  - `make stack-e2e`: прошли все 12 тестов.
+  - Тесты на перенос: два письма и версия +1, та же дата без писем, у каждого переноса свои письма. Тест админки падает, если убрать защиту версии.
+  - Браузер: прошёл сценарий в Chromium через Playwright на стеке слота 1, потому что браузерных инструментов в этой сессии нет. Создал событие на 1 место, зарегистрировал двоих и перенёс дату на вкладке. В Mailpit оба письма о переносе с правильными «было / стало». В консоли одна ошибка — 401 на `/api/auth/me/` на странице входа до логина, так и должно быть.
+  
+  **Мои решения (записаны в `docs/decisions.md`):**
+  - `PATCH` сделан в `registrations/views.py` как наследник представления события из `events`. Иначе `events` пришлось бы импортировать `registrations` для писем, а spec это запрещает.
+  - Поле вида письма расширено с 10 до 20 символов: `rescheduled` в 10 не помещается.
+  
+  **Пока не сделано, это задача 1.2:** проверка «дата в прошлом» и обновление счётчиков в открытых вкладках после изменения. Сейчас `PATCH` примет прошедшую дату.
+  
+  Предыдущая сессия осталась незакрытой — закрыл её временем последнего коммита (08:48). Новую сессию начал в 08:49 и пока не закрывал. Следующая задача — 1.2: начать её?
+
+> начинай 1.2
+
+⏺ Bash(cd /home/raf/event-registration/backend && sed -n 1,60p registrations/tests/test_stats_notifications.py; cat config/exceptions.py | head -80)
+  ⎿  from collections.abc import Callable, Iterator
+     from datetime import timedelta
+     
+     import psycopg
+     import pytest
+     from django.db import transaction
+     … +94 lines
+
+⏺ Пишу тесты вперёд: сервис, уведомления потока, API.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  54:def test_first_check_in_notifies_after_commit(
+     62:def test_rolled_back_check_in_does_not_notify(
+     72:def test_repeat_check_in_does_not_notify(
+     83:def test_registration_notifies_after_commit(
+     91:def test_rolled_back_registration_does_not_notify(
+     101:def test_repeat_registration_does_not_notify(
+     … +6 lines
+
+⏺ Последний тест бессмысленный (отмеченный на входе всегда `confirmed` по CHECK) — убираю. Теперь API-тесты:
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  ERROR registrations/tests/test_update_event.py
+     !!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+     1 error in 0.24s
+     [This command modified 2 files you've previously read: registrations/tests/test_org_event_update_api.py, registrations/tests/test_update_event.py. Call Read before editing.]
+
+⏺ Падает на отсутствующем `CapacityBelowConfirmed` — как и ожидалось. Пишу сервис:
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  with self.wrap_database_errors:
+             conn_errors: list[tuple[e.Error, str]] = []
+                     logger.debug("connection failed: %s: %s", descr, str(tex))
+                     conn_errors.append((tex, descr))
+                     logger.debug("connection failed: %s: %s", descr, str(ex))
+                     conn_errors.append((ex, descr))
+     … +24 lines
+
+⏺ Я остановил стек слота 1 (`stack-down`) — поднимаю Postgres заново.
+
+⏺ Bash(cd /home/raf/event-registration && make stack-postgres >/dev/null 2>&1; cd backend && POSTGRES_PORT=5433 uv run pytest registrations/tests/test_update_event.py registrations/tests/test_stats_notificat)
+  ⎿  21 passed in 13.18s
+
+⏺ Сервис проходит. Теперь serializer с проверками, как при создании, и обработка `below_confirmed` во view.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  218 passed in 68.33s (0:01:08)
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Success: no issues found in 81 source files
+      backend/events/serializers.py                      |  26 +++--
+      backend/openapi.yaml                               |  14 ++-
+      backend/registrations/services.py                  |  84 ++++++++++-----
+      .../tests/test_org_event_update_api.py             | 115 +++++++++++++++++++++
+      .../tests/test_stats_notifications.py              |  19 +++-
+     … +20 lines
+
+⏺ Проверяю, нужен ли `type: ignore` в сервисе на самом деле:
+
+⏺ Bash(cd /home/raf/event-registration/backend && grep -n "warn_unused_ignores\|strict" pyproject.toml; sed -i 's/            setattr(event, field, changes\[field\])  # type: ignore\[literal-required\]  # fi)
+  ⎿  44:strict = true
+     58:addopts = "--strict-markers"
+     registrations/services.py:206: error: TypedDict key must be a string literal; expected one of ("title", "description", "starts_at", "capacity")  [literal-required]
+     Found 1 error in 1 file (checked 1 source file)
+
+⏺ Нужен — но лучше обойтись без него: брать пары из `changes.items()`.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Success: no issues found in 81 source files
+     def update_event(event_id: int, changes: EventChanges, *, now: datetime | None = None) -> Event:
+         """Apply the organizer's `changes` (only the fields sent) to the event and return it.
+     
+         All under the event lock, in one transaction with the emails: an email goes out if and only
+         if its change is committed, and concurrent changes run one after another.
+     … +38 lines
+
+⏺ Bash(cat config/tests/concurrency.py; sed -n 1,70p registrations/tests/test_concurrency.py)
+  ⎿  import threading
+     from collections.abc import Callable, Sequence
+     
+     from django.db import connection
+     
+     
+     … +94 lines
+
+⏺ Bash(grep -n "^def test" registrations/tests/test_concurrency.py | tail -5 && python3 - <<'EOF')
+  ⎿  82:def test_parallel_cancels_of_one_token_promote_exactly_one(event: Event) -> None:
+     92:def test_cancel_in_parallel_with_a_registration_keeps_the_seat_for_the_queue(
+     108:def test_parallel_cancels_of_different_tokens_fill_seats_from_the_queue_in_order(
+     129:def test_parallel_check_ins_of_one_code_mark_it_once(event: Event) -> None:
+     144:def test_check_in_in_parallel_with_a_cancel_lets_exactly_one_pass(event: Event) -> None:
+     I001 [*] Import block is un-sorted or un-formatted
+     … +40 lines
+
+⏺ Проходят. Теперь проверка на падение: убираю замок в `update_event` и гоняю новые тесты гонки.
+
+⏺ Bash(uv run ruff check --fix -q registrations/tests; S=/tmp/claude-1000/-home-raf-event-registration/58adccf1-dd3a-460e-ba0b-d13cc016196f/scratchpad; cp registrations/services.py $S/services.bak && python3)
+  ⎿  backend/registrations/services.py | 88 ++++++++++++++++++++++++++++-----------
+      1 file changed, 63 insertions(+), 25 deletions(-)
+     FAILED registrations/tests/test_concurrency.py::test_lower_capacity_with_parallel_registrations_never_leaves_seats_over
+     FAILED registrations/tests/test_concurrency.py::test_parallel_reschedules_each_get_a_version_and_emails
+     2 failed, 2 passed, 8 deselected in 2.60s
+     FAILED registrations/tests/test_concurrency.py::test_lower_capacity_with_parallel_registrations_never_leaves_seats_over
+     … +12 lines
+
+⏺ Bash(git diff --stat registrations/services.py && python3 - <<'EOF')
+  ⎿  backend/registrations/services.py | 86 ++++++++++++++++++++++++++++-----------
+      1 file changed, 62 insertions(+), 24 deletions(-)
+     Command did not complete within its 120s timeout and was moved to the background (ID: bl9puhkr0). Output is being written to: /tmp/claude-1000/-home-raf-event-registration/949c05f2-5502-4fe9-b623-6db4
+
+⏺ Пока идут 20 прогонов, записываю решения и отметку задачи.
+
+⏺ Bash(cd /home/raf/event-registration && date '+%H:%M' && sed -i 's/^- \[ \] 1\.2\./- [x] 1.2./' docs/features/reschedule/tasks.md && grep -n "1.2" docs/features/reschedule/tasks.md | head -2)
+  ⎿  09:31
+     13:- [x] 1.2. `PATCH` остальных полей: название, описание, лимит (рост — повышение из листа с
+
+⏺ Bash(cat >> docs/decisions.md <<'EOF')
+  ⎿  (Bash completed with no output)
+
+⏺ ToolSearch(select:Monitor)
+  ⎿  (no output)
+
+⏺ Жду окончания 20 прогонов тестов гонки (фоновая задача, уведомление придёт само). Параллельно `make stack-check` не запускаю: он использует ту же тестовую БД Postgres слота 1.
+
+⏺ Bash(cat /tmp/claude-1000/-home-raf-event-registration/949c05f2-5502-4fe9-b623-6db4085f062d/tasks/bl9puhkr0.output; cd /home/raf/event-registration && make stack-check > /tmp/claude-1000/-home-raf-event-re)
+  ⎿  backend/registrations/services.py | 86 ++++++++++++++++++++++++++++-----------
+      1 file changed, 62 insertions(+), 24 deletions(-)
+     done
+     
+     [exited with code 0]
+     exit=2
+     … +3 lines
+
+⏺ 20 прогонов — без падений. `stack-check` упал на mypy:
+
+⏺ Bash(grep -B2 "error:" /tmp/claude-1000/-home-raf-event-registration/58adccf1-dd3a-460e-ba0b-d13cc016196f/scratchpad/check.log | head)
+  ⎿  94 files already formatted
+     cd backend && uv run mypy .
+     registrations/tests/test_concurrency.py:195: error: Argument 1 to "run_together" has incompatible type "list[object]"; expected "Sequence[Callable[[], Never]]"  [arg-type]
+
+⏺ Вызовы с разными типами результата — указываю тип списка явно.
+
+⏺ Bash(cd /home/raf/event-registration/backend && python3 - <<'EOF')
+  ⎿  Success: no issues found in 81 source files
+     exit=0
+     ======================== 282 passed in 84.80s (0:01:24) ========================
+      Test Files  28 passed (28)
+           Tests  254 passed (254)
+     [This command modified 1 file you've previously read: backend/registrations/tests/test_concurrency.py. Call Read before editing.]
+
+⏺ `make stack-check` проходит. API менялся — прогоняю `make stack-e2e`:
+
+⏺ Bash(make stack-up >/dev/null 2>&1 && make stack-e2e 2>&1 | grep -E "passed|failed|flaky" | tail -3; make stack-down >/dev/null 2>&1; echo down)
+  ⎿  12 passed (16.4s)
+     down
+
+⏺ Bash(git add -A && git status --short && git commit -q -F - <<'EOF')
+  ⎿  M  backend/events/serializers.py
+     M  backend/openapi.yaml
+     M  backend/registrations/services.py
+     M  backend/registrations/tests/test_concurrency.py
+     M  backend/registrations/tests/test_org_event_update_api.py
+     M  backend/registrations/tests/test_stats_notifications.py
+     … +29 lines
+
+⏺ Задача 1.2 готова, коммит `a0df131`.
+  
+  **Что сделано:**
+  - **`PATCH /api/org/events/{id}/`** теперь принимает любой набор из `title`, `description`, `starts_at`, `capacity`. Поля проверяются так же, как при создании, и ошибки приходят с теми же кодами.
+  - **Лимит.** Если лимит вырос, места получают первые из листа ожидания по порядку, и каждому уходит письмо «Освободилось место». Если лимит меньше числа подтверждённых — ответ 400 с кодом `below_confirmed`. Эта проверка идёт под замком события: регистрация между проверкой и сохранением не займёт место сверх нового лимита. При отказе запрос не применяется целиком, даже если в нём были другие поля.
+  - **Дата в прошлом** (400 `past`) отклоняется, только если дата меняется. Событие, которое уже идёт, можно переименовать, даже если клиент прислал его дату обратно.
+  - **Обновление счётчиков в открытых вкладках** (`notify_stats_changed`) срабатывает при любом настоящем изменении. Поле, присланное с текущим значением, изменением не считается: нет ни версии, ни писем, ни уведомления.
+  - **Права:** 401 без входа, 403 на чужое событие, 404 на несуществующее — по каждому случаю есть тест.
+  
+  **Проверено:**
+  - `make stack-check` проходит: pytest 282, Vitest 254.
+  - `make stack-e2e`: прошли все 12 тестов.
+  - Добавил два теста гонки: снижение лимита одновременно с регистрациями и одновременные переносы. Без замка в `update_event` оба падают в 5 прогонах из 5. С замком тесты гонки прошли 20 раз подряд без падений.
+  
+  **Что убрал из тестов:** тест «рост лимита одновременно с отказом» проходил и без замка `update_event`, потому что повышения уже упорядочивает замок отказа. По правилу `concurrency.md` такой тест ничего не защищает, поэтому в набор он не вошёл. Это записано в `docs/decisions.md` вместе с остальными решениями задачи.
+  
+  **Поведение, которое стоит знать:** если в одном запросе меняются и дата, и лимит, повышенный из листа получает два письма. Первое — о переносе, ещё как стоящему в листе, второе — «Освободилось место» с новой датой.
+  
+  **Пока не сделано, это задача 1.3:** вкладка «Редактирование» всё ещё с одним полем даты. На любую ошибку, включая `past`, она показывает общее «попробуйте позже». Полная форма с ошибками под полями — следующая задача.
+  
+  Сессия не закрыта. Продолжать с 1.3?
+
+> продолжай 1.3
+
+⏺ Skill(fsd-frontend)
+  ⎿  Launching skill: fsd-frontend
+
+⏺ Bash(cd /home/raf/event-registration/frontend && sed -n 40,200p src/pages/org-event-new/model/event-form.test.ts; grep -n "event-form\|model" src/pages/org-event-new/ui/OrgEventNewPage.test.ts | head; ls s)
+  ⎿  [{ capacity: Number.NaN }, "capacity", "invalid"],
+         [{ capacity: 2.5 }, "capacity", "invalid"],
+         [{ capacity: 0 }, "capacity", "min_value"],
+         [{ capacity: 10001 }, "capacity", "max_value"],
+       ] as const)("rejects %j", (overrides, field, code) => {
+         const result = parseEventForm(input(overrides), now);
+     … +23 lines
+
+⏺ Bash(mkdir -p src/entities/event/model && git mv src/pages/org-event-new/model/event-form.ts src/entities/event/model/event-form.ts && git mv src/pages/org-event-new/model/event-form.test.ts src/entities/e)
+⏺ Bash(cat >> src/entities/event/model/event-form.test.ts <<'EOF')
+  ⎿  src/pages/org-event-edit:
+     api
+     index.ts
+     model
+     ui
+     
+     … +5 lines
+
+  ⎿  ❯ serverFormErrors (4)
+     ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 9 ⎯⎯⎯⎯⎯⎯⎯
+      FAIL  src/entities/event/model/event-form.test.ts > serverFormErrors > knows below_confirmed of the capacity
+     AssertionError: expected { capacity: 'invalid' } to deeply equal { capacity: 'below_confirmed' }
+          68|     expect(serverFormErrors({ capacity: ["below_confirmed"] })).toEqua…
+
+⏺ Падают по ожидаемым причинам. Пишу модель:
+
+⏺ Bash(rmdir src/pages/org-event-new/model src/pages/org-event-edit/model; python3 - <<'EOF')
+  ⎿  Tests  26 passed (26)
+
+⏺ `Object.assign` с вычисляемым ключом обходит типизацию — заменю на типизированный generic-помощник:
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Tests  26 passed (26)
+     src/pages/org-event-edit/ui/OrgEventEditPage.vue(13,33): error TS2307: Cannot find module '../model/local-input' or its corresponding type declarations.
+     src/pages/org-event-new/ui/OrgEventNewPage.vue(30,8): error TS2307: Cannot find module '../model/event-form' or its corresponding type declarations.
+
+⏺ Модель на месте; ошибки типов — от ещё не переписанных страниц. Экспорт из сущности и страница создания:
+
+⏺ Bash(cat >> src/entities/event/index.ts <<'EOF')
+  ⎿  src/pages/org-event-edit/ui/OrgEventEditPage.vue(13,33): error TS2307: Cannot find module '../model/local-input' or its corresponding type declarations.
+           Tests  6 passed (6)
+
+⏺ Теперь тест страницы редактирования (вперёд). Смотрю, как устроен тест страницы создания:
+
+⏺ Bash(sed -n 1,80p src/pages/org-event-new/ui/OrgEventNewPage.test.ts)
+  ⎿  import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
+     import { flushPromises, mount } from "@vue/test-utils";
+     import { http, HttpResponse } from "msw";
+     import { describe, expect, it } from "vitest";
+     import { createMemoryHistory, createRouter } from "vue-router";
+     
+     … +74 lines
+
+⏺ Write(/home/raf/event-registration/frontend/src/pages/org-event-edit/ui/OrgEventEditPage.test.ts)
+  ⎿  File created successfully at: /home/raf/event-registration/frontend/src/pages/org-event-edit/ui/OrgEventEditPage.test.ts (file state is current in your context — no need to Read it back)
+
+⏺ Теперь страница:
+
+⏺ Write(/home/raf/event-registration/frontend/src/pages/org-event-edit/ui/OrgEventEditPage.vue)
+  ⎿  The file /home/raf/event-registration/frontend/src/pages/org-event-edit/ui/OrgEventEditPage.vue has been updated successfully. (file state is current in your context — no need to Read it back)
+
+⏺ Edit(/home/raf/event-registration/frontend/src/pages/org-event-edit/ui/OrgEventEditPage.vue)
+⏺ Bash(pnpm exec vitest run src/pages/org-event-edit 2>&1 | grep -E "Tests|FAIL|✓|×|AssertionError|Error:" | head -30)
+  ⎿  The file /home/raf/event-registration/frontend/src/pages/org-event-edit/ui/OrgEventEditPage.vue has been updated successfully. (file state is current in your context — no need to Read it back)
+
+  ⎿  × asks before a reschedule, naming who gets the email 29ms
+     ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+      FAIL  src/pages/org-event-edit/ui/OrgEventEditPage.test.ts > OrgEventEditPage > asks before a reschedule, naming who gets the email
+     AssertionError: expected [] to deeply equal [ Array(1) ]
+           Tests  1 failed | 8 passed (9)
+
+⏺ Edit(/home/raf/event-registration/frontend/src/pages/org-event-edit/ui/OrgEventEditPage.vue)
+⏺ Bash(pnpm exec vitest run src/pages/org-event-edit 2>&1 | grep -E "Tests|FAIL|×|AssertionError" | head -10)
+  ⎿  The file /home/raf/event-registration/frontend/src/pages/org-event-edit/ui/OrgEventEditPage.vue has been updated successfully. (file state is current in your context — no need to Read it back)
+
+  ⎿  Tests  9 passed (9)
+
+⏺ Все 9 проходят. Полная проверка фронтенда:
+
+⏺ Bash(pnpm exec prettier --write src >/dev/null && pnpm typecheck 2>&1 | grep -E "error" | head; pnpm lint 2>&1 | grep -E "error|warning" | head; pnpm test 2>&1 | grep -E "Tests|FAIL")
+  ⎿  Tests  272 passed (272)
+
+⏺ Bash(cd /home/raf/event-registration && python3 - <<'EOF')
+  ⎿  10:08
+      M docs/features/reschedule/tasks.md
+      M frontend/AGENTS.md
+      M frontend/src/entities/event/index.ts
+     RM frontend/src/pages/org-event-new/model/event-form.test.ts -> frontend/src/entities/event/model/event-form.test.ts
+     RM frontend/src/pages/org-event-new/model/event-form.ts -> frontend/src/entities/event/model/event-form.ts
+     … +6 lines
+
+⏺ `schema.d.ts` изменился — это мой `prettier --write src` задел сгенерированный файл. Проверяю и откатываю:
+
+⏺ Bash(git diff --stat frontend/src/shared/api/schema.d.ts && git checkout frontend/src/shared/api/schema.d.ts && git status --short | grep schema; echo ok)
+  ⎿  frontend/src/shared/api/schema.d.ts | 1994 +++++++++++++++++------------------
+      1 file changed, 997 insertions(+), 997 deletions(-)
+     Updated 1 path from the index
+     ok
+
+⏺ Откатил. Записываю решения:
+
+⏺ Bash(cat >> docs/decisions.md <<'EOF')
+  ⎿  exit=0
+     ======================= 282 passed in 151.55s (0:02:31) ========================
+      Test Files  29 passed (29)
+           Tests  272 passed (272)
+
+⏺ `make stack-check` проходит. UI менялся — поднимаю стек, гоняю `stack-e2e` и сам прохожу форму в Chromium:
+
+⏺ Bash(make stack-up >/dev/null 2>&1 && make stack-demo-users >/dev/null 2>&1 && make stack-e2e 2>&1 | grep -E "passed|failed|flaky" | tail -3)
+  ⎿  12 passed (20.9s)
+
+⏺ Bash(cd /home/raf/event-registration/e2e && S=/tmp/claude-1000/-home-raf-event-registration/58adccf1-dd3a-460e-ba0b-d13cc016196f/scratchpad && cat > $S/browse2.mjs <<'EOF')
+  ⎿  disabled initially: true
+     node:internal/modules/run_main:123
+         triggerUncaughtException(
+         ^
+     
+     locator.fill: Timeout 30000ms exceeded.
+     … +9 lines
+
+⏺ Селектор в моём скрипте неверный (`#capacity` — сам `input`); правлю скрипт.
+
+⏺ Bash(S=/tmp/claude-1000/-home-raf-event-registration/58adccf1-dd3a-460e-ba0b-d13cc016196f/scratchpad && sed -i 's/page.locator("#capacity").locator("input")/page.getByLabel("Мест")/g' $S/browse2.mjs && nod)
+  ⎿  disabled initially: true
+     below_confirmed shown
+     header: Форма 1793607281762 (новая)
+     counters: [ '3', '3', '0', '0', '0' ]
+     confirm: Участникам (подтверждено 3, в листе 0) уйдёт письмо о переносе.
+     date: 12 марта 2031 г. в 19:30
+     … +18 lines
+
+⏺ Read(/tmp/claude-1000/-home-raf-event-registration/58adccf1-dd3a-460e-ba0b-d13cc016196f/scratchpad/confirm.png)
+  ⎿  (no output)
+
+⏺ Bash(cd /home/raf/event-registration && make stack-down >/dev/null 2>&1; git add -A && git commit -q -F - <<'EOF')
+  ⎿  ⋯ Backing up original state…
+     ✔ Done backing up original state (a32c2d4)!
+     ⋯ Running tasks for staged files…
+         frontend/**/*.{ts,vue,js} — 8 files
+           ⋯ pnpm --dir frontend exec eslint --fix
+           ⋯ prettier --write
+     … +13 lines
+
+⏺ Задача 1.3 готова, коммит `daedd08`: на вкладке «Редактирование» теперь меняются все поля события.
+  
+  **Что сделано:**
+  - **Общая модель формы.** Модель формы события переехала из страницы создания в `entities/event/model`. Её используют обе страницы, создания и редактирования. Новые функции модели:
+    - `eventFormInput` заполняет форму текущими значениями события;
+    - `changedFields` находит изменённые поля;
+    - `parseEventChanges` проверяет поля так же, как при создании, и возвращает только изменённые. «Дата в прошлом» проверяется, только если дату меняли.
+  - **Страница редактирования:**
+    - поля заполнены текущими значениями, пока ничего не изменено, кнопка «Сохранить» неактивна;
+    - на сервер уходят только изменённые поля;
+    - если меняется дата, в форме появляется подтверждение «Участникам (подтверждено N, в листе M) уйдёт письмо о переносе» с кнопками «Перенести» и «Отмена»;
+    - ошибки показываются под полями. Слишком маленький лимит — «Не меньше подтверждённых: N»;
+    - при сбое сети появляется «Не удалось сохранить…», введённое в форме не теряется;
+    - после сохранения шапка события сразу обновляется из ответа сервера.
+  
+  **Проверено:**
+  - `make stack-check` проходит: pytest 282, Vitest 272.
+  - В том числе новые тесты: 9 на страницу и 11 на модель формы.
+  - `make stack-e2e`: прошли все 12 тестов.
+  - В Chromium на стеке слота 1 прошёл все сценарии формы: лимит ниже подтверждённых, рост лимита с переименованием, перенос с подтверждением, сбой сети.
+  - После этого в Mailpit:
+    - двое подтверждённых получили «Событие перенесено»;
+    - стоявший в листе получил «Освободилось место», а после переноса — «Событие перенесено» уже как подтверждённый.
+  - Ошибки в консоли — только те, что я вызвал сам: 401 до входа, 400 на маленький лимит и оборванный запрос.
+  
+  **Решения, которые стоит проверить** (записаны в `docs/decisions.md`):
+  - **Подтверждение только при участниках.** Если на событие никто не зарегистрирован, перенос уходит сразу, без вопроса: писем всё равно не будет. В spec сказано «подтверждение перед отправкой» без этого исключения.
+  - **Форма сравнивает с тем, что было при открытии вкладки или последнем сохранении**, а не с живыми данными события. Иначе название, изменённое в другой вкладке, считалось бы изменённым здесь и отправлялось обратно.
+  - **Общая только модель формы.** Разметка полей и тексты ошибок повторяются на двух страницах: spec обещал общую модель, а не общий компонент.
+  
+  По ходу заметил, что мой `prettier --write src` переформатировал сгенерированный `schema.d.ts`. Я откатил его до коммита, в историю это не попало.
+  
+  Следующая — задача 1.4, e2e переноса и роста лимита. После неё этап 1 переходит к ревью агентом `reviewer`. Продолжать?
+
+> делаем 1.4
+
+⏺ Bash(cd /home/raf/event-registration/e2e && cat AGENTS.md | head -60; cat tests/helpers.ts; cat tests/waitlisted-gets-promoted.spec.ts)
+  ⎿  # e2e/ — Playwright
+     
+     Команды — `docs/development.md`, раздел «E2E». Тесты идут против поднятого стека: человек — `make up` / `make e2e`, агент — `make stack-e2e` (слот 1).
+     
+     ## Правила
+     
+     … +150 lines
+
+⏺ Bash(grep -n "RouterLink\|orgEventPath" ../frontend/src/pages/org-events/ui/OrgEventsPage.vue | head; grep -rn "request.post\|registrations/" tests/*.ts | head)
+  ⎿  6:import { checkinPath, orgEventPath, routes } from "@/shared/config";
+     25:        <RouterLink :to="routes.orgEventsNew">{{ t("create") }}</RouterLink>
+     42:                <RouterLink class="hover:underline" :to="orgEventPath(event.id)">
+     44:                </RouterLink>
+     54:                <RouterLink :to="checkinPath(event.id)">{{ t("checkin") }}</RouterLink>
+
+⏺ Перенесу `registerOn` в `helpers.ts` — у него появляется второй потребитель — и напишу два теста.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  ok
+
+⏺ Bash(cd /home/raf/event-registration && make stack-up >/dev/null 2>&1 && make stack-demo-users >/dev/null 2>&1; cd e2e && S=/tmp/claude-1000/-home-raf-event-registration/58adccf1-dd3a-460e-ba0b-d13cc016196)
+  ⎿  disabled after typing: true
+     saved after one click: false | disabled now: false
+
+⏺ Bash(cd /home/raf/event-registration/frontend && python3 - <<'EOF')
+  ⎿  × lets the button be pressed while a typed capacity is not applied yet 48ms
+     ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+           Tests  1 failed | 9 passed (10)
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Tests  10 passed (10)
+     [This command modified 1 file you've previously read: src/pages/org-event-edit/ui/OrgEventEditPage.vue. Call Read before editing.]
+
+⏺ Тест проходит. Проверяю тот же сценарий в настоящем Chromium (фронтенд стека — Vite, изменения подхватываются):
+
+⏺ Bash(cd /home/raf/event-registration/e2e && sleep 2; node /tmp/claude-1000/-home-raf-event-registration/58adccf1-dd3a-460e-ba0b-d13cc016196f/scratchpad/numfield.mjs $PWD)
+  ⎿  disabled after typing: true
+     saved after one click: false | disabled now: false
+
+⏺ Bash(cd /home/raf/event-registration && grep -n "frontend:" -A15 docker-compose.yml | grep -nE "volumes|build|command|\./frontend" | head; curl -s http://localhost:5174/src/pages/org-event-edit/ui/OrgEvent)
+  ⎿  2:68-    build:
+     0
+
+⏺ Фронтенд стека — собранный образ, без live-reload. Пересобираю стек и повторяю:
+
+⏺ Bash(cd /home/raf/event-registration && sed -n '/^stack-up:/,/^$/p' Makefile; make stack-up >/dev/null 2>&1; cd e2e && node /tmp/claude-1000/-home-raf-event-registration/58adccf1-dd3a-460e-ba0b-d13cc016196)
+  ⎿  stack-up: stack-slot ## Stack of slot SLOT: frontend on 5173+SLOT, Mailpit on 8025+SLOT
+     	$(STACK_COMPOSE) up -d --build --wait
+     
+     disabled after typing: false
+     saved after one click: true | disabled now: true
+
+⏺ Bash(cd /home/raf/event-registration && make stack-e2e 2>&1 | grep -E "passed|failed|flaky|✘|Error" | tail -8)
+  ⎿  14 passed (18.5s)
+
+⏺ 14 из 14. Условие «готово» — тесты падают без писем. Останавливаю воркер слота 1 и гоняю два новых теста:
+
+⏺ Bash(sed -n '/^stack-e2e:/,/^$/p' Makefile)
+  ⎿  stack-e2e: export FRONTEND_TARGET := gateway
+     stack-e2e: stack-up ## Start the stack of slot SLOT with the gateway and run Playwright tests
+     	$(MAKE) stack-demo-users
+     	cd e2e && E2E_BASE_URL=http://localhost:$(STACK_FRONTEND_PORT) \
+     		E2E_MAILPIT_URL=http://localhost:$(call slot_port,8025) pnpm test
+
+⏺ Bash(docker compose -p event-registration-s1 stop worker 2>&1 | tail -1; cd e2e && E2E_BASE_URL=http://localhost:5174 E2E_MAILPIT_URL=http://localhost:8026 pnpm test organizer-reschedules organizer-raises )
+  ⎿  Container event-registration-s1-worker-1 Stopped 
+       ✘  2 [chromium] › tests/organizer-raises-capacity.spec.ts:5:1 › a larger capacity gives the waitlist head a seat and an email with the ticket (8.9s)
+       ✘  1 [chromium] › tests/organizer-reschedules-event.spec.ts:11:1 › a rescheduled event emails the confirmed and the waitlisted (9.4s)
+         - Timeout 5000ms exceeded while waiting on the predicate
+             at emailTo (/home/raf/event-registration/e2e/tests/helpers.ts:88:10)
+         - Timeout 5000ms exceeded while waiting on the predicate
+     … +4 lines
+
+⏺ Bash(S=/tmp/claude-1000/-home-raf-event-registration/58adccf1-dd3a-460e-ba0b-d13cc016196f/scratchpad && cp backend/registrations/services.py $S/services.bak && python3 - <<'EOF')
+  ⎿  backend/registrations/services.py | 6 ++----
+      1 file changed, 2 insertions(+), 4 deletions(-)
+       ✘  1 [chromium] › tests/organizer-raises-capacity.spec.ts:5:1 › a larger capacity gives the waitlist head a seat and an email with the ticket (15.0s)
+       ✘  2 [chromium] › tests/organizer-reschedules-event.spec.ts:11:1 › a rescheduled event emails the confirmed and the waitlisted (15.7s)
+         Error: expect(locator).toHaveText(expected) failed
+         Expected: "2"
+     … +7 lines
+
+⏺ Bash(git status --short && make stack-check > /tmp/claude-1000/-home-raf-event-registration/58adccf1-dd3a-460e-ba0b-d13cc016196f/scratchpad/check.log 2>&1; echo exit=$?; grep -E "passed|failed" /tmp/claude)
+  ⎿  M e2e/tests/helpers.ts
+      M e2e/tests/waitlisted-gets-promoted.spec.ts
+      M frontend/src/pages/org-event-edit/ui/OrgEventEditPage.test.ts
+      M frontend/src/pages/org-event-edit/ui/OrgEventEditPage.vue
+     ?? e2e/tests/organizer-raises-capacity.spec.ts
+     ?? e2e/tests/organizer-reschedules-event.spec.ts
+     … +5 lines
+
+⏺ Bash(grep -E "FAIL|×|Error|Expected|Received" /tmp/claude-1000/-home-raf-event-registration/58adccf1-dd3a-460e-ba0b-d13cc016196f/scratchpad/check.log | head -12)
+  ⎿  × cancels, rereads the ticket and refreshes the events 267ms
+      FAIL  src/pages/ticket/ui/TicketPage.test.ts > TicketPage > cancels, rereads the ticket and refreshes the events
+     AssertionError: expected false to be true // Object.is equality
+     - Expected
+     + Received
+     ⎯⎯⎯⎯⎯⎯ Unhandled Errors ⎯⎯⎯⎯⎯⎯
+     … +4 lines
+
+⏺ Bash(cd /home/raf/event-registration/frontend && for i in 1 2 3 4 5; do pnpm exec vitest run src/pages/ticket 2>&1 | grep -E "Tests "; done; git log --oneline -3 -- src/pages/ticket)
+  ⎿  Tests  13 passed (13)
+           Tests  13 passed (13)
+           Tests  13 passed (13)
+           Tests  13 passed (13)
+           Tests  13 passed (13)
+     ae1e639 feat(frontend): explain on the ticket that a checked-in code is used up
+     … +2 lines
+
+⏺ Bash(cd /home/raf/event-registration && grep -n "window is not defined" -A12 /tmp/claude-1000/-home-raf-event-registration/58adccf1-dd3a-460e-ba0b-d13cc016196f/scratchpad/check.log | grep -E "❯|at " | head)
+  ⎿  426- ❯ resolveMessageFormat ../node_modules/.pnpm/@intlify+core-base@11.4.16/node_modules/@intlify/core-base/dist/core-base.mjs:1666:13
+     427- ❯ translate ../node_modules/.pnpm/@intlify+core-base@11.4.16/node_modules/@intlify/core-base/dist/core-base.mjs:1529:11
+     428- ❯ ../node_modules/.pnpm/vue-i18n@11.4.16_vue@3.5.44_typescript@6.0.3_/node_modules/vue-i18n/dist/vue-i18n.runtime.mjs:591:48
+     429- ❯ ../node_modules/.pnpm/vue-i18n@11.4.16_vue@3.5.44_typescript@6.0.3_/node_modules/vue-i18n/dist/vue-i18n.runtime.mjs:539:49
+     430- ❯ withRootFallbackContext ../node_modules/.pnpm/vue-i18n@11.4.16_vue@3.5.44_typescript@6.0.3_/node_modules/vue-i18n/dist/vue-i18n.runtime.mjs:476:20
+     431- ❯ wrapWithDeps ../node_modules/.pnpm/vue-i18n@11.4.16_vue@3.5.44_typescript@6.0.3_/node_modules/vue-i18n/dist/vue-i18n.runtime.mjs:539:19
+     … +4 lines
+
+⏺ Повторный `make stack-check` прошёл целиком. Записываю решения, «на потом», отметку и коммичу.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  ⋯ Backing up original state…
+     ✔ Done backing up original state (13cfcda)!
+     ⋯ Running tasks for staged files…
+         frontend/**/*.{ts,vue,js} — 2 files
+           ⋯ pnpm --dir frontend exec eslint --fix
+           ⋯ prettier --write
+     … +18 lines
+
+⏺ Bash(make stack-down >/dev/null 2>&1; git log --oneline ae1e639..HEAD)
+  ⎿  f8540cd test(e2e): reschedule and raise capacity end to end
+     daedd08 feat(frontend): edit every field of an event on its edit tab
+     a0df131 feat(backend): change title, description and capacity of an event
+     f9cf721 feat: reschedule an event and email its participants
+     29885f9 docs: add the phase 5 spec and tasks for reminders and rescheduling
+
+⏺ Задача 1.4 готова, коммит `f8540cd`. По ходу нашёл и исправил ошибку в форме из 1.3.
+  
+  **Что сделано:**
+  - **Тест переноса:** организатор переносит событие через форму с подтверждением. Подтверждённый получает письмо о переносе с новой датой и кодом, стоящий в листе — «Вы в листе ожидания».
+  - **Тест лимита:** организатор поднимает лимит с 1 до 2, счётчики на панели меняются. Первый из листа получает «Освободилось место», и его код виден на странице билета по ссылке из письма.
+  - **Хелперы.** `registerOn` переехал в `helpers.ts`: теперь его использует второй тест. Там же новый `openEventEdit`.
+  
+  **Ошибка из 1.3, которую поймал этот шаг.** Поле «Мест» применяет значение только при потере фокуса. Если ввести лимит и сразу кликнуть «Сохранить», клик приходился в ещё неактивную кнопку и терялся — сохранялось только со второго раза. Воспроизвёл в Chromium. Моя браузерная проверка в 1.3 этого не увидела, потому что нажимала Tab. Теперь кнопка активна, пока в поле набрано, но ещё не применено значение, и правило spec «без изменений кнопка неактивна» по-прежнему выполняется. После исправления один клик сохраняет, в Chromium проверено.
+  
+  **Проверено:**
+  - `make stack-e2e`: прошли все 14 тестов.
+  - Падение без писем проверил временной правкой backend:
+    - без писем о переносе тест переноса падает на проверке письма «Событие перенесено»;
+    - без повышения из листа тест лимита падает на счётчике «Подтверждено», до проверки письма не доходит.
+    - Остановка воркера для такой проверки не годилась: без него тест переноса падал раньше, ещё на письме «Билет».
+  - `make stack-check`: с первого раза упал `TicketPage.test.ts`, которого я не трогал. Ошибка — `window is not defined` из `vue-i18n`, похоже, страница рендерится уже после того, как тестовое окружение разобрано. Отдельно этот тест прошёл 5 раз из 5, повторный полный прогон прошёл: pytest 282, Vitest 273. Записал в «На потом» в `tasks.md`.
+  
+  **Отступление от правил:** исправление формы попало в один коммит с e2e, а правило — одно изменение на коммит. Ветка ещё не запушена, могу разделить на два коммита.
+  
+  Этап 1 закрыт: коммиты `f9cf721`…`f8540cd`, база этапа — `ae1e639`. По процессу дальше ревью этапа агентом `reviewer` на диапазоне `ae1e639..f8540cd`, потом вы разбираете находки, потом браузерная проверка. Запускать ревью?
+
+> ревью
+
+⏺ Bash(sed -n '/## Этап 1/,/## Этап 2/p' docs/features/reschedule/tasks.md; sed -n '/## Этап 2/,/## Лог/p' docs/features/reschedule/tasks.md | head -20)
+  ⎿  ## Этап 1. Перенос и изменение лимита
+     
+     - [x] 1.1. Tracer bullet: перенос даты насквозь — `Event.schedule_version`, вид письма
+           `rescheduled` (миграции), `update_event` только для `starts_at`,
+           `PATCH /api/org/events/{id}/`, `openapi.yaml` и типы, вкладка «Редактирование» с полем
+           даты.
+     … +25 lines
+
+⏺ Agent(Review phase 5 stage 1)
+  ⎿  Async agent launched successfully. (This tool result is internal metadata — never quote or paste any part of it, including the agentId below, into a user-facing reply.)
+     agentId: a4fdc995eac171864 (internal ID - do not mention to user. Use SendMessage with to: 'a4fdc995eac171864', summary: '<5-10 word recap>' to continue this agent.)
+     The agent is working in the background. You will be notified automatically when it completes. You know nothing about its results until that notification arrives — do not report, assume, or predict the
+     Do not duplicate this agent's work — avoid working with the same files or topics it is using.
+     output_file: /tmp/claude-1000/-home-raf-event-registration/949c05f2-5502-4fe9-b623-6db4085f062d/tasks/a4fdc995eac171864.output
+     Do NOT Read or tail this file via the shell tool — it is the full subagent JSONL transcript and reading it will overflow your context. If the user asks for progress, say the agent is still running; yo
+
+⏺ Ревью этапа 1 запущено: агент `reviewer` проверяет диапазон `ae1e639..f8540cd` по spec и задачам 1.1–1.4. Работает в своём слоте (2) и с чистым контекстом, мой стек не трогает. Когда придёт отчёт, покажу его целиком до любых правок. Решения по находкам — за вами.
+
+⏺ Отчёт ревьюера, целиком и без правок. Блокирующих находок нет, три находки ждут ваших решений.
+  
+  ---
+  
+  ## Ревью этапа 1 фазы 5, диапазон ae1e639..f8540cd
+  
+  Коммиты диапазона на месте: 29885f9, f9cf721, a0df131, daedd08, f8540cd. Нашёл три вещи, все средней или низкой важности. Блокирующих находок нет.
+  
+  ### Находки
+  
+  **1. `frontend/src/pages/org-event-edit/ui/OrgEventEditPage.vue` — гонка / кэш**
+  Что: `onSuccess` кладёт ответ PATCH в `orgEventQuery(id)` через `setQueryData`. Счётчики в этом ответе view читает отдельным запросом уже после коммита (`backend/registrations/views.py`, `with_registration_counts().get`). Регистрация или отказ, закоммиченные между этим чтением и приходом ответа, присылают снимок потока с более свежими счётчиками, и ответ перезаписывает его.
+  Почему важно: панель показывает устаревшие «Подтверждено / в листе / свободно» до следующего изменения события. Подтверждение переноса берёт число получателей из тех же счётчиков, так что «уйдёт письмо N участникам» может разойтись с фактом. Код сам запрещает такой порядок: комментарий у `orgEventProbe` в `frontend/src/entities/event/api/org-events.ts` («the answer never replaces the counts of a fresher snapshot») и в макете `OrgEventLayout.vue` («a GET … could answer after it with older counts»).
+  Исправление: брать из ответа только поля формы (`title`, `description`, `starts_at`, `capacity`). Это можно делать через `setQueryData` с merge поверх текущего кэша, счётчики оставлять снимку потока. Либо не писать ответ в кэш: NOTIFY из `update_event` сам пришлёт снимок. Если оставить по spec («событие в кэше обновляется ответом»), добавить в spec и decisions оговорку про счётчики.
+  
+  **2. `frontend/src/entities/event/model/event-form.ts` — корректность формы**
+  Что: `changedFields` обрезает пробелы только у `title`, а `description` сравнивает как есть. Сервер обрезает `description`: это `CharField` в `ModelSerializer`, `trim_whitespace=True` по умолчанию. Если ввести «Talks » или « Talks», PATCH уйдёт, сервер вернёт «Talks». После этого `initial` = «Talks», а в форме останется « Talks»: поле так и считается изменённым, кнопка «Сохранить» активна рядом с «Сохранено». Каждый следующий клик шлёт PATCH, который ничего не меняет.
+  Почему важно: нарушено требование spec «нет изменений — кнопка неактивна». Организатор видит несохранённую правку, которой нет.
+  Исправление: сравнивать и отправлять `description` обрезанным, как `title`. Например, `z.string().trim().max(2000)` в `eventSchema` и trim в `changedFields` для обоих текстовых полей. Плюс тест в `event-form.test.ts`.
+  
+  **3. `backend/AGENTS.md`, правило 9 («Event: лимит, дата, организатор — до сервисов фазы 5») — документация против кода**
+  Что: сервис `update_event` теперь есть. Правило 9 при этом требует: «если сервис есть — вызывает его из `save_model`». А `events/admin.py:get_readonly_fields` по-прежнему держит `starts_at` и `capacity` только для чтения, как велит Non-Goal spec («по-прежнему только для чтения»).
+  Почему важно: правило противоречит коду и spec. Следующий агент по п. 9 начнёт переводить админку на `update_event`, хотя это решили не делать.
+  Исправление: заменить «до сервисов фазы 5» фактом. Например: «дата и лимит в админке только для чтения и после фазы 5: изменение — через PATCH организатора (spec reschedule, Non-Goals)».
+  
+  ### Проверки
+  
+  - **`stack-check` SLOT=2: упал.** Упал один тест на frontend, вне диапазона: `src/pages/ticket/ui/TicketPage.test.ts` › «cancels, rereads the ticket and refreshes the events». В строке 184 `isInvalidated` оказался `false`. Файлы `pages/ticket` диапазон не трогает. Я трижды запустил этот файл отдельно и один раз весь Vitest (273 теста), всё зелёное, так что тест нестабильный. Его стоит поправить отдельно: похоже, проверка идёт до того, как отработала инвалидация. Это не находка этапа.
+    - До падения прошли: format, tooling, check-ci, actionlint, backend lint/types/pytest (282 passed), eslint frontend.
+    - После падения `make` остановился, и `check-e2e` (линт и типы `e2e/`) не запускался.
+  - **`stack-e2e` SLOT=2: прошёл**, 14 из 14. Среди них `organizer-reschedules-event.spec.ts` и `organizer-raises-capacity.spec.ts`.
+  - `stack-down SLOT=2` и `review-worktree-remove` выполнены.
+  
+  ### Что снято решениями из docs/decisions.md
+  
+  - Кандидат «при переносе и росте лимита в одном PATCH повышенный получает сначала "вы в листе ожидания", потом "освободилось место"». Снят записью 09:31: порядок выбран сознательно, второе письмо верное и с новой датой.
+  - Кандидат «форма сравнивает с событием на момент открытия, а не с живым». Снят записью 10:08: так поле, изменённое в другой вкладке, не отправляется обратно.
+  - Кандидат «кнопка активна, пока в поле "Мест" набрано, но не применено» (`capacityTyped`). Снят записью 10:36: без этого первый клик терялся, это воспроизведено в Chromium.
+  
+  Решения 09:31 и 10:08 первую находку (про кэш) не снимают. Они не касаются порядка ответа PATCH и снимков потока.
+  
+  ### Проверено без находок
+  
+  - **Spec.** Сценарии этапа 1 есть. PATCH возвращает 200 с `OrgEventSerializer`; ошибки 400 `validation` / `past` (только при смене даты) / `below_confirmed`, а также 401, 403, 404 покрыты pytest. Повторно присланная та же дата не даёт ни версии, ни писем, ни `notify`. Лишнего сверх Non-Goals нет: нет писем об изменении названия, нет правки даты и лимита в админке.
+  - **Инварианты и конкурентность.** Проверка лимита и повышение из листа идут под `select_for_update` Event. Версия и письма о переносе — в одной транзакции. `pg_notify` транзакционный. Тесты гонок настоящие: `django_db(transaction=True)`, `run_together` в потоках, снижение лимита параллельно с регистрациями, параллельные переносы.
+  - **Письма.** `dedup_key` `rescheduled:{reg}:{version}`, `ON CONFLICT DO NOTHING`. Письмо в листе ожидания — без кода и номера. Тема в одну строку.
+  - **Миграции.** Новые, закоммиченные не менялись. Рост varchar 10→20 и замена CHECK на расширенный набор, данных под новое ограничение нет. `schedule_version` с постоянным default.
+  - **Админка.** `schedule_version` только для чтения и при создании, и при изменении; покрыто тестом.
+  - **API-контракт.** `openapi.yaml` и `schema.d.ts` обновлены, `PatchedEventUpdateRequest` совпадает с сериализатором. CSRF для PATCH ставит общий `csrfMiddleware`. Авторизация — `get_org_event` в `patch`.
+  - **Фронтенд.** Импорты сверху вниз, `entities/event` экспортирует через `index.ts`. Ошибки различаются по `AppError.kind` и `fields`. Есть загрузка, блокировка повторной отправки, ошибка сети с сохранением значений, ошибки полей под полем.
+  - **Мусор.** Поиск по добавленным строкам: TODO, `except Exception`, пустые `catch`, `console`, `waitForTimeout`, `v-html`, `datetime.now` — ничего. Эмодзи и рекламного тона нет.
+  
+  ### Не проверялось
+  
+  - Страницы в браузере я не смотрел, были только e2e.
+  - Письма в Mailpit слота 2 руками не открывал; их содержимое проверено e2e.
+  - `check-e2e` (линт и типы `e2e/`) не дошёл до запуска из-за падения выше.
+  - Этап 2 (напоминания, seed) — вне объёма.
+  
+  ---
+  
+  **Факты от меня** — они только для разбора, решать вам:
+  - **К находке 1:** снимок потока приходит после коммита `update_event`, потому что `notify_stats_changed` срабатывает при любом изменении. Значит, у варианта «не писать ответ в кэш» шапка и счётчики обновятся из снимка с небольшой задержкой, а не мгновенно.
+  - **К находке 2:** ошибка в моём коде. Название я обрезал при сравнении, а описание нет. Сервер обрезает оба поля.
+  - **К находке 3:** правило 9 я в этапе не трогал, а ревьюер прав, что теперь оно противоречит spec.
+  - **`TicketPage.test.ts`:** у меня тот же тест падал с другой ошибкой: `window is not defined` из `vue-i18n`. У ревьюера — `isInvalidated` = `false` в строке 184. Тест один, симптомы разные, значит, он нестабилен сильнее, чем я записал в «На потом».
+  
+  Решения по каждой находке:
+  
+  1. **Кэш после PATCH.** Варианты:
+     - (а) мёрж только полей формы поверх кэша;
+     - (б) не писать ответ в кэш и ждать снимок потока;
+     - (в) оставить как есть и записать оговорку в spec.
+  
+     Я бы выбрал (а): шапка обновляется сразу, а счётчики остаются за потоком.
+  2. **Обрезка описания** — исправить, как предлагает ревьюер?
+  3. **Правило 9 в `backend/AGENTS.md`** — заменить на факт из находки?
+  4. **`TicketPage.test.ts`** — оставить в «На потом» с обоими симптомами или чинить сейчас отдельным коммитом?
+
+> 1 — б (может быть блокировать кнопку до следующего снимка), 2 да, 3 да, 4 на потом
+
+⏺ Принято. По п. 1 блокировку кнопки до следующего снимка делать не буду, вот почему. После сохранения форма сравнивает уже с ответом PATCH, а не с кэшем, так что повторная отправка до снимка ничего не испортит. А если поток в этот момент переподключается, кнопка осталась бы заблокированной неопределённо долго. Если всё же хотите блокировку — скажите, добавлю отдельно.
+  
+  Начинаю с п. 1. Сначала меняю тест:
+
+⏺ Bash(cd /home/raf/event-registration/frontend && grep -n "puts the answer into the event cache" -A20 src/pages/org-event-edit/ui/OrgEventEditPage.test.ts)
+  ⎿  100:  it("sends only the changed fields and puts the answer into the event cache", async () => {
+     101-    const bodies = patched();
+     102-    const { wrapper, queryClient } = mountPage();
+     103-
+     104-    await type(wrapper, { title: "Renamed", capacity: "5" });
+     105-    await submit(wrapper);
+     … +15 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  × sends only the changed fields and leaves the event cache to the stream 153ms
+     ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+           Tests  1 failed | 9 passed (10)
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Tests  10 passed (10)
+
+⏺ Комментарий у `invalidateQueries` ссылался на «данные панели — уже ответ». Это больше не так, поправляю:
+
+⏺ Bash(grep -n "Exact:" src/pages/org-event-edit/ui/OrgEventEditPage.vue && sed -i 's|    // Exact: the list key prefixes the panel.s, whose data is the answer already.|    // Exact: the list key prefixes th)
+  ⎿  61:    // Exact: the list key prefixes the panel's, whose data is the answer already.
+     61:    // Exact: the list key prefixes the panel's, which the stream keeps (see above).
+     ../docs/features/reschedule/tasks.md:19:      сети, кэш события — из ответа. Готово, когда: Vitest по состояниям формы.
+     [This command modified 1 file you've previously read: src/pages/org-event-edit/ui/OrgEventEditPage.vue. Call Read before editing.]
+
+⏺ Bash(cd /home/raf/event-registration && grep -n "ответом" docs/features/reschedule/spec.md)
+  ⎿  83:обновляется ответом; ошибка поля — под полем (`below_confirmed`: «Не меньше подтверждённых:
+
+⏺ Bash(sed -n 81,85p docs/features/reschedule/spec.md)
+  ⎿  Дата изменена — перед отправкой подтверждение «Участникам (подтверждено N, в листе M) уйдёт
+     письмо о переносе». Сохранение: кнопка блокируется, успех — «Сохранено», событие в кэше
+     обновляется ответом; ошибка поля — под полем (`below_confirmed`: «Не меньше подтверждённых:
+     N»), сеть — сообщение, форма не сбрасывается.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  11:04
+
+⏺ Bash(cat >> docs/decisions.md <<'EOF')
+  ⎿  ⋯ Backing up original state…
+     ✔ Done backing up original state (6f1a87d)!
+     ⋯ Running tasks for staged files…
+         frontend/**/*.{ts,vue,js} — 2 files
+           ⋯ pnpm --dir frontend exec eslint --fix
+           ⋯ prettier --write
+     … +13 lines
+
+⏺ Теперь п. 2 — обрезка описания. Тест вперёд:
+
+⏺ Bash(cd /home/raf/event-registration/frontend && python3 - <<'EOF')
+  ⎿  × is empty for the initial values, and for text that differs only in spaces 9ms
+          × sends the description trimmed, as the server keeps it 4ms
+     ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+           Tests  2 failed | 25 passed (27)
+
+⏺ Оба падают по ожидаемой причине. Исправляю модель:
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  // as it is sent, trimmed.
+     export function changedFields(input: EventFormInput, initial: EventFormInput): EventField[] {
+       return EVENT_FIELDS.filter((field) =>
+         field === "title"
+           ? input.title.trim() !== initial.title.trim()
+           : input[field] !== initial[field],
+     … +2 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Tests  193 passed (193)
+
+⏺ Проходит. Коммит п. 2:
+
+⏺ Bash(cd /home/raf/event-registration && cat >> docs/decisions.md <<'EOF')
+  ⎿  ⋯ Backing up original state…
+     ✔ Done backing up original state (422c400)!
+     ⋯ Running tasks for staged files…
+         frontend/**/*.{ts,vue,js} — 2 files
+           ⋯ pnpm --dir frontend exec eslint --fix
+           ⋯ prettier --write
+     … +13 lines
+
+⏺ Пункты 3 и 4 — документация:
+
+⏺ Bash(grep -n "до сервисов фазы 5" backend/AGENTS.md && python3 - <<'EOF')
+  ⎿  43:   организатор — до сервисов фазы 5). Проверки, которых нет в модели (дата в будущем — в
+     9. Каждая модель приложения регистрируется в админке в том же коммите, что и модель:
+        `config/tests/test_admin.py` падает на незарегистрированной. Модели, которые меняются
+        только через сервисы с блокировками и инвариантами (регистрации, письма), в админке —
+        только для чтения: `has_add_permission`, `has_change_permission`, `has_delete_permission`
+        возвращают `False`, и это проверено тестом.
+     … +11 lines
+
+⏺ Неточность в моей формулировке: организатора `PATCH` не меняет. Исправляю и выравниваю перенос строк:
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  exit=0
+     ======================= 282 passed in 151.49s (0:02:31) ========================
+      Test Files  29 passed (29)
+           Tests  274 passed (274)
+
+⏺ Bash(git add -A && git commit -q -F - <<'EOF')
+  ⎿  ⋯ Backing up original state…
+     ✔ Done backing up original state (397bc9b)!
+     ⋯ Running tasks for staged files…
+         *.{mjs,json,md,yml,yaml} — 3 files
+           ⋯ prettier --write
+     
+     … +9 lines
+
+⏺ Все находки ревью разобраны по вашим решениям, три коммита:
+  
+  - **`3ac738e` — п. 1, вариант (б).** Ответ `PATCH` больше не попадает в кэш события. Шапку и счётчики обновляет снимок потока: сервер шлёт его на любое изменение события. Значения, с которыми сравнивает форма, после сохранения по-прежнему берутся из ответа. Тест страницы проверяет, что кэш остаётся нетронутым. Строку spec про кэш исправил в том же коммите.
+    - Блокировку кнопки до следующего снимка не делал. Повторная отправка до снимка ничего не портит, а при переподключении потока кнопка осталась бы неактивной неопределённо долго. Это записано в `docs/decisions.md`; если хотите блокировку, добавлю.
+  - **`bde84ca` — п. 2.** Описание теперь сравнивается и отправляется обрезанным, как название. Сначала написал два теста, оба упали по ожидаемой причине, потом исправил.
+  - **`b6635e3` — п. 3 и 4.**
+    - Правило 9 в `backend/AGENTS.md` теперь говорит прямо: лимит и дата в админке остаются только для чтения и после фазы 5, их меняет `PATCH` организатора.
+    - Нестабильный `TicketPage.test.ts` остался в «На потом», с обоими замеченными симптомами.
+  
+  Проверено:
+  - `make stack-check` проходит: pytest 282, Vitest 274.
+  - `make stack-e2e`: прошли все 14 тестов. Среди них тест роста лимита: он проверяет счётчики панели, которые теперь приходят из потока.
+  
+  По процессу допускается одно повторное ревью — только на исправления, диапазон `f8540cd..b6635e3`. После него этап 1 переходит к браузерной проверке. Запускать повторное ревью?
+
+> ревью не надо
+
+⏺ Принято, повторное ревью пропускаю — записываю это в лог решений. Дальше по процессу браузерная проверка этапа 1 на стеке слота 1. Особенно важно проверить, что после сохранения шапка обновляется из потока, раз ответ больше не пишется в кэш. Плюс две вкладки, пустые данные, сбой сети и повторная отправка.
+
+⏺ Bash(make stack-up >/dev/null 2>&1 && make stack-demo-users >/dev/null 2>&1; cd e2e && S=/tmp/claude-1000/-home-raf-event-registration/58adccf1-dd3a-460e-ba0b-d13cc016196f/scratchpad && cat > $S/stage1.mjs)
+  ⎿  empty title: true
+     B header via stream: Этап1 1793610810795 новое [ '2', '2', '0', '0', '0' ]
+     A header via stream: Этап1 1793610810795 новое [ '2', '2', '0', '0', '0' ]
+     A has updates notice: true
+     confirm: Участникам (подтверждено 2, в листе 0) уйдёт письмо о переносе.
+     after cancel, field: 2031-03-12T19:30
+     … +15 lines
+
+⏺ Read(/tmp/claude-1000/-home-raf-event-registration/58adccf1-dd3a-460e-ba0b-d13cc016196f/scratchpad/stage1-a.png)
+⏺ Read(/tmp/claude-1000/-home-raf-event-registration/58adccf1-dd3a-460e-ba0b-d13cc016196f/scratchpad/stage1-b.png)
+  ⎿  (no output)
+
+  ⎿  (no output)
+
+⏺ Bash(cd /home/raf/event-registration && make stack-down >/dev/null 2>&1; date +%H:%M; python3 - <<'EOF')
+  ⎿  11:13
+
+⏺ Bash(sed -i '/^- база этапа 2 — `b6635e3`.$/d' docs/features/reschedule/tasks.md && cat >> docs/decisions.md <<'EOF')
+  ⎿  ⋯ Backing up original state…
+     ✔ Done backing up original state (6d8068c)!
+     ⋯ Running tasks for staged files…
+         *.{mjs,json,md,yml,yaml} — 2 files
+           ⋯ prettier --write
+     
+     … +8 lines
+
+⏺ Этап 1 фазы 5 закрыт, коммит `e3cbb12`. Повторное ревью не запускал по вашему решению — это записано в лог решений.
+  
+  **Браузерная проверка на слоте 1.** Браузерных инструментов в сессии нет, поэтому сценарий гонял скриптом в Chromium через Playwright. Организатор открыт в двух вкладках: в первой «Участники», во второй «Редактирование».
+  
+  | Сценарий | Результат |
+  |---|---|
+  | Пустое название | «Обязательное поле» под полем, запрос не уходит |
+  | Название и лимит одним кликом, без Tab | «Сохранено». Шапка и счётчики обновились из потока в обеих вкладках, в первой появилось «Есть обновления» |
+  | Перенос → «Отмена» | Новая дата осталась в поле, запрос не ушёл |
+  | Перенос → двойной клик «Перенести» | Ровно один `PATCH`, дата обновилась в обеих вкладках |
+  | Обрыв `PATCH` | «Не удалось сохранить…», ввод сохранён. Повторная отправка сохраняет, после чего кнопка снова неактивна |
+  | Mailpit | Подтверждённый получил «Билет» и «Событие перенесено». Повышенный из листа — «Лист ожидания», «Освободилось место» и «Событие перенесено» |
+  | Консоль | Ошибки только ожидаемые: 401 `me` до входа и запрос, который я оборвал сам |
+  
+  **Критерии фазы, которые закрыл этот этап:**
+  - **Письмо о переносе `confirmed` и `waitlisted`.** Проверяют pytest (перенос, параллельные переносы под замком), e2e `organizer-reschedules-event.spec.ts` и этот проход в браузере.
+  - **Экран редактирования: перенос даты и изменение лимита.** Проверяют Vitest формы (10 тестов страницы и тесты модели), e2e переноса и роста лимита и этот проход.
+  
+  Сессия не закрыта, на ветке 10 коммитов, push не делал. Дальше этап 2: задача 2.1, напоминания за сутки до события (`enqueue_reminders` в воркере). Начинать?
+
+> пр
+
+⏺ Bash(gh pr view 20 --json title,body --jq '.title, .body' | head -40)
+  ⎿  Phase 4, stage 4: reconnect, demo users by hand and phase closing
+     The organizer's panel now survives a lost stream: it says it is reconnecting, picks the stream up again after a backend restart or a 502 of the gateway, and has the right counts from the first snapsho
+     
+     ## What changed
+     
+     **Backend**
+     … +33 lines
+
+⏺ Bash(git status --short && SLOT=1 git push -u origin feat/reschedule-reminders 2>&1 | tail -8)
+  ⎿  remote: 
+     remote: Create a pull request for 'feat/reschedule-reminders' on GitHub by visiting:        
+     remote:      https://github.com/rbikbov/event-registration/pull/new/feat/reschedule-reminders        
+     remote: 
+     To github.com:rbikbov/event-registration.git
+      * [new branch]      feat/reschedule-reminders -> feat/reschedule-reminders
+     … +1 lines
+
+⏺ Bash(cat > /tmp/claude-1000/-home-raf-event-registration/58adccf1-dd3a-460e-ba0b-d13cc016196f/scratchpad/pr.md <<'EOF')
+  ⎿  https://github.com/rbikbov/event-registration/pull/22
+
+⏺ Создал PR #22: https://github.com/rbikbov/event-registration/pull/22 — «Phase 5, stage 1: reschedule an event and change its capacity».
+  
+  - **Ветка.** Запушил `feat/reschedule-reminders` в `main` через `SLOT=1 git push`. Хук `pre-push` прогнал backend на Postgres слота 1 и пропустил push.
+  - **Описание PR** в стиле прошлых PR: что изменилось в backend, frontend и e2e. В разделе «Checks» — `make stack-check` (pytest 282, Vitest 274), `make stack-e2e` (14 тестов), тесты гонок, браузерная проверка и ревью с решениями по находкам. В разделе «Not checked» — нестабильный `TicketPage.test.ts`: он вне этого PR и записан в «На потом».
+  
+  Сессия не закрыта. Этап 2 по правилам пойдёт отдельным PR. Его можно начать на этой же ветке после мёржа #22 или на новой ветке от `main` — как вам удобнее.

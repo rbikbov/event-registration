@@ -1,0 +1,1805 @@
+> задача 5.4. берем первый вариант, он простой и для текущего проекта этого достаточно
+
+⏺ Bash(date '+%Y-%m-%d %H:%M' && tail -30 docs/decisions.md && ls docs/features/ && grep -n "5.4" -r docs/features/*/tasks.md docs/roadmap.md | head)
+  ⎿  2026-11-04 16:13
+     - **18:44** — ■ конец сессии (сессия не была закрыта; время последнего коммита)
+     - **18:50** — ▶ начало сессии
+     - **18:55** — задача 3.2 фазы 6: `ExpandableText` (`shared/ui/expandable-text`) — обрезан ли текст, решает сравнение `scrollHeight` и `clientHeight` свёрнутого абзаца при монтировании, при смене текст
+     - **18:58** — задача 3.3 фазы 6: время отметки — `momentFormat(at, now)` и `sameDay` в `shared/lib/moment-format.ts` (в spec — `formatMoment(iso, now)`). Функция возвращает опции `Intl.DateTimeFormatO
+     - **19:01** — задача 3.4 фазы 6: пауза «Следующий» — `aria-disabled` и пропуск нажатия на 1 с (`useTimeoutFn` vueuse), а не `disabled`: на неактивную кнопку нельзя поставить фокус, а он по spec ждёт н
+     … +36 lines
+
+⏺ Bash(sed -n 60,90p docs/features/frontend-polish/tasks.md && sed -n 200,320p docs/features/frontend-polish/tasks.md && git log -1 --format=%ci 9711935 && git show 9711935 --stat)
+  ⎿  Из «на потом» этой фазы и фазы 4 (решение от 2026-11-03 23:55). Spec — «Этап 5».
+     
+     - [x] 5.1. Ссылки навигации — компонент в `shared/ui` над `RouterLink`: текущий раздел
+           подсвечен и с `aria-current="page"`; в шапке и во вкладках макета вместо своих стилей.
+           Готово, когда: Vitest — подсветка и `aria-current` у текущей ссылки, у прочих нет.
+     - [x] 5.2. Курсор кнопок: `pointer` при наведении, `not-allowed` у неактивной (`disabled` и
+     … +68 lines
+
+⏺ Bash(sed -n 90,110p docs/features/frontend-polish/tasks.md && cat frontend/src/entities/event/model/event-form.ts && ls frontend/src/pages/ frontend/src/shared/ui frontend/src/entities/event/* && grep -rln)
+  ⎿  сейчас, при отправке; `maxlength` не ставить — молча обрезал бы вставку. Малый объём,
+              тесты форм не переписываются.
+           2. **Счётчик + общие поля события**: то же, плюс одна разметка полей (название, описание,
+              дата, места, ошибки, счётчики) для создания и редактирования; отправка — на страницах.
+           3. **Библиотека форм** — `vee-validate` + `@vee-validate/zod` (на ней shadcn-vue `Form`):
+              touched / dirty, проверка на blur; цена — переписать четыре формы (вход, регистрация,
+     … +195 lines
+
+⏺ Bash(ls frontend/src/pages/org-event-new frontend/src/pages/org-event-edit frontend/src/pages/org-event-new/* frontend/src/pages/org-event-edit/* && cat frontend/src/pages/org-event-new/ui/*.vue && cat fro)
+⏺ Bash(cat frontend/src/pages/org-event-edit/ui/OrgEventEditPage.vue && ls frontend/src/shared/ui/expandable-text frontend/src/shared/ui/nav-link && cat frontend/src/shared/ui/nav-link/index.ts)
+  ⎿  frontend/src/pages/org-event-edit/index.ts
+     frontend/src/pages/org-event-new/index.ts
+     
+     frontend/src/pages/org-event-edit:
+     api
+     index.ts
+     … +214 lines
+
+  ⎿  <script setup lang="ts">
+     import { useMutation, useQueryClient } from "@tanstack/vue-query";
+     import { computed, reactive, ref, watch } from "vue";
+     import { useI18n } from "vue-i18n";
+     
+     import {
+     … +217 lines
+
+⏺ Bash(cat frontend/AGENTS.md | head -80 && cat frontend/src/shared/ui/nav-link/NavLink.vue frontend/src/shared/ui/nav-link/NavLink.test.ts && grep -n "Этап 5" -A30 docs/features/frontend-polish/spec.md | he)
+  ⎿  # frontend/ — Vue 3 + Vite
+     
+     Команды и инструменты — `docs/development.md`, раздел «Frontend». Как писать код (слои, DI,
+     состояние, тесты) — skill `fsd-frontend`. Здесь — правила, которые действуют всегда.
+     
+     ## Карта
+     … +203 lines
+
+⏺ Записываю начало сессии и решение по 5.4 (вариант 1, счётчик символов), дальше пишу компонент счётчика.
+
+⏺ Bash(date '+%H:%M' && tail -3 docs/decisions.md)
+  ⎿  16:13
+     - **00:38** — «Нет подключения к интернету» — во всех блоках ошибок запросов, не только в первой ошибке `QueryState` (предложение человека): `OfflineHint` (`shared/ui/offline-hint`) — строкой под текс
+     - **00:42** — без сети — одна плашка «Нет подключения к интернету» под шапкой (`AppLayout`, `role="status"`), а не строка в каждом блоке ошибки (решение человека; отменяет `OfflineHint` из записи выше
+     - **00:57** — ■ конец сессии
+
+⏺ Bash(cd /home/raf/event-registration/frontend && mkdir -p src/shared/ui/char-counter && cat src/shared/ui/expandable-text/index.ts && cat src/shared/ui/shadcn/textarea/Textarea.vue && sed -n 1,40p src/page)
+  ⎿  export { default as ExpandableText } from "./ExpandableText.vue";
+     <script setup lang="ts">
+     import type { HTMLAttributes } from "vue";
+     import { useVModel } from "@vueuse/core";
+     import { cn } from "@/shared/lib/class-names";
+     
+     … +95 lines
+
+⏺ Bash(cat > src/shared/ui/char-counter/CharCounter.test.ts <<'EOF')
+  ⎿  ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+     
+     
+      Test Files  1 failed (1)
+           Tests  no tests
+        Start at  16:14:12
+     … +1 lines
+
+⏺ Bash(cat > src/shared/ui/char-counter/CharCounter.vue <<'EOF')
+  ⎿  Test Files  1 passed (1)
+           Tests  4 passed (4)
+        Start at  16:14:18
+        Duration  1.10s (environment 70%, setup 13%, transform 8%, import 4%, tests 4%)
+
+⏺ Теперь пределы — общие со схемой, и счётчик на обеих формах.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  frontend/src/entities/event/index.ts                      |  1 +
+      frontend/src/entities/event/model/event-form.ts           |  8 ++++++--
+      frontend/src/pages/org-event-edit/ui/OrgEventEditPage.vue | 10 +++++++---
+      frontend/src/pages/org-event-new/ui/OrgEventNewPage.vue   | 10 +++++++---
+      4 files changed, 21 insertions(+), 8 deletions(-)
+
+⏺ Edit(/home/raf/event-registration/frontend/src/pages/org-event-new/ui/OrgEventNewPage.vue)
+⏺ Edit(/home/raf/event-registration/frontend/src/pages/org-event-edit/ui/OrgEventEditPage.vue)
+  ⎿  The file /home/raf/event-registration/frontend/src/pages/org-event-new/ui/OrgEventNewPage.vue has been updated successfully.
+
+  ⎿  The file /home/raf/event-registration/frontend/src/pages/org-event-edit/ui/OrgEventEditPage.vue has been updated successfully.
+
+⏺ Добавляю в тесты страниц проверку счётчика.
+
+⏺ Bash(sed -n 38,100p src/pages/org-event-new/ui/OrgEventNewPage.test.ts && sed -n 1,95p src/pages/org-event-edit/ui/OrgEventEditPage.test.ts)
+  ⎿  // The number field applies what was typed on blur or Enter, not on every keystroke.
+     async function type(wrapper: Wrapper, values: Record<string, string>) {
+       for (const [id, value] of Object.entries(values)) {
+         await wrapper.get(`#${id}`).setValue(value);
+         await wrapper.get(`#${id}`).trigger("blur");
+       }
+     … +152 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Test Files  5 passed (5)
+           Tests  51 passed (51)
+        Start at  16:14:53
+        Duration  3.22s (environment 48%, import 20%, tests 12%, transform 11%, setup 8%)
+
+⏺ Тесты проходят. Посмотрю вид в браузере на слоте 1.
+
+⏺ Bash(cd /home/raf/event-registration && grep -n "stack-up\|stack-down\|5174\|8001\|слот 1\|demo" docs/development.md | head -20; ls e2e; grep -n "^stack" Makefile)
+  ⎿  74:make demo-users  # демо-учётки (один раз на новую базу)
+     140:| `make demo-users` / `make stack-demo-users SLOT=<N>`          | демо-учётки в запущенном стеке / в стеке слота (см. «Создать организатора»)              |
+     143:| `make stack-up` / `stack-e2e` / `stack-down` `SLOT=<N>`       | стек слота (см. «E2E»): поднять / e2e против него / удалить с томами                     |
+     255:`cd backend && uv run python manage.py createsuperuser`. Демо-учётки `demo@example.com` /
+     256:`demo` и `admin@example.com` / `admin` создаёт `python manage.py create_demo_users` (идемпотентна,
+     257:возвращает демо-пароли, если их меняли): в стеке — `make demo-users` после `make up`, в стеке
+     … +28 lines
+
+⏺ Bash(make stack-up >/tmp/claude-1000/-home-raf-event-registration/a79610d6-85b1-4d83-bbd8-aaeecf195ee5/scratchpad/up.log 2>&1; echo $?; tail -3 /tmp/claude-1000/-home-raf-event-registration/a79610d6-85b1-4)
+  ⎿  0
+      Container event-registration-s1-postgres-1 Healthy 
+      Container event-registration-s1-worker-1 Healthy 
+      Container event-registration-s1-frontend-1 Healthy 
+     POSTGRES_PORT=5433 BACKEND_PORT=8001 FRONTEND_PORT=5174 MAILPIT_PORT=8026 MAILPIT_SMTP_PORT=1026 docker compose -p event-registration-s1 exec backend python manage.py create_demo_users
+     Demo users are ready.
+     … +1 lines
+
+⏺ Bash(cd /home/raf/event-registration/e2e && S=/tmp/claude-1000/-home-raf-event-registration/a79610d6-85b1-4d83-bbd8-aaeecf195ee5/scratchpad && cat > $S/shot.mjs <<'EOF')
+  ⎿  1280 7/200 2003/2000 1280
+     360 7/200 2003/2000 360
+
+⏺ Read(/tmp/claude-1000/-home-raf-event-registration/a79610d6-85b1-4d83-bbd8-aaeecf195ee5/scratchpad/new-360.png)
+  ⎿  (no output)
+
+⏺ Bash(cd /home/raf/event-registration && date '+%H:%M' && python3 - <<'EOF')
+  ⎿  16:15
+     docs/features/frontend-polish/spec.md:29:- `shared/ui/expandable-text` — свёрнутое описание (событие и макет организатора).
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  0
+     # fail 0
+
+⏺ `make stack-check` прошёл. Уточню формулировку в логе и закоммичу.
+
+⏺ Bash(sed -i 's/на пределе счётчик может показать больше, чем примет сервер, но не меньше\./с эмодзи у предела форма может отказать в тексте, который принял бы сервер, но не наоборот./' docs/decisions.md &&)
+  ⎿  1
+     M  docs/decisions.md
+     M  docs/features/frontend-polish/spec.md
+     M  docs/features/frontend-polish/tasks.md
+     M  frontend/AGENTS.md
+     M  frontend/src/entities/event/index.ts
+     … +27 lines
+
+⏺ Задача 5.4 готова: под названием и описанием события на формах создания и редактирования теперь стоит счётчик символов («12/200»). Коммит `d31590a`, `make stack-check` прошёл без ошибок.
+  
+  - **Компонент**: счётчик сделан отдельным компонентом `CharCounter` в `shared/ui/char-counter`. Он стоит справа в строке ошибки поля, длину считает без пробелов по краям, как проверка формы. Сверх предела счётчик становится красным, а сама ошибка, как и раньше, появляется при отправке. Ограничение `maxlength` на поле не ставил: браузер молча обрезал бы вставленный текст. Поле связано со счётчиком через `aria-describedby`, поэтому программа чтения с экрана прочитает его при фокусе на поле.
+  - **Пределы**: 200 для названия и 2000 для описания вынесены в `EVENT_TEXT_MAX` (`entities/event/model/event-form.ts`). Их же берёт проверка формы, так что счётчик и проверка не разойдутся.
+  - **Тесты**: тест самого компонента проверяет предел (ровно на пределе — обычный цвет, на символ больше — красный). В тестах страниц создания и редактирования проверяется счётчик, в том числе от значений уже существующего события.
+  - **В браузере** (слот 1, ширина 1280 и 360 px): при 2003 символах в описании в одной строке видны «Слишком длинное значение» и красное «2003/2000», горизонтальной прокрутки нет. Смотрел только форму создания. У формы редактирования разметка та же, и её счётчик проверен только тестами.
+  - **Расхождение с сервером** (записано в лог решений): форма считает символы так же, как библиотека проверки `zod`, где эмодзи идёт за два символа, а сервер считает его за один. Поэтому текст с эмодзи у самого предела форма может отклонить, хотя сервер бы его принял. Обратного не бывает.
+  
+  Записал в `docs/decisions.md` начало сессии и решение со всеми тремя вариантами. Задача отмечена в `tasks.md`, обновлены spec и карта в `frontend/AGENTS.md`. Ревью агентом `reviewer` будет по всему этапу 5, после задач 5.5–5.8. Следующая — 5.5, порядок списков на backend.
+
+> 5.5
+
+⏺ Bash(sed -n 99,104p docs/features/frontend-polish/tasks.md && cat backend/AGENTS.md | head -60 && ls backend/events backend/events/tests 2>/dev/null && grep -n "def upcoming\|def for_organizer" -A15 backen)
+  ⎿  ошибок уже есть.
+     
+     - [ ] 5.5. Порядок списков: предстоящие — ближайшие по `starts_at` первыми, прошедшие — недавние
+           первыми; при равном `starts_at` — больший `id` выше (`upcoming`, `for_organizer` в
+           `events/models.py`); тест вперёд. Готово, когда: pytest — два события с одним `starts_at`
+           в обоих списках, больший `id` первым.
+     … +101 lines
+
+⏺ Bash(cd /home/raf/event-registration/backend && grep -n "upcoming()\|for_organizer(" -r --include=*.py . | grep -v tests/ ; grep -n "order\|def test" events/tests/test_public_events_api.py events/tests/tes)
+  ⎿  (eval):1: no matches found: --include=*.py
+     events/tests/test_org_events_api.py:51:def test_create_makes_the_caller_the_organizer(client: APIClient, organizer: User) -> None:
+     events/tests/test_org_events_api.py:68:def test_create_ignores_a_client_supplied_organizer(client: APIClient, organizer: User) -> None:
+     events/tests/test_org_events_api.py:76:def test_description_is_optional(client: APIClient) -> None:
+     events/tests/test_org_events_api.py:97:def test_create_rejects_invalid_field_with_code(
+     events/tests/test_org_events_api.py:107:def test_create_requires_all_main_fields(client: APIClient) -> None:
+     … +13 lines
+
+⏺ Bash(grep -rn "upcoming()\|for_organizer(" . | grep -v "tests/\|\.pyc" ; sed -n 1,60p events/tests/test_public_events_api.py; sed -n 1,50p events/tests/test_org_events_api.py; sed -n 118,135p events/tests/)
+  ⎿  events/views.py:40:        return Event.objects.for_organizer(self.request.user).with_registration_counts()  # type: ignore[arg-type]
+     events/views.py:133:        return Event.objects.upcoming().with_registration_counts()
+     events/models.py:15:    def for_organizer(self, user: User) -> Self:
+     from datetime import timedelta
+     from typing import Any
+     
+     … +125 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  =========================== short test summary info ============================
+     FAILED events/tests/test_public_events_api.py::test_list_puts_the_later_created_first_at_the_same_start
+     FAILED events/tests/test_org_events_api.py::test_list_puts_the_later_created_first_at_the_same_start
+     2 failed, 27 deselected in 1.67s
+
+⏺ Bash(sed -n 1,20p events/models.py)
+  ⎿  from typing import ClassVar, Self
+     
+     from django.conf import settings
+     from django.core.validators import MaxValueValidator, MinValueValidator
+     from django.db import models
+     from django.db.models import Count, F, Q
+     … +13 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  ..........                                                               [100%]
+     298 passed in 90.87s (0:01:30)
+
+⏺ Bash(grep -n "indexes\|Index(" -A3 events/models.py | head; grep -rn "starts_at\", \"id\"\|order_by(\"starts_at\"" --include=*.py . ../frontend/src 2>/dev/null | grep -v node_modules | head; grep -rn "star)
+  ⎿  (eval):1: no matches found: --include=*.py
+
+⏺ Bash(cd /home/raf/event-registration && grep -n "indexes" backend/events/models.py; grep -rn "order_by(\"starts_at\"" backend | grep -v pyc; grep -n "порядк\|ближайш" docs/architecture.md | head)
+  ⎿  backend/events/models.py:18:        return self.filter(organizer=user).order_by("starts_at", "-id")
+     backend/events/models.py:21:        return self.filter(starts_at__gt=timezone.now()).order_by("starts_at", "-id")
+     186:  - `GET /api/org/events/{id}/registrations/?status=&page=` — регистрации в порядке очереди
+     280:- **Реализовано:** состояние сервиса (`/health`), вход организатора, создание события, список событий организатора; публичный список событий (`/`) и страница события с регистрацией (`/events/:id`:
+
+⏺ Все 298 тестов проходят. Записываю решение и запускаю полную проверку.
+
+⏺ Bash(date '+%H:%M' && python3 - <<'EOF')
+  ⎿  16:29
+
+⏺ Bash(cat >> docs/decisions.md <<'EOF')
+  ⎿  The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to
+
+> [Request interrupted by user for tool use]
+
+> продолжай
+
+⏺ Bash(tail -1 docs/decisions.md | cut -c1-60 && git status --short)
+  ⎿  - **16:29** — задача 5.5 фазы 6: при равн
+      M backend/events/models.py
+      M backend/events/tests/test_org_events_api.py
+      M backend/events/tests/test_public_events_api.py
+      M docs/decisions.md
+      M docs/features/frontend-polish/tasks.md
+
+⏺ Запись в лог успела добавиться; запускаю `make stack-check`.
+
+⏺ Bash(make stack-check > /tmp/claude-1000/-home-raf-event-registration/a79610d6-85b1-4d83-bbd8-aaeecf195ee5/scratchpad/check.log 2>&1; echo $?; grep -E "passed|failed|# fail" /tmp/claude-1000/-home-raf-even)
+  ⎿  0
+     # fail 0
+     All checks passed!
+     ======================== 298 passed in 89.19s (0:01:29) ========================
+      Test Files  36 passed (36)
+           Tests  363 passed (363)
+
+⏺ Bash(git add -A && git commit -q -F - <<'EOF' && git log --oneline -1)
+  ⎿  ⋯ Backing up original state…
+     ✔ Done backing up original state (31f914f)!
+     ⋯ Running tasks for staged files…
+         backend/**/*.py — 3 files
+           ⋯ uv run --project backend ruff check --fix
+           ⋯ uv run --project backend ruff format
+     … +13 lines
+
+⏺ Задача 5.5 сделана. Коммит `dfdb064`, `make stack-check` прошёл без ошибок.
+  
+  - **Что изменилось**: оба списка событий (публичный `upcoming` и `for_organizer` для организатора) сортируются по `starts_at`, а при равном начале выше идёт событие, созданное позже (`order_by("starts_at", "-id")`). Порядок теперь однозначный, поэтому при постраничной выдаче в 5.6 строки не будут повторяться или пропадать на соседних страницах.
+  - **Тесты**: тест на каждый список (два события с одним `starts_at`, большее `id` первым) написал до изменения и проверил, что без него оба падают.
+  - **Отложено**: «прошедшие — недавние первыми» сделаю в 5.6 вместе с фильтром `period`. Отдельного списка прошедших пока нет: организатор получает все свои события одним списком, и сортировать прошедшие отдельно сейчас нечему. Это записано в `docs/decisions.md`.
+  
+  Перед паузой запись в `docs/decisions.md` успела добавиться, повторно её не дописывал. Следующая задача — 5.6: постраничная выдача и фильтр `period` в API обоих списков.
+
+> 5.6
+
+⏺ Skill(api-change)
+  ⎿  Launching skill: api-change
+
+⏺ Bash(cd /home/raf/event-registration/backend && cat events/views.py && grep -rn "Pagination\|PAGE_SIZE\|page_size" --include=*.py . | grep -v "\.venv" | head; sed -n 5,30p events/serializers.py)
+  ⎿  from collections.abc import Iterable
+     from typing import Any
+     
+     from django.db.models import QuerySet
+     from django.http import StreamingHttpResponse
+     from django.shortcuts import get_object_or_404
+     … +191 lines
+
+⏺ Bash(grep -rn "Pagination\|PAGE_SIZE\|page_size\|invalid_page\|period" registrations/*.py events/*.py config/*.py | head -20; grep -n "page" ../docs/architecture.md | head -20)
+  ⎿  registrations/services.py:308:PAGE_SIZE = 50
+     registrations/services.py:316:    For the organizer, PAGE_SIZE a page from 1; past the end, an empty one. A waitlisted
+     registrations/services.py:332:    ).order_by(*queue_order)[(page - 1) * PAGE_SIZE : page * PAGE_SIZE]
+     186:  - `GET /api/org/events/{id}/registrations/?status=&page=` — регистрации в порядке очереди
+     188:    концом — `[]`, `page` < 1 или > 1 000 000 — 400); `position` — номер в листе у
+     280:- **Реализовано:** состояние сервиса (`/health`), вход организатора, создание события, список событий организатора; публичный список событий (`/`) и страница события с регистрацией (`/events/:id`:
+
+⏺ Bash(sed -n 295,345p registrations/services.py; grep -n "page\|class .*View\|Query\|extend_schema\|OpenApiParameter" -n registrations/views.py | head -40; sed -n 170,200p ../docs/architecture.md; sed -n 10)
+  ⎿  status=Registration.Status.CONFIRMED, checked_in_at__isnull=True
+             ).update(checked_in_at=now)
+             registration = tickets.get()
+             # Decided by the field the UPDATE checked, not by the status: a promotion committed
+             # between the two queries shows a confirmed ticket that is still not checked in.
+             # A checked-in ticket is always confirmed (CHECK in the database).
+     … +145 lines
+
+⏺ Bash(sed -n 1,40p registrations/views.py; sed -n 160,195p registrations/views.py; grep -n "class RegistrationListQuery\|class .*Query" -A12 registrations/serializers.py)
+  ⎿  from typing import Any
+     
+     from django.db.models import QuerySet
+     from drf_spectacular.utils import OpenApiResponse, extend_schema
+     from rest_framework import status
+     from rest_framework.exceptions import ErrorDetail, NotFound, ValidationError
+     … +70 lines
+
+⏺ Bash(grep -n "class RegistrationFilterSerializer" -A14 registrations/serializers.py)
+  ⎿  40:class RegistrationFilterSerializer(serializers.Serializer[None]):
+     41-    status = serializers.ChoiceField(choices=Registration.Status.choices, required=False)
+     42-    # The upper bound keeps the OFFSET of a page within bigint.
+     43-    page = serializers.IntegerField(min_value=1, max_value=10**6, default=1)
+     44-
+     45-
+     … +9 lines
+
+⏺ AskUserQuestion()
+  ⎿  Your questions have been answered: "Сколько событий показывать на одной странице в списках `/` и `/org/events`? (Открытый вопрос этапа 5 в spec; у таблицы участников — 50 на страницу.)"="20 (Recommend
+
+⏺ Bash(sed -n 20,80p events/models.py | grep -n "objects\|class" ; cat events/services.py | head -40; grep -n "response.json()\|num_queries\|def test" events/tests/test_public_events_api.py events/tests/test)
+  ⎿  17:class Event(models.Model):
+     31:    objects: ClassVar[EventQuerySet] = EventQuerySet.as_manager()  # type: ignore[assignment]  # manager built from the queryset
+     33:    class Meta:
+     from django.core.exceptions import PermissionDenied
+     from django.db.models import QuerySet
+     from django.http import Http404
+     … +142 lines
+
+⏺ Write(/home/raf/event-registration/backend/events/tests/test_event_lists_api.py)
+  ⎿  File created successfully at: /home/raf/event-registration/backend/events/tests/test_event_lists_api.py (file state is current in your context — no need to Read it back)
+
+⏺ Теперь код: методы queryset, сервис, сериализаторы, views.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  1:from datetime import datetime
+     3:from django.utils import timezone
+     4:from rest_framework import serializers
+     6:from events.models import Event
+     9:class EventSerializer(serializers.ModelSerializer[Event]):
+     29:class OrgEventSerializer(serializers.ModelSerializer[Event]):
+     … +3 lines
+
+⏺ Bash(sed -n 70,95p events/serializers.py && python3 - <<'EOF')
+  ⎿  class PublicEventListSerializer(serializers.ModelSerializer[Event]):
+         free_seats = serializers.IntegerField(read_only=True)
+     
+         class Meta:
+             model = Event
+             fields = ("id", "title", "starts_at", "capacity", "free_seats")
+     … +10 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  ..................                                                       [100%]
+     18 passed in 5.72s
+
+⏺ Новые тесты проходят. Убираю `Any` из типа и обновляю прежние тесты под `{count, results}`.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  4:from django.db.models import QuerySet
+     19:from events.models import Event, EventQuerySet
+     32:def requested_page(request: Request, events: EventQuerySet) -> EventPage:
+     =================================== FAILURES ===================================
+                 raise ValueError('The "connection" and "using" parameter cannot be used together')
+                     failed = num != num_performed
+     … +7 lines
+
+⏺ Счётчик — это ещё один запрос, на число строк он не зависит: публичный список 1 → 2, список организатора 3 → 4.
+
+⏺ Bash(sed -i 's/django_assert_num_queries(3):/django_assert_num_queries(4):/' events/tests/test_org_events_api.py && python3 - <<'EOF')
+  ⎿  ........................................................................ [ 91%]
+     ............................                                             [100%]
+     316 passed in 97.12s (0:01:37)
+     events/views.py:153: error: Argument 1 to "PublicEventPageSerializer" has incompatible type "EventPage"; expected "None"  [arg-type]
+     events/views.py:153: error: Argument 2 to "requested_page" has incompatible type "ManagerFromEventQuerySet[Event]"; expected "EventQuerySet"  [arg-type]
+     Found 3 errors in 1 file (checked 87 source files)
+
+⏺ Bash(sed -i 's/from events.services import PERIODS/from events.services import PERIODS, EventPage/; s/class OrgEventPageSerializer(serializers.Serializer\[None\])/class OrgEventPageSerializer(serializers.S)
+  ⎿  Success: no issues found in 87 source files
+
+⏺ mypy чист. Генерирую схему и типы, затем переделываю фронтенд.
+
+⏺ Bash(cd /home/raf/event-registration && make schema 2>&1 | tail -3 && git diff --stat backend/openapi.yaml frontend/src/shared/api/schema.d.ts && cd frontend && pnpm exec vue-tsc --noEmit -p tsconfig.app.j)
+  ⎿  SchemaGenerationError: Failing as requested due to warnings
+     make: *** [Makefile:84: schema] Error 1
+
+⏺ Bash(cd /home/raf/event-registration && make schema 2>&1 | grep -i "warn\|error" | head)
+  ⎿  cd backend && uv run python manage.py spectacular --validate --fail-on-warn --file openapi.yaml
+     Warning: operationId "events_retrieve" has collisions [('/api/events/', 'get'), ('/api/events/{id}/', 'get')]. resolving with numeral suffixes.
+     Warning: operationId "org_events_retrieve" has collisions [('/api/org/events/', 'get'), ('/api/org/events/{event_id}/', 'get')]. resolving with numeral suffixes.
+     Warnings: 2 (2 unique)
+     Errors:   0 (0 unique)
+     SchemaGenerationError: Failing as requested due to warnings
+     … +1 lines
+
+⏺ Bash(grep -n "operationId: .*events_list\|operationId: org_events_list" backend/openapi.yaml; grep -rn "events_list" frontend/src --include=*.ts | grep -v schema.d.ts | head -3)
+  ⎿  71:      operationId: events_list
+     204:      operationId: org_events_list
+     (eval):1: no matches found: --include=*.ts
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  ✨ openapi-typescript 7.13.0
+     🚀 ../backend/openapi.yaml → src/shared/api/schema.d.ts [59.3ms]
+      backend/openapi.yaml                | 97 +++++++++++++++++++++++++++++++++----
+      frontend/src/shared/api/schema.d.ts | 63 +++++++++++++++++++++---
+      2 files changed, 144 insertions(+), 16 deletions(-)
+     diff --git a/backend/openapi.yaml b/backend/openapi.yaml
+     … +147 lines
+
+⏺ Схема в порядке. Перехожу к фронтенду.
+
+⏺ Bash(cd /home/raf/event-registration/frontend && sed -n 1,40p src/entities/event/api/public-events.ts && sed -n 1,40p src/entities/event/api/org-events.ts && grep -rn "publicEventsQuery\|orgEventsQuery" sr)
+  ⎿  import { queryOptions } from "@tanstack/vue-query";
+     
+     import { api, unwrap } from "@/shared/api";
+     import type { components, paths } from "@/shared/api";
+     import { sseSource, type LiveSource } from "@/shared/lib/live-source";
+     
+     … +75 lines
+
+⏺ Bash(cd /home/raf/event-registration/frontend && grep -rln "publicEventsQuery\|orgEventsQuery\|api/events/\"\|api/org/events/\"" src | sort; grep -rn '"\*/api/events/"\|"\*/api/org/events/"' src | grep -v )
+  ⎿  src/app/App.test.ts
+     src/app/session-expiry.test.ts
+     src/app/ui/AppLayout.test.ts
+     src/entities/event/api/org-events.ts
+     src/entities/event/api/public-events.ts
+     src/entities/event/index.ts
+     … +30 lines
+
+⏺ Bash(pnpm exec vue-tsc --noEmit -p tsconfig.app.json 2>&1 | grep "error" | head; grep -n "data\b\|data\.\|events\b" src/pages/home/ui/HomePage.vue src/pages/org-events/ui/OrgEventsPage.vue | head -30; grep)
+  ⎿  src/pages/event/ui/EventPage.test.ts(156,58): error TS2769: No overload matches this call.
+       Overload 1 of 2, '(queryKey: MaybeRefOrGetter<string[]> & string[] & { [dataTagSymbol]: { count: number; results: { readonly id: number; readonly title: string; readonly starts_at: string; readonly 
+       Overload 2 of 2, '(queryKey: MaybeRefDeep<readonly unknown[]>, updater: Updater<undefined, undefined>, options?: MaybeRefDeep<SetDataOptions> | undefined): undefined', gave the following error.
+     src/pages/home/ui/HomePage.vue(26,23): error TS2339: Property 'length' does not exist on type '{ count: number; results: { readonly id: number; readonly title: string; readonly starts_at: string; read
+     src/pages/home/ui/HomePage.vue(28,49): error TS2339: Property 'id' does not exist on type 'number | { readonly id: number; readonly title: string; readonly starts_at: string; readonly capacity: number
+     src/pages/home/ui/HomePage.vue(32,68): error TS2339: Property 'id' does not exist on type 'number | { readonly id: number; readonly title: string; readonly starts_at: string; readonly capacity: number
+     … +40 lines
+
+⏺ Bash(sed -n 15,60p src/pages/home/ui/HomePage.vue; sed -n 20,70p src/pages/org-events/ui/OrgEventsPage.vue)
+  ⎿  <template>
+       <div>
+         <h1 class="text-2xl font-semibold">{{ t("title") }}</h1>
+     
+         <QueryState
+           v-slot="{ data: loaded }"
+     … +88 lines
+
+⏺ Bash(for f in src/pages/home/ui/HomePage.vue src/pages/org-events/ui/OrgEventsPage.vue; do sed -i 's/v-if="loaded.length === 0"/v-if="loaded.results.length === 0"/; s/v-for="event in loaded"/v-for="event i)
+  ⎿  src/pages/org-events/ui/OrgEventsPage.test.ts:39:        HttpResponse.json([
+     src/pages/org-events/ui/OrgEventsPage.test.ts:97:        HttpResponse.json([
+     src/pages/org-events/ui/OrgEventsPage.test.ts:123:          : HttpResponse.json([
+     src/pages/home/ui/HomePage.test.ts:34:    server.use(http.get("*/api/events/", () => HttpResponse.json([item(1, 3), item(2, 0)])));
+     src/pages/home/ui/HomePage.test.ts:61:    server.use(http.get("*/api/events/", () => HttpResponse.json([item(1, 1)])));
+     src/pages/home/ui/HomePage.test.ts:87:        fail ? HttpResponse.json({}, { status: 500 }) : HttpResponse.json([item(1, 3)]),
+     … +63 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  39:    server.use(http.get("*/api/events/", () => HttpResponse.json(page([item(1, 3), item(2, 0)]))));
+     66:    server.use(http.get("*/api/events/", () => HttpResponse.json(page([item(1, 1)]))));
+     92:        fail ? HttpResponse.json({}, { status: 500 }) : HttpResponse.json(page([item(1, 3)])),
+             body = await request.json();
+             return HttpResponse.json({ status: "confirmed" }, { status: 201 });
+           }),
+     … +46 lines
+
+⏺ Перевожу оставшиеся тесты фронтенда на новый формат ответа `{count, results}`.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  error TS5058: The specified path does not exist: 'tsconfig.vitest.json'.
+     tsconfig.app.json
+     tsconfig.json
+     tsconfig.node.json
+     [This command modified 1 file you've previously read: src/pages/org-event-new/ui/OrgEventNewPage.test.ts. Call Read before editing.]
+
+⏺ Bash(cd /home/raf/event-registration && git status --short && cd frontend && pnpm vitest run 2>&1 | tail -5)
+  ⎿  M backend/events/models.py
+      M backend/events/serializers.py
+      M backend/events/services.py
+      M backend/events/tests/test_org_events_api.py
+      M backend/events/tests/test_public_events_api.py
+      M backend/events/views.py
+     … +18 lines
+
+⏺ Bash(pnpm vitest run 2>&1 | grep -E "Test Files|Tests |FAIL" | head)
+  ⎿  Test Files  36 passed (36)
+           Tests  363 passed (363)
+
+⏺ Vitest проходит. Проверю, не зависят ли e2e от прежнего ответа списка, затем обновлю документы.
+
+⏺ Bash(cd /home/raf/event-registration && grep -rn "api/events/\"\|api/org/events/\"\|api/events/'\|org/events/\`\|\.json()" e2e/tests | head; grep -rn "past\|days=-\|timedelta(days=-" backend/events/managem)
+  ⎿  e2e/tests/helpers.ts:95:      const found = (await (await request.get(search)).json()) as { messages: { ID: string }[] };
+     e2e/tests/helpers.ts:100:  const message = (await (await request.get(`${MAILPIT_URL}/api/v1/message/${id}`)).json()) as {
+     backend/accounts/management/commands/:
+     __init__.py
+     __pycache__
+     create_demo_users.py
+     … +10 lines
+
+⏺ Bash(grep -rn "orgEvents\|/org/events\b\|goto(\"/\")\|goto(routes.home\|getByRole(\"link\", { name: title\|starts_at\|startsAt" e2e/tests/*.ts | head -30)
+  ⎿  e2e/tests/participant-opens-ticket.spec.ts:17:  await participant.goto("/");
+     e2e/tests/participant-opens-ticket.spec.ts:18:  await participant.getByRole("link", { name: title }).click();
+     e2e/tests/screens-fit-phone.spec.ts:28:  await participant.goto("/");
+     e2e/tests/screens-fit-phone.spec.ts:29:  await expect(participant.getByRole("link", { name: title })).toBeVisible();
+     e2e/tests/screens-fit-phone.spec.ts:32:  await participant.getByRole("link", { name: title }).click();
+     e2e/tests/screens-fit-phone.spec.ts:60:  await expect(organizer.getByRole("link", { name: title })).toBeVisible();
+     … +24 lines
+
+⏺ Bash(grep -n "createEvent\|export async function\|starts\|fill(\"#starts_at\|days\|Date" e2e/tests/helpers.ts | head -20; grep -n "stack-e2e\|stack-down\|том\|чист" docs/development.md | sed -n 1,15p)
+  ⎿  9:// Created by `create_demo_users` when the backend starts (docs/architecture.md, "Окружение").
+     14:export async function organizerPage(browser: Browser): Promise<Page> {
+     43:export async function createEvent(
+     52:    .fill(`${new Date().getFullYear() + 1}-05-01T18:00`);
+     60:export async function registerOn(
+     74:export async function openEventEdit(browser: Browser, title: string): Promise<Page> {
+     … +16 lines
+
+⏺ Bash(grep -n "days\|starts_at\|range(" backend/registrations/management/commands/seed_demo.py | head -20)
+  ⎿  36:            starts_at=now + timedelta(days=7),
+     39:        for i in range(1, 4):
+     42:        # Inside the 24-hour window, with seats taken two days ago, that is before the window:
+     48:            starts_at=now + timedelta(hours=23),
+     51:        for i in range(1, 4):
+     53:                tomorrow.id, f"member{i}@example.com", f"Участник {i}", now=now - timedelta(days=2)
+
+⏺ Bash(grep -rc "createEvent(" e2e/tests/*.spec.ts | awk -F: '{s+=$2} END {print s}'; grep -n "workers\|fullyParallel" e2e/playwright.config.ts)
+  ⎿  11
+
+⏺ Bash(date '+%H:%M' && grep -n "GET /api/events/\|api/events/\`" docs/architecture.md | head)
+  ⎿  16:42
+     157:- `GET /api/events/` — будущие события с числом свободных мест (заполненные остаются в списке); `GET /api/events/{id}/` — одно событие (в том числе прошедшее: регистрация на начавшееся событие не 
+     175:- `GET /api/events/{id}/stream/` — публичное событие со свободными местами; 404
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  2
+      ELIFECYCLE  Command failed with exit code 1.
+     make[1]: *** [Makefile:47: format-check] Error 1
+     make: *** [Makefile:147: stack-check] Error 2
+
+⏺ Bash(grep -B5 "ELIFECYCLE" /tmp/claude-1000/-home-raf-event-registration/a79610d6-85b1-4d83-bbd8-aaeecf195ee5/scratchpad/check.log | head)
+  ⎿  > prettier --check .
+     
+     Checking formatting...
+     [warn] docs/architecture.md
+     [warn] Code style issues found in the above file. Run Prettier with --write to fix.
+      ELIFECYCLE  Command failed with exit code 1.
+
+⏺ Bash(npx prettier --write docs/architecture.md >/dev/null && git diff docs/architecture.md | head -40 && make stack-check > /tmp/claude-1000/-home-raf-event-registration/a79610d6-85b1-4d83-bbd8-aaeecf195ee)
+  ⎿  diff --git a/docs/architecture.md b/docs/architecture.md
+     index 72014c2..add4271 100644
+     --- a/docs/architecture.md
+     +++ b/docs/architecture.md
+     @@ -154,7 +154,7 @@
+      
+     … +27 lines
+
+⏺ Bash(grep -nE "Error|error|FAIL|✖" /tmp/claude-1000/-home-raf-event-registration/a79610d6-85b1-4d83-bbd8-aaeecf195ee5/scratchpad/check.log | grep -v "0 error" | head)
+  ⎿  329:Found 1 error.
+     330:make[1]: *** [Makefile:67: lint-backend] Error 1
+     332:make: *** [Makefile:147: stack-check] Error 2
+
+⏺ Bash(sed -n 310,330p /tmp/claude-1000/-home-raf-event-registration/a79610d6-85b1-4d83-bbd8-aaeecf195ee5/scratchpad/check.log)
+  ⎿  # suites 0
+     # pass 48
+     # fail 0
+     # cancelled 0
+     # skipped 0
+     # todo 0
+     … +15 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Checking formatting...
+     All matched files use Prettier code style!
+     
+     **Реализовано:**
+     
+     - `GET /api/health/` — 200 `{"status": "ok", "database": "ok"}` или 503.
+     … +42 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  docs/architecture.md | 12 ++++++++++--
+      1 file changed, 10 insertions(+), 2 deletions(-)
+     2
+     # fail 0
+     All checks passed!
+
+⏺ Bash(grep -nE "rror|FAIL" /tmp/claude-1000/-home-raf-event-registration/a79610d6-85b1-4d83-bbd8-aaeecf195ee5/scratchpad/check.log | head; tail -25 /tmp/claude-1000/-home-raf-event-registration/a79610d6-85b)
+  ⎿  946:-     *     * `error` - error
+     949:-    HealthStateEnum: "ok" | "error";
+     1072:-    ValidationError: {
+     1073:-      errors: {
+     1114:-          "application/json": components["schemas"]["ValidationError"];
+     1192:-          "application/json": components["schemas"]["ValidationError"];
+     … +29 lines
+
+⏺ Сгенерированный `schema.d.ts` переформатировал мой прогон prettier по `src`. Генерирую заново.
+
+⏺ Bash(make schema >/dev/null 2>&1; echo $?; make stack-check > /tmp/claude-1000/-home-raf-event-registration/a79610d6-85b1-4d83-bbd8-aaeecf195ee5/scratchpad/check.log 2>&1; echo $?; grep -E "passed|failed|#)
+  ⎿  0
+     0
+     # fail 0
+     All checks passed!
+     ======================== 316 passed in 95.84s (0:01:35) ========================
+      Test Files  36 passed (36)
+     … +1 lines
+
+⏺ `make stack-check` прошёл. Списки на экране изменились, поэтому прогоню и e2e на слоте 1.
+
+⏺ Bash(make stack-e2e > /tmp/claude-1000/-home-raf-event-registration/a79610d6-85b1-4d83-bbd8-aaeecf195ee5/scratchpad/e2e.log 2>&1; echo $?; grep -E "passed|failed|flaky|✘" /tmp/claude-1000/-home-raf-event-r)
+  ⎿  0
+       16 passed (17.3s)
+
+⏺ Bash(git add -A && git status --short && git commit -q -F - <<'EOF' && git log --oneline -1)
+  ⎿  M  backend/events/models.py
+     M  backend/events/serializers.py
+     M  backend/events/services.py
+     A  backend/events/tests/test_event_lists_api.py
+     M  backend/events/tests/test_org_events_api.py
+     M  backend/events/tests/test_public_events_api.py
+     … +42 lines
+
+⏺ Проверю, не изменил ли хук коммита сгенерированный `schema.d.ts`.
+
+⏺ Bash(make schema >/dev/null 2>&1; git status --short; grep -n "schema.d.ts\|ignore" .prettierignore frontend/.prettierignore 2>/dev/null | head)
+  ⎿  8:frontend/src/shared/api/schema.d.ts
+
+⏺ Задача 5.6 готова: оба списка событий отдаются по 20 на страницу и с фильтром по периоду. Коммит `6012607`. `make stack-check` прошёл (pytest 316, Vitest 363), `make stack-e2e` на слоте 1 — 16 из 16.
+  
+  **Как работает API** (`/api/events/` и `/api/org/events/`):
+  - `period=upcoming` — предстоящие, ближайшие первыми; это значение по умолчанию. `period=past` — уже начавшиеся, недавние первыми. При одинаковом начале выше событие, созданное позже.
+  - `page` от 1, по 20 событий на страницу (ваш выбор). Ответ — `{count, results}`, где `count` — число событий периода. По нему фронтенд посчитает последнюю страницу, поэтому `next` / `previous` в ответе нет.
+  - Страница за концом — пустой `results` с тем же `count`, а не 404. Что показывать на `?page=999`, решим в 5.7.
+  - Неверные `period` или `page` — 400 с кодом поля, как у списка участников.
+  
+  **Тесты**: в новом `events/tests/test_event_lists_api.py` каждый тест прогоняется на обоих списках. Проверяются оба периода, страницы с общим числом, страница за концом и неверные параметры. Число запросов на список выросло на один (подсчёт `count`) и по-прежнему не зависит от числа строк.
+  
+  **Фронтенд**: формат ответа изменился, поэтому в коммите отмечено ломающее изменение (`feat!`). Страницы списков теперь читают `results`, тесты переведены на `{count, results}`.
+  
+  **Временное поведение до задач 5.7 и 5.8:**
+  - `/org/events` показывает только предстоящие. Прошедшие события организатора пропадут из списка, пока не появится вкладка «Прошедшие». У организатора, у которого есть только прошедшие события, список будет пустым — «Событий пока нет».
+  - Обе страницы показывают только первые 20 событий.
+  
+  **Риск для e2e:** события, созданные в прогоне e2e, находятся по первой странице списка. Сейчас за прогон создаётся 11 событий с одной датой, новое идёт первым, и всё помещается в 20. Если тестов, создающих события, станет больше 20, этот поиск начнёт ломаться.
+  
+  Записал в `docs/decisions.md` размер страницы и отклонённые варианты, ответ за концом и временное поведение. Обновил раздел API в `docs/architecture.md`, отметил задачу в `tasks.md` и закрыл в spec открытые вопросы 5.4 и 5.6. Следующая — 5.7, компонент пагинации.
+
+> @backend/events/models.py#25-26 - правильно понимаю что прошедшие будут тоже показываться наиближайшие к текущим и отдаление? не должно ли быть "id" вместо "-id" для списка прошедших?
+
+⏺ Да, вы поняли правильно. Прошедшие идут от самых недавних к более давним: `-starts_at` ставит первым событие, которое началось ближе всего к текущему моменту.
+  
+  `-id` касается только событий с одинаковым `starts_at`. Здесь оба варианта корректны: порядок однозначный в любом случае, и строки на соседних страницах не повторятся и не пропадут. Разница в том, что брать за образец:
+  
+  - **`-id` (сейчас).** Из двух событий с одним временем выше то, что создано позже, в обоих списках одинаково. Так записано в spec и в задаче 5.5: «при равном `starts_at` — больший `id` выше».
+  - **`id`.** Список прошедших становится точным зеркалом общей хронологии `(starts_at, -id)`, то есть тем же порядком, развёрнутым назад. Если событие сдвинется из предстоящих в прошедшие, пара с одинаковым временем поменяется местами.
+  
+  Я бы оставил `-id`. Время у таких событий одинаковое, и пользователь видит разницу только в том, какое из них новее. Правило «новее — выше» на обеих вкладках проще объяснить, чем зеркальность. Но если вам ближе зеркальный вариант, поменяю на `id`. Это одна строка, правка теста `test_past_puts_the_later_created_first_at_the_same_start`, новая запись в логе решений, отменяющая прежнюю, и правка spec. Менять?
+
+> как логически правильнее: 2 события созданы одновременно. в предстоящих они отсортированы так что чем больше id (значит оно новее) тем оно выше, да? в наступивших чем меньше id (значит оно старее) тем оно выше?
+
+⏺ Нет, сейчас не так. В обоих списках событие с большим `id` стоит выше: и в предстоящих, и в прошедших. Вариант, который вы описываете (в прошедших выше меньший `id`), — это `id` вместо `-id`.
+  
+  И да, логичнее именно он. Два события начинаются в одно время, A создано раньше (меньший `id`), B — позже:
+  
+  - **Предстоящие**, `starts_at, -id`: B выше A. Список идёт от ближайшего к дальнему, значит B считается наступающим раньше A.
+  - **Прошедшие сейчас**, `-starts_at, -id`: B снова выше. Но этот список идёт от недавнего к давнему, значит теперь B считается наступившим позже A.
+  
+  Выходит, одна и та же пара в одном списке упорядочена так, будто B раньше, а в другом — будто B позже. С `id` в прошедших правило одно: внутри одного времени B «раньше» A, а прошедшие — та же лента, развёрнутая назад. Пара не меняет смысла, когда события переходят из предстоящих в прошедшие.
+  
+  Мой прошлый довод «новее — выше на обеих вкладках» смотрит на дату создания, а сами списки упорядочены по времени события. Так что беру свою рекомендацию назад: в `past()` должно быть `order_by("-starts_at", "id")`.
+  
+  Если согласны, поменяю:
+  - `past()` в `backend/events/models.py`;
+  - тест `test_past_puts_the_later_created_first_at_the_same_start`, теперь первым ожидается меньший `id`;
+  - spec и `docs/architecture.md`;
+  - в `docs/decisions.md` — новую запись, которая отменяет порядок прошедших из записи 16:42.
+  
+  Всё это одним коммитом.
+
+> да, меняй на id
+
+⏺ Bash(date '+%H:%M' && grep -n "test_past_puts" -A8 backend/events/tests/test_event_lists_api.py && grep -n "больший \`id\`" docs/features/frontend-polish/spec.md docs/architecture.md docs/features/frontend)
+  ⎿  16:55
+     79:def test_past_puts_the_later_created_first_at_the_same_start(get: Any, organizer: User) -> None:
+     80-    starts_at = timezone.now() - timedelta(days=1)
+     81-    first, second = (
+     82-        Event.objects.create(organizer=organizer, title="M", starts_at=starts_at, capacity=5).id
+     83-        for _ in range(2)
+     … +9 lines
+
+⏺ Сначала тест (он должен упасть), потом код.
+
+⏺ Bash(cd /home/raf/event-registration/backend && python3 - <<'EOF')
+  ⎿  FAILED events/tests/test_event_lists_api.py::test_past_mirrors_the_upcoming_order_at_the_same_start[/api/org/events/]
+     2 failed, 16 deselected in 1.50s
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  fmt-ok
+     76 passed in 24.05s
+
+⏺ Bash(cd /home/raf/event-registration && make stack-check > /tmp/claude-1000/-home-raf-event-registration/a79610d6-85b1-4d83-bbd8-aaeecf195ee5/scratchpad/check.log 2>&1; echo $?; grep -E "passed|failed|# fa)
+  ⎿  0
+     # fail 0
+     All checks passed!
+     ======================== 316 passed in 94.92s (0:01:34) ========================
+      Test Files  36 passed (36)
+           Tests  363 passed (363)
+
+⏺ Bash(git add -A && git commit -q -F - <<'EOF' && git log --oneline -1)
+  ⎿  ⋯ Backing up original state…
+     ✔ Done backing up original state (924b4cf)!
+     ⋯ Running tasks for staged files…
+         backend/**/*.py — 2 files
+           ⋯ uv run --project backend ruff check --fix
+           ⋯ uv run --project backend ruff format
+     … +13 lines
+
+⏺ Поменял: в `past()` теперь `order_by("-starts_at", "id")`. Коммит `f9c2689`, `make stack-check` прошёл.
+  
+  - **Тест**: `test_past_mirrors_the_upcoming_order_at_the_same_start` теперь ждёт первым событие, созданное раньше. Сначала обновил тест и убедился, что на прежнем коде он падает на обоих списках, потом поменял код.
+  - **Код**: комментарий у `past()` объясняет, что прошедшие — это порядок предстоящих, развёрнутый назад во времени.
+  - **Документы**: правило переписано в spec (текст и таблица проверок) и в `docs/architecture.md`. В `docs/decisions.md` — запись 16:55, которая отменяет прежний порядок прошедших. Записан и отклонённый вариант «созданное позже — выше на обеих вкладках» с причиной.
+  
+  Описание уже закрытой задачи 5.5 в `tasks.md` («больший `id` выше») оставил как было: это запись о сделанном, а действующее правило теперь в spec и логе решений.
+
+> 5.7
+
+⏺ Bash(cd /home/raf/event-registration/frontend && ls src/pages/org-event-participants/ui src/shared/ui/shadcn; grep -n "page" src/pages/org-event-participants/ui/*.vue | head -40; grep -rn "forgetUserData" )
+  ⎿  src/pages/org-event-participants/ui:
+     OrgEventParticipantsPage.test.ts
+     OrgEventParticipantsPage.vue
+     
+     src/shared/ui/shadcn:
+     alert
+     … +27 lines
+
+⏺ Bash(ls src/pages/org-event-participants/model/ && cat src/pages/org-event-participants/model/participant-pages.ts && sed -n 1,60p src/pages/org-event-participants/ui/OrgEventParticipantsPage.vue && sed -n)
+  ⎿  participant-pages.test.ts
+     participant-pages.ts
+     status-filter.test.ts
+     status-filter.ts
+     import type { LocationQueryValue } from "vue-router";
+     
+     … +173 lines
+
+⏺ AskUserQuestion()
+  ⎿  Your questions have been answered: "Что показывать в списке событий на странице за концом (`?page=999`)? Сервер отвечает пустой страницей и общим числом `count`."="Текст и ссылка (Recommended)", "Став
+
+⏺ Skill(fsd-frontend)
+  ⎿  Launching skill: fsd-frontend
+
+⏺ Bash(pnpm dlx shadcn-vue@latest add pagination 2>&1 | tail -5; ls src/shared/ui/shadcn/pagination && cat src/shared/ui/shadcn/pagination/Pagination.vue src/shared/ui/shadcn/pagination/PaginationContent.vue)
+  ⎿  .. prepare: Done
+     Done in 2.1s using pnpm v10.34.7
+     [32m✔[39m Installing dependencies.
+     - Updating files.
+     [?25l[2K[1G[36m?[39m [1mThe file button/Button.vue already exists. Would you like to overwrite?[22m [90m›[39m [90m(y/N)[39mls: cannot access 'src/shared/ui/shadcn/pagination': No such file 
+      M package.json
+     … +1 lines
+
+⏺ Bash(git diff package.json; (yes n | pnpm dlx shadcn-vue@latest add pagination) 2>&1 | tail -5; git status --short; ls src/shared/ui/shadcn/pagination)
+  ⎿  diff --git a/frontend/package.json b/frontend/package.json
+     index 1af2848..a6494cb 100644
+     --- a/frontend/package.json
+     +++ b/frontend/package.json
+     @@ -20,6 +20,7 @@
+          "@vueuse/core": "^15.0.0",
+     … +23 lines
+
+⏺ Bash(grep -rn "import" src/shared/ui/shadcn/pagination/ | sort | uniq -c | sort -rn | head -20; cat components.json; git diff ../pnpm-lock.yaml | head -40)
+  ⎿  1 src/shared/ui/shadcn/pagination/PaginationPrevious.vue:9:import { buttonVariants } from '@/shared/ui/shadcn/button'
+           1 src/shared/ui/shadcn/pagination/PaginationPrevious.vue:8:import { PaginationPrev, useForwardProps } from "reka-ui"
+           1 src/shared/ui/shadcn/pagination/PaginationPrevious.vue:7:import { cn } from "cn"
+           1 src/shared/ui/shadcn/pagination/PaginationPrevious.vue:6:import { reactiveOmit } from "@vueuse/core"
+           1 src/shared/ui/shadcn/pagination/PaginationPrevious.vue:5:import { ChevronLeftIcon } from "@lucide/vue"
+           1 src/shared/ui/shadcn/pagination/PaginationPrevious.vue:4:import type { ButtonVariants } from '@/shared/ui/shadcn/button'
+     … +69 lines
+
+⏺ Bash(cd /home/raf/event-registration && grep -n "shadcn" docs/development.md | head -20; grep -rn "\"cn\"\|cn@" docs/decisions.md | head)
+  ⎿  438:- UI-компоненты — shadcn-vue (Reka UI + Tailwind CSS v4). Код компонентов лежит в
+     439:  репозитории: `src/shared/ui/shadcn/` (сгенерированный, правила ESLint для него смягчены
+     441:  Добавить компонент: `cd frontend && pnpm dlx shadcn-vue@latest add <имя>` — только тот,
+
+⏺ Bash(sed -n 436,450p docs/development.md; cd frontend && pnpm remove cn 2>&1 | tail -2; git status --short ..; sed -i 's#import { cn } from "cn"#import { cn } from "@/shared/lib/class-names"#' src/shared/u)
+  ⎿  - ESLint с правилами на типах: `no-floating-promises`, `no-misused-promises`,
+       `switch-exhaustiveness-check`, `consistent-type-imports`, запрет `any`.
+     - UI-компоненты — shadcn-vue (Reka UI + Tailwind CSS v4). Код компонентов лежит в
+       репозитории: `src/shared/ui/shadcn/` (сгенерированный, правила ESLint для него смягчены
+       в `eslint.config.js`); `src/shared/ui/` вне этой папки — самописные компоненты.
+       Добавить компонент: `cd frontend && pnpm dlx shadcn-vue@latest add <имя>` — только тот,
+     … +13 lines
+
+⏺ Это известный нюанс, он описан в `development.md`. Зависимость удалена, импорты исправлены. Смотрю сами компоненты.
+
+⏺ Bash(cd src/shared/ui/shadcn/pagination && cat Pagination.vue PaginationItem.vue PaginationNext.vue PaginationEllipsis.vue index.ts PaginationContent.vue)
+  ⎿  <script setup lang="ts">
+     import type { PaginationRootEmits, PaginationRootProps } from "reka-ui"
+     import type { HTMLAttributes } from "vue"
+     import { reactiveOmit } from "@vueuse/core"
+     import { cn } from "@/shared/lib/class-names"
+     import { PaginationRoot, useForwardPropsEmits } from "reka-ui"
+     … +142 lines
+
+⏺ Bash(cd /home/raf/event-registration/frontend && d=$(find node_modules/.pnpm -maxdepth 1 -name "reka-ui@*" | head -1); ls $d/node_modules/reka-ui/dist/Pagination/; cat $d/node_modules/reka-ui/dist/Paginati)
+  ⎿  Exit code 2
+     bfs: error: node_modules/.pnpm: No such file or directory.
+     ls: cannot access '/node_modules/reka-ui/dist/Pagination/': No such file or directory
+     cat: /node_modules/reka-ui/dist/Pagination/utils.js: No such file or directory
+     sed: can't read /node_modules/reka-ui/dist/Pagination/PaginationListItem.js: No such file or directory
+
+⏺ Bash(cd /home/raf/event-registration && d=$(readlink -f frontend/node_modules/reka-ui); ls $d/dist/Pagination/; cat $d/dist/Pagination/utils.js; cat $d/dist/Pagination/PaginationListItem.js | head -70)
+  ⎿  PaginationEllipsis.cjs
+     PaginationEllipsis.cjs.map
+     PaginationEllipsis.js
+     PaginationEllipsis.js.map
+     PaginationFirst.cjs
+     PaginationFirst.cjs.map
+     … +162 lines
+
+⏺ Bash(d=$(readlink -f frontend/node_modules/reka-ui); sed -n 1,60p $d/dist/Pagination/PaginationFirst.js | grep -v "^$"; grep -n "itemsPerPage\|total\|pageCount\|siblingCount\|showEdges\|defaultPage\|useVMo)
+  ⎿  import { useForwardExpose } from "../shared/useForwardExpose.js";
+     import { Primitive } from "../Primitive/Primitive.js";
+     import { injectPaginationRootContext } from "./PaginationRoot.js";
+     import { computed, createBlock, createTextVNode, defineComponent, mergeProps, openBlock, renderSlot, unref, withCtx } from "vue";
+     //#region src/Pagination/PaginationFirst.vue?vue&type=script&setup=true&lang.ts
+     var PaginationFirst_vue_vue_type_script_setup_true_lang_default = /* @__PURE__ */ defineComponent({
+     … +88 lines
+
+⏺ Bash(cd /home/raf/event-registration/frontend && grep -rn "publicEventsQuery\|orgEventsQuery" src --include=*.vue --include=*.ts 2>/dev/null | grep -v "test.ts" ; grep -rn "publicEventsQuery\|orgEventsQuer)
+  ⎿  (eval):1: no matches found: --include=*.vue
+     src/entities/event/index.ts:5:  orgEventsQuery,
+     src/entities/event/index.ts:12:  publicEventsQuery,
+     src/entities/event/api/public-events.ts:10:export const publicEventsQuery = queryOptions({
+     src/entities/event/api/org-events.ts:9:export const orgEventsQuery = queryOptions({
+     src/pages/home/ui/HomePage.vue:5:import { publicEventsQuery } from "@/entities/event";
+     … +15 lines
+
+⏺ Bash(sed -n 38,52p src/pages/ticket/ui/TicketPage.vue; sed -n 84,96p src/pages/event/ui/EventPage.vue; grep -n "publicEventsQuery\|orgEventsQuery" -B2 -A6 src/pages/ticket/ui/TicketPage.test.ts src/pages/e)
+  ⎿  // The cancel answer is already the new status: if the reread below fails, the page must not
+         // keep showing the code of a cancelled ticket.
+         queryClient.setQueryData(
+           query.value.queryKey,
+           // A cancelled ticket is never checked in: the backend refuses to cancel one that is.
+           (old) =>
+     … +41 lines
+
+⏺ Bash(cat src/pages/org-event-participants/model/participant-pages.test.ts | head -40; grep -rn "pageFromQuery\|participant-pages" src | grep -v "^src/pages/org-event-participants/model/participant-pages" ;)
+  ⎿  import { describe, expect, it } from "vitest";
+     
+     import {
+       countsChanged,
+       pageCount,
+       pageFromQuery,
+     … +49 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Tests  46 passed (46)
+
+⏺ Bash(cd /home/raf/event-registration && d=$(readlink -f frontend/node_modules/reka-ui); sed -n 10,60p $d/dist/Pagination/PaginationRoot.js | grep -n "default\|as" | head; l=$(readlink -f frontend/node_modu)
+  ⎿  7:		defaultPage: {
+     10:			default: 1
+     19:			default: 0
+     24:			default: 2
+     33:			default: false
+     35:		asChild: {
+     … +3 lines
+
+⏺ Bash(cd /home/raf/event-registration/frontend && node -e 'const m=require("@lucide/vue"); console.log(["ChevronsLeft","ChevronsRight","ChevronLeft","ChevronRight","MoreHorizontal","ChevronsLeftIcon"].map(n)
+  ⎿  ChevronsLeft:true ChevronsRight:true ChevronLeft:true ChevronRight:true MoreHorizontal:true ChevronsLeftIcon:true
+
+⏺ Пишу тест компонента.
+
+⏺ Bash(mkdir -p src/shared/ui/page-nav && cat > src/shared/ui/page-nav/PageNav.test.ts <<'EOF')
+  ⎿  ok
+
+⏺ Bash(cat > src/shared/ui/page-nav/PageNav.vue <<'EOF')
+  ⎿  Tests  12 passed (12)
+
+⏺ Тесты компонента проходят (12). Теперь запросы списков с номером страницы.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  export {
+       orgEventLive,
+       orgEventProbe,
+       orgEventQuery,
+       orgEventsQuery,
+       type OrgEvent,
+     … +14 lines
+
+⏺ Bash(cat > src/entities/event/model/event-pages.ts <<'EOF')
+  ⎿  2:import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
+     3:import { computed, ref, watch } from "vue";
+     4:import { useI18n } from "vue-i18n";
+     5:import { useRoute } from "vue-router";
+     7:import { publicEventsQuery } from "@/entities/event";
+     8:import { AppError } from "@/shared/api";
+     … +12 lines
+
+⏺ Bash(sed -n 20,50p src/pages/ticket/ui/TicketPage.vue)
+  ⎿  const { t, d } = useI18n({ useScope: "local" });
+     const route = useRoute();
+     const queryClient = useQueryClient();
+     
+     const token = computed(() => String(route.params.token));
+     const query = computed(() => ticketQuery(token.value));
+     … +25 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  9:import { publicEventsQuery } from "@/entities/event";
+     14:const event = { id: 7, title: "Meetup", starts_at: "2030-05-01T15:00:00Z" };
+     20:  event,
+     23:const waitlisted = { status: "waitlisted", position: 3, name: "Ann", checked_in_at: null, event };
+     24:const cancelled = { status: "cancelled", name: "Ann", checked_in_at: null, event };
+         expect(wrapper.text()).not.toContain("Отказаться от регистрации?");
+     … +21 lines
+
+⏺ Обновляю тесты страниц под новые ключи (список — по страницам, событие — своим ключом).
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  src/pages/event/ui/EventPage.test.ts:9:import { publicEventsQuery } from "@/entities/event";
+     src/pages/event/ui/EventPage.test.ts:156:    queryClient.setQueryData(publicEventsQuery(2).queryKey, { count: 0, results: [] });
+     src/pages/event/ui/EventPage.test.ts:163:    expect(queryClient.getQueryState(publicEventsQuery(2).queryKey)?.isInvalidated).toBe(true);
+
+⏺ Bash(sed -n 108,125p src/pages/org-event-edit/ui/OrgEventEditPage.test.ts)
+  ⎿  expect(saveButton(wrapper).attributes("disabled")).toBeUndefined();
+       });
+     
+       it("sends only the changed fields and leaves the event cache to the stream", async () => {
+         const bodies = patched();
+         const { wrapper, queryClient } = mountPage();
+     … +12 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  ok
+
+⏺ Теперь страницы списков: номер из адреса, пагинация и текст за концом.
+
+⏺ Bash(sed -n 1,20p src/pages/org-events/ui/OrgEventsPage.vue; grep -n "pastEnd\|lastPage" -A1 src/pages/org-event-participants/ui/OrgEventParticipantsPage.vue | tail -6)
+  ⎿  <script setup lang="ts">
+     import { useQuery } from "@tanstack/vue-query";
+     import { useI18n } from "vue-i18n";
+     
+     import { orgEventsQuery } from "@/entities/event";
+     import { checkinPath, orgEventPath, routes } from "@/shared/config";
+     … +20 lines
+
+⏺ Bash(cat src/pages/org-event-participants/api/registrations.ts | head -40)
+  ⎿  import { queryOptions } from "@tanstack/vue-query";
+     
+     import { api, unwrap } from "@/shared/api";
+     import type { components } from "@/shared/api";
+     
+     import type { RegistrationCounts } from "../model/participant-pages";
+     … +28 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  src/app/ui/AppLayout.test.ts(22,14): error TS2769: No overload matches this call.
+       Overload 1 of 3, '(options: DefinedInitialQueryOptions<unknown, Error, unknown, readonly unknown[]>, queryClient?: QueryClient$1 | undefined): UseQueryDefinedReturnType<unknown, Error>', gave the fo
+       Overload 2 of 3, '(options: UndefinedInitialQueryOptions<unknown, Error, unknown, readonly unknown[]>, queryClient?: QueryClient$1 | undefined): UseQueryReturnType<unknown, Error>', gave the followi
+       Overload 3 of 3, '(options: MaybeRefOrGetter<UseQueryOptions<{ count: number; results: { readonly id: number; title: string; description?: string | undefined; starts_at: string; capacity: number; re
+     src/shared/ui/page-nav/PageNav.vue(79,63): error TS2339: Property 'value' does not exist on type '{ type: "ellipsis"; } | { type: "page"; value: number; }'.
+     [This command modified 2 files you've previously read: src/pages/home/ui/HomePage.vue, src/pages/org-events/ui/OrgEventsPage.vue. Call Read before editing.]
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  import AppLayout from "./AppLayout.vue";
+     
+     const user = { id: 1, email: "demo@example.com" };
+     
+     // The organizer's list as a page shows it: observed while the page is open.
+     const OrgEventsList = defineComponent({
+     … +10 lines
+
+⏺ Bash(sed -i 's/    useQuery(orgEventsQuery);/    useQuery(orgEventsQuery(1));/' src/app/ui/AppLayout.test.ts && pnpm exec prettier --write src/shared/ui/page-nav >/dev/null && pnpm exec vue-tsc --noEmit -p)
+  ⎿  Test Files  39 passed (39)
+           Tests  380 passed (380)
+
+⏺ Bash(sed -n 1,40p src/pages/home/ui/HomePage.test.ts; sed -n 1,30p src/pages/org-events/ui/OrgEventsPage.test.ts)
+  ⎿  import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
+     import { mount } from "@vue/test-utils";
+     import { http, HttpResponse } from "msw";
+     import { describe, expect, it, vi } from "vitest";
+     import { createMemoryHistory, createRouter } from "vue-router";
+     
+     … +63 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Tests  9 passed (9)
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  × reads the page from the address and goes to the previous one 33ms
+     ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+      FAIL  src/pages/org-events/ui/OrgEventsPage.test.ts > OrgEventsPage > reads the page from the address and goes to the previous one
+     AssertionError: expected 'Мои событияСоздать событиеЗагружаем…' to contain 'Meetup 200'
+           Tests  1 failed | 6 passed (7)
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Tests  16 passed (16)
+
+⏺ Ставлю `PageNav` в таблицу участников.
+
+⏺ Bash(sed -n 140,160p src/pages/org-event-participants/ui/OrgEventParticipantsPage.vue; grep -n '"previous"\|"next"\|"pageOf"\|Вперёд\|Назад\|из \|Страница' src/pages/org-event-participants/ui/*; grep -rn ")
+  ⎿  </tr>
+               </tbody>
+             </table>
+           </div>
+         </QueryState>
+     
+     … +24 lines
+
+⏺ Bash(sed -n 205,275p src/pages/org-event-participants/ui/OrgEventParticipantsPage.test.ts)
+  ⎿  confirmed: 100,
+         waitlisted: 15,
+         cancelled: 5,
+       };
+     
+       function pageNav(wrapper: Awaited<ReturnType<typeof mountPage>>["wrapper"]) {
+     … +65 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  1:import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
+     2:import { flushPromises, mount } from "@vue/test-utils";
+     3:import { http, HttpResponse } from "msw";
+     4:import { afterEach, describe, expect, it, vi } from "vitest";
+     5:import { createMemoryHistory, createRouter } from "vue-router";
+     6-
+     … +14 lines
+
+⏺ Bash(sed -n 60,80p src/pages/org-event-participants/ui/OrgEventParticipantsPage.test.ts; pnpm exec vue-tsc --noEmit -p tsconfig.app.json 2>&1 | grep error | head -5; pnpm vitest run src/pages/org-event-par)
+  ⎿  async function mountPage(query: Record<string, string> = {}, shown: OrgEvent = event) {
+       const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+       const router = createRouter({
+         history: createMemoryHistory(),
+         routes: [{ path: routes.orgEvent, component: OrgEventParticipantsPage }],
+       });
+     … +16 lines
+
+⏺ Vitest проходит. Теперь e2e со списком длиннее страницы. Смотрю хелперы.
+
+⏺ Bash(cd /home/raf/event-registration/e2e && sed -n 1,60p tests/helpers.ts; cat AGENTS.md | sed -n 1,60p; ls tests)
+  ⎿  import {
+       expect,
+       type APIRequestContext,
+       type Browser,
+       type Locator,
+       type Page,
+     … +86 lines
+
+⏺ Bash(cd /home/raf/event-registration && cat frontend/src/shared/api/csrf.ts | head -30; grep -n "baseURL\|E2E_BASE" e2e/playwright.config.ts)
+  ⎿  import type { Middleware } from "openapi-fetch";
+     
+     const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS", "TRACE"]);
+     
+     export function readCookie(name: string, cookies: string): string | undefined {
+       for (const part of cookies.split(";")) {
+     … +17 lines
+
+⏺ Write(/home/raf/event-registration/e2e/tests/lists-are-paged.spec.ts)
+  ⎿  File created successfully at: /home/raf/event-registration/e2e/tests/lists-are-paged.spec.ts (file state is current in your context — no need to Read it back)
+
+⏺ Bash(cd /home/raf/event-registration/e2e && python3 - <<'EOF')
+  ⎿  import { expect, test, type Page } from "@playwright/test";
+     
+     import { organizerPage } from "./helpers";
+     
+     // One page of a list holds 20 events (EVENTS_PAGE_SIZE in backend/events/services.py).
+     const PAGE_SIZE = 20;
+     … +28 lines
+
+⏺ Bash(cd /home/raf/event-registration && make stack-e2e > /tmp/claude-1000/-home-raf-event-registration/a79610d6-85b1-4d83-bbd8-aaeecf195ee5/scratchpad/e2e.log 2>&1; echo $?; grep -E "passed|failed|flaky|✘|)
+  ⎿  0
+       17 passed (17.6s)
+
+⏺ Bash(sed -n 160,175p Makefile; grep -n "^e2e\|playwright test" Makefile)
+  ⎿  .PHONY: stack-seed
+     stack-seed: stack-slot ## make seed in the stack of slot SLOT
+     	$(STACK_COMPOSE) exec backend python manage.py seed_demo
+     
+     .PHONY: stack-e2e
+     stack-e2e: export FRONTEND_TARGET := gateway
+     … +11 lines
+
+⏺ Bash(sed -i 's/    v-if="pages > 1 \&\& page <= pages"/    v-if="pages > 1000 \&\& page <= pages"/' frontend/src/shared/ui/page-nav/PageNav.vue && grep -n 'pages > 1000' frontend/src/shared/ui/page-nav/Pag)
+  ⎿  49:    v-if="pages > 1000 && page <= pages"
+         Error: locator.click: Test ended.
+           - waiting for getByRole('navigation', { name: 'Страницы событий' }).getByRole('button', { name: 'Последняя страница' })
+       1 failed
+
+⏺ Bash(grep -n 'v-if="pages' frontend/src/shared/ui/page-nav/PageNav.vue && FRONTEND_TARGET=gateway make stack-up >/dev/null 2>&1; echo up=$?; S=/tmp/claude-1000/-home-raf-event-registration/a79610d6-85b1-4d)
+  ⎿  49:    v-if="pages > 1 && page <= pages"
+     up=0
+     1280 {"x":208,"y":732,"width":864,"height":36} 1280
+     1280 past end ok
+     360 {"x":16,"y":740,"width":328,"height":36} 360
+     360 past end ok
+
+⏺ Read(/tmp/claude-1000/-home-raf-event-registration/a79610d6-85b1-4d83-bbd8-aaeecf195ee5/scratchpad/nav-360.png)
+  ⎿  (no output)
+
+⏺ Read(/tmp/claude-1000/-home-raf-event-registration/a79610d6-85b1-4d83-bbd8-aaeecf195ee5/scratchpad/nav-1280.png)
+  ⎿  (no output)
+
+⏺ Вид на 1280 и 360 px нормальный, на 360 px помещается без прокрутки. Обновляю документы.
+
+⏺ Bash(cd /home/raf/event-registration && date '+%H:%M' && grep -n "Открытые вопросы этапа" -A3 docs/features/frontend-polish/spec.md && grep -n "e2e\|spec.ts" docs/development.md | grep -i "список\|lists\|t)
+  ⎿  17:14
+     128:Открытые вопросы этапа (решаются в начале задач): 5.4 — счётчик или библиотека форм (решено:
+     129-счётчик); 5.6 — размер страницы (решено: 20); 5.7 — что показывать на странице за концом (`?page=999`): 404 или последнюю.
+     130-
+     131-## Тесты Vitest
+     277:- e2e: `cd e2e && pnpm test tests/smoke.spec.ts` (`--headed` — с окном, `--debug` —
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  ok
+     2
+      ELIFECYCLE  Command failed with exit code 1.
+
+⏺ Bash(grep -B15 "ELIFECYCLE" /tmp/claude-1000/-home-raf-event-registration/a79610d6-85b1-4d83-bbd8-aaeecf195ee5/scratchpad/check.log | head -30)
+  ⎿  Container event-registration-s1-postgres-1 Running 
+      Container event-registration-s1-postgres-1 Waiting 
+      Container event-registration-s1-postgres-1 Healthy 
+     POSTGRES_PORT=5433 make check
+     make[1]: Entering directory '/home/raf/event-registration'
+     pnpm format:check
+     … +10 lines
+
+⏺ Bash(npx prettier --write frontend/src/pages/org-event-participants frontend/src/pages/org-events e2e/tests >/dev/null && make stack-check > /tmp/claude-1000/-home-raf-event-registration/a79610d6-85b1-4d83)
+  ⎿  0
+     # fail 0
+     All checks passed!
+     ======================== 316 passed in 95.10s (0:01:35) ========================
+      Test Files  39 passed (39)
+           Tests  386 passed (386)
+     … +1 lines
+
+⏺ Bash(git add -A && git status --short && git commit -q -F - <<'EOF' && git log --oneline -1)
+  ⎿  M  docs/decisions.md
+     M  docs/features/frontend-polish/spec.md
+     M  docs/features/frontend-polish/tasks.md
+     A  e2e/tests/lists-are-paged.spec.ts
+     M  frontend/AGENTS.md
+     M  frontend/src/app/ui/AppLayout.test.ts
+     … +60 lines
+
+⏺ Задача 5.7 готова: на `/`, `/org/events` и в таблице участников теперь одна полоса страниц, номер страницы хранится в адресе. Коммит `d7886db`. `make stack-check` прошёл (pytest 316, Vitest 386), `make stack-e2e` — 17 из 17, включая новый тест.
+  
+  **Как работает** (компонент `PageNav` в `shared/ui/page-nav`, на основе shadcn `pagination`):
+  - На полосе: «Первая», «Назад», текущая страница с соседними, «Вперёд», «Последняя». Где номера пропущены, стоит «…».
+  - На телефоне подписи кнопок и «…» скрыты, остаются 7 кнопок со значками. На 360 px полоса шириной 328 px помещается без прокрутки, проверил в браузере.
+  - Если страница одна, полосы нет.
+  - **За концом** (ваш выбор): текст «Здесь событий нет.» и ссылка «К последней странице», как у участников. Полосу там не показываю, иначе она предложила бы «Вперёд».
+  - **Участники** (ваш выбор): вместо «Назад / Страница N из M / Вперёд» та же полоса.
+  - **Кнопки, а не ссылки.** Нажатие меняет адрес, «Назад» в браузере работает. Но открыть другую страницу списка в новой вкладке теперь нельзя, в том числе у участников, где раньше были ссылки. Ссылками не сделал из-за неактивных «Первая» / «Назад»: библиотека ставит им `disabled`, а на ссылке он не работает, и каждую такую кнопку пришлось бы делать дважды.
+  - Английские подписи для программ чтения с экрана («Page 2», «First Page») заменил русскими.
+  
+  **Что ещё поменялось:**
+  - **Кэш:** у каждой страницы списка свой ключ, и после изменения события сбрасываются все страницы обоих списков. Ключ самого события при этом не задевается, поэтому прежний обход через `exact` больше не нужен. Отказ от билета теперь явно сбрасывает список и страницу этого события; раньше это делал общий ключ.
+  - **Генератор shadcn** снова подставил сторонний npm-пакет `cn` в импорты и зависимости. Это известный нюанс из `development.md`: пакет удалил, импорты перевёл на `@/shared/lib/class-names`.
+  - **Чтение номера страницы из адреса** (`pageFromQuery`) перенёс в `shared/lib`: оно нужно трём страницам.
+  
+  **Тесты:**
+  - Компонент: первая, середина, последняя страница, одна страница, страница за концом, переходы.
+  - Страницы: номер берётся из адреса, переход меняет адрес и запрос, текст за концом. Ожидание — по результату (`vi.waitFor`), а не через `flushPromises()`.
+  - e2e `lists-are-paged`: создаёт 21 событие через API на 50 лет вперёд и проходит до последней страницы в обоих списках. Так он не зависит от данных прошлых прогонов. Проверил, что со скрытой полосой он падает.
+  
+  Решения записаны в `docs/decisions.md`, обновлены spec (открытый вопрос 5.7 закрыт), `tasks.md` и карта в `frontend/AGENTS.md`. Следующая — 5.8, вкладки «Предстоящие» / «Прошедшие».
+
+> нужно ли делать защиту от page=-999 ?
+
+⏺ Нет, защита уже есть с двух сторон, и обе покрыты тестами.
+  
+  - **Фронтенд.** `pageFromQuery` (`shared/lib/page-query.ts`) считает страницей 1 всё, что не целое число от 1 до 1 000 000: `-999`, `0`, `1.5`, `abc`, `1000001`. Поэтому `/?page=-999` показывает первую страницу, запрос уходит с `page=1`, на полосе выделена «1». Тест `page-query.test.ts` проверяет в том числе `"-1"` и `"0"`.
+  - **Backend.** Даже если запрос придёт к API напрямую, `page` меньше 1 отклоняется: 400 `{"errors": {"page": ["min_value"]}}`. Это проверяет `test_bad_query_is_400_with_a_code` на обоих списках.
+  
+  Остаётся мелочь: в адресной строке висит `?page=-999`, хотя показана первая страница. Исправлять это через `router.replace` не стоит: лишний переход ради адреса, который руками набрал сам пользователь. Любое нажатие на полосе всё равно ставит корректный адрес. Так же уже работает таблица участников.
+
+> 5.8
+
+⏺ Bash(cd /home/raf/event-registration/frontend && sed -n 60,100p src/pages/org-event-participants/ui/OrgEventParticipantsPage.vue; cat src/pages/org-event-participants/model/status-filter.ts; sed -n 120,130)
+  ⎿  // A table cell, not a phrase: the time alone needs no "в".
+     function checkedInAt(iso: string): string {
+       return formatMoment(iso, new Date(), (at, options) => d(at, options)).text;
+     }
+     
+     function statusText(row: OrgRegistration): string {
+     … +76 lines
+
+⏺ Bash(grep -n "period" src/shared/api/schema.d.ts | head; grep -rn "Ближайших\|Событий пока нет" src --include=*.ts | head; grep -rn "Ближайших\|Событий пока нет" ../e2e/tests | head)
+  ⎿  158:         * @description The signed-in organizer's own events, a page of a period; creating one makes the caller
+     164:         * @description The signed-in organizer's own events, a page of a period; creating one makes the caller
+     358:        /** @description A page of the organizer's events; `count` is the number of events of the period. */
+     403:        /** @description A page of events for everyone; `count` is the number of events of the period. */
+     553:                period?: "upcoming" | "past";
+     713:                period?: "upcoming" | "past";
+     … +1 lines
+
+⏺ Bash(cat > src/entities/event/model/event-period.ts <<'EOF')
+  ⎿  Tests  8 passed (8)
+
+⏺ Запросы списков получают период: ключ `[..., "list", period, page]`.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  src/pages/org-event-edit/ui/OrgEventEditPage.test.ts:121:    queryClient.setQueryData(orgEventsQuery(2).queryKey, { count: 0, results: [] });
+     src/pages/org-event-edit/ui/OrgEventEditPage.test.ts:122:    queryClient.setQueryData(publicEventsQuery(2).queryKey, { count: 0, results: [] });
+     src/pages/org-event-edit/ui/OrgEventEditPage.test.ts:133:    expect(queryClient.getQueryState(orgEventsQuery(2).queryKey)?.isInvalidated).toBe(true);
+     src/pages/org-event-edit/ui/OrgEventEditPage.test.ts:134:    expect(queryClient.getQueryState(publicEventsQuery(2).queryKey)?.isInvalidated).toBe(true);
+     src/pages/org-event-new/ui/OrgEventNewPage.test.ts:62:    queryClient.setQueryData(orgEventsQuery(2).queryKey, { count: 0, results: [] });
+     src/pages/org-event-new/ui/OrgEventNewPage.test.ts:63:    queryClient.setQueryData(publicEventsQuery(2).queryKey, { count: 0, results: [] });
+     … +12 lines
+
+⏺ Bash(sed -i 's/EventsQuery(2)/EventsQuery("past", 2)/g' src/pages/org-event-edit/ui/OrgEventEditPage.test.ts src/pages/org-event-new/ui/OrgEventNewPage.test.ts src/pages/ticket/ui/TicketPage.test.ts src/pa)
+  ⎿  <script setup lang="ts">
+     import { useQuery } from "@tanstack/vue-query";
+     import { computed } from "vue";
+     import { useI18n } from "vue-i18n";
+     import { useRoute } from "vue-router";
+     
+     … +75 lines
+
+⏺ Bash(mkdir -p src/shared/ui/filter-link && cat > src/shared/ui/filter-link/FilterLink.vue <<'EOF')
+  ⎿  Tests  37 passed (37)
+
+⏺ Ставлю вкладки на обе страницы списков.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  src/entities/event/model/event-period.test.ts(16,28): error TS2345: Argument of type '"" | "upcoming" | "past" | readonly ["past", "upcoming"] | "PAST" | "soon" | null | undefined' is not assignable t
+     src/pages/org-events/ui/OrgEventsPage.vue:122:  "empty": {
+     src/pages/org-events/ui/OrgEventsPage.vue-123-    "upcoming": "Предстоящих событий нет",
+     src/pages/org-events/ui/OrgEventsPage.vue-124-    "past": "Прошедших событий нет"
+     src/pages/org-events/ui/OrgEventsPage.vue-125-  },
+     src/pages/home/ui/HomePage.vue:109:  "empty": {
+     … +4 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  × says there are no events yet and offers to create one 52ms
+          × past the end, says so and links to the last page 84ms
+          × lists events with free seats and links to each 338ms
+          × shows no page bar when the events fit on one page 67ms
+          × reads the page from the address and goes to the next one 136ms
+          × past the end, says so and links to the last page 66ms
+     … +4 lines
+
+⏺ Упали тесты, которые искали единственный `nav` и прежний текст пустого списка. Смотрю подробности.
+
+⏺ Bash(pnpm vitest run src/pages/home src/pages/org-events 2>&1 | grep -E "AssertionError|Error:|Expected|Received|❯ src" | head -30; grep -n "lists events with free seats" -A14 src/pages/home/ui/HomePage.te)
+  ⎿  ❯ src/pages/org-events/ui/OrgEventsPage.test.ts (7 tests | 2 failed) 380ms
+      ❯ src/pages/home/ui/HomePage.test.ts (9 tests | 4 failed) 651ms
+     AssertionError: expected [ '/', '/?period=past', …(2) ] to deeply equal [ '/events/1', '/events/2' ]
+     - Expected
+     + Received
+      ❯ src/pages/home/ui/HomePage.test.ts:75:19
+     … +46 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Tests  16 passed (16)
+     [This command modified 2 files you've previously read: src/pages/org-events/ui/OrgEventsPage.test.ts, src/pages/home/ui/HomePage.test.ts. Call Read before editing.]
+
+⏺ Добавляю тесты вкладок: обе вкладки, адрес, сброс страницы при смене вкладки, пустая вкладка.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  done
+
+⏺ Поправлю два неаккуратных места в только что добавленных тестах: селектор вкладки и тип хелпера.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Tests  24 passed (24)
+     [This command modified 2 files you've previously read: src/pages/org-events/ui/OrgEventsPage.test.ts, src/pages/home/ui/HomePage.test.ts. Call Read before editing.]
+
+⏺ Bash(cd /home/raf/event-registration/e2e && cat > tests/past-events-tab.spec.ts <<'EOF')
+  ⎿  0
+       18 passed (16.6s)
+
+⏺ Bash(cd /home/raf/event-registration/e2e && python3 - <<'EOF')
+  ⎿  // Opens the past tab of a list, reloading until the event has started.
+     async function findOnPastTab(page: Page, list: string, title: string): Promise<void> {
+       await page.goto(list);
+       await page
+         .getByRole("navigation", { name: "Какие события показать" })
+         .getByRole("link", { name: "Прошедшие" })
+     … +11 lines
+
+⏺ Bash(cd /home/raf/event-registration && make stack-e2e > /tmp/claude-1000/-home-raf-event-registration/a79610d6-85b1-4d83-bbd8-aaeecf195ee5/scratchpad/e2e.log 2>&1; echo $?; grep -E "passed|failed|flaky|✘|)
+  ⎿  0
+       18 passed (15.5s)
+
+⏺ Bash(cp backend/events/models.py /tmp/claude-1000/-home-raf-event-registration/a79610d6-85b1-4d83-bbd8-aaeecf195ee5/scratchpad/models.py.bak && sed -i 's/return self.filter(starts_at__gt=timezone.now()).or)
+  ⎿  7:from datetime import timedelta
+     23:        return self.filter(starts_at__gt=timezone.now() - timedelta(days=1)).order_by("starts_at", "-id")
+         Error: expect(locator).toBeHidden() failed
+         Expected: hidden
+         Received: visible
+       1 failed
+     … +2 lines
+
+⏺ Bash(S=/tmp/claude-1000/-home-raf-event-registration/a79610d6-85b1-4d83-bbd8-aaeecf195ee5/scratchpad && cat > e2e/.shot-tmp.mjs <<'EOF')
+  ⎿  360
+
+⏺ Read(/tmp/claude-1000/-home-raf-event-registration/a79610d6-85b1-4d83-bbd8-aaeecf195ee5/scratchpad/tabs-360.png)
+  ⎿  (no output)
+
+⏺ Вкладки на 360 px помещаются, недавние прошедшие — первыми. Обновляю документы и запускаю полную проверку.
+
+⏺ Bash(cd /home/raf/event-registration && date '+%H:%M' && grep -n "Фаза 6\|фаза 6" docs/architecture.md | head -5)
+  ⎿  17:26
+     178:**Постраничная выдача списков событий (фаза 6)** — `/api/events/` и `/api/org/events/`:
+     190:  `?period=&page=`, ответ `{count, results}` (фаза 6)
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  M docs/decisions.md
+      M docs/features/frontend-polish/tasks.md
+      M frontend/AGENTS.md
+      M frontend/src/app/ui/AppLayout.test.ts
+      M frontend/src/entities/event/api/org-events.ts
+      M frontend/src/entities/event/api/public-events.ts
+     … +22 lines
+
+⏺ Bash(git add -A && git commit -q -F - <<'EOF' && git log --oneline -1)
+  ⎿  ⋯ Backing up original state…
+     ✔ Done backing up original state (d5a3828)!
+     ⋯ Running tasks for staged files…
+         frontend/**/*.{ts,vue,js} — 19 files
+           ⋯ pnpm --dir frontend exec eslint --fix
+           ⋯ prettier --write
+     … +18 lines
+
+⏺ Задача 5.8 готова: на `/` и `/org/events` появились вкладки «Предстоящие» и «Прошедшие». Коммит `4c06933`. `make stack-check` прошёл (pytest 316, Vitest 405), `make stack-e2e` — 18 из 18.
+  
+  **Как работает:**
+  - Вкладка хранится в адресе (`?period=past`). Предстоящие — это адрес без параметра.
+  - При смене вкладки открывается её первая страница, а переход по страницам вкладку сохраняет.
+  - У пустой вкладки свой текст. На `/` это «Ближайших событий пока нет» и «Прошедших событий нет», у организатора — «Предстоящих событий нет» и «Прошедших событий нет». Прежний текст организатора «Событий пока нет» был неверен, когда у него есть только прошедшие события.
+  - **Внешний вид:** вкладки выглядят и работают как фильтр статусов у участников. Ссылку фильтра я вынес в `shared/ui/filter-link`: теперь она нужна в трёх местах, и участники переведены на неё. Компонент навигационных ссылок из 5.1 не подошёл: роутер при сравнении не смотрит на `?period=`, и обе вкладки считались бы текущими.
+  - **Прошедшие события** показаны со свободными местами, как предстоящие: регистрация на начавшееся событие не запрещена (решение от 00:02). Запрет — пункт для «что дальше» в README.
+  
+  **e2e `past-events-tab`:**
+  - Событие в прошлом через API не создать, поэтому тест создаёт событие с началом через 3 секунды и перезагружает вкладку, пока оно не появится среди прошедших. Это добавляет к тесту несколько секунд.
+  - Второе событие, через 10 минут, — ближайшее предстоящее. Его появление на вкладке «Предстоящие» значит, что список загружен, и только после этого тест проверяет, что начавшегося события там нет. Без этого проверка могла пройти, пока список ещё грузится.
+  - Проверил, что тест падает, если в предстоящие попадают уже начавшиеся события.
+  
+  Решения записаны в `docs/decisions.md`, задача отмечена в `tasks.md`, обновлена карта в `frontend/AGENTS.md`.
+  
+  Все задачи этапа 5 (5.1–5.8) сделаны. По правилу 6 этап не готов, пока его не проверил агент `reviewer` и вы не разобрали находки. Запустить ревью этапа 5 сейчас? Диапазон — от `47b0959^` (первый коммит 5.1) до `4c06933`.
+
+> да, запускай ревью
+
+⏺ Bash(grep -n "## Ревью" -A40 .claude/skills/feature-workflow/SKILL.md | head -60; git log --oneline 47b0959^..HEAD; sed -n 58,120p docs/features/frontend-polish/tasks.md)
+  ⎿  92:## Ревью
+     93-
+     94-Агент `reviewer` (`.claude/agents/reviewer.md`) с чистым контекстом, после каждого этапа.
+     95-Независимость ревью держится на промпте: агент знает только то, что в нём.
+     96-
+     97-Передать **только**:
+     … +108 lines
+
+⏺ Agent(Review phase 6 stage 5)
+  ⎿  Async agent launched successfully. (This tool result is internal metadata — never quote or paste any part of it, including the agentId below, into a user-facing reply.)
+     agentId: ae5ad6e744a27fcad (internal ID - do not mention to user. Use SendMessage with to: 'ae5ad6e744a27fcad', summary: '<5-10 word recap>' to continue this agent.)
+     The agent is working in the background. You will be notified automatically when it completes. You know nothing about its results until that notification arrives — do not report, assume, or predict the
+     Do not duplicate this agent's work — avoid working with the same files or topics it is using.
+     output_file: /tmp/claude-1000/-home-raf-event-registration/a79610d6-85b1-4d83-bbd8-aaeecf195ee5/tasks/ae5ad6e744a27fcad.output
+     Do NOT Read or tail this file via the shell tool — it is the full subagent JSONL transcript and reading it will overflow your context. If the user asks for progress, say the agent is still running; yo
+
+⏺ Запустил агента `reviewer` в фоне на этап 5 фазы 6, диапазон `c57187a..4c06933`, это ветка `feat/frontend-polish-stage-5`. Передал ему, как требует `feature-workflow`, только путь к spec, задачи 5.1–5.8 текстом и диапазон коммитов. Объяснений решений в промпте нет.
+  
+  Когда ревью закончится, покажу отчёт целиком, без своих правок и без отбора находок. Решения по находкам за вами, их запишу в `docs/decisions.md`.
+
+⏺ Ревью этапа 5 закончилось. Блокирующих находок нет, есть две мелкие. Отчёт агента `reviewer` целиком:
+  
+  ---
+  
+  Ревью этапа 5 фазы 6, диапазон c57187a..4c06933 (10 коммитов, все на месте). Блокирующих находок нет: обе находки ниже — мелкие. `stack-check` и `stack-e2e` прошли.
+  
+  ## Находки
+  
+  ```text
+  frontend/src/shared/ui/page-nav/PageNav.vue:62 и :89 — доступность
+  Что: у «Предыдущая страница» видимая подпись (с ширины sm) — «Назад», у «Следующая страница» — «Вперёд». aria-label перекрывает видимый текст и не содержит его. У «Первая» / «Последняя» подпись в aria-label входит, у этих двух — нет.
+  Почему важно: нарушен WCAG 2.5.3 (Label in Name). Голосовое управление по видимому слову («нажми Назад») кнопку не найдёт; скринридер читает не то, что видно на экране.
+  Исправление: сделать видимые подписи «Предыдущая» / «Следующая» или aria-label с видимым словом в начале («Назад, предыдущая страница»). Поправить i18n `previousShort` / `nextShort` и тест `PageNav.test.ts`.
+  ```
+  
+  ```text
+  frontend/src/app/styles.css:69-74 — корректность / неверный комментарий
+  Что: правило вне слоёв `[aria-disabled="true"] { pointer-events: auto }` действует на любой элемент с aria-disabled, не только на кнопку. Комментарий на строке 71 («A disabled button gets no click either way: the browser does not fire one») верен только для `button:disabled`. Элементу с aria-disabled браузер клик доставляет: «Следующий» на чекине его получает, и защищает только `if (pausing.value) return` в `OrgCheckinPage.vue`.
+  Почему важно: правило вне слоёв перебивает любую утилиту. Ссылка или элемент reka-ui с `aria-disabled="true"` и `pointer-events-none` (обычный приём «неактивной ссылки») снова станет кликабельным, и это не будет видно. Комментарий утверждает обратное.
+  Исправление: оставить `pointer-events: auto` только для `button:disabled`, а для `[aria-disabled="true"]` задавать один `cursor: not-allowed`. Если нужен pointer-events и там — исправить комментарий: клик по aria-disabled доходит, обработчик должен его отсекать.
+  ```
+  
+  ## Проверки
+  
+  - `make stack-check SLOT=2` в копии на 4c06933 прошёл (exit 0):
+    - backend: ruff «All checks passed!», 316 passed;
+    - frontend: 41 файл, 405 тестов passed.
+  - `make stack-e2e SLOT=2`: 18 passed, включая `lists-are-paged` и `past-events-tab`.
+  - После проверок стек слота 2 остановлен, копия удалена.
+  
+  ## Сняты решениями из `docs/decisions.md`
+  
+  - **Порядок прошедших при равном `starts_at`.** Задача 5.5 требует «больший `id` выше» в обоих списках, а в коде прошедшие идут `("-starts_at", "id")`. Решение человека от 16:55 меняет это (прошедшие — тот же порядок, развёрнутый назад), spec обновлён. Тест `test_past_mirrors_the_upcoming_order_at_the_same_start` идёт на обоих эндпоинтах.
+  - **Счётчик считает эмодзи за два символа (UTF-16), сервер — за один.** Запись 16:13 это разбирает: форма может отказать у предела, но никогда не пропустит то, что отклонит сервер; `zod` считает так же.
+  - **Фон неактивной кнопки меняется при наведении** из-за `pointer-events: auto`. Цена описана в записи 00:10. Мою находку про `[aria-disabled]` эта запись не снимает: она говорит только о `disabled`-кнопке.
+  - **`PageNav` из кнопок, а не ссылок** — нельзя открыть страницу в новой вкладке. Запись 17:14 объясняет: reka ставит `disabled`, который на `<a>` не действует.
+  - **`PageNav` и `FilterLink` перенесены и на таблицу участников**, хотя 5.7 называет только `/` и `/org/events`. Это решение человека (17:14, 17:26), `FilterLink` вынесен под третьего потребителя.
+  - **Плашка «Нет подключения»** вместо строки на `/health`: решение человека 00:42, spec и Non-Goals обновлены.
+  
+  ## Проверено без находок
+  
+  - **Backend:**
+    - `event_page` и `upcoming()` / `past()`: count и строки берутся из одного queryset, у `past` граница `<=`, порядок полный — страницы не повторяют и не пропускают строки.
+    - `EventListQuerySerializer`: `page` 1…10⁶, `period` — choice; 400 с кодом поля для обоих списков.
+    - Число запросов не зависит от числа строк (тесты обновлены: 2 и 4).
+    - Тесты: страницы, последняя, за концом, оба `period`, неверные значения — на обоих эндпоинтах через параметризованную фикстуру.
+    - Авторизация `GET /org/events` — `IsAuthenticated` по умолчанию плюс фильтр `for_organizer`.
+    - `openapi.yaml` и `schema.d.ts` обновлены, проверка схемы в `stack-check` прошла.
+  - **Ключи кэша:** `["…", "list", period, page]` не пересекаются с ключами события. Инвалидация после создания, редактирования, регистрации и отказа от билета затрагивает все страницы и периоды и покрыта тестами. Отказ от билета явно сбрасывает событие — раньше это делал префикс.
+  - **Фронтенд:**
+    - `NavLink` (`isExactActive`, `aria-current="page"` только у текущей; тесты шапки и вкладок, включая «Участники» на «Чекине»).
+    - `QueryState`: ссылка «Состояние сервиса», её нет на `/health`.
+    - Плашка офлайн по `useOnline` и тест `offline` / `online`; `onlineManager` в setup сбрасывается после каждого теста.
+    - `CharCounter`: предел, обрезка пробелов, `aria-describedby`.
+    - Вкладки и `?period=`, сброс страницы при смене вкладки, пустые тексты, «за концом» со ссылкой на последнюю.
+    - `pageFromQuery` и `periodFromQuery` — с тестами.
+  - **Импорты:** только вниз, в чужой срез — через `index.ts`; ESLint boundaries прошёл.
+  - **Мусор:** в diff нет TODO, `console`, `v-html`, пустых `catch`, закомментированного кода и рекламного тона. `frontend/AGENTS.md` и `docs/architecture.md` сверены с кодом.
+  - **e2e:** без `waitForTimeout`; повтор по состоянию — `toPass` с `reload`. `e2e/test-results/` с упавшим `past-events-tab` в основной папке — не в индексе: это след проверки «тест падает», о которой говорит запись 17:26.
+  
+  ## Не проверялось
+  
+  - Страницы в браузере не смотрел: курсоры (5.2 — «Готово, когда: браузер»), вёрстка `PageNav` на 360 px, вид плашки офлайн.
+  - Тело коммитов и `tasks.md` не читал (по инструкции).
+  
+  ---
+  
+  Две поправки к разделу «Не проверялось». Вёрстку `PageNav` на 1280 и 360 px я смотрел в браузере в задаче 5.7, курсоры — в задаче 5.2 (записано в логе 00:10). Вид плашки офлайн в логе решений не описан, в браузере его, похоже, не проверяли.
+  
+  Как поступить с находками?
+  
+  1. **Подписи «Назад» / «Вперёд»** в `PageNav`. Варианты ревьюера: сделать видимые подписи «Предыдущая» / «Следующая» или поставить видимое слово в начало `aria-label` («Назад, предыдущая страница»). Я бы выбрал первый: подпись и имя кнопки тогда совпадают, как у «Первая» / «Последняя». Ширина на телефоне не меняется, там подписи скрыты.
+  2. **`pointer-events: auto` у `[aria-disabled="true"]`** в `app/styles.css`. Вариант ревьюера: оставить `pointer-events: auto` только у `button:disabled`, а `[aria-disabled="true"]` дать один `cursor: not-allowed`. Я бы выбрал его. Есть оговорка: у неактивной кнопки shadcn стоит `disabled:pointer-events-none`, и я не знаю, ставит ли что-то в коде такую же утилиту рядом с `aria-disabled`. Если ставит, то над таким элементом курсор возьмётся у родителя и `not-allowed` не будет виден. Это я проверю в браузере на «Следующий» во время паузы, как в задаче 5.2. Второй вариант ревьюера — оставить правило и только исправить комментарий.
+  
+  Исправить обе так? После исправлений по `feature-workflow` — одно повторное ревью, только на коммиты с исправлениями.
+
+> да, исправляй обе по твоим рекомендациям
+
+⏺ Bash(cd /home/raf/event-registration/frontend && sed -n 55,80p src/app/styles.css; grep -rn "aria-disabled\|pointer-events-none" src --include=*.vue | grep -v shadcn | head; grep -rn "aria-disabled" src | )
+  ⎿  }
+     }
+     
+     /* Buttons show what a click would do. Tailwind's preflight gives a button the default arrow. */
+     @layer base {
+       button:not(:disabled, [aria-disabled="true"]),
+     … +20 lines
+
+⏺ Сначала стили: `pointer-events: auto` оставляю только у `button:disabled`.
+
+⏺ Edit(/home/raf/event-registration/frontend/src/app/styles.css)
+⏺ Bash(grep -n "Short\|previous\|next" src/shared/ui/page-nav/PageNav.vue | head; grep -n "Назад\|Вперёд" -r src/shared/ui/page-nav ../e2e/tests | head)
+  ⎿  The file /home/raf/event-registration/frontend/src/app/styles.css has been updated successfully.
+
+  ⎿  23:// The pages of a list: first, previous, the current one with its neighbours, next, last. A gap
+     60:        <span class="hidden sm:block">{{ t("firstShort") }}</span>
+     62:      <PaginationPrevious :aria-label="t('previous')">
+     64:        <span class="hidden sm:block">{{ t("previousShort") }}</span>
+     89:      <PaginationNext :aria-label="t('next')">
+     90:        <span class="hidden sm:block">{{ t("nextShort") }}</span>
+     … +6 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  × names each edge button with the word it shows 21ms
+     ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+           Tests  1 failed | 12 passed (13)
+
+⏺ Bash(sed -i 's/  "previousShort": "Назад",/  "previousShort": "Предыдущая",/; s/  "nextShort": "Вперёд",/  "nextShort": "Следующая",/' src/shared/ui/page-nav/PageNav.vue && pnpm vitest run src/shared/ui/pa)
+  ⎿  Tests  13 passed (13)
+
+⏺ Bash(cd /home/raf/event-registration && FRONTEND_TARGET=gateway make stack-up >/dev/null 2>&1; echo up=$?; grep -n "Следующий\|code\|Отметить" frontend/src/pages/org-checkin/ui/OrgCheckinPage.vue | head -8)
+  ⎿  up=0
+     31:const code = ref("");
+     34:const codeField = useTemplateRef<HTMLDivElement>("code-field");
+     39:  codeField.value?.querySelector("input")?.focus();
+     71:// the answer to the next code. "Next" gets the focus: Enter takes the organizer back to the field.
+     74:  code.value = "";
+     … +3 lines
+
+⏺ Bash(S=/tmp/claude-1000/-home-raf-event-registration/a79610d6-85b1-4d83-bbd8-aaeecf195ee5/scratchpad && cat > e2e/.shot-tmp.mjs <<'EOF')
+  ⎿  during pause: true not-allowed
+     after pause: pointer
+
+⏺ Read(/tmp/claude-1000/-home-raf-event-registration/a79610d6-85b1-4d83-bbd8-aaeecf195ee5/scratchpad/nav-fixed-1280.png)
+  ⎿  (no output)
+
+⏺ Bash(cd /home/raf/event-registration && date '+%H:%M' && make stack-check > /tmp/claude-1000/-home-raf-event-registration/a79610d6-85b1-4d83-bbd8-aaeecf195ee5/scratchpad/check.log 2>&1; echo $?; grep -E "p)
+  ⎿  17:39
+     0
+     # fail 0
+     All checks passed!
+     ======================== 316 passed in 96.93s (0:01:36) ========================
+      Test Files  41 passed (41)
+     … +1 lines
+
+⏺ Bash(cat >> docs/decisions.md <<'EOF')
+  ⎿  ⋯ Backing up original state…
+     ✔ Done backing up original state (e325127)!
+     ⋯ Running tasks for staged files…
+         *.{mjs,json,md,yml,yaml} — 1 file
+           ⋯ prettier --write
+     
+     … +9 lines
+
+⏺ Bash(cat >> docs/decisions.md <<'EOF')
+  ⎿  M  docs/decisions.md
+     M  frontend/src/shared/ui/page-nav/PageNav.test.ts
+     M  frontend/src/shared/ui/page-nav/PageNav.vue
+     ⋯ Backing up original state…
+     ✔ Done backing up original state (2fb85dc)!
+     ⋯ Running tasks for staged files…
+     … +16 lines
+
+⏺ Обе находки исправлены. Запускаю повторное ревью только на коммиты с исправлениями.
+
+⏺ Agent(Re-review stage 5 fixes)
+  ⎿  Async agent launched successfully. (This tool result is internal metadata — never quote or paste any part of it, including the agentId below, into a user-facing reply.)
+     agentId: ab8b9df0b544c62a9 (internal ID - do not mention to user. Use SendMessage with to: 'ab8b9df0b544c62a9', summary: '<5-10 word recap>' to continue this agent.)
+     The agent is working in the background. You will be notified automatically when it completes. You know nothing about its results until that notification arrives — do not report, assume, or predict the
+     Do not duplicate this agent's work — avoid working with the same files or topics it is using.
+     output_file: /tmp/claude-1000/-home-raf-event-registration/a79610d6-85b1-4d83-bbd8-aaeecf195ee5/tasks/ab8b9df0b544c62a9.output
+     Do NOT Read or tail this file via the shell tool — it is the full subagent JSONL transcript and reading it will overflow your context. If the user asks for progress, say the agent is still running; yo
+
+⏺ Исправил обе находки ревью, как вы выбрали. `make stack-check` прошёл (pytest 316, Vitest 406).
+  
+  - **`pointer-events` у `aria-disabled`** (`db0bcc5`). В `app/styles.css` `pointer-events: auto` теперь стоит только у `button:disabled`. Элемент с `aria-disabled="true"` получает только курсор `not-allowed`, а его собственный `pointer-events` больше не перебивается. Комментарий исправлен: клик по такому элементу браузер доставляет, отсекает его обработчик. Проверил в браузере: «Следующий» на чекине во время паузы — `not-allowed`, после паузы — `pointer`.
+  - **Подписи кнопок пагинации** (`14bd2bb`). «Назад» / «Вперёд» заменил на «Предыдущая» / «Следующая»: видимое слово теперь начало имени кнопки, как у «Первая» / «Последняя». Новый тест сверяет подпись и имя всех четырёх крайних кнопок. На старых подписях он падал, на новых проходит. На 1280 px проверил в браузере; на телефоне подписи скрыты, ширина полосы прежняя.
+  
+  Решения по обеим находкам записаны в `docs/decisions.md`.
+  
+  Повторное ревью (одно, по `feature-workflow`) запущено в фоне только на коммиты с исправлениями, `4c06933..14bd2bb`. Покажу отчёт целиком, когда придёт.
+
+⏺ Повторное ревью закончилось: обе исправленные находки закрыты, но новые подписи дали регрессию. Отчёт агента `reviewer` целиком:
+  
+  ---
+  
+  ## Повторное ревью этапа 5 фазы 6 (4c06933..14bd2bb)
+  
+  Обе находки первого ревью исправлены. Но новые, более длинные подписи кнопок дали одну новую проблему: на ширине от 640 до примерно 704 px страница прокручивается вбок.
+  
+  ### Находки
+  
+  ```text
+  frontend/src/shared/ui/page-nav/PageNav.vue:61,65,89,93 (+ i18n :106,:108) — корректность / вёрстка (регрессия этого диапазона)
+  Что: подписи «Предыдущая» / «Следующая» видны начиная с `sm` (`hidden sm:block`), и полоса пагинации стала шире своего блока. Замерено на стеке слота 2: 164 события, `/?page=4`, видны 9 элементов (две «…» и три номера). На ширине 640 px полоса занимает 672 px при ширине nav 608, у документа `scrollWidth` = 656 при окне 640, то есть страница прокручивается вбок. Со старыми подписями «Назад» / «Вперёд» в том же окне полоса занимала 596 px, `scrollWidth` был 640 и переполнения не было. На 700 px, 768 px и 360 px переполнения нет.
+  Почему важно: на планшетах и в узких окнах (640–~704 px) списки `/` и `/org/events` прокручиваются вбок, как только в списке 8 и больше страниц. Таблицу участников это тоже касается: там тот же `PageNav`. Spec («Ширина телефона») требует не прокручивать вбок только на 360 px, но до этого диапазона переполнения на `sm` не было. Решение 17:41 в decisions.md утверждает, что «ширина полосы та же»: это верно только ниже `sm`, проверяли только 360 и 1280 px.
+  Исправление: показывать слова крайних кнопок и «…» начиная с `md`, а не `sm` (`hidden md:block` / `hidden md:flex`). На `md` блок шириной 736 px вмещает 672 px. Ещё один вариант: показывать слова только у «Первая» / «Последняя». Нужна проверка: в `screens-fit-phone` или в отдельном e2e на 640 px открыть список с ≥ 8 страницами и сравнить `scrollWidth` с шириной окна. Сейчас ни один тест такого случая не создаёт.
+  ```
+  
+  По остальному коду диапазона находок нет:
+  
+  - **`styles.css`.** `pointer-events: auto` теперь задаётся только у `button:disabled`. У `[aria-disabled="true"]` остался один `cursor: not-allowed` в правиле вне слоёв. Оба комментария соответствуют поведению. Единственный элемент с `aria-disabled` (`OrgCheckinPage.vue:134`, «Следующий») сам отбрасывает клик (`if (pausing.value) return`), как и сказано в комментарии. Правила 9 (не править `shared/ui/shadcn`) диапазон не нарушает.
+  - **`PageNav.vue`.** Видимое слово стало началом `aria-label`, требование WCAG 2.5.3 выполнено. Новый тест в `PageNav.test.ts` сравнивает текст и имя всех четырёх крайних кнопок, так что возврат «Назад» его уронит.
+  
+  ### Результаты проверок
+  - `stack-check SLOT=2` в копии на 14bd2bb прошёл (exit 0): backend 316 passed, Vitest 41 файл / 406 тестов, линтеры и проверки типов frontend и e2e без ошибок.
+  - `stack-e2e SLOT=2` — 18 passed.
+  
+  ### Решения из docs/decisions.md
+  - 17:39 (`pointer-events`) совпадает с исправлением; находок по нему нет.
+  - 17:41 (подписи) не снимает находку выше: довод «на телефоне подписи скрыты, ширина полосы та же» не покрывает диапазон от `sm` до ~704 px, а в браузере проверяли только 360 и 1280 px.
+  - Других находок, к которым относились бы решения, нет.
+  
+  ### Проверено без находок
+  - Поиск из anti-slop по diff: мусора, закомментированного кода и комментариев-пересказов нет.
+  - Других мест с `aria-disabled` / `pointer-events-none`, которые задело бы новое правило, нет: `Label.vue` и `Input.vue` используют `disabled` / `data-disabled`, а не `aria-disabled`.
+  - Тесты страниц обращаются к кнопкам по `aria-label`, а он не менялся.
+  
+  ### Не проверялось
+  - Визуально в браузере страницы не смотрел. Ширину замерял скриптом Playwright через `getBoundingClientRect` / `scrollWidth` и сделал один скриншот на 640 px (`/tmp/claude-1000/-home-raf-event-registration/a79610d6-85b1-4d83-bbd8-aaeecf195ee5/scratchpad/m/640.png`); полоса на нём не видна.
+  - Курсор при наведении глазами не проверял.
+  - Ширину на `/org/events` и в таблице участников отдельно не замерял: компонент тот же.
+  
+  Для замеров в базу слота 2 добавлено 130 событий через API. Они удалены вместе с томом при `stack-down`. Копия репозитория удалена, рабочая папка чистая.
+  
+  ---
+  
+  Мой промах: в записи 17:41 я написал «ширина полосы та же», а проверил только 360 и 1280 px. Промежуточные ширины, где подписи уже видны, не смотрел.
+  
+  Повторное ревью по `feature-workflow` было единственным, дальше решаете вы. Варианты из отчёта:
+  
+  1. **Подписи и «…» с `md` вместо `sm`** — моя рекомендация. Подписи остаются у всех четырёх кнопок, правка — четыре класса. Ниже 768 px полоса будет только из значков, как сейчас на телефоне.
+  2. **Подписи только у «Первая» / «Последняя»**, а «Предыдущая» / «Следующая» — только значками на любой ширине. Полоса узкая на любой ширине, но кнопки станут неодинаковыми.
+  
+  К любому варианту ревьюер предлагает e2e: открыть на 640 px список с 8 и больше страницами и проверить, что страница не прокручивается вбок. Добавлю его в `screens-fit-phone` или отдельным тестом. Для этого e2e создаст через API около 140 событий: 20 на страницу, 8 и больше страниц. Прогон станет на несколько секунд дольше.
+  
+  Какой вариант исправления берём и добавлять ли e2e?
+
+> вариант 1 с md, e2e добавь
+
+⏺ Беру `md` для подписей и «…» и добавляю e2e. Хелпер создания события через API нужен уже трём e2e, поэтому выношу его в `helpers.ts`. Сначала тест: на текущем коде он должен упасть на 640 px.
+
+⏺ Bash(cd /home/raf/event-registration/e2e && sed -n 60,80p tests/helpers.ts; cat tests/past-events-tab.spec.ts | sed -n 1,20p; sed -n 1,30p tests/screens-fit-phone.spec.ts)
+  ⎿  export async function registerOn(
+       page: Page,
+       title: string,
+       email: string,
+       name: string,
+     ): Promise<void> {
+     … +65 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  import { expect, test, type Page } from "@playwright/test";
+     
+     import { organizerPage, postEvent } from "./helpers";
+     
+     // One page of a list holds 20 events (EVENTS_PAGE_SIZE in backend/events/services.py).
+     const PAGE_SIZE = 20;
+     … +24 lines
+
+⏺ Bash(cat > tests/page-bar-fits.spec.ts <<'EOF')
+  ⎿  Error: the list is wider than a 640 px window
+         Expected: <= 640
+         Received:    656
+         > 44 |     expect(scrollWidth, `the list is wider than a ${width} px window`).toBeLessThanOrEqual(
+       1 failed
+
+⏺ Тест воспроизводит находку: на 640 px — 656 вместо 640. Теперь исправление: подписи и «…» с `md`.
+
+⏺ Bash(cd /home/raf/event-registration/frontend && sed -i 's/class="hidden sm:block"/class="hidden md:block"/g; s/class="hidden sm:flex"/class="hidden md:flex"/g' src/shared/ui/page-nav/PageNav.vue && grep -)
+  ⎿  60:        <span class="hidden md:block">{{ t("firstShort") }}</span>
+     64:        <span class="hidden md:block">{{ t("previousShort") }}</span>
+     68:        class="hidden md:flex"
+     84:        class="hidden md:flex"
+     90:        <span class="hidden md:block">{{ t("nextShort") }}</span>
+     94:        <span class="hidden md:block">{{ t("lastShort") }}</span>
+     … +10 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Tests  13 passed (13)
+       1 passed (3.1s)
+
+⏺ e2e проходит. Посмотрю полосу глазами на 768 px, где подписи появляются.
+
+⏺ Bash(cd /home/raf/event-registration && S=/tmp/claude-1000/-home-raf-event-registration/a79610d6-85b1-4d83-bbd8-aaeecf195ee5/scratchpad && cat > e2e/.shot-tmp.mjs <<'EOF')
+⏺ Read(/tmp/claude-1000/-home-raf-event-registration/a79610d6-85b1-4d83-bbd8-aaeecf195ee5/scratchpad/nav-768.png)
+⏺ Read(/tmp/claude-1000/-home-raf-event-registration/a79610d6-85b1-4d83-bbd8-aaeecf195ee5/scratchpad/nav-640.png)
+  ⎿  (Bash completed with no output)
+
+  ⎿  (no output)
+
+  ⎿  (no output)
+
+⏺ На 640 px остаются только значки, на 768 px подписи помещаются. Запускаю полную проверку и все e2e.
+
+⏺ Bash(cd /home/raf/event-registration && make stack-check > /tmp/claude-1000/-home-raf-event-registration/a79610d6-85b1-4d83-bbd8-aaeecf195ee5/scratchpad/check.log 2>&1; echo check=$?; grep -E "passed|faile)
+  ⎿  check=0
+     # fail 0
+     All checks passed!
+     ======================== 316 passed in 95.69s (0:01:35) ========================
+      Test Files  41 passed (41)
+     e2e=2
+     … +4 lines
+
+⏺ Bash(grep -E "✘|Error:|Expected|Received|›" /tmp/claude-1000/-home-raf-event-registration/a79610d6-85b1-4d83-bbd8-aaeecf195ee5/scratchpad/e2e.log | head -20)
+  ⎿  ✓   6 [chromium] › tests/organizer-creates-event.spec.ts:5:1 › organizer signs in, creates an event and sees it in the list (3.2s)
+       ✓   3 [chromium] › tests/organizer-logs-out.spec.ts:5:1 › the organizer signs out, and signing in again leads back to the page asked for (3.4s)
+       ✓   9 [chromium] › tests/organizer-creates-event.spec.ts:28:1 › organizer sees the field error from the form and stays on it (1.8s)
+       ✓  11 [chromium] › tests/organizer-creates-event.spec.ts:48:1 › a wrong password shows the server error and keeps the login form (1.0s)
+       ✓   4 [chromium] › tests/organizer-reschedules-event.spec.ts:11:1 › a rescheduled event emails the confirmed and the waitlisted (7.4s)
+       ✓   1 [chromium] › tests/organizer-sees-arrivals-live.spec.ts:5:1 › a check-in at the entrance updates the arrivals on a panel open elsewhere (8.4s)
+     … +14 lines
+
+⏺ Bash(cd /home/raf/event-registration/e2e && python3 - <<'EOF')
+  ⎿  tests/organizer-creates-event.spec.ts:7:  const startsAt = `${new Date().getFullYear() + 1}-05-01T18:00`;
+     tests/lists-are-paged.spec.ts:13:  start.setFullYear(start.getFullYear() + 100);
+     tests/helpers.ts:52:    .fill(`${new Date().getFullYear() + 1}-05-01T18:00`);
+     tests/organizer-reschedules-event.spec.ts:28:  const newStart = `${new Date().getFullYear() + 1}-05-02T19:30`;
+     tests/page-bar-fits.spec.ts:21:  start.setFullYear(start.getFullYear() + 40);
+     e2e=0
+     … +2 lines
+
+⏺ 19 из 19. Прогоню ещё раз: данные прошлого прогона остаются в базе, и тесты не должны от них зависеть.
+
+⏺ Bash(make stack-e2e > /tmp/claude-1000/-home-raf-event-registration/a79610d6-85b1-4d83-bbd8-aaeecf195ee5/scratchpad/e2e.log 2>&1; echo e2e=$?; grep -E "passed|failed|flaky|✘" /tmp/claude-1000/-home-raf-eve)
+  ⎿  e2e=2
+       1 failed
+       18 passed (16.2s)
+      ELIFECYCLE  Test failed. See above for more details.
+     17:56
+
+⏺ Bash(grep -E "✘|Error:|Expected|Received|wider|Locator|waiting" /tmp/claude-1000/-home-raf-event-registration/a79610d6-85b1-4d83-bbd8-aaeecf195ee5/scratchpad/e2e.log | head -12)
+  ⎿  ✘   1 [chromium] › tests/lists-are-paged.spec.ts:22:1 › both event lists go page by page to the last event (9.6s)
+         Error: expect(locator).toBeVisible() failed
+         Locator: getByRole('link', { name: 'Paged 1793807793803 21', exact: true })
+         Expected: visible
+         Error: element(s) not found
+           - waiting for getByRole('link', { name: 'Paged 1793807793803 21', exact: true })
+
+⏺ Bash(cd /home/raf/event-registration/e2e && sed -n 22,55p tests/lists-are-paged.spec.ts)
+  ⎿  test("both event lists go page by page to the last event", async ({ browser }) => {
+       const organizer = await organizerPage(browser);
+       const last = await createEventsBeyondAPage(organizer, `Paged ${Date.now()}`);
+     
+       const guest = await (await browser.newContext()).newPage();
+       await guest.goto("/");
+     … +17 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  run1=0
+       19 passed (15.8s)
+     run2=0
+       19 passed (16.0s)
+     [This command modified 1 file you've previously read: e2e/tests/lists-are-paged.spec.ts. Call Read before editing.]
+
+⏺ Два прогона подряд — 19 из 19. Записываю решение и коммичу.
+
+⏺ Bash(date '+%H:%M' && cat >> docs/decisions.md <<'EOF')
+  ⎿  17:58
+     M  docs/decisions.md
+     M  e2e/tests/helpers.ts
+     M  e2e/tests/lists-are-paged.spec.ts
+     A  e2e/tests/page-bar-fits.spec.ts
+     M  e2e/tests/past-events-tab.spec.ts
+     … +26 lines
+
+⏺ Bash(sed -i 's/^- \*\*18:02\*\* — по повторному ревью этапа 5/- **17:58** — по повторному ревью этапа 5/' docs/decisions.md && grep -c "17:58\*\* — по повторному" docs/decisions.md && git add docs/decision)
+  ⎿  1
+     ✔ Done cleaning up temporary files!
+     c6e12cc fix(frontend): show the words of the page bar from md, where they fit
+
+⏺ Добавлю в лог `tasks.md` строки о ревью этапа 5, как у прошлых этапов.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  ⋯ Backing up original state…
+     ✔ Done backing up original state (672851d)!
+     ⋯ Running tasks for staged files…
+         *.{mjs,json,md,yml,yaml} — 1 file
+           ⋯ prettier --write
+     
+     … +8 lines
+
+⏺ Находку повторного ревью исправил, полоса страниц больше не шире окна на 640–700 px. Коммит `c6e12cc`. `make stack-check` прошёл (pytest 316, Vitest 406), `make stack-e2e` — 19 из 19 два прогона подряд.
+  
+  - **Исправление:** подписи кнопок и «…» видны с `md` (768 px), ниже полоса только из значков. На 640 px — одни значки, на 768 px подписи помещаются; проверил скриншотами.
+  - **Новый e2e `page-bar-fits`:** создаёт через API 141 событие (не меньше 8 страниц) и открывает страницу 4, где видны обе «…» и три номера. На ширине 360, 640, 700, 768 и 1024 px проверяет, что страница не прокручивается вбок. На старых классах он падал на 640 px (656 > 640).
+  - **Гонка в `lists-are-paged`:** её показал новый тест. Его событие должно стоять в списке последним, а тесты, идущие параллельно, добавляют события раньше него. Тогда событие уезжает за последнюю страницу, посчитанную при загрузке. В первом прогоне тест упал именно так. Теперь он повторяет переход на последнюю страницу, пока не найдёт событие. Самые дальние даты закреплены за ним (100 лет), у `page-bar-fits` — 40.
+  - **Хелпер:** создание события через API вынесено в `postEvent` в `e2e/tests/helpers.ts`, им пользуются три e2e.
+  
+  Записи в `docs/decisions.md` и строки о двух ревью этапа 5 в логе `tasks.md` — отдельным коммитом `011a296`. Время записи в логе сначала поставил на глаз (18:02 вместо 17:58 по `date`). Исправил его, дополнив ещё не отправленный коммит, поэтому у него новый хеш — `c6e12cc`.
+  
+  Повторное ревью по `feature-workflow` было единственным, третьего на это исправление не запускал. Посмотреть изменения — `git diff 14bd2bb..c6e12cc`.
+  
+  Этап 5 закрыт. Остался этап 6: нестабильные тесты Vitest и закрытие фазы. Ветку `feat/frontend-polish-stage-5` можно отправлять (`SLOT=1 git push`) и открывать PR «Phase 6, stage 5: …». Сделать это?
+
+> да, пушь и открывай PR
+
+⏺ Bash(git status --short && git log --oneline main..HEAD | cat && gh pr list --state all --limit 4 --json number,title,body | head -c 2500)
+  ⎿  011a296 docs: record the reviews of phase 6, stage 5 in its task log
+     c6e12cc fix(frontend): show the words of the page bar from md, where they fit
+     14bd2bb fix(frontend): show the words of the previous and next page buttons in their names
+     db0bcc5 fix(frontend): keep pointer events of aria-disabled elements as they are
+     4c06933 feat(frontend): split both event lists into upcoming and past tabs
+     d7886db feat(frontend): page through the event lists and the participants
+     … +12 lines
+
+⏺ Bash(gh pr list --state all --limit 1 --json title,body -q '.[0].title, .[0].body' | tail -25)
+  ⎿  - the event layout no longer repeats the width of `<main>`.
+     - Long values wrap instead of widening the page: the participant's name on the ticket, the name and email in the check-in answer.
+     - The participants table bounds its name and email columns (`min-w-32 max-w-60` on a block inside the cell, as Chrome ignores `max-width` on a `<td>`): one long value wraps rather than stretching the 
+     - The event tabs wrap (`flex-wrap`). A scrolling tab bar was tried and dropped: it clipped the keyboard focus ring.
+     
+     **e2e**
+     … +18 lines
+
+⏺ Отправляю ветку (хук `pre-push` проверит backend на Postgres слота 1).
+
+⏺ Bash(SLOT=1 git push -u origin feat/frontend-polish-stage-5 2>&1 | tail -8)
+  ⎿  remote: 
+     remote: Create a pull request for 'feat/frontend-polish-stage-5' on GitHub by visiting:        
+     remote:      https://github.com/rbikbov/event-registration/pull/new/feat/frontend-polish-stage-5        
+     remote: 
+     To github.com:rbikbov/event-registration.git
+      * [new branch]      feat/frontend-polish-stage-5 -> feat/frontend-polish-stage-5
+     … +1 lines
+
+⏺ Bash(cat > /tmp/claude-1000/-home-raf-event-registration/a79610d6-85b1-4d83-bbd8-aaeecf195ee5/scratchpad/pr.md <<'EOF')
+  ⎿  https://github.com/rbikbov/event-registration/pull/29
+
+⏺ Ветка `feat/frontend-polish-stage-5` отправлена, PR открыт: https://github.com/rbikbov/event-registration/pull/29 — «Phase 6, stage 5: deferred navigation, forms and paged event lists».
+  
+  Хук `pre-push` перед отправкой проверил backend на Postgres слота 1 и прошёл.
+  
+  Описание PR построено по образцу прошлых: что изменилось, проверки, «Не проверялось». В «Не проверялось» записал три вещи:
+  - плашку «Нет подключения к интернету» проверял только Vitest, в браузере её никто не смотрел;
+  - страницу списка нельзя открыть в новой вкладке: полоса страниц сделана кнопками;
+  - регистрация на уже начавшееся событие по-прежнему возможна, в том числе с вкладки «Прошедшие».
+  
+  Ответ API списков изменился с массива на `{count, results}`, в PR это отмечено как ломающее изменение.
+  
+  Сессию не закрывал. Если на сегодня всё, добавлю в `docs/decisions.md` запись «■ конец сессии» отдельным коммитом в эту же ветку, он попадёт в PR #29.

@@ -1,0 +1,1287 @@
+> /clear
+
+> делаем этап 3 в новой ветке от origin/main
+
+⏺ Skill(session-handoff)
+  ⎿  Launching skill: session-handoff
+
+⏺ Bash(date && make worktime 2>&1 | tail -5 && git fetch origin && git log --oneline origin/main -8 && git status --short && cat docs/features/checkin/tasks.md && tail -20 docs/decisions.md)
+  ⎿  <persisted-output>
+     Output too large (30.1KB). Full output saved to: /home/raf/.claude/projects/-home-raf-event-registration/3bddae65-57c2-4a28-926c-1b4005b3fdb8/tool-results/bvjqxzq2g.txt
+     
+     Preview (first 2KB):
+     Sat Oct 31 11:19:05 EET 2026
+     2026-10-31 05:39 → 2026-10-31 05:53  0 ч 14 мин
+     … +34 lines
+
+⏺ Bash(git status --short; sed -n '/## Этап 3/,$p' docs/features/checkin/tasks.md; echo ----; tail -15 docs/decisions.md; git log --oneline origin/main..HEAD | head)
+  ⎿  ## Этап 3. Панель события
+     
+     - [ ] 3.1 backend: `GET /api/org/events/{id}/` со счётчиками (`checked_in` в
+           `with_registration_counts`), `GET /api/org/events/{id}/registrations/?status=`. Готово,
+           когда: тесты счётчиков, фильтра, 400 на неизвестный статус, 404 на чужое зелёные.
+     - [ ] 3.2 frontend: панель `/org/events/:id` — счётчики, таблица с фильтром, ссылка на чекин;
+     … +87 lines
+
+⏺ Bash(git diff --stat HEAD origin/main && git switch -c feat/checkin-dashboard origin/main && git log -1 --oneline)
+⏺ Skill(feature-workflow)
+  ⎿  Switched to a new branch 'feat/checkin-dashboard'
+     branch 'feat/checkin-dashboard' set up to track 'origin/main'.
+     f953669 docs: close the flaky email test session
+
+  ⎿  Launching skill: feature-workflow
+
+⏺ Bash(cat docs/features/checkin/spec.md && grep -n "Этап\|база\|База" docs/features/checkin/tasks.md | head)
+  ⎿  # Чекин и статистика организатора: spec
+     
+     Фаза — `docs/roadmap.md`, фаза 3. Статус: утверждён 2026-10-31.
+     
+     ## Что и зачем
+     
+     … +111 lines
+
+⏺ Bash(cd /home/raf/event-registration/backend && ls; ls */ | head -60; cat backend/AGENTS.md 2>/dev/null || cat AGENTS.md)
+  ⎿  AGENTS.md
+     CLAUDE.md
+     Dockerfile
+     __pycache__
+     accounts
+     config
+     … +125 lines
+
+⏺ Bash(cat events/models.py events/views.py events/serializers.py events/services.py config/urls.py; ls events/tests registrations/tests)
+  ⎿  from typing import ClassVar, Self
+     
+     from django.conf import settings
+     from django.core.validators import MaxValueValidator, MinValueValidator
+     from django.db import models
+     from django.db.models import Count, F, Q
+     … +193 lines
+
+⏺ Bash(cat registrations/views.py registrations/serializers.py registrations/models.py; sed -n 1,200p registrations/services.py | grep -n "def \|position\|queued_at" )
+  ⎿  from typing import Any
+     
+     from drf_spectacular.utils import OpenApiResponse, extend_schema
+     from rest_framework import status
+     from rest_framework.exceptions import NotFound
+     from rest_framework.permissions import AllowAny
+     … +288 lines
+
+⏺ Bash(cat events/tests/test_org_events_api.py; sed -n 1,80p registrations/tests/test_checkin_api.py; sed -n 36,55p registrations/services.py; cat conftest.py)
+  ⎿  from datetime import timedelta
+     from typing import Any
+     
+     import pytest
+     from django.db import IntegrityError
+     from django.utils import timezone
+     … +301 lines
+
+⏺ Bash(cat config/exceptions.py; grep -n "403\|404\|def test" registrations/tests/test_checkin_api.py | sed -n 1,40p; grep -rn "Window\|RowNumber" --include=*.py . | grep -v .venv | head)
+  ⎿  from typing import Any
+     
+     from drf_spectacular.utils import inline_serializer
+     from rest_framework import serializers, status
+     from rest_framework.exceptions import APIException, ValidationError
+     from rest_framework.response import Response
+     … +50 lines
+
+⏺ Пишу тесты вперёд для 3.1: счётчики панели и список участников.
+
+⏺ Write(/home/raf/event-registration/backend/events/tests/test_org_event_detail_api.py)
+⏺ Write(/home/raf/event-registration/backend/registrations/tests/test_org_registrations_api.py)
+  ⎿  File created successfully at: /home/raf/event-registration/backend/events/tests/test_org_event_detail_api.py (file state is current in your context — no need to Read it back)
+
+  ⎿  File created successfully at: /home/raf/event-registration/backend/registrations/tests/test_org_registrations_api.py (file state is current in your context — no need to Read it back)
+
+⏺ Bash(sed -n 1,40p registrations/tests/test_services.py; grep -n "^def test.*position\|^def test.*tie\|^def test.*order" registrations/tests/test_services.py)
+  ⎿  from datetime import timedelta
+     from typing import Any
+     
+     import pytest
+     from django.db import IntegrityError, transaction
+     from django.utils import timezone
+     … +39 lines
+
+⏺ Bash(sed -n 120,160p registrations/tests/test_services.py)
+  ⎿  assert again.created is False
+         assert again.position == 2
+     
+     
+     def test_waitlist_order_breaks_a_queued_at_tie_by_id(event: Event) -> None:
+         event.capacity = 1
+     … +34 lines
+
+⏺ Добавлю сервисный тест: позиции в списке совпадают с `waitlist_position`, включая ничью по `queued_at`.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  event-registration-s1-postgres-1 0.0.0.0:5433->5432/tcp, [::]:5433->5432/tcp
+
+⏺ Bash(POSTGRES_PORT=5433 uv run pytest -q events/tests/test_org_event_detail_api.py registrations/tests/test_org_registrations_api.py registrations/tests/test_services.py 2>&1 | grep -E "^(FAILED|ERROR)|pas)
+  ⎿  ERROR registrations/tests/test_services.py
+     !!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+     1 error in 0.20s
+
+⏺ Bash(POSTGRES_PORT=5433 uv run pytest -q events/tests/test_org_event_detail_api.py registrations/tests/test_org_registrations_api.py 2>&1 | grep -E "^(FAILED|ERROR)|passed|failed|error" | head -30)
+  ⎿  failed = num != num_performed
+                     failed = num_performed > num
+                 if failed:
+                     failed = num != num_performed
+                     failed = num_performed > num
+                 if failed:
+     … +16 lines
+
+⏺ Тесты падают по ожидаемой причине (эндпоинтов нет). Реализую.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  from dataclasses import dataclass
+     from datetime import datetime, timedelta
+     
+     from django.db import transaction
+     from django.db.models import Max, Q
+     from django.utils import timezone
+     … +78 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  3:from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema
+
+⏺ Bash(sed -i 's/from drf_spectacular.utils import OpenApiParameter, OpenApiResponse, extend_schema/from drf_spectacular.utils import OpenApiResponse, extend_schema/' registrations/views.py && POSTGRES_PORT=)
+  ⎿  157 passed in 43.84s
+
+⏺ Bash(cd /home/raf/event-registration && grep -n "^schema\|^check-backend\|^stack-check" Makefile; cd backend && uv run python manage.py check >/dev/null; cd .. && make schema 2>&1 | tail -3 && git diff --s)
+  ⎿  53:check-backend: lint-backend typecheck-backend migrations-check schema-check test-backend ## Backend: lint, types, migrations, schema, tests
+     73:schema: ## Regenerate the OpenAPI schema and frontend API types after an API change
+     78:schema-check: ## Fail if openapi.yaml or frontend API types are out of date, or a view is undocumented
+     133:stack-check: stack-postgres ## make check against the Postgres of slot SLOT (default 1)
+     137:stack-check-backend: stack-postgres ## make check-backend against the Postgres of slot SLOT
+     
+     … +13 lines
+
+⏺ Bash(git diff backend/openapi.yaml | grep -n "status\|position\|required" | head -30)
+  ⎿  19:+        required: true
+     46:+        of one status.
+     52:+        required: true
+     54:+        name: status
+     93:       required:
+     129:+      required:
+     … +5 lines
+
+⏺ Bash(date +%H:%M && python3 - <<'EOF')
+  ⎿  11:23
+     | `GET /api/org/events/{id}/`                         | —                                | 200 `{id, title, description, starts_at, capacity, confirmed, waitlisted, checked_in, free_seats}`          |
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  24 | | from registrations.services import (
+     25 | |     TicketCheckedIn,
+     26 | |     TicketNotConfirmed,
+     27 | |     cancel,
+     28 | |     check_in,
+     29 | |     event_registrations,
+     … +19 lines
+
+⏺ Bash(cd /home/raf/event-registration/backend && uv run ruff check --fix -q . ; uv run ruff format -q . ; cd .. && make stack-check 2>&1 | grep -E "error|Error|FAILED|passed|failed|✓|ok" | tail -25)
+  ⎿  ok 31 - docs-only changes run nothing
+     ok 32 - backend changes run backend checks
+     ok 33 - backend changes pushed from a slot use the slot's Postgres
+     ok 34 - shared files pushed from a slot check the backend on the slot's Postgres
+     ok 35 - frontend changes run frontend checks
+     ok 36 - e2e changes run static checks of the e2e code
+     … +20 lines
+
+⏺ Bash(cd /home/raf/event-registration/backend && grep -rn "WithAnnotations\|django_stubs_ext" --include=*.py accounts config events registrations emails | head; uv run python -c "import django_stubs_ext; pr)
+  ⎿  (eval):1: no matches found: --include=*.py
+     ok
+     (eval):1: no matches found: --include=*.py
+
+⏺ Bash(grep -n "PAGINATION\|REST_FRAMEWORK" -A8 config/settings.py | head -20; grep -rn "WithAnnotations" accounts config events registrations emails | head -3; sed -n 195,210p registrations/tests/test_servi)
+  ⎿  121:REST_FRAMEWORK = {
+     122-    "DEFAULT_AUTHENTICATION_CLASSES": [
+     123-        "accounts.authentication.SessionAuthenticationWith401",
+     124-    ],
+     125-    "DEFAULT_PERMISSION_CLASSES": [
+     126-        "rest_framework.permissions.IsAuthenticated",
+     … +19 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  1:from dataclasses import dataclass
+     2:from datetime import datetime, timedelta
+     3:from typing import TypedDict
+     5:from django.db import transaction
+     6:from django.db.models import Case, F, Max, Q, QuerySet, When, Window
+     7:from django.db.models.functions import RowNumber
+     … +8 lines
+
+⏺ Bash(grep -n "stubs" pyproject.toml; grep -rn "django_stubs_ext" config/settings.py)
+  ⎿  7:    "django-stubs-ext>=6.1.2",
+     17:    "django-stubs[compatible-mypy]>=6.1.2",
+     18:    "djangorestframework-stubs>=3.18.1",
+     52:[tool.django-stubs]
+     config/settings.py:10:import django_stubs_ext
+     config/settings.py:13:django_stubs_ext.monkeypatch()
+
+⏺ Bash(cd /home/raf/event-registration && make stack-check 2>&1 | grep -E "error|Error|FAILED|passed|failed|All checks|✗" | tail -20)
+  ⎿  All checks passed!
+         new_errors = check(app_configs=app_configs, databases=databases)
+         raise TypeError(f"Too {'many' if alen > plen else 'few'} arguments for {self};"
+     TypeError: Too many arguments for typing.Annotated[~_T, django_stubs_ext.annotations.Annotations[+_Annotations]]; actual 2, expected 1
+     make[1]: *** [Makefile:66: migrations-check] Error 1
+     make: *** [Makefile:134: stack-check] Error 2
+
+⏺ Bash(cd /home/raf/event-registration/backend && python3 - <<'EOF')
+  ⎿  183:def event_registrations(event_id: int, status: str | None = None) -> QuerySet[QueuedRegistration]:
+     F821 Undefined name `QueuedRegistration`
+        --> registrations/services.py:183:79
+         |
+     183 | def event_registrations(event_id: int, status: str | None = None) -> QuerySet[QueuedRegistration]:
+         |                                                                               ^^^^^^^^^^^^^^^^^^
+     … +6 lines
+
+⏺ Bash(sed -i 's/-> QuerySet\[QueuedRegistration\]:/-> QuerySet[Registration]:/' registrations/services.py && uv run ruff check -q . && uv run ruff format -q . && uv run mypy . 2>&1 | tail -3 && cd .. && mak)
+  ⎿  registrations/tests/test_services.py:204: error: Cannot resolve keyword 'position' into field. Choices are: cancelled_at, checked_in_at, confirmed_at, email, emails, event, event_id, id, manage_token,
+     Found 1 error in 1 file (checked 73 source files)
+     All checks passed!
+     registrations/tests/test_services.py:204: error: Cannot resolve keyword 'position' into field. Choices are: cancelled_at, checked_in_at, confirmed_at, email, emails, event, event_id, id, manage_token,
+     Found 1 error in 1 file (checked 73 source files)
+     make[1]: *** [Makefile:62: typecheck-backend] Error 1
+     … +2 lines
+
+⏺ Bash(cd /home/raf/event-registration/backend && python3 - <<'EOF')
+  ⎿  Success: no issues found in 73 source files
+     All checks passed!
+     ============================= 218 passed in 57.67s =============================
+      Test Files  19 passed (19)
+           Tests  144 passed (144)
+     [This command modified 1 file you've previously read: backend/registrations/tests/test_services.py. Call Read before editing.]
+
+⏺ Bash(make stack-check >/dev/null 2>&1; echo exit=$?; git status --short)
+  ⎿  exit=0
+      M backend/config/urls.py
+      M backend/events/models.py
+      M backend/events/serializers.py
+      M backend/events/services.py
+     A  backend/events/tests/test_org_event_detail_api.py
+     … +11 lines
+
+⏺ `make stack-check` проходит (exit 0: 218 pytest, 144 Vitest). Коммичу 3.1.
+
+⏺ Bash(git add -A && git commit -q -F - <<'EOF')
+  ⎿  ⋯ Backing up original state…
+     ✔ Done backing up original state (8d59706)!
+     ⋯ Running tasks for staged files…
+         backend/**/*.py — 11 files
+           ⋯ uv run --project backend ruff check --fix
+           ⋯ uv run --project backend ruff format
+     … +18 lines
+
+⏺ Skill(fsd-frontend)
+  ⎿  Launching skill: fsd-frontend
+
+⏺ Bash(cd /home/raf/event-registration/frontend && cat AGENTS.md | head -80; find src -type f | grep -v schema.d.ts | sort)
+  ⎿  # frontend/ — Vue 3 + Vite
+     
+     Команды и инструменты — `docs/development.md`, раздел «Frontend». Как писать код (слои, DI,
+     состояние, тесты) — skill `fsd-frontend`. Здесь — правила, которые действуют всегда.
+     
+     ## Карта
+     … +136 lines
+
+⏺ Bash(cd /home/raf/event-registration/frontend/src && cat shared/config/routes.ts app/router.ts entities/event/index.ts entities/event/api/*.ts pages/org-events/ui/OrgEventsPage.vue pages/org-checkin/index.)
+  ⎿  // Every in-app path lives here: pages cannot import app/router.ts, and a path typed twice
+     // is a silent 404 after one of them changes.
+     export const routes = {
+       home: "/",
+       event: "/events/:id(\\d+)",
+       health: "/health",
+     … +176 lines
+
+⏺ Bash(cat pages/org-checkin/ui/OrgCheckinPage.vue; sed -n 1,80p pages/org-checkin/ui/OrgCheckinPage.test.ts)
+  ⎿  <script setup lang="ts">
+     import { useMutation } from "@tanstack/vue-query";
+     import { computed, nextTick, onMounted, ref, useTemplateRef } from "vue";
+     import { useI18n } from "vue-i18n";
+     import { useRoute } from "vue-router";
+     
+     … +236 lines
+
+⏺ Bash(cat app/query-client.ts; cat pages/event/ui/EventPage.vue | sed -n 1,80p; cat pages/org-events/ui/OrgEventsPage.test.ts | sed -n 1,60p; ls ../ ; cat ../package.json | grep -n "\"test\|vitest\|shadcn\|)
+  ⎿  import { QueryClient } from "@tanstack/vue-query";
+     
+     import { AppError } from "@/shared/api";
+     
+     // A retry can fix only a lost connection or a server failure, never a 4xx.
+     function shouldRetry(failureCount: number, error: unknown): boolean {
+     … +172 lines
+
+⏺ Bash(sed -n 80,200p pages/event/ui/EventPage.vue; grep -n "status\|position\|OrgRegistration\|OrgEvent\b" shared/api/schema.d.ts | sed -n 1,40p)
+  ⎿  const notFound = computed(
+       () => loadError.value instanceof AppError && loadError.value.kind === "not_found",
+     );
+     
+     function submit(): void {
+       const parsed = parseRegistrationForm(form);
+     … +124 lines
+
+⏺ Bash(mkdir -p /home/raf/event-registration/frontend/src/pages/org-event/{api,model,ui} && cd /home/raf/event-registration/frontend/src && cat > pages/org-event/model/status-filter.test.ts <<'EOF')
+  ⎿  Test Files  1 failed | 3 passed (4)
+           Tests  25 passed (25)
+        Start at  11:29:26
+        Duration  1.88s (environment 55%, import 25%, tests 12%, setup 5%, transform 3%)
+
+⏺ Bash(cd /home/raf/event-registration/frontend/src && cat > pages/org-event/model/status-filter.ts <<'EOF')
+  ⎿  export { checkinPath, eventPath, routes, ticketPath } from "./routes";
+     8:  orgEvents: "/org/events",
+     9:  orgEventsNew: "/org/events/new",
+     10:  orgEvent: "/org/events/:id(\\d+)",
+     23:export function orgEventPath(id: number): string {
+           Tests  6 passed (6)
+     … +2 lines
+
+⏺ Bash(cd /home/raf/event-registration/frontend/src && sed -i 's/export { checkinPath, eventPath, routes, ticketPath } from ".\/routes";/export { checkinPath, eventPath, orgEventPath, routes, ticketPath } fr)
+  ⎿  (Bash completed with no output)
+
+⏺ Страница написана. Подключаю маршрут, ссылку из списка событий и загрузку события на экране чекина.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  54:onMounted(focusCode);
+     179:    <Alert v-if="failure" variant="destructive" class="mt-6" role="alert">
+
+⏺ Read(/home/raf/event-registration/frontend/src/pages/org-checkin/ui/OrgCheckinPage.vue)
+  ⎿  110	<template>
+     111	  <main class="mx-auto max-w-xl px-4 py-8">
+     112	    <RouterLink
+     113	      v-if="event"
+     114	      class="text-muted-foreground text-sm underline"
+     115	      :to="orgEventPath(event.id)"
+     … +74 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  {{ event ? t("titleOf", { title: event.title }) : t("title") }}
+         </h1>
+     
+         <Alert v-if="eventAnswer" class="mt-6" role="alert">
+           <AlertDescription>{{ t(eventAnswer) }}</AlertDescription>
+         </Alert>
+     … +65 lines
+
+⏺ Обновляю тесты экрана чекина (теперь он запрашивает событие) и добавляю тесты на загрузку события.
+
+⏺ Bash(grep -n "mountPage()\|server.use\|^  it(" pages/org-checkin/ui/OrgCheckinPage.test.ts | head -60; sed -n 80,400p pages/org-checkin/ui/OrgCheckinPage.test.ts | grep -n "forbidden\|403" )
+  ⎿  29:async function mountPage() {
+     59:  it("puts the cursor into the code field when the screen opens", async () => {
+     60:    const wrapper = await mountPage();
+     66:  it("lets a confirmed ticket in and shows who it is instead of the form", async () => {
+     68:    server.use(
+     74:    const wrapper = await mountPage();
+     … +32 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Tests  16 passed (16)
+
+⏺ Bash(cd /home/raf/event-registration/frontend/src && cat > pages/org-event/ui/OrgEventPage.test.ts <<'EOF')
+  ⎿  × switches the filter through the URL 31ms
+     ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+      FAIL  src/pages/org-event/ui/OrgEventPage.test.ts > OrgEventPage > switches the filter through the URL
+     AssertionError: expected [ null ] to deeply equal [ null, 'cancelled' ]
+           Tests  1 failed | 15 passed (16)
+
+⏺ Bash(sed -i 's|    expect(router.currentRoute.value.query).toEqual({ status: "cancelled" });\n||' src/pages/org-event/ui/OrgEventPage.test.ts && python3 - <<'EOF')
+  ⎿  (Bash completed with no output)
+
+⏺ Bash(pnpm exec vitest run src/pages/org-event/ui -t "switches" 2>&1 | head -40)
+  ⎿  (!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+       - import "./vite.config" without a file extension (vitest.config.ts:3:24). Add the file extension
+     Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+     
+      RUN  v5.0.5 /home/raf/event-registration/frontend
+     
+     … +5 lines
+
+⏺ Отдельно тест проходит — проверяю, не зависит ли он от порядка.
+
+⏺ Bash(for i in 1 2 3; do pnpm exec vitest run src/pages/org-event/ui 2>&1 | grep -E "Tests |stdout|/org/events|expected" ; done)
+  ⎿  [VUE_ROUTER_R0004] No match found for location with path "/org/events"
+     stdout | src/pages/org-event/ui/OrgEventPage.test.ts > OrgEventPage > switches the filter through the URL
+     /org/events/7?status=cancelled
+     stdout | src/pages/org-event/ui/OrgEventPage.test.ts > OrgEventPage > switches the filter through the URL
+     "/org/events/7?status=cancelled"
+     ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+     … +18 lines
+
+⏺ Bash(grep -rn "waitFor" src | head -3; python3 - <<'EOF')
+  ⎿  src/pages/home/ui/HomePage.test.ts:19:  await vi.waitFor(() => expect(wrapper.find('[role="status"]').exists()).toBe(false));
+     src/pages/home/ui/HomePage.test.ts:61:    await vi.waitFor(() => expect(wrapper.text()).toContain("Meetup 1"));
+     src/pages/event/ui/EventPage.test.ts:36:  await vi.waitFor(() => expect(wrapper.find('[role="status"]').exists()).toBe(false));
+           Tests  10 passed (10)
+           Tests  10 passed (10)
+           Tests  10 passed (10)
+
+⏺ Добавляю проверку ссылки на панель в тест списка событий и смотрю тест роутера.
+
+⏺ Bash(cd /home/raf/event-registration/frontend/src && grep -n "checkinPath\|it(" pages/org-events/ui/OrgEventsPage.test.ts; grep -n "orgCheckin\|requiresAuth\|it(" app/router.test.ts | head -20)
+  ⎿  7:import { checkinPath, routes } from "@/shared/config";
+     26:  it("shows a loading state until the list arrives", async () => {
+     35:  it("lists events with their capacity", async () => {
+     70:    expect(rows[1]?.get(`a[href="${checkinPath(2)}"]`).text()).toBe("Чекин");
+     73:  it("says there are no events yet and offers to create one", async () => {
+     83:  it("shows an error and loads again on retry", async () => {
+     … +6 lines
+
+⏺ Bash(sed -n 20,45p app/router.test.ts; sed -n 60,72p pages/org-events/ui/OrgEventsPage.test.ts)
+  ⎿  function setup() {
+       return createAppRouter(new QueryClient(), createMemoryHistory());
+     }
+     
+     describe("route guard", () => {
+       it("sends a guest from an organizer page to /login", async () => {
+     … +31 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  6:import { eventPath, routes } from "@/shared/config";
+
+⏺ Bash(sed -i 's|import { eventPath, routes } from "@/shared/config";|import { eventPath, orgEventPath, routes } from "@/shared/config";|' app/router.test.ts && grep -n "orgEventsQuery" ../AGENTS.md && sed -)
+  ⎿  13:src/entities/event/  события: orgEventsQuery (организатор), publicEventsQuery / publicEventQuery(id) (публичные)
+      ELIFECYCLE  Command failed with exit code 1.
+     make[1]: *** [Makefile:37: format-check] Error 1
+     make: *** [Makefile:134: stack-check] Error 2
+     [This command modified 2 files you've previously read: frontend/AGENTS.md, frontend/src/app/router.test.ts. Call Read before editing.]
+
+⏺ Bash(cd /home/raf/event-registration/frontend && pnpm exec prettier --write src >/dev/null && pnpm exec eslint --fix src 2>&1 | tail -20; cd .. && make stack-check 2>&1 | grep -E "error|Error|✖|FAILED|pass)
+  ⎿  -     *     * `error` - error
+     -    HealthStateEnum: "ok" | "error";
+     -    ValidationError: {
+     -      errors: {
+     -          "application/json": components["schemas"]["ValidationError"];
+     -          "application/json": components["schemas"]["ValidationError"];
+     … +14 lines
+
+⏺ Я прогнал prettier по всей `src` — он переформатировал сгенерированный `schema.d.ts`. Перегенерирую схему.
+
+⏺ Bash(make schema >/dev/null 2>&1; git diff --stat frontend/src/shared/api/schema.d.ts; make stack-check 2>&1 | grep -E "error|Error|✖|FAILED|passed|failed|All checks|warning" | tail -20)
+  ⎿  # Subtest: an unclosed session is a warning and is not counted
+     ok 44 - an unclosed session is a warning and is not counted
+     # Subtest: a start while another session is open and an end without a start are warnings
+     ok 45 - a start while another session is open and an end without a start are warnings
+     # Subtest: an end before its start is a warning, not negative time
+     ok 46 - an end before its start is a warning, not negative time
+     … +9 lines
+
+⏺ Bash(make stack-check >/dev/null 2>&1; echo exit=$?; git status --short; git diff frontend/src/pages/org-checkin/ui/OrgCheckinPage.vue | head -80)
+  ⎿  exit=0
+      M frontend/AGENTS.md
+      M frontend/src/app/router.test.ts
+      M frontend/src/app/router.ts
+      M frontend/src/entities/event/api/org-events.ts
+      M frontend/src/entities/event/index.ts
+     … +87 lines
+
+⏺ `make stack-check` проходит (218 pytest, 165 Vitest). Изменился UI, поэтому по правилам запускаю ещё `make stack-e2e`.
+
+⏺ Bash(make stack-e2e 2>&1 | tail -15)
+  ⎿  > e2e@0.0.0 test /home/raf/event-registration/e2e
+     > playwright test
+     
+     
+     Running 7 tests using 5 workers
+     
+     … +9 lines
+
+⏺ Bash(date +%H:%M && python3 - <<'EOF')
+  ⎿  11:37
+
+⏺ Bash(sed -i 's/^- \*\*ЧЧ:ММ\*\* — задача 3.2 фазы 3/- **11:37** — задача 3.2 фазы 3/' docs/decisions.md && python3 - <<'EOF')
+  ⎿  ⋯ Backing up original state…
+     ✔ Done backing up original state (cd9611f)!
+     ⋯ Running tasks for staged files…
+         frontend/**/*.{ts,vue,js} — 16 files
+           ⋯ pnpm --dir frontend exec eslint --fix
+           ⋯ prettier --write
+     … +30 lines
+
+⏺ Оба коммита этапа готовы. По правилам этап не готов без ревью — запускаю агента `reviewer` на диапазон `f953669..62cf648`.
+
+⏺ Agent(Review phase 3 stage 3)
+  ⎿  Async agent launched successfully. (This tool result is internal metadata — never quote or paste any part of it, including the agentId below, into a user-facing reply.)
+     agentId: a84d15e3aeac42f92 (internal ID - do not mention to user. Use SendMessage with to: 'a84d15e3aeac42f92', summary: '<5-10 word recap>' to continue this agent.)
+     The agent is working in the background. You will be notified automatically when it completes. You know nothing about its results until that notification arrives — do not report, assume, or predict the
+     Do not duplicate this agent's work — avoid working with the same files or topics it is using.
+     output_file: /tmp/claude-1000/-home-raf-event-registration/4634a2ff-61b4-4b8b-88ec-9ab8fa0d7ccf/tasks/a84d15e3aeac42f92.output
+     Do NOT Read or tail this file via the shell tool — it is the full subagent JSONL transcript and reading it will overflow your context. If the user asks for progress, say the agent is still running; yo
+
+⏺ Этап 3 реализован в ветке `feat/checkin-dashboard` (от `origin/main`, `f953669`). Ревью агентом `reviewer` ещё идёт.
+  
+  **Коммиты**
+  - `69082b1` — backend (3.1). `GET /api/org/events/{id}/` отдаёт событие и счётчики одним запросом: подтверждено, в листе ожидания, пришло, свободно. `GET /api/org/events/{id}/registrations/?status=` отдаёт участников в порядке очереди, у тех, кто в листе ожидания, — номер. Номер считается в том же запросе, что и список, и совпадает с тем, который видит участник, — это сверяет отдельный тест. Неизвестный статус → 400.
+  - `62cf648` — frontend (3.2). Новая панель `/org/events/:id`, на неё ведёт название события в списке. На панели счётчики, ссылка «Чекин» и таблица участников с фильтром по статусу; фильтр хранится в адресе страницы. Экран чекина теперь пишет название события в заголовке. Если события нет или оно чужое, вместо формы ввода кода показывается сообщение. Если не загрузилось только название, форма продолжает работать.
+  
+  **Отступление от формулировки задачи, решите вы:** в задаче 3.1 написано «404 на чужое», а в строке spec для деталей события была только 404. Я сделал 403 для чужого события и 404 для несуществующего, как в общем правиле spec и вашем решении из «Допущений». Строку spec поправил и записал это в `decisions.md`.
+  
+  **Проверки**
+  - `make stack-check` проходит: 218 pytest, 165 Vitest.
+  - `make stack-e2e`: 7 из 7.
+  
+  **Что осталось по этапу**
+  - Показать вам отчёт ревью целиком, когда он придёт. Решения по находкам за вами.
+  - После этого пройти этап в браузере на слоте 1.
+  - Затем этап 4: e2e и закрытие фазы.
+
+⏺ Ревью этапа 3 пришло. По правилам показываю отчёт целиком и ничего не исправляю, пока вы не решите.
+  
+  ---
+  
+  ## Ревью этапа 3 фазы 3 (f953669..62cf648)
+  
+  Блокирующих находок нет. Нашлась одна мелкая проблема в интерфейсе. Оба коммита на месте: 69082b1 (backend) и 62cf648 (frontend).
+  
+  ### Находки
+  
+  ```text
+  frontend/src/pages/org-event/ui/OrgEventPage.vue:758 (и :805) — асинхронность и UI
+  Что: в шаблоне ветка `v-else-if="isError"` стоит раньше, чем `v-else-if="event"`. С участниками то же самое: `registrations.isError` проверяется раньше, чем `registrations.data`. В TanStack Query v5 неудачное фоновое обновление (при фокусе окна) ставит `status: 'error'` и при этом оставляет `data`.
+  Почему важно: организатор возвращается во вкладку с панелью, а связь пропала. Тогда уже загруженные счётчики и таблица целиком заменяются на «Не удалось загрузить событие» или «Не удалось загрузить участников». На экране чекина (OrgCheckinPage.vue:264) это сделано правильно: алерт показывается над формой, заголовок остаётся.
+  Исправление: показывать полную ошибку только когда данных нет (`isError && !event`). Если данные есть, а обновление не удалось, вывести алерт над счётчиками или таблицей. В OrgEventsPage.vue так же устроено давно, это не новость этапа. Здесь же это новый код, который повторяет ту же схему.
+  ```
+  
+  ### Проверки
+  - `make -C .claude/worktrees/review stack-check SLOT=2`: прошёл. Ruff выдал «All checks passed!», pytest — 218 passed. Vitest — 165 passed в 21 файле. Lint и typecheck frontend и e2e прошли.
+  - `stack-e2e SLOT=2`: 7 из 7 passed. Сценария этапа 4.1 в e2e пока нет, этот этап его и не обещал.
+  - После проверок выполнил `stack-down SLOT=2` и `review-worktree-remove`.
+  
+  ### Что снято решениями из docs/decisions.md
+  - В задаче 3.1 написано «404 на чужое», а реализован 403 у `GET /api/org/events/{id}/`, и строка spec исправлена. Это снято записью 11:23. Общее правило spec («Событие другого организатора — 403») и решение человека в п. 2 «Допущений» важнее строки таблицы. Кроме того, 403 совпадает с чекином и списком участников.
+  - Пока событие загружается, экран чекина показывает форму, а при ошибке 500 или сбое сети форма не прячется. Это снято записью 11:37: название события — только подпись, и чекин у входа не должен вставать из-за неё. Этот случай покрыт тестом «keeps checking codes in when the event title fails to load».
+  
+  ### Проверено, находок нет
+  - **Backend.** View тонкие, выборка — в `events_registrations` в services.py. В обоих view права проверяются через `get_org_event`, тесты есть на 401, 403 и 404. Счётчик `checked_in` считается без фильтра по статусу, и это корректно: запись с отметкой всегда `confirmed` по CHECK. Позиция в листе ожидания считается оконной функцией внутри CASE. Сервисный тест сверяет её с `waitlist_position`, в том числе при одинаковом `queued_at`. Фильтр стоит до окна, поэтому номера при фильтре `waitlisted` не сдвигаются. На неизвестный статус приходит 400 `invalid_choice`. Число запросов не зависит от числа строк: деталь — 3 запроса, список — 4, это проверено `django_assert_num_queries`. Новых моделей и миграций нет, данные только читаются, поэтому замки и гонки не нужны.
+  - **Контракт.** В `openapi.yaml` и `schema.d.ts` есть оба эндпоинта, `position` необязателен, `checked_in_at` может быть null, для 400 указан `ValidationError`. Это сходится со строками API в spec.
+  - **Frontend.** Импорты идут только вниз: `orgEventQuery` берётся из `entities/event` через `index.ts`, у него два потребителя — панель и чекин. Пути взяты из `routes` и `orgEventPath`. Тексты лежат в локальном i18n. Пустых catch нет, нет `v-html`, ошибки различаются по `AppError.kind`. На панели есть все состояния из spec: загрузка, ошибка с «Повторить», «не найдено», «чужое», пустой список и пустой фильтр. Фильтр хранится в URL. Есть переход из списка событий и ссылки «Чекин» и «Панель события». Кэш после чекина не устаревает: `staleTime` по умолчанию 0, поэтому панель перечитывает данные при открытии, как требует Non-Goals. Vitest покрывает загрузку, ошибку, пустой список, фильтр и 404/403/500 на экране чекина.
+  - **Мусор.** Комментарии в diff объясняют причину, а не пересказывают код. TODO, эмодзи, рекламного тона, закомментированного кода и мёртвых экспортов нет. Карта в `frontend/AGENTS.md` обновлена и сходится с кодом.
+  
+  ### Что не проверялось
+  - Страницы в браузере не открывал: вёрстку, фокус, вид алертов и ширину таблицы на мобильном не смотрел.
+  - Письма в Mailpit не проверял: этот этап писем не касается.
+  
+  ---
+  
+  **Уточнения к отчёту:**
+  - Номера строк 758 и 805 — это строки в diff, а не в файле: в `OrgEventPage.vue` около 200 строк. Речь о ветках `v-else-if="isError"` и `v-else-if="registrations.isError.value"` в шаблоне [OrgEventPage.vue](frontend/src/pages/org-event/ui/OrgEventPage.vue).
+  - Функция называется `event_registrations`, а не `events_registrations`.
+  - На экране чекина находка тоже частично применима: при неудачном фоновом обновлении события заголовок остаётся, но появляется алерт «Не удалось загрузить событие, чекин работает». Сама форма не пропадает.
+  
+  **Что нужно решить по находке:**
+  1. Исправить на панели: полная ошибка только когда данных нет, при неудачном фоновом обновлении — алерт над данными. Плюс тест на этот случай.
+  2. Исправить и на панели, и в списке событий [OrgEventsPage.vue](frontend/src/pages/org-events/ui/OrgEventsPage.vue). Там та же схема, но с фазы 1, то есть это вне этапа.
+  3. Не исправлять сейчас, записать в «на потом».
+  
+  Я бы выбрал вариант 1, а список событий записал бы в «на потом». Как решите? После исправления запущу повторное ревью только на коммит с исправлением, затем пройду этап в браузере.
+
+> 1 и 2. если проблема встречается уже не в первый раз нужно создать правило/памятку для этого. если возможно вынести в компонент или composable чтобы не дублировать везде логику
+
+⏺ Делаю варианты 1 и 2. Сначала смотрю, на каких ещё страницах встречается эта схема. От этого зависит, какой будет общий компонент и как сформулировать правило.
+
+⏺ Bash(cd /home/raf/event-registration/frontend/src && grep -n "v-if=\"isPending\"\|v-else-if=\"isError\"\|v-else-if=\"event\"\|v-else-if=\"events\|v-else-if=\"ticket\|isError" pages/*/ui/*.vue; grep -rln "i)
+  ⎿  pages/ticket/ui/TicketPage.vue:23:const { data: ticket, isPending, isError, error: loadError, refetch } = useQuery(query);
+     pages/ticket/ui/TicketPage.vue:29:  isError: cancelFailed,
+     pages/ticket/ui/TicketPage.vue:82:    <p v-if="isPending" class="text-muted-foreground" role="status">{{ t("loading") }}</p>
+     pages/ticket/ui/TicketPage.vue:87:    <Alert v-else-if="isError && !ticket" variant="destructive" role="alert">
+     pages/ticket/ui/TicketPage.vue:93:    <Card v-else-if="ticket">
+     pages/ticket/ui/TicketPage.vue:99:        <Alert v-if="isError" variant="destructive" role="alert">
+     … +25 lines
+
+⏺ Bash(sed -n 15,60p pages/ticket/ui/TicketPage.vue; sed -n 80,112p pages/ticket/ui/TicketPage.vue; grep -n "refresh\|stale\|Не удалось" pages/ticket/ui/TicketPage.vue; grep -n "isLoadingError\|isRefetchErro)
+  ⎿  import { cancelTicket, ticketQuery } from "../api/ticket";
+     
+     const { t, d } = useI18n({ useScope: "local" });
+     const route = useRoute();
+     const queryClient = useQueryClient();
+     
+     … +78 lines
+
+⏺ Bash(cat shared/ui/card-heading/index.ts shared/ui/card-heading/CardHeading.test.ts | head -40; sed -n 1,40p shared/lib/i18n.ts)
+  ⎿  export { default as CardHeading } from "./CardHeading.vue";
+     import { mount } from "@vue/test-utils";
+     import { describe, expect, it } from "vitest";
+     
+     import { CardHeading } from ".";
+     
+     … +34 lines
+
+⏺ Bash(mkdir -p /home/raf/event-registration/frontend/src/shared/ui/query-state && cd /home/raf/event-registration/frontend/src/shared/ui/query-state && cat > QueryState.test.ts <<'EOF')
+  ⎿  FAIL  src/shared/ui/query-state/QueryState.test.ts [ src/shared/ui/query-state/QueryState.test.ts ]
+     Error: Failed to resolve import "." from "src/shared/ui/query-state/QueryState.test.ts". Does the file exist?
+       8  |  // failed refetch (isError with the previous data kept).
+           Tests  no tests
+
+⏺ Bash(cd /home/raf/event-registration/frontend/src/shared/ui/query-state && cat > index.ts <<'EOF')
+  ⎿  Tests  3 passed (3)
+
+⏺ Bash(f=src/shared/ui/query-state/QueryState.vue && cp $f /tmp/claude-1000/-home-raf-event-registration/3bddae65-57c2-4a28-926c-1b4005b3fdb8/scratchpad/qs.vue 2>/dev/null || { mkdir -p /tmp/claude-1000/-hom)
+  ⎿  × keeps the data on screen when a refetch fails, with the error above it 11ms
+     ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+           Tests  1 failed | 2 passed (3)
+           Tests  3 passed (3)
+
+⏺ Третий тест ловит именно эту ошибку. Перевожу панель на `QueryState`.
+
+⏺ Read(/home/raf/event-registration/frontend/src/pages/org-event/ui/OrgEventPage.vue)
+  ⎿  1	<script setup lang="ts">
+     2	import { useQuery } from "@tanstack/vue-query";
+     3	import { computed } from "vue";
+     4	import { useI18n } from "vue-i18n";
+     5	import { useRoute } from "vue-router";
+     6	
+     … +174 lines
+
+⏺ Bash(cd /home/raf/event-registration/frontend/src/pages/org-event/ui && python3 - <<'EOF')
+  ⎿  Tests  41 passed (41)
+
+⏺ Bash(cd /home/raf/event-registration/frontend/src/pages/org-event/ui && python3 - <<'EOF')
+  ⎿  Tests  18 passed (18)
+
+⏺ Перевожу список событий организатора.
+
+⏺ Bash(cd /home/raf/event-registration/frontend/src/pages/org-events/ui && python3 - <<'EOF')
+  ⎿  <RouterLink :to="routes.orgEventsNew">{{ t("create") }}</RouterLink>
+           </Button>
+         </div>
+     
+         <QueryState
+           v-slot="{ data: loaded }"
+     … +40 lines
+
+⏺ Добавляю тест на неудачное фоновое обновление в список событий и пишу правило.
+
+⏺ Bash(sed -n 12,25p OrgEventsPage.test.ts; sed -n 83,120p OrgEventsPage.test.ts)
+  ⎿  async function mountPage() {
+       const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+       const router = createRouter({
+         history: createMemoryHistory(),
+         routes: [{ path: routes.orgEvents, component: OrgEventsPage }],
+       });
+     … +36 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Tests  5 passed (5)
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  (eval):22: no matches found: --include=*.vue
+
+⏺ Правило записано. Добавляю запись в лог решений, запускаю `make stack-check` и коммичу исправление этапа.
+
+⏺ Bash(cd /home/raf/event-registration && date +%H:%M && python3 - <<'EOF')
+  ⎿  11:51
+
+⏺ Bash(sed -i 's/^- \*\*TIME\*\* — по ревью этапа 3/- **11:51** — по ревью этапа 3/; s/ — компонент выводит их из `data` и `isError`, и фейку в тестах хватает четырёх полей\./ — компонент выводит то же из `d)
+  ⎿  �овтор их не меняет. Отклонено: composable, который возвращает состояние для `v-if`, — каждая страница повторяла бы ту же разметку трёх веток; отдельный `isLoadingError` / `isRefetchError` — компонент
+     All checks passed!
+     ============================= 218 passed in 59.01s =============================
+      Test Files  22 passed (22)
+           Tests  171 passed (171)
+     exit=0
+
+⏺ Bash(git add -A && git commit -q -F - <<'EOF' 2>&1 | grep -E "✖|⚠|error" ; git log --oneline -1)
+  ⎿  fd48609 fix(frontend): keep loaded data on screen when a refetch fails
+
+⏺ Bash(cd /home/raf/event-registration/frontend/src/pages && sed -n 1,75p home/ui/HomePage.vue; grep -n "Не удалось обновить\|refreshFailed\|refetchQueries\|invalidate" ticket/ui/TicketPage.test.ts event/ui/)
+  ⎿  <script setup lang="ts">
+     import { useQuery } from "@tanstack/vue-query";
+     import { useI18n } from "vue-i18n";
+     
+     import { publicEventsQuery } from "@/entities/event";
+     import { eventPath, routes } from "@/shared/config";
+     … +65 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
+     import { mount } from "@vue/test-utils";
+     import { http, HttpResponse } from "msw";
+     import { describe, expect, it, vi } from "vitest";
+     import { createMemoryHistory, createRouter } from "vue-router";
+     
+     … +23 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Tests  5 passed (5)
+       const router = createRouter({
+         history: createMemoryHistory(),
+         routes: [
+           { path: routes.event, component: EventPage },
+           { path: routes.home, component: { template: "<div />" } },
+     … +21 lines
+
+⏺ Теперь публичная страница события.
+
+⏺ Bash(cd /home/raf/event-registration/frontend/src/pages/event/ui && python3 - <<'EOF')
+  ⎿  12:import { Button } from "@/shared/ui/shadcn/button";
+     156:            <Button type="submit" :disabled="isSubmitting">
+     158:            </Button>
+     59:  it("shows the event with its free seats and the form", async () => {
+     71:  it("says there are no seats at 0", async () => {
+     79:  it("shows 'not found' for an unknown event", async () => {
+     … +13 lines
+
+⏺ Bash(sed -n 1,24p EventPage.test.ts; sed -n 59,70p EventPage.test.ts; sed -n 237,258p EventPage.test.ts)
+  ⎿  import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
+     import { mount } from "@vue/test-utils";
+     import { http, HttpResponse } from "msw";
+     import { describe, expect, it, vi } from "vitest";
+     import { createMemoryHistory, createRouter } from "vue-router";
+     
+     … +52 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  × flags a malformed email 64ms
+          × shows the waitlist position 63ms
+     ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+           Tests  2 failed | 23 passed (25)
+
+⏺ Bash(pnpm exec vitest run src/pages/event/ui 2>&1 | grep -B3 -A25 "FAIL .*malformed" | head -50; sed -n 161,200p src/pages/event/ui/EventPage.test.ts)
+  ⎿  it("flags a malformed email", async () => {
+         eventLoaded();
+         const { wrapper } = await mountPage();
+     
+         await fill(wrapper, { email: "nope", name: "Ann" });
+     
+     … +33 lines
+
+⏺ Bash(for i in 1 2 3; do pnpm exec vitest run src/pages/event/ui 2>&1 | grep -E "Tests |×|AssertionError|Error:" | head -6; done)
+  ⎿  Tests  17 passed (17)
+           Tests  17 passed (17)
+           Tests  17 passed (17)
+
+⏺ Bash(for i in 1 2 3 4 5; do pnpm exec vitest run src/pages/event/ 2>&1 | grep -E "Tests |×" | head -4; done; git stash -q && for i in 1 2 3 4 5; do pnpm exec vitest run src/pages/event/ 2>&1 | grep -E "Tes)
+  ⎿  Tests  25 passed (25)
+           Tests  25 passed (25)
+           Tests  25 passed (25)
+           Tests  25 passed (25)
+           Tests  25 passed (25)
+           Tests  24 passed (24)
+     … +8 lines
+
+⏺ Bash(for i in $(seq 1 15); do out=$(pnpm exec vitest run src/pages/event/ 2>&1); echo "$out" | grep -E "Tests " ; if echo "$out" | grep -q "×"; then echo "$out" | grep -A30 "FAIL " | head -60; break; fi; d)
+  ⎿  Tests  25 passed (25)
+           Tests  25 passed (25)
+     ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+           Tests  1 failed | 24 passed (25)
+      FAIL  src/pages/event/ui/EventPage.test.ts > EventPage > shows a general error when the server fails
+     Error: Unable to get [role="alert"] within: <main class="mx-auto max-w-xl px-4 py-8"><a href="/" class="text-muted-foreground text-sm underline">Все события</a>
+     … +29 lines
+
+⏺ Bash(sed -n 46,58p src/pages/event/ui/EventPage.test.ts; git log --oneline -3 -- src/pages/event/ui/EventPage.test.ts)
+  ⎿  }
+     
+     // The request goes through the network layer, so it takes more than one flush: wait until the
+     // submit button is no longer disabled (or the form gave way to the result).
+     async function settled(wrapper: Wrapper) {
+       await vi.waitFor(() => expect(wrapper.find("button[disabled]").exists()).toBe(false));
+     … +10 lines
+
+⏺ Bash(git stash -q && fails=0; for i in $(seq 1 25); do pnpm exec vitest run src/pages/event/ 2>&1 | grep -q "×" && fails=$((fails+1)); done; echo "without changes: $fails/25"; git stash pop -q && git statu)
+  ⎿  without changes: 0/25
+     4
+
+⏺ Bash(grep -n "settled(\|fill(" src/pages/event/ui/EventPage.test.ts | wc -l; grep -n "settled(" src/pages/event/ui/EventPage.test.ts)
+  ⎿  14
+     45:  await settled(wrapper);
+     50:async function settled(wrapper: Wrapper) {
+     273:    await settled(wrapper);
+
+⏺ Bash(sed -n 262,280p src/pages/event/ui/EventPage.test.ts; sed -n 22,24p src/pages/event/ui/EventPage.test.ts)
+  ⎿  await new Promise((resolve) => setTimeout(resolve, 50));
+             return HttpResponse.json({ status: "confirmed" }, { status: 201 });
+           }),
+         );
+         const { wrapper } = await mountPage();
+         await wrapper.get("#email").setValue("a@x.io");
+     … +16 lines
+
+⏺ Bash(for i in $(seq 1 30); do out=$(pnpm exec vitest run src/pages/event/ 2>&1); if echo "$out" | grep -q "×"; then echo "$out" | grep -E "×|FAIL|Error|expected|❯ src" | head -20; break; fi; done; echo run)
+  ⎿  run=30
+
+⏺ Bash(f=0; for i in $(seq 1 12); do out=$(pnpm exec vitest run 2>&1); if echo "$out" | grep -q "×"; then f=$((f+1)); echo "$out" | grep -E "×|Error:|❯ src" | head -8; fi; done; echo "fails=$f/12")
+  ⎿  fails=0/12
+
+⏺ Bash((for i in $(seq 1 8); do pnpm exec vitest run >/dev/null 2>&1; done) & for i in $(seq 1 25); do out=$(pnpm exec vitest run src/pages/event/ 2>&1); if echo "$out" | grep -q "×"; then echo "run $i"; ech)
+  ⎿  (Bash completed with no output)
+
+⏺ Bash(grep -n "await mountPage()\|fill(wrapper" src/pages/event/ui/EventPage.test.ts)
+  ⎿  42:async function fill(wrapper: Wrapper, values: Record<string, string>) {
+     62:    const { wrapper } = await mountPage();
+     74:    const { wrapper } = await mountPage();
+     82:    const { wrapper } = await mountPage();
+     90:    const { wrapper } = await mountPage();
+     108:    const { wrapper, queryClient } = await mountPage();
+     … +22 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  await wrapper.get('[role="alert"] button').trigger("click");
+     
+         await vi.waitFor(() => expect(wrapper.text()).toContain("Talks and pizza"));
+       });
+     
+       it("registers, shows the result and refreshes the lists", async () => {
+     … +13 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Tests  25 passed (25)
+
+⏺ Теперь прогоны на холодном кэше (кэш Vite очищаю перед каждым) и серия обычных.
+
+⏺ Bash(ls node_modules/.vite 2>/dev/null; f=0; for i in $(seq 1 10); do rm -rf node_modules/.vite/vitest; pnpm exec vitest run src/pages/event/ 2>&1 | grep -q "×" && f=$((f+1)); done; echo "cold: $f/10"; f=0)
+  ⎿  deps
+     vitest
+     cold: 0/10
+     warm: 0/30
+
+⏺ Bash(cd /home/raf/event-registration/frontend/src/shared/ui/query-state && python3 - <<'EOF')
+  ⎿  × shows that a retry is under way and blocks a second one 13ms
+     ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+     Error: Unable to get [role="alert"] button within: <div>
+           Tests  1 failed | 3 passed (4)
+
+⏺ Bash(cd /home/raf/event-registration/frontend/src/shared/ui/query-state && python3 - <<'EOF')
+  ⎿  × shows that a retry of a refetch is under way and blocks a second one 9ms
+     ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+     AssertionError: expected 'Повторить' to be 'Загружаем…' // Object.is equality
+           Tests  1 failed | 4 passed (5)
+
+⏺ Тест падает по ожидаемой причине. Добавляю `isFetching` в контракт и блокировку кнопки.
+
+⏺ Bash(cd /home/raf/event-registration/frontend/src/shared/ui/query-state && python3 - <<'EOF')
+  ⎿  Tests  5 passed (5)
+
+⏺ Bash(cd /home/raf/event-registration/frontend/src/pages/ticket/ui && sed -n 60,80p TicketPage.vue; sed -n 112,150p TicketPage.vue; sed -n 150,175p TicketPage.vue | grep -n "loading\|retry\|error")
+  ⎿  });
+     
+     const notFound = computed(
+       () => loadError.value instanceof AppError && loadError.value.kind === "not_found",
+     );
+     
+     … +57 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  37:    // keep showing the code of a cancelled ticket.
+     64:  () => ticket.error.value instanceof AppError && ticket.error.value.kind === "not_found",
+     96:          <CardHeading :level="1" class="text-2xl">{{ loaded.event.title }}</CardHeading>
+     97:          <p class="text-muted-foreground text-sm">{{ startsAt(loaded.event.starts_at) }}</p>
+     100:          <p>{{ loaded.name }}</p>
+     102:          <template v-if="loaded.status === 'confirmed'">
+     … +8 lines
+
+⏺ Bash(cd /home/raf/event-registration && date +%H:%M)
+  ⎿  12:10
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Tests  173 passed (173)
+     lint-ok
+
+⏺ Bash(git commit -q -F - <<'EOF' 2>&1 | grep -E "✖|⚠" ; git stash pop -q && git log --oneline -1 && git status --short)
+  ⎿  Exit code 1
+     Auto-merging frontend/src/shared/ui/query-state/QueryState.vue
+     CONFLICT (content): Merge conflict in frontend/src/shared/ui/query-state/QueryState.vue
+     The stash entry is kept in case you need it again.
+
+⏺ Возвращение stash дало конфликт в `QueryState.vue`: хук prettier при коммите переформатировал файл. Смотрю, что получилось.
+
+⏺ Bash(git log --oneline -2 && git status --short && git diff frontend/src/shared/ui/query-state/QueryState.vue | head -40)
+  ⎿  ef0c322 feat(frontend): show that a retry after a failed refetch is under way
+     fd48609 fix(frontend): keep loaded data on screen when a refetch fails
+     M  frontend/src/pages/event/ui/EventPage.test.ts
+     M  frontend/src/pages/event/ui/EventPage.vue
+     M  frontend/src/pages/home/ui/HomePage.test.ts
+     M  frontend/src/pages/home/ui/HomePage.vue
+     … +23 lines
+
+⏺ Расхождение только в форматировании. Беру закоммиченную версию и снимаю stash.
+
+⏺ Bash(git checkout HEAD -- frontend/src/shared/ui/query-state/QueryState.vue && git stash drop -q && git status --short && git diff HEAD --stat)
+  ⎿  M  frontend/src/pages/event/ui/EventPage.test.ts
+     M  frontend/src/pages/event/ui/EventPage.vue
+     M  frontend/src/pages/home/ui/HomePage.test.ts
+     M  frontend/src/pages/home/ui/HomePage.vue
+     M  frontend/src/pages/ticket/ui/TicketPage.vue
+      frontend/src/pages/event/ui/EventPage.test.ts | 118 +++++++++++++++++--------
+     … +5 lines
+
+⏺ Всё на месте. Пишу запись о втором коммите и запускаю полный `make stack-check`.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  ELIFECYCLE  Command failed with exit code 1.
+     make[1]: *** [Makefile:37: format-check] Error 1
+     make: *** [Makefile:134: stack-check] Error 2
+     exit=2
+
+⏺ Bash(make format-check 2>&1 | grep -E "warn|\.vue|\.ts|\.md" | head)
+  ⎿  [warn] frontend/src/pages/event/ui/EventPage.test.ts
+     [warn] frontend/src/pages/home/ui/HomePage.vue
+     [warn] Code style issues found in 2 files. Run Prettier with --write to fix.
+
+⏺ Bash(cd /home/raf/event-registration/frontend && pnpm exec prettier --write src/pages/event/ui/EventPage.test.ts src/pages/home/ui/HomePage.vue >/dev/null && cd .. && make stack-check 2>&1 | grep -E "error)
+  ⎿  All checks passed!
+     ======================== 218 passed in 61.02s (0:01:01) ========================
+      Test Files  22 passed (22)
+           Tests  175 passed (175)
+     exit=0
+     [This command modified 1 file you've previously read: frontend/src/pages/event/ui/EventPage.test.ts. Call Read before editing.]
+
+⏺ Bash(git add -A && git commit -q -F - <<'EOF' 2>&1 | grep -E "✖|⚠" ; git log --oneline -6)
+  ⎿  7b3c818 fix(frontend): keep loaded data on a failed refetch on the public and ticket pages
+     ef0c322 feat(frontend): show that a retry after a failed refetch is under way
+     fd48609 fix(frontend): keep loaded data on screen when a refetch fails
+     62cf648 feat(frontend): add the organizer's event panel and name the event at check-in
+     69082b1 feat(backend): add the organizer's event panel with counts and participants
+     f953669 docs: close the flaky email test session
+
+⏺ Agent(Re-review stage 3 fixes)
+⏺ Bash(make stack-e2e 2>&1 | tail -12)
+  ⎿  Async agent launched successfully. (This tool result is internal metadata — never quote or paste any part of it, including the agentId below, into a user-facing reply.)
+     agentId: a429d9adb93d3e54c (internal ID - do not mention to user. Use SendMessage with to: 'a429d9adb93d3e54c', summary: '<5-10 word recap>' to continue this agent.)
+     The agent is working in the background. You will be notified automatically when it completes. You know nothing about its results until that notification arrives — do not report, assume, or predict the
+     Do not duplicate this agent's work — avoid working with the same files or topics it is using.
+     output_file: /tmp/claude-1000/-home-raf-event-registration/4634a2ff-61b4-4b8b-88ec-9ab8fa0d7ccf/tasks/a429d9adb93d3e54c.output
+     Do NOT Read or tail this file via the shell tool — it is the full subagent JSONL transcript and reading it will overflow your context. If the user asks for progress, say the agent is still running; yo
+
+  ⎿  Running 7 tests using 5 workers
+     
+       ✓  2 [chromium] › tests/smoke.spec.ts:3:1 › frontend reaches the backend and the database through the proxy (8.9s)
+       ✓  5 [chromium] › tests/organizer-creates-event.spec.ts:5:1 › organizer signs in, creates an event and sees it in the list (9.5s)
+       ✓  6 [chromium] › tests/organizer-creates-event.spec.ts:28:1 › organizer sees the field error from the form and stays on it (2.8s)
+       ✓  7 [chromium] › tests/organizer-creates-event.spec.ts:48:1 › a wrong password shows the server error and keeps the login form (2.0s)
+     … +5 lines
+
+⏺ По решению «1 и 2» сделал больше, чем исправление на двух страницах: общий компонент, правило и перевод ещё трёх страниц. Повторное ревью исправлений запущено и ещё не закончилось, его отчёт покажу целиком.
+  
+  **Коммиты после первого ревью**
+  - `fd48609` — новый компонент `shared/ui/query-state/QueryState.vue`. Ошибка показывается вместо данных, только пока данных нет. Если фоновое обновление не удалось, над прежними данными появляется алерт с «Повторить». Панель и список событий организатора переведены на него.
+    - Правило записано в п. 4 [frontend/AGENTS.md](frontend/AGENTS.md): данные запроса выводить через `QueryState`, а тест страницы должен проверять неудачный `refetchQueries()`.
+  - `ef0c322` — обратная связь при «Повторить», по вашему замечанию:
+    - **Если данных ещё нет**, обратная связь уже была: повтор переводит запрос в `pending`, и алерт сменяется на «Загружаем…».
+    - **Если данные на экране**, раньше ничего не менялось. Теперь кнопка на время запроса заблокирована и подписана «Загружаем…».
+  - `7b3c818` — то же для главной, публичной страницы события и страницы билета. На первых двух была та же ошибка. На публичной странице события неудачное обновление прятало форму вместе с введёнными значениями. Страница билета работала правильно, но держала свою копию логики; алерт обновления там теперь над карточкой, а не внутри.
+  
+  **Нестабильные тесты.** Три падения примерно на 140 прогонов, все в первых прогонах. Это совпадает с вашим throttling в Chrome: потом не упало ни разу, ни под нагрузкой, ни на холодном кэше. Заодно исправил хелпер `settled()` в тестах страницы события. Он мог вернуться ещё до начала запроса, теперь ждёт и окончания мутации. Причину одного из падений («malformed email», там запроса нет вовсе) я так и не нашёл.
+  
+  **Проверки:** `make stack-check` проходит (218 pytest, 175 Vitest), `make stack-e2e` — 7 из 7.
+  
+  **Дальше:** отчёт повторного ревью, затем проход этапа в браузере на слоте 1.
+
+⏺ Повторное ревью пришло. Показываю отчёт целиком, ничего не правил.
+  
+  ---
+  
+  ## Повторное ревью этапа 3 фазы 3: исправления, диапазон 62cf648..7b3c818
+  
+  Находка первого ревью исправлена. На `OrgEventPage.vue` и `OrgEventsPage.vue` неудачное фоновое обновление больше не заменяет данные: счётчики, таблица и список остаются, над ними появляется алерт. Тесты с `refetchQueries()` это подтверждают, отдельно для запроса события и для запроса участников. Блокирующих находок нет. Есть три мелкие, все про то, как исправление распространено по проекту.
+  
+  ```text
+  frontend/src/pages/org-checkin/ui/OrgCheckinPage.vue:127 — Асинхронность и UI / Тесты
+  Что: экран чекина выводит запрос события своей разметкой, без `QueryState`. Кнопка «Повторить» (строка 130) не блокируется и не показывает, что запрос идёт. После неудачного фонового обновления название остаётся в заголовке, а алерт говорит «Не удалось загрузить событие, чекин работает». В `OrgCheckinPage.test.ts` нет теста на неудачный `refetchQueries()` после загрузки: тест на строке 279 проверяет только первую неудачную загрузку.
+  Почему важно: на этом экране остался недочёт, который по замечанию человека (запись 12:10) исправили в `QueryState`: после «Повторить» не видно, что запрос идёт. Новое правило п. 4 `frontend/AGENTS.md` требует тест на неудачный refetch от каждой страницы с запросом, а этот экран его не выполняет. Сейчас поведение верное (данные не прячутся), но тестом это не закреплено.
+  Исправление: добавить тест «загрузили событие → refetch 500 → название в h1 осталось, алерт есть, форма работает». На время `isFetching` блокировать кнопку повтора, как в `QueryState`. Если экран нарочно остаётся без `QueryState` (форма работает и без события, запись 11:37), назвать его исключением в п. 4.
+  ```
+  
+  ```text
+  frontend/AGENTS.md:31 — Документация против кода
+  Что: правило звучит как общее: «Данные запроса на странице выводятся через `QueryState` …, а не цепочкой `v-if="isPending"` / `v-else-if="isError"` / `v-else-if="data"`». На 7b3c818 эту цепочку дословно использует `frontend/src/pages/health/ui/HealthPage.vue:14-16`, а `OrgCheckinPage.vue` выводит запрос без `QueryState` (см. находку выше).
+  Почему важно: правило, которое в коде уже нарушено в двух местах, следующий исполнитель либо примет за необязательное, либо станет «чинить» страницу состояния. Там показ «Backend недоступен» при неудачном обновлении как раз верен.
+  Исправление: назвать исключения в п. 4. Например: «кроме `health` (страница показывает текущую доступность) и экрана чекина (форма работает без события)». Другой вариант — перевести `HealthPage` на `QueryState`.
+  ```
+  
+  ```text
+  frontend/src/shared/ui/query-state/QueryState.vue:39 — Мёртвый код
+  Что: проверка `if (props.query.isFetching.value) return;` в `retry()` никогда не срабатывает. Кнопка над данными при `isFetching` заблокирована (строка 54). Кнопка ошибки первой загрузки исчезает, как только начинается запрос: TanStack Query v5 без данных переводит запрос в `pending`, это и проверяет тест «shows the loading state while a retry of the first load is under way». Тест «blocks a second one» проходит за счёт атрибута `disabled`: `trigger` в Vue Test Utils на заблокированной кнопке ничего не вызывает. С проверкой или без неё тест ведёт себя одинаково.
+  Почему важно: код выглядит как защита от двойного запроса, но тестом не покрыт и ничего не защищает. Реальную защиту дают `disabled` и смена ветки.
+  Исправление: удалить проверку и оставить `@click="query.refetch()"` (через `void`). Если проверку оставлять, нужен тест, который падает без неё.
+  ```
+  
+  ## Проверки
+  
+  - `make -C .claude/worktrees/review stack-check SLOT=2` на 7b3c818 прошёл (exit 0): backend 218 passed, Vitest 22 файла, 175 тестов passed; ruff, mypy и `makemigrations --check` чистые.
+  - `stack-e2e SLOT=2` прошёл: 7 passed. Его запускал, потому что изменился UI главной, публичной страницы события и страницы билета.
+  - Стек слота 2 остановлен (`stack-down`), копия репозитория удалена (`review-worktree-remove`).
+  
+  ## Что изменили записи `docs/decisions.md`
+  
+  - Ни одна находка не снята. Записи 11:51 и 12:10 вводят `QueryState` и правило п. 4, но про `HealthPage`, про экран чекина и про проверку в `retry()` в них ничего нет.
+  - Запись 11:37 («прочий сбой загрузки события форму оставляет») объясняет, почему на экране чекина своя разметка. Поэтому эта находка не про «перевести на `QueryState»`, а про обратную связь при повторе, тест и упоминание в правиле.
+  
+  ## Проверено, находок нет
+  
+  - Вывод `OrgEventPage`: `not_found` и `forbidden` показываются до `QueryState`. Запрос участников вложен в `QueryState` события, поэтому сбой участников не прячет счётчики. При смене фильтра (новый ключ) показывается «Загружаем…», а не старые строки.
+  - `OrgEventsPage`, `HomePage`, `EventPage` (введённые в форму значения сохраняются при неудачном refetch, тест есть), `TicketPage` (тест «keeps the loaded ticket when a later read fails» уже был).
+  - `QueryStateSource` не тянет зависимость от TanStack Query в `shared/ui`. Импорты идут только вниз, в чужой срез — через `index.ts` (`OrgEvent` экспортирован из `entities/event/index.ts`).
+  - Тексты интерфейса лежат в i18n-блоках. Неиспользуемые ключи (`loading`, `retry`) со страниц удалены, пустых `catch` нет, промисы обёрнуты в `void` или `await`.
+  - `settled()` в `EventPage.test.ts` теперь ждёт и `isMutating() === 0`.
+  - Поиск кандидатов из anti-slop по diff ничего не нашёл: эмодзи, TODO, `v-html`, рекламного тона нет.
+  - Backend, API и миграции в диапазоне не менялись.
+  
+  ## Не проверялось
+  
+  - Страницы в браузере не смотрел, браузера у меня нет.
+  - Тексты коммитов и `tasks.md` не читал, так задано в инструкции.
+  
+  ---
+  
+  **Пояснения к находкам:**
+  - Находка 1 верна. На экране чекина алерт после неудачного обновления говорит «Не удалось **загрузить** событие», хотя название уже на экране. Своя разметка там осталась нарочно: форма должна работать, даже если событие не загрузилось. `QueryState` прячет содержимое, пока данных нет, поэтому напрямую не подходит.
+  - Находка 3 верна. Проверку в `retry()` я добавил «на всякий случай», а защищает на самом деле `disabled`.
+  
+  **Что решить:**
+  1. **Экран чекина.** Предлагаю: кнопка повтора на время запроса заблокирована и подписана «Загружаем…», как в `QueryState`. Добавить тест на неудачный refetch. Записать экран исключением в п. 4.
+  2. **Правило п. 4.** Назвать исключения: `health` и экран чекина. Или перевести `HealthPage` на `QueryState`, тогда при неудачном обновлении там останется прежний статус с алертом над ним. Я бы назвал исключением: страница состояния должна показывать текущую доступность, а не прежнюю.
+  3. **Мёртвая проверка в `retry()`.** Предлагаю удалить.
+  
+  Делать всё по предложенному? Повторов ревью больше не будет: по правилам он один. Если согласны, исправлю, прогоню проверки и пройду этап в браузере.
+
+> 1. использование @frontend/src/shared/ui/query-state/QueryState.vue  с пустыми слотами это костыль?
+  2. health - исключение. checkin - пока обсуждаем.
+  3. ок
+
+⏺ Сразу делаю решённое: убираю мёртвую проверку (п. 3) и записываю `health` исключением в правило (п. 2). Про чекин ответ ниже.
+
+⏺ Edit(/home/raf/event-registration/frontend/src/shared/ui/query-state/QueryState.vue)
+⏺ Read(/home/raf/event-registration/frontend/AGENTS.md)
+  ⎿  The file /home/raf/event-registration/frontend/src/shared/ui/query-state/QueryState.vue has been updated successfully. (file state is current in your context — no need to Read it back)
+
+  ⎿  27	3. Типы API не пишутся руками — они из `schema.d.ts` (`make schema`). Нужен тип ответа —
+     28	   `components["schemas"]["<Имя>"]`.
+     29	4. Каждое асинхронное действие в UI показывает загрузку, ошибку и пустое состояние и
+     30	   блокирует повторную отправку.
+     31	   Данные запроса на странице выводятся через `QueryState` (`shared/ui/query-state`), а не
+     32	   цепочкой `v-if="isPending"` / `v-else-if="isError"` / `v-else-if="data"`. TanStack Query
+     … +6 lines
+
+⏺ Edit(/home/raf/event-registration/frontend/AGENTS.md)
+⏺ Bash(date +%H:%M && cd frontend && pnpm exec vitest run src/shared/ui/query-state 2>&1 | grep -E "Tests |×")
+  ⎿  The file /home/raf/event-registration/frontend/AGENTS.md has been updated successfully.
+
+  ⎿  12:51
+           Tests  5 passed (5)
+
+⏺ Bash(cd /home/raf/event-registration && python3 - <<'EOF')
+  ⎿  exit=0
+
+⏺ Bash(git add -A && git commit -q -F - <<'EOF' 2>&1 | grep -E "✖|⚠" ; git log --oneline -1)
+  ⎿  0df70a0 refactor(frontend): drop the retry guard that never fires and name the health exception
+
+⏺ Пункты 2 и 3 закоммичены (`0df70a0`). `make stack-check` проходит.
+  
+  **Про вопрос 1: да, `QueryState` с пустым слотом был бы костылём.** Компонент построен так: пока данных нет, на месте содержимого стоит «Загружаем…» или ошибка, данные появились — показывается слот. На экране чекина форма должна работать в любом состоянии запроса события, даже если оно так и не загрузилось. Для этого пришлось бы поставить `QueryState` с пустым слотом рядом с формой. Он рисовал бы чужое «Загружаем…» над работающей формой, а название в `h1` всё равно бралось бы из запроса в обход компонента. Читатель кода не поймёт, зачем компонент без содержимого.
+  
+  **Что общего у чекина с `QueryState`:** алерт с текстом и кнопкой «Повторить», которая на время запроса заблокирована и подписана «Загружаем…». Предлагаю вынести этот алерт в отдельный компонент, например `shared/ui/query-state/RetryAlert.vue`. Его входы: текст, `isFetching`, событие `retry`. Использовать его будут три места: обе ветки ошибки внутри `QueryState` и экран чекина. Логика повтора тогда живёт в одном месте, а у чекина остаётся своя разметка: форма всегда видна, `not_found` и `forbidden` показываются вместо неё.
+  
+  **Ещё одна неточность на экране чекина:** после неудачного обновления там написано «Не удалось **загрузить** событие», хотя название уже в заголовке. Логичнее показывать разные тексты: «Не удалось загрузить название события, чекин работает», пока данных нет, и «Не удалось обновить событие, чекин работает», когда они есть.
+  
+  Если согласны:
+  1. Выношу `RetryAlert` и перевожу на него `QueryState` и экран чекина.
+  2. Ставлю на чекине два текста.
+  3. Добавляю тест «событие загрузили → обновление упало → название осталось, алерт есть, форма работает».
+  4. В п. 4 правила пишу экран чекина исключением с причиной: форма работает без события, поэтому нужен `RetryAlert`, а не `QueryState`.
+  
+  Делать так?
+
+> делай
+
+⏺ Делаю. Начинаю с теста `RetryAlert`.
+
+⏺ Bash(cd /home/raf/event-registration/frontend/src/shared/ui/query-state && cat > RetryAlert.test.ts <<'EOF')
+  ⎿  ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+      FAIL  src/shared/ui/query-state/RetryAlert.test.ts > RetryAlert > shows the text and asks for a retry on click
+      FAIL  src/shared/ui/query-state/RetryAlert.test.ts > RetryAlert > shows that the request is under way and takes no second click
+
+⏺ Bash(cd /home/raf/event-registration/frontend/src/shared/ui/query-state && cat > RetryAlert.vue <<'EOF')
+  ⎿  Tests  7 passed (7)
+
+⏺ Теперь экран чекина. Сначала тест на неудачное обновление (тест вперёд).
+
+⏺ Bash(cd /home/raf/event-registration/frontend/src/pages/org-checkin/ui && grep -n "queryClient\|return wrapper;\|it(\"keeps checking codes in" OrgCheckinPage.test.ts)
+  ⎿  44:  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+     52:    global: { plugins: [router, [VueQueryPlugin, { queryClient }], createAppI18n()] },
+     55:  return wrapper;
+     279:  it("keeps checking codes in when the event title fails to load", async () => {
+
+⏺ Bash(sed -n 40,46p OrgCheckinPage.test.ts && python3 - <<'EOF')
+  ⎿  // The screen loads its event for the title; a test about the event passes its own answer.
+     async function mountPage(eventResponse: () => Response = () => HttpResponse.json(event)) {
+       server.use(http.get(EVENT, eventResponse));
+       const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+       const router = createRouter({
+         history: createMemoryHistory(),
+     … +5 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  × keeps checking codes in when the event title fails to load 17ms
+          × keeps checking codes in when the event title fails to load 9ms
+          × keeps the title and checks codes in when a refetch of the event fails 5004ms
+          × shows that a retry of the event is under way 20ms
+     ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+     AssertionError: expected 'Не удалось загрузить событие, чекин р…' to contain 'Не удалось загрузить название события'
+     … +3 lines
+
+⏺ Bash(grep -n '  it("' src/pages/org-checkin/ui/OrgCheckinPage.test.ts | sed -n 14,40p; wc -l src/pages/org-checkin/ui/OrgCheckinPage.test.ts)
+  ⎿  265:  it("says a missing event is not found instead of taking codes", async () => {
+     273:  it("says someone else's event is foreign instead of taking codes", async () => {
+     281:  it("keeps checking codes in when the event title fails to load", async () => {
+     293:  it("keeps the title and checks codes in when a refetch of the event fails", async () => {
+     311:  it("says a missing event is not found instead of taking codes", async () => {
+     319:  it("says someone else's event is foreign instead of taking codes", async () => {
+     … +4 lines
+
+⏺ Bash(git checkout -- src/pages/org-checkin/ui/OrgCheckinPage.test.ts && python3 - <<'EOF')
+  ⎿  18
+          × keeps checking codes in when the event title fails to load 17ms
+          × keeps the title and checks codes in when a refetch of the event fails 14ms
+          × shows that a retry of the event is under way 18ms
+     ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+     AssertionError: expected 'Не удалось загрузить событие, чекин р…' to contain 'Не удалось загрузить название события'
+     … +3 lines
+
+⏺ Теперь 18 тестов, и три падают по ожидаемым причинам. Меняю экран чекина.
+
+⏺ Bash(cd /home/raf/event-registration/frontend/src/pages/org-checkin/ui && python3 - <<'EOF')
+  ⎿  Tests  18 passed (18)
+
+⏺ Тесты и типы проходят. Записываю экран чекина исключением в правило и упоминаю `RetryAlert`.
+
+⏺ Bash(cd /home/raf/event-registration && python3 - <<'EOF')
+  ⎿  All checks passed!
+     ======================== 218 passed in 64.06s (0:01:04) ========================
+      Test Files  23 passed (23)
+           Tests  179 passed (179)
+     exit=2
+
+⏺ Первый прогон показал зелёные тесты, но код выхода 2. Смотрю, какая цель упала.
+
+⏺ Bash(make stack-check 2>&1 | grep -E "\*\*\*|\[warn\]|error" | head)
+  ⎿  (Bash completed with no output)
+
+⏺ Bash(make stack-check > /tmp/claude-1000/-home-raf-event-registration/3bddae65-57c2-4a28-926c-1b4005b3fdb8/scratchpad/check.log 2>&1; echo exit=$?; grep -nE "Error|\*\*\*|FAIL|×" /tmp/claude-1000/-home-raf)
+  ⎿  exit=0
+
+⏺ Bash(L=/tmp/claude-1000/-home-raf-event-registration/3bddae65-57c2-4a28-926c-1b4005b3fdb8/scratchpad; for i in 1 2; do make stack-check > $L/check$i.log 2>&1; echo "run $i exit=$?"; grep -nE "Error|\*\*\*|)
+  ⎿  run 1 exit=0
+     run 2 exit=0
+
+⏺ Bash(git add -A && git commit -q -F - <<'EOF' 2>&1 | grep -E "✖|⚠" ; git log --oneline -1; git status --short)
+  ⎿  e7f4ac9 refactor(frontend): share the retry alert with the check-in screen
+
+⏺ Bash(cd /home/raf/event-registration/e2e && ls; ls tests; sed -n 1,40p tests/organizer-creates-event.spec.ts; ls tests/* | head; grep -n "stack-up\|5174\|8001\|8026" ../docs/development.md | head)
+  ⎿  AGENTS.md
+     CLAUDE.md
+     eslint.config.js
+     node_modules
+     package.json
+     playwright.config.ts
+     … +60 lines
+
+⏺ Bash(cat tests/helpers.ts | head -60; grep -n "baseURL\|E2E_\|process.env" playwright.config.ts)
+  ⎿  import { expect, type APIRequestContext, type Browser } from "@playwright/test";
+     
+     // Created by `create_demo_users` when the backend starts (docs/architecture.md, "Окружение").
+     export const ORGANIZER = { email: "demo@example.com", password: "demo" };
+     const MAILPIT_URL = process.env.E2E_MAILPIT_URL ?? "http://localhost:8025";
+     
+     … +53 lines
+
+⏺ Пишу скрипт прохода. Сначала смотрю, как e2e достаёт код билета из письма.
+
+⏺ Bash(grep -n "extract(\|emailTo(" tests/*.spec.ts | head -5; cd .. && make stack-up 2>&1 | tail -3)
+  ⎿  tests/participant-opens-ticket.spec.ts:26:  const text = await emailTo(request, email, "Билет");
+     tests/participant-opens-ticket.spec.ts:27:  const code = extract(text, /Код билета: (\S+)/);
+     tests/participant-opens-ticket.spec.ts:28:  const link = extract(text, /(http\S+\/tickets\/\S+)/);
+     tests/waitlisted-gets-promoted.spec.ts:40:  const waitlisted = await emailTo(request, waitingEmail, "Лист ожидания");
+     tests/waitlisted-gets-promoted.spec.ts:42:  const waitingLink = extract(waitlisted, /(http\S+\/tickets\/\S+)/);
+      Container event-registration-s1-backend-1 Healthy 
+     … +2 lines
+
+⏺ Write(/tmp/claude-1000/-home-raf-event-registration/3bddae65-57c2-4a28-926c-1b4005b3fdb8/scratchpad/browser-pass.cjs)
+  ⎿  File created successfully at: /tmp/claude-1000/-home-raf-event-registration/3bddae65-57c2-4a28-926c-1b4005b3fdb8/scratchpad/browser-pass.cjs (file state is current in your context — no need to Read it
+
+⏺ Bash(S=/tmp/claude-1000/-home-raf-event-registration/3bddae65-57c2-4a28-926c-1b4005b3fdb8/scratchpad; mkdir -p $S/shots; cd $S && NODE_PATH=/home/raf/event-registration/e2e/node_modules timeout 180 node br)
+  ⎿  1. list: title links to /org/events/9
+     2. empty panel counters: Мест 2 Подтверждено 0 В листе ожидания 0 Пришло 0 Свободно 2 | Регистраций пока нет
+        register Ann: 201 {"status":"confirmed"}
+        register Bob: 201 {"status":"confirmed"}
+        register Cid: 201 {"status":"waitlisted","position":1}
+     3. checkin heading: Чекин: Panel 1793444942644 | back link: /org/events/9
+     … +42 lines
+
+⏺ Read(/tmp/claude-1000/-home-raf-event-registration/3bddae65-57c2-4a28-926c-1b4005b3fdb8/scratchpad/shots/panel.png)
+  ⎿  (no output)
+
+⏺ Read(/tmp/claude-1000/-home-raf-event-registration/3bddae65-57c2-4a28-926c-1b4005b3fdb8/scratchpad/shots/retry.png)
+  ⎿  (no output)
+
+⏺ Экраны выглядят как задумано. Записываю проход в лог `tasks.md`, останавливаю стек слота 1 и коммичу.
+
+⏺ Bash(make stack-down >/dev/null 2>&1; python3 - <<'EOF')
+  ⎿  6ede94e docs: log the review and the browser pass of the event panel stage
+
+⏺ Этап 3 закончен: две задачи, два ревью и проход в браузере. Всё закоммичено в ветке `feat/checkin-dashboard`, но не запушено и PR не создан — жду вашей команды.
+  
+  **Что сделано по второму ревью**
+  - `0df70a0` — убрал проверку в `retry()`, которая никогда не срабатывала. Страницу `health` записал исключением в правило п. 4 [frontend/AGENTS.md](frontend/AGENTS.md).
+  - `e7f4ac9` — вынес алерт с кнопкой «Повторить» в отдельный компонент `RetryAlert` в `shared/ui/query-state`. Пока идёт повтор, кнопка заблокирована и на ней «Загружаем…». Его используют обе ветки ошибки в `QueryState` и экран чекина. Экран чекина записан вторым исключением в правило, с причиной: форма работает и без события.
+    - На чекине теперь два разных текста: «Не удалось загрузить название события, чекин работает», пока события нет, и «Не удалось обновить событие, чекин работает» после неудачного обновления. Тесты на неудачное обновление и на повтор добавлены.
+  - `6ede94e` — в лог `tasks.md` записаны итоги ревью и проход в браузере.
+  
+  **Проход в Chromium на слоте 1** (скрипт Playwright), всё сработало как ожидалось:
+  - **Переходы.** Название события в списке ведёт на панель.
+  - **Счётчики.** На пустой панели 2/0/0/0/2. После трёх регистраций на 2 места и чекина одного билета — 2/2/1/1/0. Таблица идёт в порядке очереди, у третьего «№1» в листе ожидания.
+  - **Фильтр.** Меняет URL, «назад» в браузере возвращает прежний фильтр, `?status=gone` показывает всех.
+  - **Неудачное обновление.** Алерт появляется над прежними данными. Во время повтора кнопка показывает «Загружаем…», потом алерт уходит.
+  - **Ошибки события.** Несуществующее событие на панели и на чекине — «Событие не найдено», формы нет. Если событие не загрузилось (500), форма чекина работает.
+  - В консоли только сетевые сообщения о сбоях, которые я сделал сам. Ошибок JS нет. Стек слота 1 остановлен.
+  
+  **Проверки**
+  - `make stack-check` проходит: 218 pytest, 179 Vitest. Один прогон перед коммитом `e7f4ac9` упал, а его вывод я отбросил, так что причину не знаю. Следующие три прогона подряд прошли.
+  - `make stack-e2e`: 7 из 7. Последний раз запускал на `7b3c818`, после него менялся только фронтенд.
+  
+  **Дальше — этап 4:** e2e «код из письма → пропущен → уже отмечен → на панели пришло: 1» и закрытие фазы. Сессию в `decisions.md` пока не закрывал.
+
+> пр
+
+⏺ Пушу ветку (`SLOT=1`, чтобы хук проверял backend на Postgres слота 1) и смотрю, как оформлены прошлые PR этапов.
+
+⏺ Bash(gh pr list --state merged --limit 3 --json number,title && gh pr view 12 --json body -q .body | head -40)
+  ⎿  [{"number":14,"title":"Fix the flaky two-worker email test and keep the waitlist in lock order"},{"number":13,"title":"Phase 3, stage 2: check a ticket in only once"},{"number":12,"title":"Phase 3, st
+     ## Зачем
+     
+     Начало фазы 3: организатор отмечает пришедших по коду с билета. Этап 1 — tracer bullet, один
+     сценарий насквозь: код из письма → экран чекина → «Пропущен». Повтор чекина, неподтверждённый
+     билет, запрет отказа после чекина и тесты гонок — этап 2; панель события со счётчиками — этап 3.
+     … +35 lines
+
+⏺ Bash(SLOT=1 git push -u origin feat/checkin-dashboard 2>&1 | tail -5)
+  ⎿  The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to
+
+> [Request interrupted by user for tool use]
+
+⏺ No response requested.
+
+> пр
+
+⏺ Прошлый push прервали посреди работы. Сначала проверяю, дошла ли ветка до GitHub.
+
+⏺ Bash(git fetch origin 2>&1 | tail -2; git ls-remote --heads origin feat/checkin-dashboard; git rev-parse HEAD; git status -sb | head -1)
+  ⎿  6ede94e4c55716ea90c81e722027635b8cd34c12
+     ## feat/checkin-dashboard...origin/main [ahead 8]
+
+⏺ Ветки на GitHub нет, push не прошёл. Повторяю. Хук `pre-push` гоняет проверки backend на Postgres слота 1, это около минуты.
+
+⏺ Bash(SLOT=1 git push -u origin feat/checkin-dashboard 2>&1 | tail -6)
+  ⎿  remote: Create a pull request for 'feat/checkin-dashboard' on GitHub by visiting:        
+     remote:      https://github.com/rbikbov/event-registration/pull/new/feat/checkin-dashboard        
+     remote: 
+     To github.com:rbikbov/event-registration.git
+      * [new branch]      feat/checkin-dashboard -> feat/checkin-dashboard
+     branch 'feat/checkin-dashboard' set up to track 'origin/feat/checkin-dashboard'.
+
+⏺ Bash(gh pr create --base main --head feat/checkin-dashboard --title "Phase 3, stage 3: event panel with counters and participants" --body-file - <<'EOF')
+  ⎿  https://github.com/rbikbov/event-registration/pull/15
+
+⏺ PR создан: https://github.com/rbikbov/event-registration/pull/15
+  
+  Прошлый push не дошёл до GitHub, второй прошёл: хук `pre-push` проверил backend на Postgres слота 1. Ветка `feat/checkin-dashboard`, 9 коммитов от `f953669`.
+  
+  Название — «Phase 3, stage 3: event panel with counters and participants». Описание составлено по образцу PR этапов 1 и 2 (#12, #13): зачем, что изменилось, как проверено.
+  
+  Сессия в `decisions.md` пока не закрыта. Закрою последним коммитом сессии или продолжу этап 4 — как скажете.

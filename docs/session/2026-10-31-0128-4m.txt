@@ -1,0 +1,72 @@
+> запусти агента reviewer с этим промптом, сам ревью не делай
+  ```
+  
+  
+  Сделай повторное ревью исправлений по ревью настройки слотов и процесса ревью в
+  репозитории /home/raf/event-registration.
+  
+  - Spec: нет; рамки — раздел «E2E» docs/development.md и AGENTS.md (слоты, правило 6).
+  - Задачи: агент не запускает цели слота 0 ни из одного skill и правила папки; автор
+    запускает stack-e2e до ревью при изменении API, UI или e2e/; review-worktree не оставляет
+    копию при ошибке установки.
+  - Ещё не сделано: предупреждение о незакрытой сессии в хуке session-start; pre-push на
+    слоте агента; перенос skills в .agents/ — их отсутствие не находка.
+  - Диапазон: f0e82a0..2bea337 (ветка chore/reviewer-setup).
+  
+  Перед ревью, не открывая файлов: назови свою модель и процитируй пункт 5 раздела «Порядок»
+  из skill anti-slop-review.
+  
+  Файлы не изменяй. Ответ — в формате из твоих инструкций.
+  
+  
+  ```
+
+⏺ Agent(Re-review slot setup fixes)
+  ⎿  Async agent launched successfully. (This tool result is internal metadata — never quote or paste any part of it, including the agentId below, into a user-facing reply.)
+     agentId: a277bd3612562ec5f (internal ID - do not mention to user. Use SendMessage with to: 'a277bd3612562ec5f', summary: '<5-10 word recap>' to continue this agent.)
+     The agent is working in the background. You will be notified automatically when it completes. You know nothing about its results until that notification arrives — do not report, assume, or predict the
+     Do not duplicate this agent's work — avoid working with the same files or topics it is using.
+     output_file: /tmp/claude-1000/-home-raf-event-registration/984f7f55-088d-49ee-b35f-74078ebf0e24/tasks/a277bd3612562ec5f.output
+     Do NOT Read or tail this file via the shell tool — it is the full subagent JSONL transcript and reading it will overflow your context. If the user asks for progress, say the agent is still running; yo
+
+⏺ Я запустил агента `reviewer` с вашим промптом без изменений. Он работает в фоне, сам я ревью не делаю. Когда он закончит, перешлю вам его ответ целиком.
+
+⏺ Ответ агента `reviewer` (файлы он не менял):
+  
+  **Модель и цитата.** Opus 5.5 (claude-opus-5-5). Пункт 5 раздела «Порядок» из anti-slop-review: «Если есть браузер — поднять стек своего слота (основная сессия — `make stack-up`, слот 1: http://localhost:5174, Mailpit http://localhost:8026), посмотреть страницы, затем `make stack-down`. `make up` не запускать: это стек человека. Без браузера (агент `reviewer`) — отметить в «не проверялось».»
+  
+  В диапазоне f0e82a0..2bea337 один коммит, 2bea337. Агент нашёл две проблемы в документации, обе невысокой важности.
+  
+  ## Находки
+  
+  **1. [docs/development.md:159](docs/development.md#L159): чек-лист отправляет агента в слот 0**
+  - **Что:** в пункте 5 «Проверить» в строке 158 появилась строка для агента, но в ней только `make stack-check` и `make stack-e2e`. Сразу под ней осталось «руками в браузере (`make dev-backend` + `make dev-frontend`)». Эти цели занимают порты слота 0 (5173 и 8000), а `dev-backend` ещё и запускает `migrate` в Postgres человека на порту 5432.
+  - **Почему важно:** агент, который идёт по этому чек-листу, запустит цели слота 0, а AGENTS.md (строки 12–15) это запрещает. Запись в логе решений 01:25 (5) закрыла в этом списке `make check` и `make e2e`, а пункт про браузер пропустила.
+  - **Как исправить:** дописать браузер в строку 158, например: «агент — на своём слоте: `make stack-check`, `make stack-e2e`, браузер — `make stack-up` (http://localhost:5174, Mailpit http://localhost:8026), затем `make stack-down`».
+  
+  **2. [AGENTS.md:27](AGENTS.md#L27): в карте осталась старая строка про e2e**
+  - **Что:** в карте всё ещё написано «e2e/ Playwright против стека из make up». В [e2e/AGENTS.md:3](e2e/AGENTS.md#L3) ту же фразу в этом диапазоне уже заменили на вариант с двумя стеками.
+  - **Почему важно:** корневой файл читается в каждой сессии, а e2e/AGENTS.md — только при работе в папке e2e/. Самое заметное место говорит агенту, что e2e идут против стека человека, и противоречит e2e/AGENTS.md.
+  - **Как исправить:** «Playwright против поднятого стека: `make up` (слот 0) или `make stack-e2e` (слот агента)» или просто «Playwright (правила — e2e/AGENTS.md)».
+  
+  ## Проверки
+  - `make stack-check SLOT=2` на 2bea337 прошёл (exit 0): pytest — 132 passed, Vitest — 116 passed, тесты хуков и scripts — 0 падений; ruff, mypy, schema-check и format-check зелёные.
+  - `stack-e2e` агент не запускал: в диапазоне меняются только markdown и цель `review-worktree`.
+  - Ошибку в `review-worktree` агент проверил сам: подставил `pnpm`, который всегда падает. Цель упала, и копия не осталась. Обычный запуск и `review-worktree-remove` тоже работают.
+  
+  ## Записи в логе решений
+  - Записи 01:25 (4) и 01:25 (5) ни одну из находок не снимают.
+  - Pre-push с `make dev-deps check-backend` ([scripts/pre-push.mjs:21](scripts/pre-push.mjs#L21)) тоже запускает цели слота 0. Агент не считает это находкой: так сказано в промпте, и запись 00:57 держит это как открытый вопрос.
+  
+  ## Без находок
+  - **Задача 1:** цели и порты слота 0 в `.claude/`, во всех AGENTS.md и в `docs/rules/` встречаются только в запретах и в описании слота 0. Хуки make-цели не запускают.
+  - **Задача 2:** в feature-workflow `stack-e2e` стоит в фазе 5, в шаге «После задачи» и в разделе «Браузер». Ревью идёт после фазы 5, так что e2e запускаются до него.
+  - **Задача 3:** ветка `|| { git worktree remove --force …; exit 1; }` срабатывает при ошибке любой из двух команд установки.
+  - **Мусор:** в diff нет рекламного тона, эмодзи, TODO и закомментированного кода. Пути и цели, упомянутые в изменённых строках, существуют.
+  
+  ## Не проверялось
+  - Страницы в браузере: у ревьюера нет браузера.
+  - Настоящее падение `uv sync` в копии: проверялся только падающий `pnpm`, но обработка ошибки у них общая.
+  - Прерывание `review-worktree` через Ctrl-C: в этом случае копия остаётся, цель на это не рассчитана.
+  
+  По правилу 6 этап не готов, пока вы не разберёте эти находки. Если скажете, исправлю обе.

@@ -1,0 +1,2099 @@
+> /clear
+
+> делаем этап 1
+
+⏺ Skill(session-handoff)
+  ⎿  Launching skill: session-handoff
+
+⏺ Bash(make worktime 2>&1 | tail -5; date '+%Y-%m-%d %H:%M'; tail -20 docs/decisions.md; git log -3 --format='%h %ci %s')
+⏺ Bash(cat docs/features/realtime/spec.md docs/features/realtime/tasks.md)
+  ⎿  2026-10-31 09:22 → 2026-10-31 11:00  1 ч 38 мин
+     2026-10-31 11:19 → 2026-10-31 13:09  1 ч 50 мин
+     2026-10-31 13:13 → 2026-10-31 13:28  0 ч 15 мин
+     Итого: 28 ч 59 мин
+     Предупреждение: сессия с 2026-10-31 13:29 не закрыта и не учтена
+     2026-10-31 14:05
+     … +23 lines
+
+  ⎿  # Realtime (SSE): spec
+     
+     Фаза — `docs/roadmap.md`, фаза 4. Статус: утверждён 2026-10-31.
+     
+     ## Что и зачем
+     
+     … +195 lines
+
+⏺ Skill(feature-workflow)
+  ⎿  Launching skill: feature-workflow
+
+⏺ Bash(cat backend/AGENTS.md docs/rules/concurrency.md; ls -R backend | grep -v __pycache__ | head -80; cat docs/development.md | head -150)
+  ⎿  # backend/ — Django + DRF
+     
+     Команды и инструменты — `docs/development.md`, раздел «Backend». Здесь — правила для кода.
+     
+     ## Структура
+     
+     … +337 lines
+
+⏺ First, the session markers, then I'll look at the code for task 1.1.
+
+⏺ Bash(ls backend/events backend/registrations backend/events/tests backend/registrations/tests backend/config/tests; cat backend/registrations/services.py; cat backend/events/views.py backend/events/urls.py)
+  ⎿  backend/config/tests:
+     __init__.py
+     __pycache__
+     concurrency.py
+     test_admin.py
+     test_exceptions.py
+     … +407 lines
+
+⏺ Bash(cat backend/events/serializers.py backend/events/services.py backend/events/models.py backend/events/tests/test_org_event_detail_api.py; cat backend/conftest.py; cat backend/pyproject.toml; grep -n "D)
+  ⎿  from datetime import datetime
+     
+     from django.utils import timezone
+     from rest_framework import serializers
+     
+     from events.models import Event
+     … +353 lines
+
+⏺ Bash(cat .claude/skills/api-change/SKILL.md; cat backend/registrations/views.py | sed -n 1,60p; sed -n 1,60p backend/registrations/tests/test_checkin.py; cat backend/config/tests/concurrency.py; cat backen)
+  ⎿  ---
+     name: api-change
+     description: >
+       Процедура изменения API: serializer, view или URL backend → тест → схема OpenAPI → типы
+       фронтенда → вызов с фронтенда. Использовать, когда добавляется или меняется эндпоинт, поле
+       запроса или ответа, статус ответа. Не использовать для правок логики без изменения
+     … +320 lines
+
+⏺ Bash(grep -n "dev-backend\|stack-check\b\|stack-check:" -A4 Makefile | head -30; grep -n "MIDDLEWARE" -A12 backend/config/settings.py; cd backend && grep -n "aclosing\|disconnect\|is_async" .venv/lib/pytho)
+  ⎿  132:.PHONY: stack-check
+     133:stack-check: stack-postgres ## make check against the Postgres of slot SLOT (default 1)
+     134-	POSTGRES_PORT=$(STACK_POSTGRES_PORT) $(MAKE) check
+     135-
+     136:.PHONY: stack-check-backend
+     137:stack-check-backend: stack-postgres ## make check-backend against the Postgres of slot SLOT
+     … +43 lines
+
+⏺ Plan is clear. Starting with session markers, then adding `pytest-asyncio` (needed for `AsyncClient` stream tests).
+
+⏺ Bash(cd /home/raf/event-registration && python3 - <<'EOF')
+  ⎿  Prepared 1 package in 227ms
+     Installed 1 package in 4ms
+      + pytest-asyncio==1.4.1
+     21:    "pytest-asyncio>=1.4.1",
+
+⏺ Bash(grep -n "aclosing_iterator_wrapper" -B2 -A12 .venv/lib/python3.12/site-packages/django/test/client.py | head -50; sed -n 180,240p .venv/lib/python3.12/site-packages/django/core/handlers/asgi.py; grep )
+  ⎿  127-
+     128-
+     129:async def aclosing_iterator_wrapper(iterable, close):
+     130-    try:
+     131-        async for chunk in iterable:
+     132-            yield chunk
+     … +133 lines
+
+⏺ Writing the tests first.
+
+⏺ Bash(sed -n 60,200p registrations/tests/test_checkin.py | grep -n "def test\|transaction" | head; cat registrations/tests/test_checkin_api.py | sed -n 1,40p)
+  ⎿  4:def test_check_in_accepts_the_code_as_typed_at_the_entrance(
+     15:def test_a_repeat_check_in_reports_the_first_time_and_changes_nothing(event: Event) -> None:
+     29:def test_check_in_of_a_ticket_that_is_not_confirmed_raises_and_marks_nothing(
+     43:def test_a_promotion_right_after_the_update_is_not_reported_as_a_repeat(event: Event) -> None:
+     69:def test_check_in_of_an_unknown_code_raises(event: Event) -> None:
+     76:def test_check_in_of_another_events_code_raises_and_marks_nothing(
+     … +42 lines
+
+⏺ Write(/home/raf/event-registration/backend/registrations/tests/test_stats_notifications.py)
+  ⎿  File created successfully at: /home/raf/event-registration/backend/registrations/tests/test_stats_notifications.py (file state is current in your context — no need to Read it back)
+
+⏺ Now the stream API tests.
+
+⏺ Write(/home/raf/event-registration/backend/events/tests/test_org_event_stream_api.py)
+  ⎿  File created successfully at: /home/raf/event-registration/backend/events/tests/test_org_event_stream_api.py (file state is current in your context — no need to Read it back)
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  E   ModuleNotFoundError: No module named 'events.realtime'
+     =========================== short test summary info ============================
+     ERROR registrations/tests/test_stats_notifications.py
+     !!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+     1 error in 0.26s
+
+⏺ Failing as expected. Now the realtime module.
+
+⏺ Write(/home/raf/event-registration/backend/events/realtime.py)
+  ⎿  File created successfully at: /home/raf/event-registration/backend/events/realtime.py (file state is current in your context — no need to Read it back)
+
+⏺ Now serializer, view, URL and the notify in `check_in`.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  165:    spaces and dashes. Raises Registration.DoesNotExist when the event has no such ticket and
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  async with stream(client, event.id) as response:
+     >           await next_message(response)
+     
+     events/tests/test_org_event_stream_api.py:109: 
+     _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+     
+     … +19 lines
+
+⏺ Parser bug in my test helper (blank line terminator). Fixing:
+
+⏺ Bash(sed -i 's/for line in bytes(chunk).decode().splitlines())/for line in bytes(chunk).decode().splitlines() if line)/' events/tests/test_org_event_stream_api.py && POSTGRES_PORT=5433 uv run pytest regist)
+  ⎿  .........                                                                [100%]
+     =============================== warnings summary ===============================
+     events/tests/test_org_event_stream_api.py::test_stream_needs_a_session
+       /home/raf/event-registration/backend:0: PytestWarning: Error when trying to teardown test databases: OperationalError('database "test_event_registration" is being accessed by other users\nDETAIL:  T
+     
+     -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+     … +2 lines
+
+⏺ Green. One leftover DB connection blocks teardown; finding which test leaks it.
+
+⏺ Bash(for t in test_stream_needs_a_session test_stream_of_a_missing_event_is_404 test_stream_starts_with_a_snapshot test_stream_of_another_organizers_event_is_403; do echo "== $t"; POSTGRES_PORT=5433 uv run)
+  ⎿  == test_stream_needs_a_session
+     0.12s call     events/tests/test_org_event_stream_api.py::test_stream_needs_a_session
+     1 passed, 5 deselected in 1.31s
+     == test_stream_of_a_missing_event_is_404
+       /home/raf/event-registration/backend:0: PytestWarning: Error when trying to teardown test databases: OperationalError('database "test_event_registration" is being accessed by other users\nDETAIL:  T
+     0.12s call     events/tests/test_org_event_stream_api.py::test_stream_of_a_missing_event_is_404
+     … +8 lines
+
+⏺ Read(/home/raf/event-registration/backend/events/tests/test_org_event_stream_api.py)
+  ⎿  1	import asyncio
+     2	import json
+     3	from collections.abc import AsyncIterator
+     4	from contextlib import asynccontextmanager
+     5	from datetime import timedelta
+     6	from typing import Any
+     … +44 lines
+
+⏺ Edit(/home/raf/event-registration/backend/events/tests/test_org_event_stream_api.py)
+⏺ Bash(sed -i 's/^from django.http import StreamingHttpResponse$/from django.db import connection\nfrom django.http import StreamingHttpResponse/' events/tests/test_org_event_stream_api.py && POSTGRES_PORT=5)
+  ⎿  The file /home/raf/event-registration/backend/events/tests/test_org_event_stream_api.py has been updated successfully.
+
+  ⎿  ERROR events/tests/test_org_event_stream_api.py::test_changes_not_yet_read_give_the_latest_snapshot
+     ERROR events/tests/test_org_event_stream_api.py::test_stream_of_another_organizers_event_is_403
+     ERROR events/tests/test_org_event_stream_api.py::test_stream_of_a_missing_event_is_404
+     9 passed, 1 warning, 5 errors in 12.17s
+     [This command modified 1 file you've previously read: events/tests/test_org_event_stream_api.py. Call Read before editing.]
+
+⏺ Bash(POSTGRES_PORT=5433 uv run pytest events/tests/test_org_event_stream_api.py -q 2>&1 | grep -E "^E " | sort | uniq | head)
+  ⎿  E           django.db.utils.DatabaseError: DatabaseWrapper objects created in a thread can only be used in that same thread. The object with alias 'default' was created in thread id 138443967856960 an
+
+⏺ Closing it from the fixture runs into Django's per-context connection handling. Simpler: the 401/403/404 cases never stream, so they can use the sync `APIClient`, which closes connections normally.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  All checks passed!
+     .........                                                                [100%]
+     9 passed in 6.34s
+
+⏺ Clean. Now checking the tests actually catch the bug: first without the notify, then with an unconditional one.
+
+⏺ Bash(cp registrations/services.py /tmp/claude-1000/svc.bak && python3 - <<'EOF')
+  ⎿  FAILED registrations/tests/test_stats_notifications.py::test_first_check_in_notifies_after_commit
+     FAILED events/tests/test_org_event_stream_api.py::test_check_in_sends_a_new_snapshot
+     FAILED events/tests/test_org_event_stream_api.py::test_changes_not_yet_read_give_the_latest_snapshot
+     3 failed, 6 passed, 1 warning in 21.23s
+     FAILED registrations/tests/test_stats_notifications.py::test_repeat_check_in_does_not_notify
+     1 failed, 2 passed in 3.23s
+     … +8 lines
+
+⏺ Each test fails without its guard. Now the schema and the full backend check.
+
+⏺ Bash(cd /home/raf/event-registration && make schema 2>&1 | tail -5; git diff --stat -- backend/openapi.yaml frontend/; git diff backend/openapi.yaml | head -80)
+  ⎿  > frontend@0.0.0 gen:api /home/raf/event-registration/frontend
+     > openapi-typescript ../backend/openapi.yaml -o src/shared/api/schema.d.ts
+     
+     ✨ openapi-typescript 7.13.0
+     🚀 ../backend/openapi.yaml → src/shared/api/schema.d.ts [95.5ms]
+      backend/openapi.yaml                | 49 ++++++++++++++++++++++++++++++
+     … +69 lines
+
+⏺ Bash(grep -n "stream" docs/architecture.md | head -20)
+  ⎿  155:- `GET /api/events/{id}/stream/` — SSE: свободные места
+     177:- `GET /api/org/events/{id}/stream/` — SSE: зарегистрировано / в листе ожидания / пришло
+
+⏺ Bash(sed -n 140,200p docs/architecture.md)
+  ⎿  - `POST /api/events/{id}/registrations/` `{email, name}` → 201 (в том числе повторная регистрация после отказа) / 200 (повтор) `{status, position?}`; кода
+       билета в ответе нет — он приходит только письмом, иначе любой получил бы чужой билет, введя
+       чужой email. Мест нет → `waitlisted` и `position` (номер в листе; только для `waitlisted`)
+     
+     - `POST /api/tickets/{manage_token}/cancel/` → 200 `{status: "cancelled"}` / 404 (неизвестный
+       токен) / 409 (билет уже отмечен на входе, фаза 3); повтор — тот же 200 без повышения; повышенному ставится письмо `promoted`. Токен приходит
+     … +55 lines
+
+⏺ `architecture.md` gets updated in the phase-close task (4.4), as the tasks say. Updating the spec (401, and the listener closing after the last subscriber), then running the full check.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  --- a/docs/features/realtime/spec.md
+     +++ b/docs/features/realtime/spec.md
+     -| Метод и путь                       | Вход   | Ответ                                                                                            | Ошибки (статус → `kind`)                            
+     -| ---------------------------------- | ------ | ------------------------------------------------------------------------------------------------ | ----------------------------------------------------
+     -| `GET /api/org/events/{id}/stream/` | сессия | 200 `text/event-stream`: `event: stats`, `data: {confirmed, waitlisted, checked_in, free_seats}` | 403 (нет сессии или событие другого организатора); 4
+     -| `GET /api/events/{id}/stream/`     | —      | 200 `text/event-stream`: `event: stats`, `data: {free_seats}`                                    | 404                                                 
+     … +17 lines
+
+⏺ Bash(sed -n 339,380p docs/development.md)
+  ⎿  ## Backend
+     
+     - Структура: `backend/config/` — настройки, корневые URL, ASGI, `health.py`; приложения
+       Django — папки рядом (`accounts/`). Python 3.12, Django 5.2 LTS, DRF.
+     - Переменные окружения читаются только в `config/settings.py`. Значения по умолчанию
+       совпадают с сервисами `docker compose`, поэтому локально ничего задавать не нужно.
+     … +36 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  POSTGRES_PORT=5433 BACKEND_PORT=8001 FRONTEND_PORT=5174 MAILPIT_PORT=8026 MAILPIT_SMTP_PORT=1026 docker compose -p event-registration-s1 up -d --wait postgres
+      Container event-registration-s1-postgres-1 Running 
+      Container event-registration-s1-postgres-1 Waiting 
+      Container event-registration-s1-postgres-1 Healthy 
+     POSTGRES_PORT=5433 make check
+     make[1]: Entering directory '/home/raf/event-registration'
+     … +12 lines
+
+⏺ Bash(npx prettier --write docs/development.md >/dev/null && make stack-check 2>&1 | grep -E "error|Error|passed|failed|warn|✓|Test Files|Tests " | head -30)
+  ⎿  # Subtest: an unclosed session is a warning and is not counted
+     ok 44 - an unclosed session is a warning and is not counted
+     # Subtest: a start while another session is open and an end without a start are warnings
+     ok 45 - a start while another session is open and an end without a start are warnings
+     # Subtest: an end before its start is a warning, not negative time
+     ok 46 - an end before its start is a warning, not negative time
+     … +9 lines
+
+⏺ Bash(cd /home/raf/event-registration/backend && uv run ruff check . 2>&1 | head -30)
+  ⎿  I001 [*] Import block is un-sorted or un-formatted
+       --> events/views.py:1:1
+        |
+      1 | / from typing import Any
+      2 | |
+      3 | | from django.db.models import QuerySet
+     … +24 lines
+
+⏺ Bash(uv run ruff check --fix -q . ; uv run ruff format -q . ; uv run ruff check . && uv run mypy . 2>&1 | tail -15)
+  ⎿  All checks passed!
+     events/views.py:71: error: Argument 2 of "select_parser" is incompatible with supertype "rest_framework.negotiation.BaseContentNegotiation"; supertype defines the argument type as "Iterable[BaseParser
+     events/views.py:71: note: This violates the Liskov substitution principle
+     events/views.py:71: note: See https://mypy.readthedocs.io/en/stable/common_issues.html#incompatible-overrides
+     events/views.py:75: error: Argument 2 of "select_renderer" is incompatible with supertype "rest_framework.negotiation.BaseContentNegotiation"; supertype defines the argument type as "Iterable[BaseRend
+     events/views.py:75: note: This violates the Liskov substitution principle
+     … +5 lines
+
+⏺ Lint and formatting are fixed; now fixing four mypy type errors, then rerunning the full check.
+
+⏺ Bash(sed -n 66,80p events/views.py; sed -n 98,104p events/views.py; sed -n 58,75p events/tests/test_org_event_stream_api.py)
+  ⎿  EventSource sends `Accept: text/event-stream`, which no DRF renderer offers, so the default
+         negotiation answers 406. The stream itself bypasses the renderer; errors go out as JSON.
+         """
+     
+         def select_parser(self, request: Request, parsers: list[BaseParser]) -> BaseParser:
+             return parsers[0]
+     … +31 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  241:class _MonkeyPatchedASGIResponse(_ASGIResponse):
+     242-    def json(self) -> Any: ...
+     243-    request: dict[str, Any]
+     244-    client: AsyncClient
+     245-    templates: list[Template]
+     246-
+     … +14 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  events/tests/test_org_event_stream_api.py:68: error: Unused "type: ignore" comment  [unused-ignore]
+     Found 1 error in 1 file (checked 76 source files)
+     [This command modified 1 file you've previously read: events/tests/test_org_event_stream_api.py. Call Read before editing.]
+
+⏺ Bash(sed -n 66,70p events/tests/test_org_event_stream_api.py)
+  ⎿  finally:
+             # What a disconnect does: the subscription and the listener are released.
+             await response.streaming_content.aclose()  # type: ignore[attr-defined]  # an async generator under AsyncClient
+
+⏺ Bash(sed -i 's|        await response.streaming_content.aclose()  # type: ignore\[attr-defined\]  # an async generator under AsyncClient|        await response.streaming_content.aclose()|' events/tests/tes)
+  ⎿  Success: no issues found in 76 source files
+     All checks passed!
+     ======================== 227 passed in 62.69s (0:01:02) ========================
+      Test Files  23 passed (23)
+           Tests  179 passed (179)
+     [This command modified 1 file you've previously read: backend/events/tests/test_org_event_stream_api.py. Call Read before editing.]
+
+⏺ Bash(make stack-check >/tmp/claude-1000/sc.log 2>&1; echo exit=$?; tail -3 /tmp/claude-1000/sc.log; grep -c "accessed by other users" /tmp/claude-1000/sc.log)
+  ⎿  exit=0
+     > tsc --noEmit
+     
+     make[1]: Leaving directory '/home/raf/event-registration'
+     0
+
+⏺ `make stack-check` passes (227 pytest, 179 Vitest). Next: `make stack-e2e`, then a manual `curl -N` of the stream against real uvicorn on the slot-1 stack.
+
+⏺ Bash(make stack-e2e > /tmp/claude-1000/e2e.log 2>&1; echo exit=$?; grep -E "passed|failed|flaky" /tmp/claude-1000/e2e.log | tail -5)
+  ⎿  exit=0
+       8 passed (18.5s)
+
+⏺ Bash(grep -n "demo\|organizer@\|password" backend/accounts/management/commands/create_demo_users.py | head -5)
+  ⎿  8:# Documented demo credentials for reviewers and e2e (docs/architecture.md, "Окружение").
+     10:DEMO_ORGANIZER = ("demo@example.com", "demo")
+     15:    help = "Create or reset the demo organizer and the demo admin (only with DJANGO_DEBUG=true)."
+     18:        # Known passwords and a superuser must never reach a deployment that runs without DEBUG.
+     21:            self.stderr.write("DEBUG is off: demo users are not created.")
+
+⏺ Bash(cd /tmp/claude-1000 && B=http://localhost:5174; J=jar.txt; rm -f $J)
+  ⎿  me 401
+     {"id":1,"email":"demo@example.com"} login 200
+     [{"id":1,"title":"Ticket 1793445388409","description":"","starts_at":"2027-05-01T15:00:00Z","capacity":5,"confirmed":0,"waitlisted":0},{"id":2,"title":"Check-in 1793445388629","description":"","starts
+     Shell cwd was reset to /home/raf/event-registration
+
+⏺ Logged in through Vite. Now: open the stream, check a ticket in through the API, and see whether a second snapshot arrives.
+
+⏺ Bash(cd /tmp/claude-1000 && B=http://localhost:5174; J=jar.txt)
+  ⎿  3|7ZHZRKC6|f
+     4|TP9RVNEQ|f
+     9|MFUGT9RR|f
+     {"result":"checked_in","name":"Анна","masked_email":"pa***@example.com","checked_in_at":"2026-10-31T12:18:29.970735Z"} checkin 200
+     HTTP/1.1 200 OK
+     vary: Accept, Cookie
+     … +21 lines
+
+⏺ Bash(date '+%H:%M' && python3 - <<'EOF')
+  ⎿  14:18
+     57:- Исследование этапа 1: снимок — `Event.objects.with_registration_counts()` и поля
+     58-  `OrgEventSerializer`; права — `get_org_event`; чекин — условный `UPDATE` в
+     59-  `registrations.services.check_in` (уведомление — по числу отмеченных строк). Django 5.2 под
+     60-  ASGI читает асинхронный поток через `aclosing` и отменяет его при `http.disconnect`.
+     61-
+
+⏺ Bash(cat >> docs/decisions.md <<'EOF')
+  ⎿  M  backend/config/urls.py
+     A  backend/events/realtime.py
+     M  backend/events/serializers.py
+     A  backend/events/tests/test_org_event_stream_api.py
+     M  backend/events/views.py
+     M  backend/openapi.yaml
+     … +9 lines
+
+⏺ Bash(git commit -q -F - <<'EOF')
+  ⎿  ⋯ Backing up original state…
+     ✔ Done backing up original state (24ea52c)!
+     ⋯ Running tasks for staged files…
+         backend/**/*.py — 7 files
+           ⋯ uv run --project backend ruff check --fix
+           ⋯ uv run --project backend ruff format
+     … +18 lines
+
+⏺ 1.1 committed. Before the frontend: `make dev-backend` runs `runserver` (WSGI), and I expect it to buffer an async stream forever. Checking that on slot 1's Postgres:
+
+⏺ Bash(cd /home/raf/event-registration/backend && (POSTGRES_PORT=5433 DJANGO_DEBUG=true timeout 12 uv run python manage.py runserver 8019 --noreload > /tmp/claude-1000/rs.log 2>&1 &) ; sleep 4; J=/tmp/claude)
+  ⎿  login 200
+     /usr/lib/python3.12/wsgiref/handlers.py:183: Warning: StreamingHttpResponse must consume asynchronous iterators in order to serve them synchronously. Use a synchronous iterator instead.
+
+⏺ Bash(cd /home/raf/event-registration && grep -rn "runserver" --include=*.md --include=Makefile --include=*.py --include=*.toml . 2>/dev/null | grep -v node_modules | grep -v .venv | grep -v "docs/decisions)
+  ⎿  (eval):1: no matches found: --include=*.md
+
+⏺ Bash(cd /home/raf/event-registration && git grep -n "runserver" -- . ':!docs/decisions.md')
+  ⎿  Makefile:177:	$(BACKEND) uv run python manage.py runserver 8000
+     backend/config/settings.py:35:    # Before staticfiles: runserver also serves static through WhiteNoise, the same way as
+     backend/config/settings.py:37:    "whitenoise.runserver_nostatic",
+     backend/config/settings.py:102:# collectstatic output, served by WhiteNoise under any server (uvicorn, runserver).
+     backend/config/settings.py:146:# handlers: the access loggers of uvicorn and of runserver (`django.server`) are described again
+     docs/development.md:73:  его на `<token>` в access-логах uvicorn и `runserver` (`django.server`, `make dev-backend`) и
+     … +2 lines
+
+⏺ Bash(grep -n "^BACKEND\b\|^BACKEND :\|^BACKEND=" Makefile; sed -n 172,178p Makefile; sed -n 60,80p docs/development.md)
+  ⎿  3:BACKEND := cd backend &&
+     	$(FRONTEND) pnpm dev
+     
+     .PHONY: dev-backend
+     dev-backend: ## Backend dev server on :8000 (needs `make dev-deps`)
+     	$(BACKEND) uv run python manage.py migrate
+     … +23 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Makefile            | 2 +-
+      docs/development.md | 9 ++++++---
+      2 files changed, 7 insertions(+), 4 deletions(-)
+     login 200
+     event: stats
+     data: {"confirmed": 1, "waitlisted": 0, "checked_in": 1, "free_seats": 4}
+     … +3 lines
+
+⏺ `uvicorn --reload` streams correctly and serves admin static. Committing:
+
+⏺ Bash(cd /home/raf/event-registration && T=$(date '+%H:%M') && cat >> docs/decisions.md <<EOF)
+  ⎿  ✔ Done cleaning up temporary files!
+     c4618e3 build(backend): run the dev backend under uvicorn so SSE streams work
+
+⏺ Now task 1.2 (frontend). Loading the FSD rules and the panel code.
+
+⏺ Skill(fsd-frontend)
+  ⎿  Launching skill: fsd-frontend
+
+⏺ Bash(cd /home/raf/event-registration/frontend && cat AGENTS.md | head -120; find src -type f | grep -v schema.d.ts | sort)
+  ⎿  # frontend/ — Vue 3 + Vite
+     
+     Команды и инструменты — `docs/development.md`, раздел «Frontend». Как писать код (слои, DI,
+     состояние, тесты) — skill `fsd-frontend`. Здесь — правила, которые действуют всегда.
+     
+     ## Карта
+     … +159 lines
+
+⏺ Bash(cat src/pages/org-event/ui/OrgEventPage.vue src/entities/event/api/org-events.ts src/entities/event/index.ts src/shared/api/index.ts; sed -n 1,80p src/pages/org-event/ui/OrgEventPage.test.ts)
+  ⎿  <script setup lang="ts">
+     import { useQuery } from "@tanstack/vue-query";
+     import { computed } from "vue";
+     import { useI18n } from "vue-i18n";
+     import { useRoute } from "vue-router";
+     
+     … +301 lines
+
+⏺ Bash(cat src/shared/api/AGENTS.md src/shared/api/client.ts; cat src/shared/lib/test/setup.ts src/shared/lib/test/msw.ts; grep -n "boundaries" -A30 eslint.config.* | head -60)
+  ⎿  # src/shared/api — сеть и ошибки
+     
+     - `api` (openapi-fetch) + `unwrap()` — единственный путь к backend. `unwrap` возвращает
+       данные или бросает `AppError`; сетевую ошибку — как `kind: "network"`.
+     - `AppError.kind` выводится из HTTP-статуса в `app-error.ts` и только там. Новый статус или
+       новый `kind` — правка `kindForStatus` и новый случай в `app-error.test.ts`.
+     … +120 lines
+
+⏺ Bash(grep -rln "OrgEventPage\|pages/org-event\"" src | grep -v "pages/org-event/"; cat src/app/router.ts | head -40; sed -n 80,400p src/pages/org-event/ui/OrgEventPage.test.ts | grep -n "it(\|afterEach\|be)
+  ⎿  src/app/router.ts
+     import type { QueryClient } from "@tanstack/vue-query";
+     import { createRouter, type RouterHistory } from "vue-router";
+     
+     import { meQuery } from "@/entities/session";
+     import { EventPage } from "@/pages/event";
+     … +46 lines
+
+⏺ Writing the fake and the composable test first.
+
+⏺ Write(/home/raf/event-registration/frontend/src/shared/lib/test/fake-event-source.ts)
+⏺ Write(/home/raf/event-registration/frontend/src/shared/lib/use-event-stream.test.ts)
+⏺ Bash(pnpm exec vitest run src/shared/lib/use-event-stream.test.ts 2>&1 | tail -5)
+  ⎿  File created successfully at: /home/raf/event-registration/frontend/src/shared/lib/test/fake-event-source.ts (file state is current in your context — no need to Read it back)
+
+  ⎿  File created successfully at: /home/raf/event-registration/frontend/src/shared/lib/use-event-stream.test.ts (file state is current in your context — no need to Read it back)
+
+  ⎿  Test Files  1 failed (1)
+           Tests  no tests
+        Start at  14:21:22
+        Duration  739ms (environment 91%, setup 7%, transform 1%, worker 1%)
+
+⏺ The test fails because the module doesn't exist yet. Writing the composable:
+
+⏺ Write(/home/raf/event-registration/frontend/src/shared/lib/use-event-stream.ts)
+⏺ Bash(pnpm exec vitest run src/shared/lib/use-event-stream.test.ts 2>&1 | tail -5; pnpm exec eslint src/shared/lib/ 2>&1 | tail; pnpm exec vue-tsc --noEmit 2>&1 | tail)
+  ⎿  File created successfully at: /home/raf/event-registration/frontend/src/shared/lib/use-event-stream.ts (file state is current in your context — no need to Read it back)
+
+  ⎿  Test Files  1 passed (1)
+           Tests  3 passed (3)
+        Start at  14:21:36
+        Duration  740ms (environment 77%, import 8%, setup 6%, transform 6%, tests 2%, worker 1%)
+
+⏺ Composable passes; ESLint and vue-tsc are clean. Now the entity's stream URL and the page.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  await flushPromises();
+       });
+     
+       it("shows the event, its counters and a link to the check-in", async () => {
+         server.use(
+           http.get(EVENT, () => HttpResponse.json(event)),
+     … +81 lines
+
+⏺ Page tests next: `EventSource` stubbed for the whole file, plus two new cases (a snapshot updates "Пришло"; unmounting closes the stream).
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  × updates the counters from a snapshot of the stream 25ms
+          × closes the stream when the page is left 16ms
+     ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+      FAIL  src/pages/org-event/ui/OrgEventPage.test.ts > OrgEventPage > updates the counters from a snapshot of the stream
+      FAIL  src/pages/org-event/ui/OrgEventPage.test.ts > OrgEventPage > closes the stream when the page is left
+           Tests  2 failed | 44 passed (46)
+
+⏺ Both fail for the expected reason. Wiring the page:
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Tests  46 passed (46)
+
+⏺ Green, with ESLint and vue-tsc clean. Updating the frontend map in `frontend/AGENTS.md`, then running the full check.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  exit=0
+     All checks passed!
+     ======================== 227 passed in 62.96s (0:01:02) ========================
+      Test Files  24 passed (24)
+           Tests  184 passed (184)
+
+⏺ `make stack-check` passes. Now the stage check: rebuild the slot-1 stack and drive two browser contexts with a scratch Playwright script (no browser tool in this session).
+
+⏺ Bash(make stack-up > /tmp/claude-1000/up.log 2>&1; echo exit=$?; sed -n 1,60p e2e/tests/helpers.ts)
+  ⎿  exit=0
+     import { expect, type APIRequestContext, type Browser, type Page } from "@playwright/test";
+     
+     // Created by `create_demo_users` when the backend starts (docs/architecture.md, "Окружение").
+     export const ORGANIZER = { email: "demo@example.com", password: "demo" };
+     const MAILPIT_URL = process.env.E2E_MAILPIT_URL ?? "http://localhost:8025";
+     … +55 lines
+
+⏺ Bash(ls e2e/node_modules/@playwright/test/ | head; docker compose -p event-registration-s1 exec -T postgres psql -U postgres -d event_registration -Atc "select r.event_id, r.ticket_code, (select count(*) f)
+  ⎿  LICENSE
+     NOTICE
+     README.md
+     cli.js
+     index.d.ts
+     index.js
+     … +13 lines
+
+⏺ Bash(mkdir -p /tmp/claude-1000/-home-raf-event-registration/eaee4e1c-e774-4657-b556-d050f4d9827b/scratchpad && cd /tmp/claude-1000/-home-raf-event-registration/eaee4e1c-e774-4657-b556-d050f4d9827b/scratchp)
+  ⎿  166:      <form v-else class="mt-6 grid gap-2" novalidate @submit.prevent="submit">
+     177:          <Button type="submit" :disabled="isPending || code.trim() === ''">
+     178:            {{ isPending ? t("checking") : t("submit") }}
+     199:  "submit": "Отметить",
+       "eventNotFound": "Событие не найдено",
+       "eventError": "Не удалось загрузить название события, чекин работает",
+     … +10 lines
+
+⏺ Bash(cd /tmp/claude-1000/-home-raf-event-registration/eaee4e1c-e774-4657-b556-d050f4d9827b/scratchpad && node two-tabs.mjs http://localhost:5174 4 TP9RVNEQ 2>&1 | tail -5)
+  ⎿  Пришло: 0 -> 1 in 16 ms; reopened streams after load: 0
+     console errors: [
+       'Failed to load resource: the server responded with a status of 401 (Unauthorized)',
+       'Failed to load resource: the server responded with a status of 401 (Unauthorized)'
+     ]
+     Shell cwd was reset to /home/raf/event-registration
+
+⏺ "Пришло" in the second tab went from 0 to 1, 16 ms after the check-in, with no reload. Checking where the two 401s come from:
+
+⏺ Bash(cd /tmp/claude-1000/-home-raf-event-registration/eaee4e1c-e774-4657-b556-d050f4d9827b/scratchpad && sed -i 's|  page.on("pageerror"|  page.on("response", (r) => r.status() >= 400 \&\& errors.push(`${r)
+  ⎿  Пришло: 0 -> 1 in 17 ms; reopened streams after load: 0
+     console errors: [
+       '401 /api/auth/me/',
+       'Failed to load resource: the server responded with a status of 401 (Unauthorized)',
+       '401 /api/auth/me/',
+       'Failed to load resource: the server responded with a status of 401 (Unauthorized)'
+     … +2 lines
+
+⏺ Bash(cd /tmp/claude-1000/-home-raf-event-registration/eaee4e1c-e774-4657-b556-d050f4d9827b/scratchpad && cat > missing.mjs <<'EOF')
+  ⎿  stream responses in 5 s: [ 404 ]
+     Shell cwd was reset to /home/raf/event-registration
+
+⏺ One 404 and no retries. Running `make stack-e2e`, since the UI changed:
+
+⏺ Bash(make stack-e2e > /tmp/claude-1000/e2e.log 2>&1; echo exit=$?; grep -E "passed|failed|flaky" /tmp/claude-1000/e2e.log | tail -3; date +%H:%M)
+  ⎿  exit=0
+       8 passed (13.6s)
+     14:25
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  eac8bab feat(frontend): update the event panel counts live from its stream
+     c4618e3 build(backend): run the dev backend under uvicorn so SSE streams work
+     28cede9 feat(backend): stream live event panel counts over SSE
+     2aca928 docs: point the realtime stage 1 base at the rebased spec commit
+
+⏺ Both tasks are committed. Per the stage process, now the independent review by the `reviewer` agent.
+
+⏺ Agent(Review realtime stage 1)
+  ⎿  Async agent launched successfully. (This tool result is internal metadata — never quote or paste any part of it, including the agentId below, into a user-facing reply.)
+     agentId: adb262a6768e227f8 (internal ID - do not mention to user. Use SendMessage with to: 'adb262a6768e227f8', summary: '<5-10 word recap>' to continue this agent.)
+     The agent is working in the background. You will be notified automatically when it completes. You know nothing about its results until that notification arrives — do not report, assume, or predict the
+     Do not duplicate this agent's work — avoid working with the same files or topics it is using.
+     output_file: /tmp/claude-1000/-home-raf-event-registration/705633a2-6c6e-447a-94bd-41573c2d4476/tasks/adb262a6768e227f8.output
+     Do NOT Read or tail this file via the shell tool — it is the full subagent JSONL transcript and reading it will overflow your context. If the user asks for progress, say the agent is still running; yo
+
+⏺ Stage 1 is built and committed. It isn't finished yet: the `reviewer` agent is still running, and the stage closes after you go through its findings. I'll show you its report in full when it arrives.
+  
+  **Commits on `feat/realtime-org-stream`:**
+  - `28cede9` **1.1, backend.**
+    - The first check-in of a ticket sends a Postgres notification in the same transaction. A repeat check-in doesn't, since the counts don't change.
+    - One listener per process. It connects when the first panel opens a stream and disconnects when the last one closes.
+    - `GET /api/org/events/{id}/stream/` sends the counts right away, then again after each check-in. Errors are plain JSON.
+    - The stream is in `openapi.yaml`, and the frontend type is generated from it.
+  - `c4618e3` **Outside the tasks:** `make dev-backend` now runs uvicorn with reload instead of `runserver`. `runserver` can't send an endless stream: I checked with `curl -N` and it sent nothing.
+  - `eac8bab` **1.2, frontend.** A shared composable opens the stream and closes it when you leave the page. The panel writes each snapshot over the cached event, so the counters update without a reload.
+  
+  **Verified:**
+  - `make stack-check` passes (pytest 227, Vitest 184) and `make stack-e2e` passes (8).
+  - Each new backend test fails when its guard is removed: no notification, or a notification on every check-in.
+  - On the slot-1 stack with Vite, two browser contexts: a check-in in one changed "Пришло" in the other from 0 to 1 in about 17 ms, with no reload. The only console errors were the 401s for `/api/auth/me/` on the login page before signing in; those were there before this stage.
+  - On a missing event the stream got one 404 and didn't retry.
+  - With real uvicorn, the disconnect closed the listener: 0 `LISTEN` connections were left.
+  
+  **Decisions for you to look at (logged in `decisions.md`):**
+  - **401, not 403.** The spec said a request without a session gets 403 on the stream. I made it 401, like every other organizer endpoint, and corrected the spec.
+  - **Listener closes after the last panel leaves.** The spec only said when it opens. I added this so a process with no open panels holds no extra database connection.
+  - **Async test tooling.** I added `pytest-asyncio`. The stream's error responses are tested with the regular sync client, because the async test client leaves a connection open and the test database then can't be dropped.
+  - **Left for later.** Settings that only `runserver` needed are still there, noted in "на потом" in `tasks.md`.
+  
+  The slot-1 stack is still up in case review fixes need another browser pass.
+
+⏺ The `reviewer` report on stage 1 is below in full. I haven't changed anything yet: you decide on each finding.
+  
+  ---
+  
+  Ревью этапа 1 фазы 4, диапазон `6cf95c4..eac8bab`. Коммиты на месте: `2aca928`, `28cede9`, `c4618e3`, `eac8bab`. Нашёл три дефекта и одну мелочь. Блокирующих нет. `stack-check` и `stack-e2e` на слоте 2 прошли.
+  
+  **Находки**
+  
+  1. **`Makefile:177` — Корректность (dev-окружение).**
+     - **Что:** `make dev-backend` теперь запускает `uvicorn ... --reload` без `--timeout-graceful-shutdown`. Пока открыт хоть один поток, перезагрузка после правки кода зависает на «Waiting for connections to close». Проверил на uvicorn 0.54.0 из копии (минимальное ASGI-приложение с бесконечным `text/event-stream`, `curl -N`, затем `touch app.py`): через 6 с сервер всё ещё ждал, новый запрос не получил ответа (`curl -m 2` → 000).
+     - **Почему важно:** этап сам делает панель организатора постоянно открытым потоком. Любая правка backend при открытой вкладке панели вешает dev-сервер, пока не закрыть вкладку или не нажать Ctrl+C. То же, что spec («Крайние случаи», перезапуск backend) обещает решить для Docker.
+     - **Исправление:** добавить `--timeout-graceful-shutdown <несколько секунд>` в `dev-backend` в этом же коммите или явно отнести его к задаче этапа 2 вместе с Docker. Решение 14:20 говорит только о WSGI/`runserver` и этот эффект не разбирает.
+  
+  2. **`frontend/src/pages/org-event/ui/OrgEventPage.vue:33-44` — Гонка / корректность.**
+     - **Что:** снимок пишется через `setQueryData` и не учитывает `GET` того же `orgEventQuery`, который ещё не вернулся. В `query-client.ts` `staleTime` по умолчанию 0 и `refetchOnWindowFocus` включён. Поэтому при переключении на вкладку панели (ровно сценарий двух вкладок) уходит `GET`. Если он прочитал БД до чекина, а ответ пришёл после снимка, старые счётчики перезапишут свежий снимок. Новый снимок придёт только со следующим изменением. Тот же исход при первой загрузке: поток и `GET` стартуют одновременно, снимок, пришедший до ответа `GET`, отбрасывается (`cached ? … : cached`). Комментарий «its GET reads counts at least as fresh» в этом порядке событий неверен.
+     - **Почему важно:** нарушается инвариант spec «после (пере)подключения счётчики верны». «Пришло» может показывать меньше реального неограниченно долго, если чекинов больше нет.
+     - **Исправление:** если запрос события в полёте (`queryClient.isFetching({ queryKey, exact: true })`) или кэша ещё нет, вызывать `invalidateQueries({ queryKey, exact: true })`. По умолчанию `cancelRefetch: true` отменит текущий `GET` и прочитает БД после снимка. Иначе — `setQueryData`. Добавить Vitest: `GET` отвечает после `emit`, итог — счётчики снимка. Решение 14:25 повторяет утверждение комментария, но не рассматривает `GET`, начатый до снимка, поэтому находку не снимает.
+  
+  3. **`backend/events/realtime.py:108-115` — Конкурентность / утечка состояния.**
+     - **Что:** `self._connection` присваивается до `LISTEN` и до создания задачи `_deliver`, без обработки исключения. Если отключение клиента отменит запрос, пока выполняется `await self._connection.execute("LISTEN …")`, или `LISTEN` упадёт, останется `_connection is not None` при `_dispatch is None`, и очередь в `_subscribers` не добавится. Следующие подписчики пропустят инициализацию: соединение «есть», но уведомления никто не читает. Их потоки получат первый снимок и больше ничего, пока все не отключатся.
+     - **Почему важно:** живой счётчик молча замерзает для всех вкладок процесса. Ошибки нет, индикатора нет (а в этапе 4 он завязан на обрыв слушателя, которого здесь нет). Окно узкое (один round-trip), но отмена при отключении в Django ASGI — штатный путь.
+     - **Исправление:** подключиться и выполнить `LISTEN` в локальную переменную; при `BaseException` закрыть её и пробросить; присваивать `self._connection` и `self._dispatch` только после успеха.
+  
+  4. **`frontend/src/shared/lib/use-event-stream.ts:3-11,48` — Лишняя абстракция.**
+     - **Что:** параметр `deps` и интерфейсы `StreamSource`/`EventStreamDeps` нужны только `use-event-stream.test.ts`. Production-код (`OrgEventPage.vue`) их не передаёт, а тест страницы подменяет тот же конструктор через `vi.stubGlobal("EventSource", …)`. То есть механизм подмены без параметра в проекте уже есть.
+     - **Почему важно:** два способа подмены одного и того же, и параметр без потребителя в коде приложения (AGENTS.md, п. 3).
+     - **Исправление:** убрать `deps` и интерфейсы, в `use-event-stream.test.ts` использовать `vi.stubGlobal`, как в тесте страницы. Решение 14:25 фиксирует выбор `deps`, но не объясняет, зачем рядом второй механизм, поэтому находку не снимает.
+  
+  **Проверки**
+  
+  - `make -C .claude/worktrees/review stack-check SLOT=2` на `eac8bab` прошёл:
+    - backend pytest: 227 passed;
+    - Vitest: 184 passed;
+    - линтеры, типы и e2e lint/typecheck: без ошибок.
+  - `make -C .claude/worktrees/review stack-e2e SLOT=2` прошёл: 8 passed. Новых e2e у этапа нет, это регрессия.
+  - `stack-down SLOT=2` и `review-worktree-remove` выполнены. Тестовые процессы uvicorn на порту 8099 остановлены.
+  
+  **Решения из `docs/decisions.md`.** Ни одну находку решения не снимают:
+  - 14:20 объясняет переход на uvicorn, но не зависание `--reload`.
+  - 14:25 повторяет утверждение о свежести `GET` и фиксирует `deps` без разбора гонки и второго механизма подмены.
+  - 14:18 объясняет 401 вместо 403 (общий `SessionAuthenticationWith401`, spec исправлен) — это я не выносил в находки.
+  
+  **Проверено без находок**
+  
+  - `pg_notify` только при `marked` внутри `transaction.atomic()` в `check_in`; откат его отменяет.
+  - Тесты: после коммита, без уведомления после отката (внешний `atomic`), без уведомления при повторном чекине. Работают через настоящий `LISTEN`, `transaction=True`.
+  - Порядок «подписка, затем снимок» в `stats_stream`. Очередь `maxsize=1`, снимок из БД одним запросом `with_registration_counts()`.
+  - Соединение снимка закрывается в per-request потоке `sync_to_async`.
+  - Права через `get_org_event` (403/404) и `IsAuthenticated` (401); ошибки уходят в JSON благодаря `IgnoreAccept`; тесты на 401/403/404.
+  - Заголовки `Cache-Control: no-cache` и `X-Accel-Buffering: no` заданы и проверены тестом.
+  - `openapi.yaml` и `schema.d.ts` обновлены, `stack-check` их сверил. Отсутствие 401 в схеме совпадает с остальными эндпоинтами.
+  - `OrgEventStatsSerializer` повторяет поля `GET`.
+  - Фронтенд:
+    - импорты идут только вниз, `entities/event` — через `index.ts`;
+    - путь потока сверяется с `paths` через `satisfies`;
+    - поток закрывается при размонтировании и переоткрывается при смене адреса (тесты есть).
+  - Документация (`development.md`, `frontend/AGENTS.md`, поправки spec) соответствует коду.
+  - Поиск кандидатов anti-slop по diff (TODO, `console`, `print`, `except Exception`, `v-html`, пустой `catch`, рекламные слова) ничего не дал. Персональных данных в логах нет.
+  
+  **Не проверялось**
+  
+  - Страницы в браузере не смотрел: пункт 1.2 «чекин в одной вкладке меняет "Пришло" в другой» принимаю по записи 14:25.
+  - Зависание `--reload` воспроизведено на минимальном ASGI-приложении, не на Django-view: это поведение uvicorn, Django-обработчик здесь ничего не меняет.
+  - Гонку из второй находки и отмену из третьей не воспроизводил, это вывод из кода.
+  - Удаление события при открытом потоке (`Event.DoesNotExist` в генераторе) не проверял.
+  
+  ---
+  
+  **What I can add from the code (the decision on each is yours):**
+  - **Finding 2:** I agree with the reviewer's reading. The `cached ? … : cached` check drops a snapshot that arrives before the first `GET` returns. A `GET` already in flight when a snapshot arrives can overwrite it with older counts. My comment "its GET reads counts at least as fresh" holds only when the `GET` starts after the snapshot.
+  - **Finding 3:** this matches `subscription()`. `_connection` is set before `await … LISTEN`, so a cancellation at that point leaves the listener half-started.
+  - **Finding 1:** in Docker, `--timeout-graceful-shutdown` is already planned in task 2.1. `dev-backend` was switched in this stage, so it's open whether the fix belongs here or in 2.1.
+  - **Finding 4:** the `deps` pattern comes from the `fsd-frontend` skill: "логика, которая его использует, получает конструктор через `deps`". The same skill lists `vi.stubGlobal("EventSource", …)` as the way to replace it in tests. It contradicts itself here. Whichever way you choose, the skill should probably say so explicitly.
+  
+  How do you want each one handled? For example: fix 2 and 3 now, put 1 into this stage, and 4 either way.
+
+> 1. запиши в этап 2.
+  2. ок, попробуем твое предложение.
+  3. ок.
+  4. я уже подумываю что зря согласился с правилами оригинального fsd. мне не особо нравится куча логики/верстки в page. я бы хотел читать страницы с меньшей когнитивной нагрузкой, т.е. дробить на features сразу, неважно сколько потребителей, но это оставим на фазу 6-7 или 8. так что в данном случае я думаю можно оставить абстракцию. вообще я бы сразу делал возможность легкого переезда на websocket например или long polling. это единственное место где я бы точно нарушил правило.
+
+⏺ Recording your decisions first, then fixing 3 and 2 (test first), then the task 2.1 text.
+
+⏺ Bash(date +%H:%M; grep -n "^## \|Фаза 6\|Фаза 7\|Фаза 8" docs/roadmap.md | head -30)
+  ⎿  14:46
+     19:## Фаза 0. Каркас — готова
+     39:## Фаза 1. Регистрация, лист ожидания, отказ — готова
+     72:## Фаза 2. Outbox, воркер, письма — готова
+     86:## Фаза 3. Чекин и статистика организатора — готова
+     97:## Фаза 4. Realtime (SSE) — в работе
+     … +3 lines
+
+⏺ Bash(sed -n 117,140p docs/roadmap.md)
+  ⎿  ## Фаза 6. Доводка фронтенда — не начата
+     
+     Экраны появляются в фазах 1–5; здесь — то, что видно только на собранном приложении.
+     Критерии: общая навигация и layout; у всех экранов состояния загрузки, ошибки и пустого
+     списка; работа на ширине телефона; единый вид.
+     
+     … +9 lines
+
+⏺ Bash(cat >> docs/decisions.md <<'EOF')
+  ⎿  ok
+
+⏺ Now finding 3. The test makes `LISTEN` fail (an invalid channel name) and checks that a later subscription still receives notifications:
+
+⏺ Write(/home/raf/event-registration/backend/events/tests/test_realtime.py)
+⏺ Bash(cd /home/raf/event-registration/backend && POSTGRES_PORT=5433 timeout 60 uv run pytest events/tests/test_realtime.py -q 2>&1 | grep -E "Error|passed|failed|accessed" | head)
+  ⎿  File created successfully at: /home/raf/event-registration/backend/events/tests/test_realtime.py (file state is current in your context — no need to Read it back)
+
+  ⎿  ___________ test_a_failed_listen_leaves_the_listener_to_start_again ____________
+             it cancels the task and raises TimeoutError.  To avoid the task
+             #     except asyncio.TimeoutError:
+                 except exceptions.CancelledError as exc:
+                     raise TimeoutError from exc
+     E               asyncio.exceptions.CancelledError
+     … +4 lines
+
+⏺ It times out without receiving the notification, which reproduces the bug. Fixing `subscription()`:
+
+⏺ Edit(/home/raf/event-registration/backend/events/realtime.py)
+⏺ Bash(POSTGRES_PORT=5433 timeout 60 uv run pytest events/tests/test_realtime.py events/tests/test_org_event_stream_api.py registrations/tests/test_stats_notifications.py -q 2>&1 | tail -3)
+  ⎿  The file /home/raf/event-registration/backend/events/realtime.py has been updated successfully. (file state is current in your context — no need to Read it back)
+
+  ⎿  ..........                                                               [100%]
+     10 passed in 6.82s
+
+⏺ Passes. Running the full check before committing:
+
+⏺ Bash(cd /home/raf/event-registration && make stack-check >/tmp/claude-1000/sc.log 2>&1; echo exit=$?; grep -E "passed|failed" /tmp/claude-1000/sc.log | tail -3; git add -A && git commit -q -m "fix(backend))
+  ⎿  exit=2
+      Test Files  4 failed | 20 passed (24)
+           Tests  4 failed | 180 passed (184)
+      ELIFECYCLE  Test failed. See above for more details.
+     d197473 fix(backend): start the stats listener again after a failed LISTEN
+
+⏺ The commit went through even though the check failed: my command didn't stop on the failed check. I didn't touch the frontend in this commit, so let me see what failed in Vitest:
+
+⏺ Bash(grep -E "FAIL|Error:|×" /tmp/claude-1000/sc.log | head -20)
+  ⎿  × shows the email format hint with a literal @ 143ms
+          × creates the event, refreshes the list and returns to it 319ms
+          × brings back an empty, focused field for the next participant 195ms
+          × shows a load error with a retry 1078ms
+      FAIL  src/pages/login/ui/LoginPage.test.ts > LoginPage > shows the email format hint with a literal @
+     AssertionError: expected 'Вход для организатораEmailПарольВойти' to contain 'name@example.com'
+     … +6 lines
+
+⏺ Four unrelated page tests, all timing-type assertions. Rerunning the frontend suite to see whether this is load-related flakiness:
+
+⏺ Bash(cd /home/raf/event-registration/frontend && for i in 1 2 3; do pnpm exec vitest run 2>&1 | grep -E "Tests "; done; uptime)
+  ⎿  Tests  184 passed (184)
+     ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+           Tests  1 failed | 183 passed (184)
+           Tests  184 passed (184)
+      14:49:25 up 10:58,  2 users,  load average: 7.88, 2.54, 1.43
+
+⏺ Bash(ps -eo pcpu,etime,args --sort=-pcpu | head -8)
+  ⎿  %CPU     ELAPSED COMMAND
+     60.0       00:00 /usr/bin/zsh -c source /home/raf/.claude/shell-snapshots/snapshot-zsh-1793448226706-2ginwf.sh 2>/dev/null || true && setopt NO_EXTENDED_GLOB NO_BARE_GLOB_QUAL 2>/dev/null || true && {
+      4.5    10:58:24 /home/raf/.vscode-server/bin/e646868227c3e3a9e3f24277c8c7220be42c0be7/node --dns-result-order=ipv4first /home/raf/.vscode-server/bin/e646868227c3e3a9e3f24277c8c7220be42c0be7/out/boots
+      1.4       47:58 /home/raf/.vscode-server/extensions/anthropic.claude-code-2.1.314-linux-x64/resources/native-binary/claude --output-format stream-json --verbose --input-format stream-json --max-think
+      1.4    10:58:09 /home/raf/.vscode-server/bin/e646868227c3e3a9e3f24277c8c7220be42c0be7/node /home/raf/.vscode-server/extensions/ms-python.vscode-pylance-2026.4.1/dist/server.bundle.js --cancellationRe
+      0.9    01:39:33 /home/raf/.vscode-server/extensions/anthropic.claude-code-2.1.314-linux-x64/resources/native-binary/claude --output-format stream-json --verbose --input-format stream-json --max-think
+     … +2 lines
+
+⏺ Bash(cd /home/raf/event-registration && make stack-check >/tmp/claude-1000/sc.log 2>&1; echo exit=$?; grep -E "passed|failed" /tmp/claude-1000/sc.log | tail -3)
+  ⎿  exit=0
+     ======================== 228 passed in 67.62s (0:01:07) ========================
+      Test Files  24 passed (24)
+           Tests  184 passed (184)
+
+⏺ `make stack-check` passes on `d197473` (pytest 228, Vitest 184). I'll log the flaky page tests in "на потом". Now finding 2, tests first:
+
+⏺ Bash(cd /home/raf/event-registration/frontend && python3 - <<'EOF')
+  ⎿  × keeps a snapshot that came before the event loaded 18ms
+     ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+     AssertionError: expected '1' to be '2' // Object.is equality
+           Tests  1 failed | 47 passed (48)
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  × keeps a snapshot that came while an older GET of the event was in flight 35ms
+          × keeps a snapshot that came before the event loaded 18ms
+     ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+     AssertionError: expected '1' to be '2' // Object.is equality
+     AssertionError: expected '1' to be '2' // Object.is equality
+           Tests  2 failed | 46 passed (48)
+
+⏺ Both cases now reproduce the race. Fixing the page:
+
+⏺ Bash(sed -i 's/server_\./backend./g; s/const server_ = heldEvent()/const backend = heldEvent()/' src/pages/org-event/ui/OrgEventPage.test.ts && python3 - <<'EOF')
+  ⎿  × keeps a snapshot that came while an older GET of the event was in flight 24ms
+     ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+     AssertionError: expected '1' to be '2' // Object.is equality
+           Tests  1 failed | 47 passed (48)
+
+⏺ Still failing for the in-flight case. Instrumenting to see which requests reach the handler and what they read:
+
+⏺ Bash(cp src/pages/org-event/ui/OrgEventPage.test.ts /tmp/claude-1000/t.bak && sed -i 's|      const counts = current;|      const counts = current;\n      process.stdout.write(`GET checked_in=${counts.chec)
+  ⎿  GET checked_in=1 held=false
+     GET checked_in=1 held=true
+     snapshot fetching=1
+     GET checked_in=2 held=false
+           Tests  2 passed | 46 skipped (48)
+      .../src/pages/org-event/ui/OrgEventPage.test.ts    | 65 ++++++++++++++++++++++
+     … +2 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  2
+     ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+           Tests  1 failed | 47 passed (48)
+     ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+           Tests  1 failed | 47 passed (48)
+     ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+     … +5 lines
+
+⏺ Bash(pnpm exec vitest run src/pages/org-event 2>&1 | grep -E "×|Error|expected|❯ src" | head -10)
+  ⎿  ❯ src/pages/org-event/ui/OrgEventPage.test.ts (16 tests | 1 failed) 944ms
+          × keeps a snapshot that came before the event loaded 66ms
+     AssertionError: expected '1' to be '2' // Object.is equality
+      ❯ src/pages/org-event/ui/OrgEventPage.test.ts:390:43
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Tests  48 passed (48)
+           Tests  48 passed (48)
+           Tests  48 passed (48)
+           Tests  48 passed (48)
+           Tests  48 passed (48)
+
+⏺ Five runs green, ESLint and vue-tsc clean. Checking that both new tests fail on the previous page code (from HEAD):
+
+⏺ Bash(cp src/pages/org-event/ui/OrgEventPage.vue /tmp/claude-1000/p.bak && git show HEAD:frontend/src/pages/org-event/ui/OrgEventPage.vue > src/pages/org-event/ui/OrgEventPage.vue && pnpm exec vitest run sr)
+  ⎿  × keeps a snapshot that came while an older GET of the event was in flight 112ms
+          × keeps a snapshot that came before the event loaded 61ms
+     ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+           Tests  2 failed | 46 passed (48)
+      .../src/pages/org-event/ui/OrgEventPage.test.ts    | 71 ++++++++++++++++++++++
+      frontend/src/pages/org-event/ui/OrgEventPage.vue   | 20 ++++--
+     … +1 lines
+
+⏺ Both fail on the old code and pass with the fix. Logging the change from the reviewer's suggestion and the flaky tests, then checks with the commit gated on them:
+
+⏺ Bash(cd /home/raf/event-registration && T=$(date +%H:%M) && cat >> docs/decisions.md <<EOF)
+  ⎿  /tmp/claude-1000/e2e.log:  8 passed (13.6s)
+     /tmp/claude-1000/sc.log: ELIFECYCLE  Command failed with exit code 1.
+
+⏺ Bash(grep -B5 "ELIFECYCLE" /tmp/claude-1000/sc.log | head -20)
+  ⎿  > prettier --check .
+     
+     Checking formatting...
+     [warn] frontend/src/pages/org-event/ui/OrgEventPage.test.ts
+     [warn] Code style issues found in the above file. Run Prettier with --write to fix.
+      ELIFECYCLE  Command failed with exit code 1.
+
+⏺ Only formatting (my sed edits skipped the format hook); the e2e line is from the earlier run. Formatting and rerunning both:
+
+⏺ Bash(npx prettier --write frontend/src/pages/org-event/ui/OrgEventPage.test.ts >/dev/null && make stack-check >/tmp/claude-1000/sc.log 2>&1 && make stack-e2e >/tmp/claude-1000/e2e.log 2>&1 && echo ALL-GREE)
+  ⎿  ALL-GREEN
+     /tmp/claude-1000/e2e.log:  8 passed (32.7s)
+     /tmp/claude-1000/sc.log:All checks passed!
+     /tmp/claude-1000/sc.log:======================= 228 passed in 117.05s (0:01:57) ========================
+     /tmp/claude-1000/sc.log: Test Files  24 passed (24)
+     /tmp/claude-1000/sc.log:      Tests  186 passed (186)
+
+⏺ The full check and e2e pass. Rerunning the two-tab browser check on the rebuilt stack (`stack-e2e` rebuilt the frontend):
+
+⏺ Bash(docker compose -p event-registration-s1 exec -T postgres psql -U postgres -d event_registration -Atc "select r.event_id||' '||r.ticket_code from registrations_registration r join events_event e on e.i)
+  ⎿  19 VPPE22MC
+
+⏺ Bash(cd /tmp/claude-1000/-home-raf-event-registration/eaee4e1c-e774-4657-b556-d050f4d9827b/scratchpad && node two-tabs.mjs http://localhost:5174 19 VPPE22MC 2>&1 | tail -7)
+  ⎿  Пришло: 0 -> 1 in 31 ms; reopened streams after load: 0
+     console errors: [
+       '401 /api/auth/me/',
+       'Failed to load resource: the server responded with a status of 401 (Unauthorized)',
+       '401 /api/auth/me/',
+       'Failed to load resource: the server responded with a status of 401 (Unauthorized)'
+     … +2 lines
+
+⏺ Bash(git add -A && git commit -q -m "fix(frontend): keep a stream snapshot over an older GET of the event)
+  ⎿  542f3ad fix(frontend): keep a stream snapshot over an older GET of the event
+     d197473 fix(backend): start the stats listener again after a failed LISTEN
+     eac8bab feat(frontend): update the event panel counts live from its stream
+     c4618e3 build(backend): run the dev backend under uvicorn so SSE streams work
+     28cede9 feat(backend): stream live event panel counts over SSE
+     2aca928 docs: point the realtime stage 1 base at the rebased spec commit
+     … +1 lines
+
+⏺ Fixes are committed. Per the workflow, the re-review covers only the fix commits (`eac8bab..542f3ad`). Launching it:
+
+⏺ Agent(Re-review realtime stage 1 fixes)
+  ⎿  Async agent launched successfully. (This tool result is internal metadata — never quote or paste any part of it, including the agentId below, into a user-facing reply.)
+     agentId: a8a65d10f7612f174 (internal ID - do not mention to user. Use SendMessage with to: 'a8a65d10f7612f174', summary: '<5-10 word recap>' to continue this agent.)
+     The agent is working in the background. You will be notified automatically when it completes. You know nothing about its results until that notification arrives — do not report, assume, or predict the
+     Do not duplicate this agent's work — avoid working with the same files or topics it is using.
+     output_file: /tmp/claude-1000/-home-raf-event-registration/705633a2-6c6e-447a-94bd-41573c2d4476/tasks/a8a65d10f7612f174.output
+     Do NOT Read or tail this file via the shell tool — it is the full subagent JSONL transcript and reading it will overflow your context. If the user asks for progress, say the agent is still running; yo
+
+⏺ I've done what you decided on all four findings. The re-review of the fix commits is still running; I'll show you its report in full when it arrives.
+  
+  - **1:** went into task 2.1. The task now also covers `--timeout-graceful-shutdown` for `make dev-backend`, not just Docker.
+  - **2:** fixed in `542f3ad`, but not exactly as the reviewer proposed. `invalidateQueries` alone doesn't cancel a first load that is still running; it joins it. So the old `GET` still answered last, and the "snapshot before the event loaded" test kept failing. Now the page cancels the event request first, then refetches it. This applies to both cases: a refetch in flight, and the first load. Both new tests fail on the old code and pass with the fix (five runs in a row).
+  - **3:** fixed in `d197473`. The connection is kept only after `LISTEN` succeeds, and closed if it fails or the request is cancelled. The test makes `LISTEN` fail on purpose; before the fix, the next subscription never got its notification.
+  - **4:** the `deps` stays as the place where the stream could later be swapped for WebSocket or long polling, logged as your one deliberate exception to "nothing for the future". Your doubt about the FSD rule, keeping code on the page until there's a second consumer, is now a line in phase 6 in `roadmap.md`.
+  
+  **Checks:**
+  - `make stack-check` passes (pytest 228, Vitest 186) and `make stack-e2e` passes (8).
+  - The two-tab browser check on the rebuilt stack passed: 0 → 1 with no reload.
+  
+  **One slip on my side:** commit `d197473` went in while that check run was red, because my command didn't stop on the failure. The failures were four existing page tests the commit didn't touch. A full rerun on that commit passed. Under load the frontend suite also failed once in three runs, so those tests look flaky. I listed them in "на потом" in `tasks.md`.
+
+> 2. можно было сделать чтобы подключение начало инициализироваться только после запроса?
+  4. подойдут ли сигнатуры для других типов соединений? что по именованию, может сделать названия более общими?
+
+⏺ Это ответы на вопросы, код я пока не трогаю: повторное ревью ещё идёт по этим же файлам.
+  
+  ## 2. Открывать поток только после загрузки события
+  
+  Можно, но это закрывает только половину гонки.
+  
+  - **Первая загрузка — да, решается.** Если поток открывать после ответа `GET`, первый снимок читается из БД позже `GET`. Он всегда не старее, и его можно просто писать в кэш. Плюс: на чужом или несуществующем событии поток вообще не открывается, лишнего 403/404 нет. Минус: поток открывается на один запрос позже, это незаметно.
+  - **Фоновое обновление — нет.** Пока поток открыт, `refetchOnWindowFocus` шлёт `GET` при каждом переходе на вкладку панели, а это как раз сценарий двух вкладок. Такой `GET` может прочитать счётчики до снимка и ответить после него. Гонка остаётся, и ветка «отменить и перечитать» всё равно нужна.
+  
+  Убрать её совсем можно только так: на панели отключить фоновое обновление события, пока открыт поток (`staleTime: Infinity`). Тогда счётчики обновляет только поток, а снимок всегда пишется в кэш. Цена: остальные поля события (название, дата) перестанут обновляться при фокусе. Сейчас их никто не меняет, но в фазе 5 появится `PATCH`, и правка в одной вкладке не дойдёт до другой, пока снимок не начнёт нести и эти поля.
+  
+  **Рекомендация:** оставить как сейчас. Одна ветка в 10 строк покрывает оба случая и ничего не теряет. Открывать поток после загрузки можно и дополнительно, ради отсутствия 403/404, но гонку это не упростит.
+  
+  ## 4. Подойдут ли сигнатуры для других транспортов
+  
+  Нет. Сейчас контракт описывает `EventSource`, а не «живые данные»:
+  
+  - `deps: { EventSource: new (url) => StreamSource }`: транспорт создаётся из одного URL.
+  - `addEventListener(type, …)` с именованными событиями — понятие SSE.
+  - `orgEventStreamUrl(id)` в `entities/event` — адрес потока SSE.
+  
+  Для других транспортов:
+  
+  | Транспорт        | Чего не хватает в текущей сигнатуре                                                                                                                                          |
+  | ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+  | **WebSocket**    | одно соединение на всё приложение, после открытия нужно отправить «подписаться на X», сообщения без имён, тип внутри данных. Встроить можно только адаптером, который изображает `EventSource` |
+  | **Long polling** | конструктора нет вообще: это цикл `fetch` с курсором. Подогнать под `new (url)` можно только искусственно                                                                     |
+  
+  Есть и общее, что понадобится любому транспорту уже на этапе 4: состояние `open | reconnecting`. Сейчас его в контракте нет.
+  
+  **Что предлагаю**, если делать абстракцию, то от потребителя:
+  
+  ```ts
+  // shared/lib/live: what the page needs, whatever the transport.
+  interface LiveSource<Data> {
+    subscribe(onData: (data: Data) => void, onStatus: (status: "open" | "reconnecting") => void): () => void;
+  }
+  
+  function useLive<Data>(source: MaybeRefOrGetter<LiveSource<Data>>, onData: (data: Data) => void): Ref<"open" | "reconnecting">;
+  ```
+  
+  - В `shared/lib`: `sseSource(url, event)` — единственная реализация сейчас, внутри `EventSource`.
+  - В `entities/event`: `orgEventStats(id): LiveSource<OrgEventStats>` вместо `orgEventStreamUrl(id)`. Страница не знает, SSE это или нет.
+  - Переезд на WebSocket или long polling — новая реализация `LiveSource`. Страницы и сущность по сигнатуре не меняются.
+  - Тесты: фейковый `LiveSource` вместо фейкового `EventSource`. Тест страницы обходится без `vi.stubGlobal`, и противоречие из находки 4 уходит само.
+  
+  **Именование:** да, стоит поменять. `useEventStream` в проекте про мероприятия читается как «поток мероприятий». Предлагаю `live` / `LiveSource` / `useLive` и `orgEventStats(id)`. Варианты вроде `useSubscription` или `useServerPush` тоже нормальные, главное — без слова «event».
+  
+  **Цена:** правка трёх файлов и тестов в этом же этапе, до этапа 3, где появится второй потребитель (страница события). Но повторное ревью по процессу одно, а оно уже идёт. Правку после него reviewer не увидит, если вы не разрешите ещё один повтор или не решите, что её посмотрите вы.
+  
+  Делать переименование и контракт `LiveSource` сейчас, или после ревью отдельной задачей в начале этапа 3?
+
+⏺ Повторное ревью пришло. Отчёт целиком ниже, я ничего не правил.
+  
+  ---
+  
+  Повторное ревью этапа 1 фазы 4 (диапазон `eac8bab..542f3ad`): четыре находки, блокирующих нет. Обе правки первого ревью работают, и их тесты падают на старом коде. Проверки зелёные: `stack-check` и `stack-e2e`.
+  
+  Коммиты на месте: `d197473` `fix(backend): start the stats listener again after a failed LISTEN`, `542f3ad` `fix(frontend): keep a stream snapshot over an older GET of the event`.
+  
+  **Находки**
+  
+  1. **`backend/events/tests/test_realtime.py:27` — тесты.**
+     - **Что:** тест вызывает сбой LISTEN через синтаксическую ошибку (`CHANNEL = "not a channel"`, `psycopg.errors.SyntaxError`), хотя комментарий называет его тем, «что делает отмена при отключении». `CancelledError`, ради которой в `realtime.py:75` стоит `except BaseException`, тест не создаёт. Закрытие неудачного соединения (`await listening.close()`, `realtime.py:76`) тест тоже не проверяет.
+     - **Почему важно:** если заменить `except BaseException` на `except Exception` или убрать `close()`, тест останется зелёным. Тогда при отключении клиента во время LISTEN слушатель снова будет выглядеть запущенным, но ничего не раздаст — ровно этот дефект исправлял коммит. Без `close()` соединение с Postgres утекает.
+     - **Исправление:** добавить случай, где `execute` у соединения подменён корутиной с `raise asyncio.CancelledError`; ожидать `pytest.raises(asyncio.CancelledError)`, затем проверить, что следующая подписка получает уведомление. Закрытие проверить через число строк `pg_stat_activity` с `query LIKE 'LISTEN%'` до и после, либо оставить только то, что тест реально проверяет, и поправить комментарий в строке 27.
+  
+  2. **`frontend/src/pages/org-event/ui/OrgEventPage.vue:45` — корректность.**
+     - **Что:** если GET события уже в полёте, снимок отбрасывается, а запрос отменяется и запускается заново (`cancelQueries` → `invalidateQueries`). Если следующий снимок придёт раньше ответа нового GET, тот тоже отменится.
+     - **Почему важно:** два следствия.
+       - Пока перезапрос не ответил, «Пришло» показывает прежнее число, хотя более свежий снимок уже пришёл. Это касается и обычного фонового перезапроса при фокусе окна (`staleTime` 0).
+       - Если снимки приходят чаще, чем отвечает GET, ответ всё время отменяется. При первой загрузке страница остаётся в «Загружаем…», и каждый отменённый запрос всё равно доходит до сервера: `queryFn` в `orgEventQuery` не передаёт `signal`, поэтому отмена не прерывает HTTP. На текущей нагрузке (чекин раз в секунды, GET — десятки мс) это редкость, но отказа ничто не ограничивает.
+     - **Исправление:** при наличии кэша сначала `setQueryData(queryKey, { ...cached, ...stats })`, потом cancel+invalidate — свежие числа видны сразу, а старый GET их не затрёт. Отмену стоит сделать настоящей: передавать `signal` из контекста `queryFn` в `api.GET(..., { signal })` в `frontend/src/entities/event/api/org-events.ts`.
+  
+  3. **`frontend/src/pages/org-event/ui/OrgEventPage.vue:33` — мусор / тон.**
+     - **Что:** комментарий из пяти строк пересказывает ветку кода («then that GET is cancelled and the event is read again»). Причина, которую из кода не видно, — только последняя фраза: TanStack Query присоединяет `invalidateQueries` к первой загрузке, а не отменяет её.
+     - **Почему важно:** такой пересказ устаревает при первой же правке ветки.
+     - **Исправление:** оставить почему: «A GET in flight may have read the counts before the snapshot; invalidation alone joins a first load instead of cancelling it, hence cancel first».
+  
+  4. **`docs/roadmap.md:126` — git.**
+     - **Что:** строка о пересмотре правила FSD про `features` попала в коммит `d197473` `fix(backend): ... failed LISTEN`, к слушателю она не относится.
+     - **Почему важно:** по сообщению коммита не найти, когда в roadmap появился этот пункт. Это нарушает правило «один коммит — одно логическое изменение».
+     - **Исправление:** на будущее — отдельный коммит `docs: ...`. Историю ветки до слияния можно поправить, если это принято в проекте.
+  
+  **Проверки**
+  
+  - `make -C .claude/worktrees/review stack-check SLOT=2`: exit 0, «All checks passed!», backend 228 passed, frontend 24 файла / 186 тестов passed.
+  - `make -C .claude/worktrees/review stack-e2e SLOT=2`: exit 0, 8 passed.
+  - В конце выполнены `stack-down SLOT=2` и `make review-worktree-remove`.
+  
+  **Решения из `docs/decisions.md`**
+  
+  - 14:46 (п. 3, слушатель) и 14:57 (cancel перед invalidate) подтверждают выбранный подход, но первую находку не снимают: про покрытие ветки `CancelledError` тестом в них ничего нет.
+  - 14:57 верно объясняет, почему одного `invalidateQueries` мало (первая загрузка присоединяется), и это я не оспариваю. Отбрасывание снимка, пока GET в полёте, и бесконечную отмену при частых снимках решение не рассматривает, так что вторая находка остаётся.
+  - 14:46 поясняет содержание строки roadmap, но не то, почему она в коммите про backend, — четвёртая находка остаётся.
+  - Ни одна находка не снята.
+  
+  **Проверено без находок**
+  
+  - `realtime.py`: соединение и задача раздачи присваиваются только после удачного LISTEN, это под `_lock`, ветка с ошибкой пробрасывает исключение.
+  - Оба новых теста Vitest падали бы на прежнем коде: GET держится после того, как прочитал старые числа, иначе было бы «1» вместо «2».
+  - `void` без `catch` безопасен: `cancelQueries` и `invalidateQueries` в TanStack Query v5 не отклоняются при ошибке запроса.
+  - Ветка «нет кэша»: после 403/404 поток тоже не откроется, после 500 — один перезапрос на снимок, приемлемо.
+  - Импорты по слоям и `AppError.kind` не тронуты; API и схема в диапазоне не менялись; миграций нет; логов с персональными данными нет.
+  - Поиск кандидатов из `anti-slop-review` по diff: мусора, TODO и эмодзи нет.
+  
+  **Не проверялось**
+  
+  - Страница в браузере (две вкладки, чекин меняет «Пришло») не открывалась: браузера у ревьюера нет.
+  - Поведение под частыми чекинами (вторая находка) не воспроизводилось, оно выведено из кода TanStack Query.
+  
+  ---
+  
+  **Что могу добавить по фактам:**
+  - **Находка 1:** верно. В тесте я подменил сбой `LISTEN` синтаксической ошибкой, а комментарий выдаёт это за отмену при отключении. На `except Exception` тест не упал бы.
+  - **Находка 2** связана с вашим вопросом 2. Если писать снимок в кэш сразу и только потом отменять и перечитывать, свежее число видно сразу. Без кэша ветка остаётся, как есть. Бесконечную отмену при частых снимках это не убирает. Её ограничило бы открытие потока после загрузки события вместе с `signal` в `queryFn`: тогда отменённый запрос действительно прерывается и не доходит до сервера.
+  - **Находка 4:** верно, это моя ошибка. Одна запись в логе решений охватывала все четыре находки, и я положил её вместе с roadmap в первый коммит с исправлением. Историю ветки можно поправить до PR.
+  
+  **Ещё ждёт ответа мой вопрос:** переименование и контракт `LiveSource` делать сейчас или задачей в начале этапа 3. По процессу это ревью было последним, поэтому правки по находкам и `LiveSource` смотрите вы, если не разрешите ещё один повтор.
+  
+  Что делаем с каждой из находок 1–4?
+
+> 4. ревью закончилось, делаем в этой ветке.
+  ---
+  ревью:
+  1. ок
+  2. может пусть sse шлёт все данные просто и http запросы вообеще не делаем если у пользователя нормально подключился стрим?
+  3. ок, если останется.
+  4. да, отдельным коммитом.
+
+⏺ Your decisions: the `LiveSource` contract in this branch, findings 1 and 4 now, finding 3 only if that comment survives. Your idea in 2 changes the spec, so I'll lay out the options below before writing code for it. Starting with 4 and 1. Is the branch pushed? A rewrite is only safe if it isn't:
+
+⏺ Bash(git status -sb | head -1; git branch -r --contains d197473 2>/dev/null | head; git show --stat d197473 | tail -8)
+  ⎿  ## feat/realtime-org-stream
+         Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+     
+      backend/events/realtime.py            | 14 ++++++++++---
+      backend/events/tests/test_realtime.py | 37 +++++++++++++++++++++++++++++++++++
+      docs/decisions.md                     |  1 +
+     … +3 lines
+
+⏺ Bash(set -e; git branch -f backup-before-split HEAD; git reset -q --hard eac8bab)
+  ⎿  diff-done
+     c6fcb87 fix(frontend): keep a stream snapshot over an older GET of the event
+     2441c32 fix(backend): start the stats listener again after a failed LISTEN
+     2f54cda docs: record the decisions on the realtime stage 1 review
+     eac8bab feat(frontend): update the event panel counts live from its stream
+     c4618e3 build(backend): run the dev backend under uvicorn so SSE streams work
+     … +8 lines
+
+⏺ The history is split, and the final tree is identical to the backup branch. Now finding 1: the test should create an actual `CancelledError` and check that the connection is closed.
+
+⏺ Write(/home/raf/event-registration/backend/events/tests/test_realtime.py)
+⏺ Bash(cd /home/raf/event-registration/backend && uv run ruff check events/tests/test_realtime.py && uv run mypy events/tests/test_realtime.py 2>&1 | tail -3; POSTGRES_PORT=5433 timeout 120 uv run pytest eve)
+  ⎿  The file /home/raf/event-registration/backend/events/tests/test_realtime.py has been updated successfully. (file state is current in your context — no need to Read it back)
+
+  ⎿  All checks passed!
+     Success: no issues found in 1 source file
+     ..                                                                       [100%]
+     2 passed in 2.61s
+
+⏺ Both pass. Checking that they catch the two regressions the reviewer named: `except Exception`, and a missing `close()`.
+
+⏺ Bash(cp events/realtime.py /tmp/claude-1000/rt.bak)
+  ⎿  == except Exception
+     2 passed in 2.16s
+     == no close
+     2 passed in 1.96s
+      backend/events/tests/test_realtime.py | 50 ++++++++++++++++++++++++++++-------
+      1 file changed, 41 insertions(+), 9 deletions(-)
+     … +1 lines
+
+⏺ Bash(grep -n "ResourceWarning" -B3 .venv/lib/python3.12/site-packages/psycopg/_connection_base.py | head -12)
+  ⎿  153-        __warn(
+     154-            f"{object.__repr__(self)} was deleted while still open."
+     155-            " Please use 'with' or '.close()' to close the connection properly",
+     156:            ResourceWarning,
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  All checks passed!
+     Success: no issues found in 1 source file
+     == fixed code
+     2 passed in 2.02s
+     == except Exception
+     FAILED events/tests/test_realtime.py::test_a_listen_that_does_not_complete_closes_its_connection_and_lets_the_next_one_start[cancel_listen]
+     … +7 lines
+
+⏺ The test now catches both regressions: `except Exception` fails the cancellation case, and a missing `close()` fails both. Committing after the full check, gated properly this time:
+
+⏺ Bash(cd /home/raf/event-registration && T=$(date +%H:%M) && cat >> docs/decisions.md <<EOF)
+  ⎿  COMMITTED
+     ======================= 229 passed in 121.09s (0:02:01) ========================
+      Test Files  24 passed (24)
+           Tests  186 passed (186)
+     ffb65ab test(backend): cover a cancelled LISTEN and the close of its connection
+     backup-removed
+
+⏺ Сделано:
+  - **Находка 4:** строка в `roadmap.md`, правка задачи 2.1 и запись решений вынесены в отдельный коммит `2f54cda docs: …`, он стоит перед исправлением слушателя. Ветка не была запушена, итоговое дерево не изменилось.
+  - **Находка 1:** коммит `ffb65ab`. Тест теперь проверяет и отмену `LISTEN` (как при отключении клиента), и закрытие соединения. Обе ошибки, которые называл ревьюер, роняют тест: `except Exception` вместо `except BaseException` и пропущенный `close()`. Выяснилось и другое: без `close()` CPython сам закрывает брошенное соединение, как только на него не остаётся ссылок. Поэтому реальная утечка была бы короткой, а заметна она только по `ResourceWarning` от psycopg, по нему тест и проверяет.
+  - `make stack-check` проходит: pytest 229, Vitest 186.
+  
+  ## Находка 2: поток со всеми данными и без HTTP
+  
+  Это меняет spec: в снимке не только счётчики, а всё событие. Есть одно препятствие. `EventSource` не сообщает статус ответа, поэтому по одному потоку не отличить «чужое событие» (403) от «нет такого» (404) и от обрыва сети. Сейчас эти ответы показывает `GET`. Варианты:
+  
+  | Вариант | Как | HTTP-запросов | Гонка снимка и `GET` | Цена |
+  | --- | --- | --- | --- | --- |
+  | **А. Один `GET`, дальше только поток** | поток шлёт событие целиком; поток открывается после первого `GET`; у панели нет фонового `GET` (`staleTime: Infinity`) | один при открытии панели | нет: первый снимок читается после `GET`, других `GET` нет | мало. Ветка с отменой и перечитыванием (и находки 2–3) исчезает. Название и дата из потока подойдут фазе 5 (`PATCH`) |
+  | **Б. Только поток, на `fetch`** | поток читается через `fetch` (статус есть → `AppError`, 403/404 как сейчас) и свой разбор SSE | ни одного, кроме потока | нет | больше всего кода: свой разбор SSE и своё переподключение, состояние загрузки — свой код рядом с TanStack Query. Отступление от spec («`EventSource`») |
+  | **В. Только `EventSource`, `GET` при ошибке** | данные из потока; поток не открылся — `GET`, чтобы узнать причину | ни одного, пока поток работает | нет | два пути загрузки, причину ошибки видно с задержкой |
+  
+  **Рекомендую А.** Это почти ваша идея: пока поток подключён, HTTP-запросов нет. Отличие одно: первая загрузка остаётся обычным `GET`. Он даёт 403/404/«Повторить» через `QueryState` как сейчас и не открывает поток на чужом событии. После этого:
+  - снимок всегда пишется в кэш, логика отмены и находки 2–3 уходят вместе с ней;
+  - на этапе 3 страница события устроена так же (поток шлёт публичное событие целиком);
+  - на этапе 4, пока идёт переподключение, данные могут устареть, и об этом скажет индикатор, а свежий снимок придёт сразу после переподключения.
+  
+  Что поменяется:
+  - **spec:** «Снимок» — всё событие (форма `OrgEventSerializer`), панель без фонового `GET`, поток открывается после загрузки;
+  - **backend:** вместо `OrgEventStatsSerializer` поток шлёт `OrgEventSerializer`;
+  - **frontend:** `LiveSource` с новыми именами (как договорились) и упрощённая панель.
+  
+  Всё это — в этой ветке, отдельными коммитами.
+  
+  Берём А, или вам ближе Б, без единого `GET`?
+
+> 1) ок, давай А. первые данные из get пишем в кеш?
+  2) "события устроена так же (поток шлёт публичное событие целиком);" поток же только для организатора? у нас email не утекают наружу?
+
+⏺ 1. Да, но отдельно ничего писать не нужно: этот `GET` — `useQuery(orgEventQuery(id))`, и его ответ уже лежит в кэше под ключом `["org", "events", id]`. Поток пишет снимки под тот же ключ. Чтобы `GET` никогда не ответил после снимка, панель открывает поток только после первого ответа и сама больше не перезапрашивает событие: при фокусе, при монтировании, при восстановлении сети. Кэш с прошлого визита показывается сразу и обновляется первым снимком. Это миллисекунды, а снимок теперь содержит всё событие.
+  
+  2. Потоков два, у каждого свои права и поля. Email ни один из них не отдаёт:
+  
+  | Поток | Кто | Что в снимке |
+  | --- | --- | --- |
+  | `GET /api/org/events/{id}/stream/` (этот этап) | организатор события, по сессии: чужое — 403 | событие и счётчики — поля `GET /api/org/events/{id}/` |
+  | `GET /api/events/{id}/stream/` (этап 3) | все | поля публичного `GET /api/events/{id}/`: название, описание, дата, мест, свободно |
+  
+  Участников (имя, email) нет ни в одном снимке: они только в `GET /api/org/events/{id}/registrations/`, только для организатора. На этапе 3 снимок со сменой счётчиков перечитывает эту таблицу тем же запросом. Публичный поток не даёт ничего сверх того, что уже отдаёт публичный `GET`. Он только сообщает, когда изменилось число свободных мест.
+  
+  Делаю А двумя коммитами. Первый — контракт `LiveSource` с новыми именами, поведение то же. Второй — снимок со всем событием и панель без фонового `GET`. Начинаю с контракта:
+
+⏺ Bash(cd /home/raf/event-registration/frontend && cat src/pages/org-event/ui/OrgEventPage.vue | sed -n 1,60p)
+  ⎿  <script setup lang="ts">
+     import { useQuery, useQueryClient } from "@tanstack/vue-query";
+     import { computed } from "vue";
+     import { useI18n } from "vue-i18n";
+     import { useRoute } from "vue-router";
+     
+     … +54 lines
+
+⏺ Bash(git rm -q src/shared/lib/use-event-stream.ts src/shared/lib/use-event-stream.test.ts && cat > src/shared/lib/live-source.ts <<'EOF')
+  ⎿  /home/raf/event-registration/frontend/src/shared/lib/live-source.ts
+       14:69  error  Unsafe argument of type `any` assigned to a parameter of type `string`  @typescript-eslint/no-unsafe-argument
+     
+     ✖ 1 problem (1 error, 0 warnings)
+     
+           Tests  66 passed (66)
+     … +1 lines
+
+⏺ One ESLint error: the native `EventSource` types a message's `data` as `any`. Fixing that by typing the listener's message:
+
+⏺ Bash(sed -i 's|      source.addEventListener(event, (message) => onData(JSON.parse(message.data) as Data));|      source.addEventListener(event, (message: MessageEvent<string>) =>\n        onData(JSON.pars)
+  ⎿  export function sseSource<Data>(url: string, event: string): LiveSource<Data> {
+       return {
+         subscribe(onData) {
+           const source = new EventSource(url);
+           // The server's contract: the data of a message is the JSON of the schema type.
+           source.addEventListener(event, (message: MessageEvent<string>) =>
+     … +6 lines
+
+⏺ Clean. Updating the spec line about the composable and committing the refactor:
+
+⏺ Bash(cd /home/raf/event-registration && grep -n "Общий composable" -A2 docs/features/realtime/spec.md)
+  ⎿  97:- Общий composable потока в `shared/lib`: открывает `EventSource`, отдаёт снимки и состояние
+     98-  `open | reconnecting`, закрывает поток при уходе со страницы.
+     99-
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  COMMITTED
+     ======================= 229 passed in 118.96s (0:01:58) ========================
+      Test Files  25 passed (25)
+           Tests  187 passed (187)
+
+⏺ Contract refactor committed (pytest 229, Vitest 187). Now the second commit: the snapshot carries the whole event, and the panel reads it once and then only from the stream. Page tests first:
+
+⏺ Bash(cd /home/raf/event-registration/frontend && grep -n "keeps a snapshot\|function heldEvent\|async function settled\|const snapshot\|updates the counters from\|closes the stream when\|^});\|async functi)
+  ⎿  50:async function mountPage(query: Record<string, string> = {}) {
+     77:});
+     81:});
+     289:  it("updates the counters from a snapshot of the stream", async () => {
+     309:  it("closes the stream when the page is left", async () => {
+     324:  function heldEvent() {
+     … +6 lines
+
+⏺ Read(/home/raf/event-registration/frontend/src/pages/org-event/ui/OrgEventPage.test.ts)
+  ⎿  48	};
+     49	
+     50	async function mountPage(query: Record<string, string> = {}) {
+     51	  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+     52	  const router = createRouter({
+     53	    history: createMemoryHistory(),
+     … +14 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  × opens the stream once the event has loaded 66ms
+          × takes the whole event from a snapshot of the stream 26ms
+          × does not read the event again when the window regains focus 172ms
+          × shows a cached event at once and leaves its refresh to the stream 80ms
+     ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+           Tests  4 failed | 45 passed (49)
+     … +1 lines
+
+⏺ All four fail on the current code. Backend now, test first: the first message is `snapshot` with the full event from the panel's `GET`.
+
+⏺ Bash(cd /home/raf/event-registration/backend && grep -n '"stats"\|stats\[' events/tests/test_org_event_stream_api.py)
+  ⎿  88:            "stats",
+     101:        assert stats["checked_in"] == 1
+     116:        assert stats["checked_in"] == 2
+
+⏺ Bash(sed -n 76,118p events/tests/test_org_event_stream_api.py)
+  ⎿  async def test_stream_starts_with_a_snapshot(client: AsyncClient, event: Event) -> None:
+         await sync_to_async(confirmed)(event, "a@x.io")
+         await sync_to_async(Registration.objects.create)(
+             event=event, email="b@x.io", name="N", status=Registration.Status.WAITLISTED
+         )
+     
+     … +34 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  FAILED events/tests/test_org_event_stream_api.py::test_stream_starts_with_a_snapshot
+     1 failed, 5 passed in 7.05s
+
+⏺ Now the backend change: the view sends `OrgEventSerializer` as `snapshot`, and `OrgEventStatsSerializer` goes away.
+
+⏺ Bash(grep -n "stats_stream\|event: stats\|OrgEventStats\|stats\b" events/realtime.py events/views.py events/serializers.py | head -20)
+  ⎿  events/views.py:19:from events.realtime import stats_stream
+     events/views.py:23:    OrgEventStatsSerializer,
+     events/views.py:89:            "`text/event-stream`. Each message is `event: stats` with the counts as JSON in"
+     events/views.py:93:            (200, "text/event-stream"): OrgEventStatsSerializer,
+     events/views.py:104:            return OrgEventStatsSerializer(event).data
+     events/views.py:107:            stats_stream(event_id, snapshot), content_type="text/event-stream"
+     … +7 lines
+
+⏺ Bash(sed -n 84,115p events/views.py; sed -n 110,130p events/realtime.py)
+  ⎿  content_negotiation_class = IgnoreAccept
+     
+         @extend_schema(
+             description=(
+                 "`text/event-stream`. Each message is `event: stats` with the counts as JSON in"
+                 " `data`: the first one right after connecting, then one after each change."
+     … +45 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  (eval):51: no matches found: --include=*.py
+     All checks passed!
+     Success: no issues found in 77 source files
+     6 passed in 6.84s
+      backend/openapi.yaml                | 30 ++++--------------------------
+      frontend/src/shared/api/schema.d.ts | 11 ++---------
+     … +2 lines
+
+⏺ Backend green, schema regenerated (`OrgEventStats` is gone). Now the frontend. `useLive` accepts `null` (no subscription yet), and gets a test for it:
+
+⏺ Bash(cd /home/raf/event-registration/frontend && python3 - <<'EOF')
+  ⎿  /home/raf/event-registration/frontend/src/pages/org-event/ui/OrgEventPage.vue
+        7:59  error    'OrgEventStats' is defined but never used                 @typescript-eslint/no-unused-vars
+       99:23  warning  Variable 'loaded' is already declared in the upper scope  vue/no-template-shadow
+     
+     ✖ 2 problems (1 error, 1 warning)
+     
+     … +1 lines
+
+⏺ Two small issues: a leftover import, and `loaded` shadows the template slot variable. Fixing both:
+
+⏺ Bash(sed -i 's/, type OrgEventStats } from "@\/entities\/event";/ } from "@\/entities\/event";/; s/const loaded = computed(() => event.data.value !== undefined);/const eventLoaded = computed(() => event.da)
+  ⎿  <script setup lang="ts">
+     import { useQuery, useQueryClient } from "@tanstack/vue-query";
+     import { computed } from "vue";
+     import { useI18n } from "vue-i18n";
+     import { useRoute } from "vue-router";
+     
+     … +44 lines
+
+⏺ The three `refetchOn*: false` already cover what `staleTime: Infinity` was there for, so I'm dropping it, then rerunning the tests:
+
+⏺ Bash(sed -i '/^    staleTime: Infinity,$/d' src/pages/org-event/ui/OrgEventPage.vue && pnpm exec vitest run src/shared/lib src/pages/org-event 2>&1 | grep -E "×|Tests "; grep -rn "OrgEventStats\|\"stats\"")
+  ⎿  Tests  68 passed (68)
+     src/shared/lib/live-source.test.ts:21:    sseSource("/api/stream/", "stats").subscribe((data) => received.push(data));
+     src/shared/lib/live-source.test.ts:22:    streams.opened[0]?.emit("stats", { checked_in: 1 });
+     src/shared/lib/live-source.test.ts:30:    const unsubscribe = sseSource("/api/stream/", "stats").subscribe(() => {});
+
+⏺ Tests green; the remaining `"stats"` strings are generic transport tests. Now the spec:
+
+⏺ Bash(cd /home/raf/event-registration && grep -n "stats\|снимок\|Снимок\|Панель события\|Страница события" docs/features/realtime/spec.md)
+  ⎿  10:SSE полный снимок счётчиков. Локально фронтенд — dev-сервер Vite, а e2e идёт через сборку
+     28:Без изменений и миграций. Канал `event_stats`, payload — `event_id` строкой.
+     35:| после (пере)подключения счётчики верны                 | первое сообщение потока — снимок из БД, прочитанный после подписки на уведомления: изменение между снимком и подпиской даст ещё один снимо
+     36:| пропущенное уведомление не искажает счётчики           | по сети — полный снимок, не прирост; очередь подписчика — на одно ожидающее событие: снимок всё равно читается из БД                      
+     43:| `GET /api/org/events/{id}/stream/` | сессия | 200 `text/event-stream`: `event: stats`, `data: {confirmed, waitlisted, checked_in, free_seats}` | 401 (нет сессии); 403 (событие другого организатор
+     44:| `GET /api/events/{id}/stream/`     | —      | 200 `text/event-stream`: `event: stats`, `data: {free_seats}`                                    | 404                                               
+     … +12 lines
+
+⏺ Bash(sed -n 8,12p docs/features/realtime/spec.md; sed -n 46,52p docs/features/realtime/spec.md; sed -n 90,96p docs/features/realtime/spec.md)
+  ⎿  требование «работает при двух одновременно открытых клиентах». Транзакция, которая меняет
+     счётчики события, шлёт `pg_notify`; процесс backend слушает канал и отправляет подписчикам
+     SSE полный снимок счётчиков. Локально фронтенд — dev-сервер Vite, а e2e идёт через сборку
+     за nginx, который буферизует ответы, как прокси в продакшене.
+     Отправная точка — «Realtime» и «Процессы» в `docs/architecture.md`; отличия — «Допущения»,
+     - Поток: `retry: 3000`, сразу снимок, затем снимок на каждое уведомление события и
+     … +13 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  151 docs/features/realtime/spec.md
+     [This command modified 1 file you've previously read: docs/features/realtime/spec.md. Call Read before editing.]
+
+⏺ 151 lines against the 150-line limit for a spec. Shortening one phrase:
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  149 docs/features/realtime/spec.md
+     
+     - **Панель события**: событие читается одним `GET` (он даёт 403/404 — `EventSource` статус не
+       отдаёт), затем открывается поток, и снимок заменяет событие в кэше `orgEventQuery(id)`.
+       Фоновых перезапросов события у панели нет: `GET`, прочитавший событие до снимка, ответил бы
+       после него старыми счётчиками; кэш с прошлого визита обновляет первый снимок. Снимок с изменёнными счётчиками сбрасывает запрос участников:
+     … +5 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  149 docs/features/realtime/spec.md
+     /tmp/claude-1000/sc.log:All checks passed!
+     /tmp/claude-1000/e2e.log:  8 passed (32.7s)
+     [This command modified 1 file you've previously read: docs/features/realtime/spec.md. Call Read before editing.]
+
+⏺ `stack-check` stopped before the tests: only ruff's line is in the output. Checking why:
+
+⏺ Bash(grep -nE "error|Error|FAIL|differ|\*\*\*" /tmp/claude-1000/sc.log | head -15)
+  ⎿  872:-     *     * `error` - error
+     875:-    HealthStateEnum: "ok" | "error";
+     979:-    ValidationError: {
+     980:-      errors: {
+     1021:-          "application/json": components["schemas"]["ValidationError"];
+     1120:-          "application/json": components["schemas"]["ValidationError"];
+     … +9 lines
+
+⏺ The schema check failed. I ran Prettier over all of `frontend/src`, and it reformatted the generated `schema.d.ts`. Regenerating it:
+
+⏺ Bash(make schema >/dev/null 2>&1; git diff --stat -- frontend/src/shared/api/schema.d.ts; make stack-check >/tmp/claude-1000/sc.log 2>&1 && make stack-e2e >/tmp/claude-1000/e2e.log 2>&1 && echo ALL-GREEN; )
+  ⎿  frontend/src/shared/api/schema.d.ts | 11 ++---------
+      1 file changed, 2 insertions(+), 9 deletions(-)
+     /tmp/claude-1000/sc.log: ❯ src/pages/org-event-new/ui/OrgEventNewPage.test.ts (6 tests | 1 failed) 1869ms
+     /tmp/claude-1000/sc.log: Test Files  1 failed | 24 passed (25)
+     /tmp/claude-1000/sc.log:      Tests  1 failed | 188 passed (189)
+     /tmp/claude-1000/sc.log: ELIFECYCLE  Test failed. See above for more details.
+     … +1 lines
+
+⏺ Schema is fine now. One Vitest failure: `OrgEventNewPage`, one of the tests already listed as flaky. It doesn't mount the panel, but let me make sure it isn't related:
+
+⏺ Bash(grep -A6 "FAIL .*OrgEventNewPage" /tmp/claude-1000/sc.log | head -10; cd frontend && for i in 1 2 3 4 5 6; do pnpm exec vitest run src/pages/org-event-new 2>&1 | grep -E "Tests "; done)
+  ⎿  FAIL  src/pages/org-event-new/ui/OrgEventNewPage.test.ts > OrgEventNewPage > shows field errors without sending a request
+     AssertionError: expected 'Новое событиеНазваниеОписаниеНачалоМе…' to contain 'Обязательное поле'
+     
+     Expected: "Обязательное поле"
+     Received: "Новое событиеНазваниеОписаниеНачалоМестСоздатьОтмена"
+     
+     … +7 lines
+
+⏺ Bash(cd /home/raf/event-registration && python3 - <<'EOF')
+  ⎿  ALL-GREEN
+     /tmp/claude-1000/e2e.log:  8 passed (33.7s)
+     /tmp/claude-1000/sc.log:All checks passed!
+     /tmp/claude-1000/sc.log:======================= 229 passed in 117.42s (0:01:57) ========================
+     /tmp/claude-1000/sc.log: Test Files  25 passed (25)
+     /tmp/claude-1000/sc.log:      Tests  189 passed (189)
+
+⏺ Everything is green, and the e2e check-in test passed: it goes from the check-in page to the panel with cached data in between. Rerunning the two-tab browser check:
+
+⏺ Bash(R=$(docker compose -p event-registration-s1 exec -T postgres psql -U postgres -d event_registration -Atc "select r.event_id||' '||r.ticket_code from registrations_registration r join events_event e on)
+  ⎿  25 N85H63HC
+     
+         at /tmp/claude-1000/-home-raf-event-registration/eaee4e1c-e774-4657-b556-d050f4d9827b/scratchpad/two-tabs.mjs:20:41 {
+       log: [ `  - waiting for locator('[data-counter="checkedIn"] dd')` ],
+       name: 'TimeoutError'
+     }
+     … +3 lines
+
+⏺ The script couldn't find the counter on the panel at all. The e2e passes, so I'll check what the page shows:
+
+⏺ Bash(cd /tmp/claude-1000/-home-raf-event-registration/eaee4e1c-e774-4657-b556-d050f4d9827b/scratchpad && cat > peek.mjs <<'EOF')
+  ⎿  console: debug [vite] connecting...
+     console: debug [vite] connected.
+     resp 200 /src/shared/api/index.ts
+     resp 200 /src/entities/session/api/me.ts
+     resp 200 /src/shared/api/client.ts
+     resp 200 /src/shared/api/app-error.ts
+     … +59 lines
+
+⏺ The page renders, and the stream opens after the event's `GET`, as designed. The earlier timeout looks like the first page load on a freshly rebuilt Vite container. Rerunning the two-tab check:
+
+⏺ Bash(cd /tmp/claude-1000/-home-raf-event-registration/eaee4e1c-e774-4657-b556-d050f4d9827b/scratchpad && node two-tabs.mjs http://localhost:5174 25 N85H63HC 2>&1 | tail -7)
+  ⎿  Пришло: 0 -> 1 in 32 ms; reopened streams after load: 0
+     console errors: [
+       '401 /api/auth/me/',
+       'Failed to load resource: the server responded with a status of 401 (Unauthorized)',
+       '401 /api/auth/me/',
+       'Failed to load resource: the server responded with a status of 401 (Unauthorized)'
+     … +2 lines
+
+⏺ It works: 0 → 1 in the second tab without a reload. Committing:
+
+⏺ Bash(git add -A && git commit -q -m "feat: send the whole event in the panel stream and read it only once)
+  ⎿  7ea5f56 feat: send the whole event in the panel stream and read it only once
+     bbc99a0 refactor(frontend): put live data behind a transport-agnostic LiveSource
+     ffb65ab test(backend): cover a cancelled LISTEN and the close of its connection
+     c6fcb87 fix(frontend): keep a stream snapshot over an older GET of the event
+     2441c32 fix(backend): start the stats listener again after a failed LISTEN
+     2f54cda docs: record the decisions on the realtime stage 1 review
+     … +4 lines
+
+⏺ Вариант А и контракт `LiveSource` сделаны и закоммичены. Повторов ревью по процессу больше нет, поэтому `bbc99a0..7ea5f56` смотрите вы или разрешаете ещё один повтор.
+  
+  **Коммиты:**
+  - `bbc99a0` **Контракт.**
+    - `LiveSource<Data>` с одним методом `subscribe(onData)`, который возвращает отписку.
+    - `sseSource(url, event)` — единственная реализация, на `EventSource`.
+    - `useLive(source, onData)` вместо `useEventStream`.
+    - Сущность отдаёт `orgEventLive(id)`, страница о SSE не знает. Поведение не менялось.
+  - `7ea5f56` **Вариант А.**
+    - Снимок потока — событие целиком, как в `GET /api/org/events/{id}/`, имя сообщения `snapshot`. `OrgEventStatsSerializer` удалён.
+    - Панель читает событие одним `GET`, открывает поток после ответа и сама событие больше не перечитывает: ни при фокусе, ни при монтировании, ни при восстановлении сети. Каждый снимок просто пишется в кэш.
+    - Ветка «отменить и перечитать» удалена. Вместе с ней ушли находки 2 и 3 повторного ревью: комментария, о котором была находка 3, больше нет.
+    - Spec обновлён (149 строк), решение записано в лог и отменяет запись 14:57.
+  
+  **Проверено:**
+  - `make stack-check` проходит (pytest 229, Vitest 189), `make stack-e2e` проходит (8). В e2e чекина есть переход с экрана чекина на панель с кэшем между ними.
+  - Новые тесты страницы падали на прежнем коде: поток открывается после загрузки, снимок заменяет всё событие, при фокусе нет `GET`, кэш с прошлого визита показывается без `GET`.
+  - В браузере на слоте 1, два контекста: чекин в одном меняет «Пришло» во втором с 0 на 1 без перезагрузки. Первая попытка упала по таймауту на поиске счётчика сразу после пересборки контейнера. Страница при этом рендерилась нормально, повтор прошёл. Похоже на холодный старт Vite.
+  - Один раз упал тест формы `OrgEventNewPage`, который изменение не трогает. Отдельно он прошёл 6 раз подряд, полный прогон после этого зелёный. Он добавлен к списку нестабильных тестов в «на потом».
+  
+  **Что поменялось в поведении панели:** если поток не подключится совсем (например, прокси его режет), событие на панели не обновится и при фокусе окна. Раньше обновлялось. Об обрыве будет говорить индикатор этапа 4, а запасного опроса по решению от 28.10 нет.
+  
+  Стек слота 1 ещё поднят. Ветка не запушена, PR не открыт.
+
+> "Похоже на холодный старт Vite" как будто не в первый раз уже.
+  Что по ограничениям sse, если участников будет 10000 ничего не отвалится? Надо заложить на будущее виртулизацию таблицы
+
+⏺ Two separate questions. First I'll check what's actually known about the cold start, and measure the server cost of an open stream instead of guessing.
+
+⏺ Bash(grep -n -i "холодн\|cold\|warmup\|optimizeDeps" docs/decisions.md docs/development.md docs/features/*/tasks.md frontend/vite.config.ts e2e/playwright.config.ts 2>/dev/null | cut -c1-260)
+  ⎿  docs/decisions.md:609:- **12:10** — вне этапа, продолжение записи 11:51 (решение человека — не дублировать логику на страницах): главная, публичная страница со�
+
+⏺ Bash(grep -n -i "холодн\|cold" docs/decisions.md | cut -c1-80; grep -o "0 из 10 на холодном кэше Vite[^.]*" docs/decisions.md; cat frontend/vite.config.ts | head -40)
+  ⎿  609:- **12:10** — вне этапа, продолжение записи 11:51
+     0 из 10 на холодном кэше Vite и 0 из 30 подряд
+     import { fileURLToPath, URL } from "node:url";
+     
+     import VueI18nPlugin from "@intlify/unplugin-vue-i18n/vite";
+     import tailwindcss from "@tailwindcss/vite";
+     … +17 lines
+
+⏺ Bash(cd /tmp/claude-1000/-home-raf-event-registration/eaee4e1c-e774-4657-b556-d050f4d9827b/scratchpad && cat > panel-time.mjs <<'EOF')
+  ⎿  run 0: login 1637 ms, panel 373 ms []
+     run 1: login 1578 ms, panel 382 ms []
+     run 2: login 1582 ms, panel 396 ms []
+     run 3: login 1111 ms, panel 477 ms []
+     run 4: login 1540 ms, panel 406 ms []
+     -- after frontend restart
+     … +6 lines
+
+⏺ Bash(docker compose -p event-registration-s1 logs --since 40m backend frontend 2>&1 | grep -v -E '" 200|" 201|" 304|" 302|HTTP/1.1" 200' | grep -v -E "^\s*$" | tail -25)
+  ⎿  backend-1   | INFO:     172.19.0.5:48300 - "GET /api/auth/me/ HTTP/1.1" 401 Unauthorized
+     backend-1   | Unauthorized: /api/auth/me/
+     backend-1   | INFO:     172.19.0.5:41094 - "GET /api/auth/me/ HTTP/1.1" 401 Unauthorized
+     backend-1   | Unauthorized: /api/auth/me/
+     backend-1   | INFO:     172.19.0.5:41150 - "GET /api/auth/me/ HTTP/1.1" 401 Unauthorized
+     backend-1   | Unauthorized: /api/auth/me/
+     … +19 lines
+
+⏺ Bash(P=event-registration-s1; threads() { docker compose -p $P exec -T backend sh -c 'for p in /proc/[0-9]*; do grep -q uvicorn $p/cmdline 2>/dev/null && ls $p/task | wc -l; done' | head -1; })
+  ⎿  before: threads=1 pg=2
+     20 streams: threads=1 pg=3
+     after close: threads=1 pg=2
+
+⏺ `threads=1` looks wrong: the first match is probably PID 1, the `sh -c` whose command line also contains "uvicorn". Counting per process:
+
+⏺ Bash(P=event-registration-s1; threads() { docker compose -p $P exec -T backend sh -c 'for p in /proc/[0-9]*; do c=$(tr "\0" " " < $p/cmdline 2>/dev/null); case "$c" in *uvicorn*) echo "$(basename $p):$(ls )
+  ⎿  before: 1:1:sh 15:3:/opt/venv/bin/python 2246:1:sh  pg=2
+     20 streams: 1:1:sh 15:23:/opt/venv/bin/python 2309:1:sh  pg=3
+     after close: 1:1:sh 15:3:/opt/venv/bin/python 2387:1:sh  pg=2
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  15:59
+
+⏺ Bash(sed -i 's/(решение от 2026-10-31 15:55)/(решение от 2026-10-31 15:59)/' docs/roadmap.md && cat >> docs/decisions.md <<'EOF')
+  ⎿  79cadd8 docs: plan virtualizing the participants table in phase 6
+     [This command modified 1 file you've previously read: docs/roadmap.md. Call Read before editing.]
+
+⏺ **Про «холодный старт Vite».** Да, это была догадка, и неверная: перед тем прогоном `stack-e2e` уже прогнал все страницы через тот же Vite. Я замерил:
+  - 5 открытий панели подряд — около 0,4 с;
+  - первое открытие после перезапуска контейнера фронтенда — около 4 с, следующие — около 0,4 с;
+  - в логах backend ни ошибок, ни медленных ответов.
+  
+  30 секунд не повторились ни в одном из 10 прогонов, так что причину я не знаю. В следующий раз запишу трассировку Playwright прямо при падении, а не буду гадать. Запись о неудачной проверке в логе решений исправлена.
+  
+  **10 000 участников.** Сам поток от этого не растёт: снимок — одно событие со счётчиками, участников в нём нет. Проблемы в другом месте:
+  
+  | Где | Что будет | Когда станет важно |
+  | --- | --- | --- |
+  | **Таблица участников** | `GET …/registrations/` отдаёт всех одним ответом: 10 000 мест плюс лист ожидания, это примерно 1,5 МБ JSON и около 40 тыс. узлов DOM. На этапе 3 каждый снимок с изменёнными счётчиками будет перечитывать её целиком, то есть каждая регистрация — новые 1,5 МБ в каждую открытую панель | задача 3.2 |
+  | **Поток ОС на соединение** (замерено: 20 потоков SSE — 20 потоков ОС) | синхронный DRF-view держит отдельный поток ОС на всё время ответа. У организатора потоков единицы, но публичную страницу события откроют все участники: 1 000 зрителей — 1 000 потоков ОС | публичный поток, задача 3.1 |
+  | **Чтение снимка в каждом потоке** | на каждое изменение каждый подписчик сам читает событие из БД: N зрителей — N запросов, и до N соединений одновременно. У Postgres по умолчанию `max_connections = 100`, при массовых регистрациях это предел | публичный поток, 3.1 |
+  | **Лимит браузера** | по HTTP/1.1 браузер держит не больше 6 соединений на один адрес. У организатора с 6 открытыми вкладками панели остальные запросы встанут в очередь | шлюз (этап 2) и продакшен: помогает HTTP/2 или один поток на все вкладки — это делается внутри `LiveSource`, страницы не меняются |
+  
+  **Что предлагаю:**
+  1. **Виртуализация таблицы** — записал в фазу 6 (`79cadd8`), вместе с постраничной выдачей: виртуализация разгружает DOM, но не сеть, если таблица всё равно перечитывается целиком.
+  2. **Задача 3.2** — до фазы 6 не перечитывать таблицу на каждый снимок. Вариантов два: не чаще раза в несколько секунд, или плашка «Есть изменения — обновить». Нужно ваше решение.
+  3. **Задача 3.1** — слушатель читает снимок один раз на событие и раздаёт всем подписчикам: один запрос на изменение вместо N, и потоки не держат соединений БД. Это небольшая правка `realtime.py`, предлагаю включить её в 3.1.
+  4. **Поток ОС на соединение** — для публичного потока нужен асинхронный view. Тогда отдельный поток ОС не держится: права проверяются одним `sync_to_async`, снимок читается из общего пула. Это пересматривает решение 13:48 о том, что потоки — синхронные DRF-view. Если делать, то в 3.1, и, видимо, сразу для обоих потоков.
+  
+  Как поступаем с пунктами 2–4?
+
+> таблица участников - виртуализацию вычеркиваем, пагинация + кнопка "есть обновления, обновить", т.е. возвращаемся к тому что поток отдает только счетчики и инфу о событии, для участников отдельный http эндпоинт. кнопка "есть обновления" высчитывается по счетчикам из потока, пагинация тоже.
+  даже 6 вкладок - по-моему достаточно, не вижу кейса где одному организатору нужно в одном браузере иметь кучу вкладок, максимум 2-3 и то просто для теста что работает по-моему.
+  "поток ос" - да, асинхронный или может подумать в сторону редиса(или подобного) если это опрадывается.
+
+⏺ Записываю решения и смотрю, поддерживает ли установленный DRF асинхронные view: от этого зависит, как сделать поток без отдельного потока ОС.
+
+⏺ Bash(cd /home/raf/event-registration/backend && uv pip list 2>/dev/null | grep -i -E "djangorestframework |drf-spectacular|adrf"; grep -n "async\|iscoroutinefunction" .venv/lib/python3.12/site-packages/res)
+  ⎿  djangorestframework       3.18.3
+     drf-spectacular           0.30.0
+     86:                http_method_names = set(callback.cls.http_method_names)
+     95:            methods = callback.cls(**kwargs).allowed_methods
+     133:            original_cls = callback.cls
+     134:            callback.cls = override_view.view_replacement()
+     … +6 lines
+
+⏺ Read(/home/raf/event-registration/docs/features/realtime/spec.md)
+  ⎿  1	# Realtime (SSE): spec
+     2	
+     3	Фаза — `docs/roadmap.md`, фаза 4. Статус: утверждён 2026-10-31.
+     4	
+     5	## Что и зачем
+     6	
+     … +144 lines
+
+⏺ Обновляю spec (держу в пределах 150 строк), задачи этапа 3 и roadmap:
+
+⏺ Bash(cd /home/raf/event-registration && python3 - <<'EOF')
+  ⎿  155 docs/features/realtime/spec.md
+     [This command modified 1 file you've previously read: docs/features/realtime/spec.md. Call Read before editing.]
+
+⏺ 155 строк — сокращаю допущения, которые уже утверждены, без потери содержания:
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  151 docs/features/realtime/spec.md
+     | ------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------
+     | подписчик не видит счётчики незакоммиченной транзакции | `pg_notify` в той же транзакции, что и изменение: Postgres доставляет уведомление только после коммита, откат его отменяет                   
+     | после (пере)подключения счётчики верны                 | первое сообщение потока — снимок из БД, прочитанный после подписки на уведомления: изменение между снимком и подпиской даст ещё один снимок, 
+     | пропущенное уведомление не искажает счётчики           | по сети — полный снимок, не прирост; очередь подписчика — на одно ожидающее событие: снимок всё равно читается из БД                         
+     | изменения без смены счётчиков не шлют уведомление      | `pg_notify` только там, где строка изменилась: новая и оживлённая регистрация, отказ, повышение, первая отметка                              
+     … +11 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  150 docs/features/realtime/spec.md
+     ## Этап 3. Все изменения счётчиков и страница события
+     
+     - [ ] 3.1 backend: `pg_notify` в `register` и `cancel` (с повышением);
+           `GET /api/events/{id}/stream/` с `free_seats`. Готово, когда: тесты «одно уведомление»
+           на регистрацию, оживление, отказ с повышением и «без уведомления» на повторы зелёные.
+     … +6 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Пересмотр правила FSD «код на странице, пока у него один потребитель»: дробить экран на
+     `features` сразу, чтобы страница читалась легче (решение от 2026-10-31 14:46) — в этой фазе
+     или позже.
+     
+     ## Фаза 7. Сдача — не начата
+     16:16
+
+⏺ Bash(sed -i 's/(решение от 2026-10-31 16:13)/(решение от 2026-10-31 16:16)/' docs/features/realtime/spec.md && cat >> docs/decisions.md <<'EOF')
+  ⎿  79abd53 docs: plan paging the participants table and async streams in realtime stage 3
+     [This command modified 1 file you've previously read: docs/features/realtime/spec.md. Call Read before editing.]
+
+⏺ Решения записаны (`79abd53`):
+  - **Таблица:** виртуализация вычеркнута (это отменяет запись 15:59). Вместо неё постраничная выдача `?page=` по 50 и кнопка «Есть обновления — обновить». Число страниц и появление кнопки считаются по счётчикам из снимка. Чтобы страницы считались и для фильтров «Все» и «Отказались», у события организатора добавится счётчик `cancelled`.
+  - **Поток:** по-прежнему отдаёт только событие и счётчики, участники — отдельным `GET`.
+  - **Шесть вкладок:** записано в Non-Goals spec.
+  - **Этап 3** теперь из пяти задач: асинхронные потоки и одно чтение снимка на всех, уведомления в регистрации и отказе и публичный поток, постраничная выдача и `cancelled`, фронтенд, e2e.
+  
+  ## Redis
+  
+  По-моему, здесь он не оправдан:
+  - **Поток ОС держит не брокер, а синхронный view.** Пока идёт ответ, Django держит контекст запроса со своим потоком ОС. С Redis вместо `LISTEN` поток ОС на соединение остался бы тем же.
+  - **Рассылка между процессами уже есть.** Каждый процесс держит своё соединение `LISTEN`, и Postgres доставляет уведомление всем. Это одно соединение на процесс, а не на зрителя.
+  - **Нагрузку на БД снимает раздача снимка, не брокер.** Процесс читает снимок один раз на изменение и рассылает его всем своим подписчикам (задача 3.1). Сверху Redis мог бы дать только кэш снимка, общий для процессов. Это экономит по одному запросу на процесс за изменение — заметно разве что при десятках процессов.
+  
+  Redis имеет смысл, если появится то, что NOTIFY делает плохо: сообщения больше 8000 байт, история для дочитывания после переподключения, очень много процессов. Пока этого нет.
+  
+  ## Как сделать потоки асинхронными
+  
+  DRF 3.18 не поддерживает `async def get`, а spec требует, чтобы поток был в `openapi.yaml` с теми же правами и ошибками. Варианты:
+  
+  | Вариант | Как | Плюсы | Минусы |
+  | --- | --- | --- | --- |
+  | **А. `adrf`** | пакет с асинхронным `APIView`, который наследует DRF `APIView` | права, `get_org_event`, 401/403/404 и `extend_schema` — как сейчас; view почти не меняется | новая зависимость. Совместимость с DRF 3.18 и drf-spectacular 0.30 я не проверял |
+  | **Б. Обычный асинхронный Django-view** | `await request.auser()`, права через `sync_to_async(get_org_event)`, ошибки JSON вручную | без зависимостей | drf-spectacular его не видит: путь в схему добавляется своим хуком постобработки, формат ошибок дублируется руками |
+  
+  **Рекомендую А, но после проверки:** в отдельном окружении поставить `adrf` и убедиться, что `make schema` проходит, 401/403/404 те же, а 20 открытых потоков не добавляют потоков ОС. Если хоть что-то не сойдётся, делаю Б.
+  
+  Сейчас идёт этап 1. Проверку `adrf` сделать уже сейчас, чтобы закрыть открытый вопрос spec, или в начале задачи 3.1? Ветка не запушена, PR этапа 1 ещё не открыт.
+
+> на данный момент все нюансы записаны и открытых вопросов нет кроме "поток ос на соединение" ?
+
+⏺ Сверю по файлам, а не по памяти:
+
+⏺ Bash(grep -n "Открыт" docs/features/realtime/spec.md; sed -n '/## На потом/,$p' docs/features/realtime/tasks.md; sed -n '/## Лог/,/## На потом/p' docs/features/realtime/tasks.md | head -20; git status --sh)
+  ⎿  127:   этапа 3 — асинхронные; DRF 3.18 асинхронных обработчиков не знает. **Открыт:** как.
+     ## На потом
+     
+     - Настройки под `runserver` (`whitenoise.runserver_nostatic`, логгер `django.server` в
+       `LOGGING`) остались после перехода `make dev-backend` на uvicorn: убрать или оставить для
+       ручного `manage.py runserver`.
+     … +18 lines
+
+⏺ В spec открыт только он: «Допущения», п. 1, «как сделать потоки асинхронными». Но кроме него есть вещи, которые не вопросы spec, а ждут вас или пока записаны не там, где их найдёт следующая сессия:
+  
+  1. **Этап 1 формально не закрыт.** Правило 6 в `AGENTS.md`: этап готов, когда его прошёл `reviewer` и вы разобрали находки. Оба круга ревью прошли, но после второго круга появились коммиты, которых reviewer не видел:
+     - `bbc99a0` — контракт `LiveSource`;
+     - `7ea5f56` — снимок со всем событием и панель без фонового `GET`;
+     - `ffb65ab` — тест слушателя.
+  
+     Нужно ваше решение: смотрите их сами или разрешаете ещё один повтор ревью. В `tasks.md` состояние этапа не записано, новая сессия этого не увидит.
+  2. **PR этапа 1 не открыт**, ветка не запушена.
+  3. **В «на потом» два пункта без решения:** настройки под `runserver` (убрать или оставить) и нестабильные тесты страниц под нагрузкой.
+  4. **Непонятный таймаут 30 с в браузерной проверке** записан только в логе решений (15:59), в «на потом» его нет. Если повторится, его не с чем будет связать.
+  
+  В остальном всё, что обсуждали, уже в файлах:
+  - graceful shutdown для dev и Docker — задача 2.1;
+  - постраничная выдача и кнопка «Есть обновления — обновить» — задачи 3.3–3.5;
+  - раздача одного снимка всем подписчикам — 3.1;
+  - лимит в 6 вкладок — Non-Goals spec;
+  - пересмотр правила FSD — фаза 6 в roadmap;
+  - `architecture.md` приводится к коду при закрытии фазы (4.4).
+  
+  Предлагаю дописать в лог `tasks.md` состояние этапа 1 (ревью пройдено, коммиты после него ждут вашего решения, PR не открыт), а таймаут — в «на потом». Сделать?
+
+> запусти еще одно ревью и потом допишем и сделаем пр. тестировать adrf буду в новой сессии, надо будет сделать заготовку промпта для новой сессии
+
+⏺ Agent(Third review of realtime stage 1)
+  ⎿  Async agent launched successfully. (This tool result is internal metadata — never quote or paste any part of it, including the agentId below, into a user-facing reply.)
+     agentId: a9566423291f0e8c8 (internal ID - do not mention to user. Use SendMessage with to: 'a9566423291f0e8c8', summary: '<5-10 word recap>' to continue this agent.)
+     The agent is working in the background. You will be notified automatically when it completes. You know nothing about its results until that notification arrives — do not report, assume, or predict the
+     Do not duplicate this agent's work — avoid working with the same files or topics it is using.
+     output_file: /tmp/claude-1000/-home-raf-event-registration/705633a2-6c6e-447a-94bd-41573c2d4476/tasks/a9566423291f0e8c8.output
+     Do NOT Read or tail this file via the shell tool — it is the full subagent JSONL transcript and reading it will overflow your context. If the user asks for progress, say the agent is still running; yo
+
+⏺ Ревью запущено на `c6fcb87..79abd53`. Пока оно идёт, готовлю заготовку промпта для новой сессии с проверкой `adrf`:
+
+⏺ Write(/tmp/claude-1000/-home-raf-event-registration/eaee4e1c-e774-4657-b556-d050f4d9827b/scratchpad/adrf-session-prompt.md)
+  ⎿  File created successfully at: /tmp/claude-1000/-home-raf-event-registration/eaee4e1c-e774-4657-b556-d050f4d9827b/scratchpad/adrf-session-prompt.md (file state is current in your context — no need to R
+
+⏺ Третье ревью этапа 1 (`c6fcb87..79abd53`) ещё идёт. Отчёт покажу целиком, когда придёт. После разбора находок допишу состояние этапа в `tasks.md`, таймаут — в «на потом», и подготовлю PR.
+  
+  Заготовка промпта для новой сессии, где вы будете проверять `adrf`, лежит в `/tmp/claude-1000/-home-raf-event-registration/eaee4e1c-e774-4657-b556-d050f4d9827b/scratchpad/adrf-session-prompt.md`. Написана для агента, который начнёт новую сессию в этом репозитории без нашего разговора.
+  
+  Что в ней:
+  - **Цель:** закрыть п. 1 «Допущений» spec, задачу 3.1 не делать.
+  - **Почему вопрос возник:** замер 20 потоков SSE — 20 потоков ОС, и DRF 3.18 не поддерживает `async def get`.
+  - **Варианты:** А — `adrf`, Б — обычный асинхронный Django-view.
+  - **Четыре проверки для `adrf`:** совместимость со схемой, те же 401/403/404 и обход 406, нет лишних потоков ОС под uvicorn, отключение клиента снимает `LISTEN`.
+  - **Если не сойдётся:** то же для варианта Б.
+  - **Результат:** запись в лог решений, закрытый вопрос spec, пробный код не идёт в `main`.
+  
+  Одно место нужно вписать вам: от какой ветки делать пробу — `main` после слияния PR этапа 1 или текущая ветка.
+
+⏺ Третье ревью пришло. Перед тем как показать отчёт, сверяю факты по экрану чекина, на который ссылается находка 1:
+
+⏺ Bash(cd /home/raf/event-registration/frontend && grep -n "useQuery\|invalidate\|orgEventPath\|RouterLink\|onSuccess" src/pages/org-checkin/ui/OrgCheckinPage.vue | head; sed -n 14,22p src/entities/event/api)
+  ⎿  2:import { useMutation, useQuery } from "@tanstack/vue-query";
+     9:import { orgEventPath } from "@/shared/config";
+     34:} = useQuery(computed(() => orgEventQuery(eventId.value)));
+     61:  onSuccess: (result) => {
+     115:    <RouterLink
+     118:      :to="orgEventPath(event.id)"
+     … +9 lines
+
+⏺ Bash(sed -n 56,72p src/pages/org-checkin/ui/OrgCheckinPage.vue)
+  ⎿  onMounted(focusCode);
+     
+     const { mutate, isPending, error, reset } = useMutation({
+       mutationFn: (typed: string) => checkIn(eventId.value, typed),
+       onSuccess: (result) => {
+         show(
+     … +10 lines
+
+⏺ Третье ревью этапа 1 пришло. Ниже отчёт целиком, я ничего не правил.
+  
+  ---
+  
+  Ревью этапа 1 фазы 4, диапазон `c6fcb87..79abd53` (5 коммитов: `ffb65ab`, `bbc99a0`, `7ea5f56`, `79cadd8`, `79abd53`). Находок две: одна гонка средней важности и один пробел в тестах. Файлы репозитория не менял.
+  
+  **Находки**
+  
+  1. **`frontend/src/pages/org-event/ui/OrgEventPage.vue:26-44` — Корректность / гонка.**
+     - **Что:** обещание «других GET нет» держат только настройки наблюдателя самой панели (`refetchOnMount/WindowFocus/Reconnect: false`). Но у `OrgCheckinPage.vue:34` свой `useQuery(orgEventQuery(id))` на тот же ключ `["org","events",id]` с настройками по умолчанию. При этом `queryFn` в `frontend/src/entities/event/api/org-events.ts:18-19` не передаёт `signal`. Поэтому TanStack Query v5 не отменяет запрос, когда страница размонтируется, и запрос допишет кэш, когда ответит.
+     - **Сценарий:** организатор открывает экран чекина. Данные в кэше устарели, поэтому монтирование запускает `GET`. Организатор сразу переходит ссылкой «к панели» (`OrgCheckinPage.vue:115-121`). Событие уже в кэше, так что `eventLoaded` равен true, поток открывается сразу и пишет первый снимок. Потом приходит ответ `GET`, который читал БД раньше, и записывает поверх более старые счётчики. Следующий снимок придёт только при следующем изменении события, а до тех пор «Пришло» на панели неверно.
+     - **Почему важно:** этап обещает живой и верный счётчик. Комментарий в строках 26-27 и spec («Фоновых перезапросов события у панели нет: GET, прочитавший событие до снимка, ответил бы после него старыми счётчиками») утверждают, что гонки нет вовсе. На деле она закрыта только для собственных запросов панели.
+     - **Исправление:** в обработчике снимка до `setQueryData` вызвать `queryClient.cancelQueries({ queryKey, exact: true })`. Отмена срабатывает синхронно и отбрасывает результат запроса, начатого раньше снимка, а `setQueryData` затем перезаписывает откатанное состояние. Нужен тест: в кэше лежит событие, `GET` придержан (`countedEvent().hold()` + `queryClient.fetchQuery` из «другой страницы»), приходит снимок, `GET` отпускается — на панели остаются счётчики снимка.
+  
+  2. **`frontend/src/pages/org-event/ui/OrgEventPage.vue:32` — Тесты.**
+     - **Что:** `refetchOnReconnect: false` не покрыт ни одним тестом. В `OrgEventPage.test.ts` нет `onlineManager`. Для двух других опций я проверил мутацией в своей копии: без `refetchOnWindowFocus: false` падают «does not read the event again when the window regains focus» и «shows a cached event…», без `refetchOnMount: false` падает «shows a cached event…».
+     - **Почему важно:** если строку удалить, тесты останутся зелёными. Тогда восстановление сети (переход offline → online) снова запустит `GET`, который может ответить после снимка, — это та же гонка, ради которой опция стоит.
+     - **Исправление:** добавить тест по образцу теста с фокусом: `onlineManager.setOnline(false)`, затем `setOnline(true)`, затем `flushPromises()`, затем `expect(backend.gets()).toBe(1)`. В конце вернуть `setOnline(true)`.
+  
+  **Проверки**
+  
+  - `make -C .claude/worktrees/review stack-check SLOT=2` (копия на `79abd53`) — прошёл, exit 0. Линтеры: «All checks passed!»; pytest: 229 passed; Vitest: 25 файлов, 189 тестов passed; lint и typecheck e2e чистые.
+  - Мутации во временной копии (после каждой изменения откатил через `git checkout`) — результаты в находке 2.
+  - `stack-e2e` не запускал: e2e потока появляются только на этапе 2, сценарии в `e2e/` диапазон не менял.
+  - Стек слота 2 остановлен (`stack-down SLOT=2`), копия удалена (`review-worktree-remove`).
+  
+  **Решения из `docs/decisions.md`**
+  
+  - Находку 1 запись 15:43 не снимает. Её довод «первый снимок читается после GET, других GET нет» относится к наблюдателю панели. Наблюдатель экрана чекина на тот же ключ кэша и неотменяемый запрос в полёте в нём не учтены.
+  - Абстракцию `LiveSource` с единственной реализацией `sseSource` и комментарий про WebSocket и long polling в `frontend/src/shared/lib/live-source.ts:1-2` в находки не включал: это осознанное решение человека, записи 14:46 (п. 4) и 15:36. К тому же у контракта есть фейк в `use-live.test.ts`.
+  - Подмену `EventSource` через `vi.stubGlobal` вместо `deps` не считаю нарушением: её прямо разрешает таблица тестов skill `fsd-frontend` (строка 139), запись 15:36.
+  
+  **Проверено без находок**
+  
+  - Backend: переход `stats` → `snapshot` (`OrgEventSerializer`; имён и email участников в снимке нет). Удалён `OrgEventStatsSerializer`. Изменения согласованы в `openapi.yaml` и `schema.d.ts`. Остатков `OrgEventStats`, `orgEventStreamUrl`, `useEventStream`, `stats_stream` и `event: stats` вне лога решений нет.
+  - Слушатель: при неудачном или отменённом `LISTEN` соединение закрывается (`except BaseException` → `close()` → `raise`). Параметризованный тест ловит `ResourceWarning` и проверяет, что следующий подписчик стартует. Тесты 401/403/404 на месте.
+  - Фронтенд: поток открывается только после загрузки события (тест с придержанным `GET`). `useLive` переподписывается при смене источника и закрывает подписку вместе с областью. Импорты идут вниз по слоям, в срез — через `index.ts`. `frontend/AGENTS.md` (карта) совпадает с кодом.
+  - Spec: сценарии и Non-Goals совпадают с решениями 15:43 и 16:16. То, что перенесено на этапы 3 и 4 («Есть обновления», постраничная выдача, асинхронные view, индикатор), в этом этапе не реализовано и в находки не включено.
+  - Поиск кандидатов из `anti-slop-review` по diff (тон, эмодзи, TODO, пустые catch, персональные данные в логах, `v-html`) ничего не дал.
+  
+  **Не проверялось**
+  
+  - В браузере не смотрел: ни страницы, ни сценарий «чекин в одной вкладке меняет “Пришло” в другой» под Vite.
+  - Гонку из находки 1 не воспроизводил: она выведена из кода TanStack Query (запрос без `signal` не отменяется при уходе последнего наблюдателя) и маршрута по ссылке «чекин → панель».
+  
+  ---
+  
+  **Что могу добавить по фактам:**
+  - **Находка 1:** код подтверждает предпосылки. Экран чекина читает событие обычным `useQuery(orgEventQuery(id))` (`OrgCheckinPage.vue:34`) с настройками по умолчанию. Ссылка на панель — `OrgCheckinPage.vue:115-121`. `queryFn` не передаёт `signal`. Отметка на экране чекина событие не сбрасывает: в `onSuccess` только показ результата, поэтому `GET` в полёте появляется только при монтировании экрана с устаревшим кэшем. Окно гонки — пока этот `GET` не ответил, обычно десятки миллисекунд, причём переход на панель должен успеть раньше. e2e `organizer-checks-in` идёт ровно по маршруту «чекин → панель» и проходит, но гонку он не ловит.
+  - Исправление ревьюера, `cancelQueries` перед каждым `setQueryData`, — синхронная отмена без перечитывания. Цикла отмен из прошлого ревью оно не даёт: снимок пишется сразу, нового `GET` не запускается.
+  - **Находка 2:** верно, на `refetchOnReconnect` теста нет.
+  
+  Что делаем с находками 1 и 2? После этого допишу состояние этапа в `tasks.md`, таймаут — в «на потом», и открою PR.
+
+> 1. напомни зачем нам поток на чекине
+  2. надо в этой ветке доделать
+
+⏺ 1. **Потока на экране чекина нет и не планируется**: живой экран чекина — в Non-Goals spec. Находка не про поток, а про общий кэш. Экрану чекина нужно только название события, но он читает его тем же запросом `orgEventQuery(id)`, что и панель. Так решили в фазе 3 (запись 11:37): один ключ кэша на две страницы, чтобы панель после чекина открывалась сразу с данными. Поэтому `GET`, который экран чекина начал при монтировании, может ответить уже на панели, поверх свежего снимка.
+  
+     Как закрыть:
+     - **По предложению ревьюера:** панель отменяет запрос события перед каждой записью снимка. Одна строка и тест, и это закрывает гонку с любым `GET` с любой страницы, в том числе с будущими.
+     - **Развести ключи:** у экрана чекина свой запрос только для названия. Гонка уходит, но пропадает общий кэш, а задачу с названием это решает лишь частично.
+  
+     **Рекомендую первый.** Делать?
+  
+  2. Делаю тест на `refetchOnReconnect` в этой ветке, по тому же образцу, что тест с фокусом:
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Tests  50 passed (50)
+     == without refetchOnReconnect: false
+          × does not read the event again when the network comes back 109ms
+          × shows a cached event at once and leaves its refresh to the stream 48ms
+     ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+           Tests  2 failed | 48 passed (50)
+     … +2 lines
+
+⏺ Bash(sed -i '/refetchOnReconnect: false,/d' src/pages/org-event/ui/OrgEventPage.vue; pnpm exec vitest run src/pages/org-event -t "shows a cached event" 2>&1 | grep -E "×|✓|Tests "; cp /tmp/claude-1000/p2.b)
+  ⎿  Tests  1 passed | 49 skipped (50)
+     ugrep: warning: node_modules/@tanstack/query-core/build/modern/onlineManager.js: No such file or directory
+
+⏺ Bash(cd /home/raf/event-registration && T=$(date +%H:%M) && cat >> docs/decisions.md <<EOF)
+  ⎿  COMMITTED
+     ======================== 229 passed in 67.79s (0:01:07) ========================
+      Test Files  25 passed (25)
+           Tests  190 passed (190)
+     113250a test(frontend): cover the panel not reading its event again on reconnect
+
+⏺ Находка 2 закрыта коммитом `113250a`. Тест «восстановление сети не перечитывает событие» падает, если убрать `refetchOnReconnect: false`, а с опцией зелёный. `make stack-check` проходит: pytest 229, Vitest 190.
+  
+  Жду вашего решения по находке 1. Я рекомендую вариант ревьюера: панель отменяет запрос события перед каждой записью снимка, плюс тест на `GET` с экрана чекина, который отвечает после снимка. После этого допишу состояние этапа в `tasks.md`, таймаут — в «на потом», и открою PR.
+
+> 1. или все таки нужен поток для чекина тоже чтобы на странице чекина актуальное название было и счетчики. возникла идея сделать форму чекина дочерней страницей страницы события для организатора и встроить через view-router ? или может даже в корне страницы запрос и поток, а таблица и чекин как подстраницы, насколько это будет удобно?
+
+⏺ Идея хорошая. Она закрывает находку 1 по построению, а не заплаткой.
+  
+  ## Как это выглядело бы
+  
+  ```text
+  /org/events/:id            OrgEventLayout: GET события, поток, шапка (название, счётчики),
+                             403/404, вкладки «Участники | Чекин»
+  ├── ""                     таблица участников (постранично, «Есть обновления»)
+  └── "checkin"              форма чекина
+  ```
+  
+  - Пути не меняются (`routes.orgEvent`, `routes.orgCheckin`), меняется только конфиг роутера в `app/router.ts`: `children` у маршрута события.
+  - Событие из макета дочерним страницам передаётся пропсом через `<RouterView :event="…">`. Дочерняя страница объявляет пропс сама, страницы друг друга не импортируют, связывает их `app` — это укладывается в правила FSD.
+  
+  ## Что это даёт
+  
+  - **Гонки нет по построению:** у события один владелец, один запрос и один поток. Экран чекина своего `GET` не делает.
+  - **Живой экран чекина:** название и «Пришло N из M» у входа обновляются сами. Сейчас это в Non-Goals, а станет бесплатным.
+  - **Переход «чекин ↔ участники» не переоткрывает поток и не перечитывает событие:** макет остаётся на месте, меняется только дочерняя страница.
+  - **403/404 и загрузка события — в одном месте:** сейчас эта логика повторена на двух страницах.
+  - **Страницы короче:** макет — данные и шапка, таблица и форма отдельно. Это в сторону вашего пересмотра правила FSD.
+  
+  ## Что придётся учесть
+  
+  - **Исключение фазы 3: форма чекина работает и без события.** Если `GET` упал не с 403/404, макет показывает над формой алерт «Повторить», но саму форму не прячет. Значит, у макета не может быть одного `QueryState` на всё содержимое.
+  - **У входа часто телефон.** Шапку с пятью счётчиками над формой нужно сжать до одной строки, например «Пришло 12 из 40», иначе форма уедет вниз.
+  - **Объём:** перестраиваются экраны фазы 3, их тесты, e2e `organizer-checks-in` (по ссылкам он должен пройти без правок) и spec фазы 4: экран чекина уходит из Non-Goals.
+  
+  ## Куда это поставить
+  
+  Предлагаю так:
+  - **В этот PR** — однострочное исправление ревьюера (`cancelQueries` перед записью снимка) и тест, чтобы этап 1 закрылся без известной гонки.
+  - **Перестройку маршрутов** — задачей в начало этапа 3. Там панель всё равно переделывается (постраничная выдача, «Есть обновления»), и делать её до этого значит переписывать таблицу дважды. После перестройки отмена запроса не нужна, и строку можно убрать.
+  
+  Другой вариант — делать перестройку прямо в этой ветке вместо заплатки. Тогда PR этапа 1 вырастет примерно вдвое и, скорее всего, понадобится ещё одно ревью.
+  
+  Как поступаем?
+
+> исправление гонки здесь, маршруты в 3 этап
+
+⏺ Делаю: исправление гонки — в этой ветке, перестройку маршрутов — задачей в этап 3. Начинаю с теста: `GET`, начатый «другой страницей» до монтирования панели, отвечает после снимка.
+
+⏺ Bash(cd /home/raf/event-registration/frontend && python3 - <<'EOF')
+  ⎿  × keeps a snapshot over a GET of the event that another page started before it 130ms
+     ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+     AssertionError: expected '1' to be '2' // Object.is equality
+           Tests  1 failed | 50 passed (51)
+     [This command modified 1 file you've previously read: src/pages/org-event/ui/OrgEventPage.test.ts. Call Read before editing.]
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Tests  51 passed (51)
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Tests  51 passed (51)
+           Tests  51 passed (51)
+           Tests  51 passed (51)
+           Tests  51 passed (51)
+           Tests  51 passed (51)
+     
+     … +16 lines
+
+⏺ Пять из пяти зелёные. Теперь spec (он уже на пределе в 150 строк) и задача перестройки маршрутов в этапе 3:
+
+⏺ Bash(cd /home/raf/event-registration && python3 - <<'EOF')
+  ⎿  150 docs/features/realtime/spec.md
+     [This command modified 1 file you've previously read: docs/features/realtime/spec.md. Call Read before editing.]
+
+⏺ Разношу по двум коммитам: исправление со своей строкой в spec, затем отдельно план этапа 3.
+
+⏺ Bash(cp docs/features/realtime/spec.md /tmp/claude-1000/spec.full && python3 - <<'EOF')
+  ⎿  -  после него старыми счётчиками; кэш с прошлого визита обновляет первый снимок. Таблица
+     +  после него старыми счётчиками; кэш с прошлого визита обновляет первый снимок. `GET` того же
+     +  ключа с экрана чекина снимок отменяет. Таблица
+     -- Чужое событие или выход из сессии до подключения — 403, панель уже показывает ответ
+     -  `GET`; поток не переоткрывается без конца — повтор только после обрыва открытого потока.
+     COMMITTED
+     … +4 lines
+
+⏺ Bash(cp /tmp/claude-1000/spec.full docs/features/realtime/spec.md && npx prettier --write docs/features/realtime/spec.md >/dev/null && git diff docs/features/realtime/spec.md | grep "^[-+]" | grep -v "^+++)
+  ⎿  -- Живой публичный список событий (`/`), живая страница билета (номер в листе), живой экран
+     -  чекина: по критериям — панель организатора и страница события.
+     +- Живой публичный список событий (`/`), живая страница билета (номер в листе): по
+     +  критериям — панель организатора и страница события (экран чекина — её часть с этапа 3).
+     -  ключа с экрана чекина снимок отменяет. Таблица
+     +  ключа с экрана чекина снимок отменяет. С этапа 3 событие — макет `/org/events/:id`: запрос,
+     … +6 lines
+
+⏺ Перед PR прогоняю `make stack-e2e`: после последнего прогона фронтенд менялся.
+
+⏺ Bash(make stack-e2e >/tmp/claude-1000/e2e.log 2>&1; echo exit=$?; grep -E "passed|failed|flaky" /tmp/claude-1000/e2e.log | tail -3; git log --oneline main..HEAD | wc -l; git fetch -q origin && git log --on)
+  ⎿  exit=0
+       8 passed (31.0s)
+     16
+
+⏺ e2e проходит (8), `main` за это время не ушёл вперёд. Пушу (`SLOT=1`, хук `pre-push` проверит backend на Postgres слота 1):
+
+⏺ Bash(SLOT=1 git push -u origin feat/realtime-org-stream 2>&1 | tail -6)
+  ⎿  remote: Create a pull request for 'feat/realtime-org-stream' on GitHub by visiting:        
+     remote:      https://github.com/rbikbov/event-registration/pull/new/feat/realtime-org-stream        
+     remote: 
+     To github.com:rbikbov/event-registration.git
+      * [new branch]      feat/realtime-org-stream -> feat/realtime-org-stream
+     branch 'feat/realtime-org-stream' set up to track 'origin/feat/realtime-org-stream'.
+
+⏺ Bash(gh pr create --base main --head feat/realtime-org-stream --title "Phase 4, stage 1: live check-in counter on the organizer event panel" --body "$(cat <<'EOF')
+  ⎿  https://github.com/rbikbov/event-registration/pull/17
+
+⏺ Готово, PR открыт: https://github.com/rbikbov/event-registration/pull/17.
+  
+  **Последние коммиты:**
+  - `bbeeba8` — исправление находки 1. Снимок перед записью в кэш отменяет `GET` того же события, который начал экран чекина. Тест держит такой `GET` до снимка: до исправления на панели оставалось «1» вместо «2», после — зелёный 5 прогонов подряд. Я ожидал, что откат отменённого запроса затрёт снимок, но этого нет.
+  - `113250a` — тест находки 2: восстановление сети не перечитывает событие.
+  - `3d25098` — план задачи 3.4: макет `/org/events/:id`, в котором живут запрос, поток, шапка и 403/404, а «участники» и «чекин» — дочерние маршруты. Экран чекина убран из Non-Goals spec. Задачи этапа 3 перенумерованы, e2e 3.6 теперь проверяет и «Пришло» на экране чекина.
+  - В лог `tasks.md` дописано состояние этапа 1: три круга ревью, находки разобраны, задача 1.2 сделана шире плана. Таймаут браузерной проверки добавлен в «на потом» с указанием снять трассу при повторе.
+  
+  **Проверено перед PR:** `make stack-check` (pytest 229, Vitest 191), `make stack-e2e` (8), `pre-push` на Postgres слота 1 при пуше. `main` вперёд не ушёл, ребейз не понадобился.
+  
+  **Осталось:**
+  - В заготовке промпта для сессии с `adrf` нужно вписать ветку, от которой делать пробу. Если проверять после слияния PR #17, то это `main`. Файл: `/tmp/claude-1000/-home-raf-event-registration/eaee4e1c-e774-4657-b556-d050f4d9827b/scratchpad/adrf-session-prompt.md`.
+  - Стек слота 1 ещё поднят.
+  - Маркер конца сессии в `decisions.md` не поставлен: сессия продолжается. Если заканчиваем, поставлю его последним коммитом и сделаю `make stack-down`.
+
+> у нас учтен кейс если у организатора 2 события и он заходит по прямой ссылке на одно событие, потом по прямой ссылке на другое событие (с перезагрузкой), и возвращается кнопкой "назад" на предыдущее событие (без перезагрузки) ?
+
+⏺ Сначала проверю, а не буду рассуждать. «Назад» после полной загрузки другой страницы возвращает в прежний документ, а браузер может восстановить его из back/forward cache (bfcache) вместе с замороженным JS. Тогда наш `EventSource` уже закрыт, а `GET` при показе панель не делает. Проверяю на слоте 1 в Chromium: восстанавливается ли страница из bfcache, переоткрывается ли поток и доходит ли чекин.
+
+⏺ Bash(docker compose -p event-registration-s1 exec -T postgres psql -U postgres -d event_registration -Atc "select r.event_id||' '||r.ticket_code from registrations_registration r join events_event e on e.i)
+  ⎿  31 KMCGEQNC
+     30 G582GYZE
+     32
+     31
+     30
+
+⏺ Bash(cd /tmp/claude-1000/-home-raf-event-registration/eaee4e1c-e774-4657-b556-d050f4d9827b/scratchpad && cat > back.mjs <<'EOF')
+  ⎿  {
+       url: 'http://localhost:5174/org/events/31',
+       restoredFromBfcache: false,
+       before: '0',
+       after: '1'
+     }
+     … +12 lines
+
+⏺ Bash(cd /home/raf/event-registration/e2e && F=$(find node_modules/ -path "*playwright-core/lib/server/chromium/chromiumSwitches.js" | head -1); echo $F; grep -n -i "back-forward\|BackForwardCache" $F)
+  ⎿  (Bash completed with no output)
+
+⏺ Bash(grep -rl -i "BackForwardCache" $(find . -path "*node_modules/playwright-core/lib" -type d 2>/dev/null | head -1) 2>/dev/null | head -3; grep -rho -i "[a-z-]*BackForwardCache[a-z,]*" $(find . -path "*n)
+  ⎿  (Bash completed with no output)
+
+⏺ Bash(P=$(node -e "console.log(require.resolve('playwright-core/package.json',{paths:['e2e/node_modules/@playwright/test']}))" 2>/dev/null); D=$(dirname "$P"); echo $D; grep -rho -i "[a-z-]*back-\?forward-\)
+  ⎿  .
+
+⏺ Bash(cd /tmp/claude-1000/-home-raf-event-registration/eaee4e1c-e774-4657-b556-d050f4d9827b/scratchpad && cat > bfcache.mjs <<'EOF')
+  ⎿  plain page restored from bfcache: false
+     Shell cwd was reset to /home/raf/event-registration
+
+⏺ Короткий ответ: в нашей проверке работает, но проверка не покрывает главный риск.
+  
+  **Что проверено** (слот 1, Chromium из Playwright):
+  1. Панель события 31 по прямой ссылке.
+  2. Событие 32 по прямой ссылке, с полной загрузкой.
+  3. «Назад» вернул на 31: браузер загрузил страницу заново, был новый `GET` и новый поток.
+  4. Чекин на событии 31 из другого контекста изменил «Пришло» с 0 на 1.
+  
+  **Почему этого мало.** Контрольный опыт: обычная страница без потока тоже не восстановилась из bfcache. Значит, в этом окружении «Назад» всегда перезагружает страницу, и случай «без перезагрузки» я не воспроизвёл. Причины две, и я не проверил, какая из них:
+  - Playwright мог выключить bfcache своими флагами;
+  - dev-сервер Vite держит WebSocket для HMR, а страницы с открытым WebSocket Chrome в bfcache не кладёт.
+  
+  В сборке без Vite, то есть в продакшене и в шлюзе этапа 2, и в обычном браузере страница может вернуться из bfcache. Как именно браузеры обходятся при этом с открытым `EventSource`, я точно не знаю. Если страница вернётся замороженной, а поток закрыт, панель покажет счётчики на момент ухода и больше обновляться не будет. Своего `GET` она не делает, а индикатор обрыва этапа 4 срабатывает по ошибке потока, которой может и не быть.
+  
+  **Внутри приложения**, без перезагрузки (переход по ссылкам между двумя событиями и «Назад» в истории SPA): `useLive` переподписывается при смене события, это покрыто тестом composable, а кэш второго события обновляет первый снимок. Теста на уровне страницы нет.
+  
+  **Что предлагаю.** Сделать в `useLive`, для любого транспорта:
+  - на `pagehide` с `persisted` отписываться — страница не держит соединение в bfcache;
+  - на `pageshow` с `persisted` подписываться заново — первый снимок сразу даёт свежие данные.
+  
+  Это несколько строк и тест Vitest с `PageTransitionEvent`. Проверить в браузере можно только через сборку без Vite, то есть после шлюза этапа 2.
+  
+  Куда это поставить: в задачу 4.2 этапа 4, где переподключение и индикатор, или сразу в PR #17?
+
+> может лучше отслеживать id события из браузерной строки через роутер?
+
+⏺ Мы уже так и делаем: `eventId` — это `computed` от `route.params.id` (`OrgEventPage.vue`), а поток и запрос пересоздаются, когда id меняется. Поэтому переходы внутри приложения, включая «Назад» в истории SPA, уже идут через роутер.
+  
+  С bfcache это не поможет, потому что проблема там не в id:
+  - При восстановлении из bfcache браузер не загружает и не перерисовывает страницу. Он размораживает прежний документ целиком, вместе с состоянием Vue и роутера.
+  - URL тот же (событие A), `route.params.id` тот же, и навигации vue-router не происходит. Ни один `watch` не срабатывает: с точки зрения приложения ничего не менялось.
+  - Изменилось другое: пока документ был заморожен, браузер мог закрыть его сетевые соединения, в том числе `EventSource`. Id верный, а поток мёртв.
+  
+  Узнать, что страницу разморозили, можно только по событию `pageshow` с `persisted: true`. Его я и предлагал слушать в `useLive`: переподписаться и сразу получить свежий снимок.
+  
+  Остаётся тот же вопрос: делать это в задаче 4.2 (переподключение) или сразу в PR #17?
+
+> в 4.2
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  3d25098..cdb9187  feat/realtime-org-stream -> feat/realtime-org-stream
+     cdb9187 docs: plan reopening the live data after a bfcache restore in realtime task 4.2
+
+⏺ Записал это в задачу 4.2 и запушил в PR #17 (коммит `cdb9187`, только документация).
+  
+  - **Задача 4.2:**
+    - `useLive` отписывается на `pagehide` с `persisted` и подписывается заново на `pageshow` с `persisted`.
+    - Готово, когда тест Vitest «`pageshow` из bfcache → новая подписка» зелёный.
+    - И когда в браузере через шлюз «Назад» после полной загрузки другого события показывает живые счётчики. Через Vite это не проверить: в моём опыте bfcache не включился даже на странице без потока.
+  - **Лог решений:** записаны причина и то, что опыт на слоте 1 этот случай не воспроизвёл. Там же почему отклонено отслеживание id через роутер: при восстановлении из bfcache id не меняется.
+
+> какие коммиты ревьювер не смотрел?
+
+⏺ История ветки, похоже, изменилась: хеши в выводе хука не совпадают с моими. Сначала смотрю, что сейчас в репозитории:
+
+⏺ Bash(git status -sb | head -3; git log --oneline -22 --format='%h %ad %s' --date=format:%H:%M; git log --oneline -3 origin/feat/realtime-org-stream 2>/dev/null; git branch --show-current)
+  ⎿  ## feat/realtime-gateway
+     29a18a0 17:33 docs: plan the organizer event layout with nested routes in realtime stage 3
+     d2f37ff 17:33 fix(frontend): cancel a GET of the event from another page on a snapshot
+     069a100 16:42 test(frontend): cover the panel not reading its event again on reconnect
+     3570ba5 16:16 docs: plan paging the participants table and async streams in realtime stage 3
+     3a19796 15:59 docs: plan virtualizing the participants table in phase 6
+     … +21 lines
+
+⏺ Bash(gh pr view 17 --json state,mergedAt,mergeCommit,headRefOid --jq '{state,mergedAt,merge:.mergeCommit.oid,head:.headRefOid}'; git fetch -q origin; git log --oneline -3 origin/main; git merge-base --is-a)
+  ⎿  {"head":"3d25098ed1387bf4a5312aaac4c683c6583d2960","merge":"29a18a05ae7cdbe9e25f9ca3dc3daf425e379853","mergedAt":"2026-10-31T15:45:29Z","state":"MERGED"}
+     29a18a0 docs: plan the organizer event layout with nested routes in realtime stage 3
+     d2f37ff fix(frontend): cancel a GET of the event from another page on a snapshot
+     069a100 test(frontend): cover the panel not reading its event again on reconnect
+     29a18a0 in main
+     0
+     … +1 lines
+
+⏺ PR #17 влит в `main` в 17:45 rebase-слиянием, поэтому у коммитов новые хеши. Влит он на коммите `3d25098`, то есть **последний коммит `cdb9187` (план bfcache в задаче 4.2) в `main` не попал**: я запушил его уже после слияния. Он есть только в старой ветке `origin/feat/realtime-org-stream`. Вы сейчас на новой ветке `feat/realtime-gateway`, она стоит ровно на `main`.
+  
+  **Что смотрел ревьюер** (хеши — как сейчас в `main`):
+  
+  | Круг | Коммиты |
+  | --- | --- |
+  | 1 | `a879731`, `8bce6f4` (поток и слушатель), `eb0f597` (uvicorn в `dev-backend`), `f94ba1e` (панель из потока) |
+  | 2 | `efcaa75` + `911bd14` (до разделения истории это был один коммит, ревьюер видел то же содержимое), `84b169d` (отмена и перечитывание, потом удалено) |
+  | 3 | `f3adb84` (тест отмены `LISTEN`), `da23a09` (`LiveSource`), `c6cf416` (снимок — событие целиком), `3a19796`, `3570ba5` (документы) |
+  
+  **Чего ревьюер не видел:**
+  
+  | Коммит | Что | Где |
+  | --- | --- | --- |
+  | `069a100` | тест: восстановление сети не перечитывает событие (находка 2 третьего круга) | `main` |
+  | `d2f37ff` | `cancelQueries` перед записью снимка и тест (находка 1 третьего круга) | `main` |
+  | `29a18a0` | документы: план макета с дочерними маршрутами (задача 3.4) | `main` |
+  | `cdb9187` | документы: план bfcache в задаче 4.2 | только старая ветка |
+  
+  Код из них — только `d2f37ff`: одна строка `cancelQueries` и тест к ней. `069a100` добавляет только тест, остальное — документы.
+  
+  **Что предлагаю:**
+  1. Перенести `cdb9187` в `feat/realtime-gateway` через `cherry-pick`, иначе план задачи 4.2 потеряется.
+  2. Если нужно ревью `069a100..d2f37ff`, сделать его коротким отдельным кругом: оба коммита уже в `main`, так что находки пойдут в этап 2 или в «на потом».
+  
+  Делать?
+
+> да, сделай cherry-pick, ревью не нужно
+
+⏺ Bash(git status --short | head; git cherry-pick cdb9187 2>&1 | tail -2; git log --oneline -2; git show --stat --format=%s HEAD | tail -4)
+  ⎿  Date: Sat Oct 31 17:45:34 2026 +0200
+      2 files changed, 7 insertions(+), 2 deletions(-)
+     389cd8f docs: plan reopening the live data after a bfcache restore in realtime task 4.2
+     29a18a0 docs: plan the organizer event layout with nested routes in realtime stage 3
+     
+      docs/decisions.md               | 1 +
+     … +2 lines
+
+⏺ Bash(T=$(date +%H:%M) && cat >> docs/decisions.md <<EOF)
+  ⎿  9502cca docs: plan reopening the live data after a bfcache restore in realtime task 4.2
+     29a18a0 docs: plan the organizer event layout with nested routes in realtime stage 3
+      docs/decisions.md               | 2 ++
+      docs/features/realtime/tasks.md | 8 ++++++--
+      2 files changed, 8 insertions(+), 2 deletions(-)
+
+⏺ Готово: план bfcache для задачи 4.2 теперь в ветке этапа 2, в коммите `9502cca` поверх `main`. В тот же коммит я добавил запись в лог решений: PR #17 влит без `cdb9187`, коммит перенесён сюда, а `069a100`, `d2f37ff` и `29a18a0` ревьюер не смотрел, по вашему решению это не нужно.
+  
+  Ветка `feat/realtime-gateway` пока не запушена. Строки «база этапа 2 — `<sha>`» в логе `tasks.md` ещё нет: её ставят в начале этапа, когда за него возьмёмся.

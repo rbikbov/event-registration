@@ -1,0 +1,1742 @@
+> /clear
+
+> /model
+
+> ! git log
+
+⏺ Bash(date '+%Y-%m-%d %H:%M %Z' && tail -n 15 docs/decisions.md && git log -1 --format='%ad' --date=format:'%Y-%m-%d %H:%M')
+  ⎿  2026-11-03 14:32 EET
+     - **10:08** — задача 1.3 фазы 5: форма редактирования целиком. Модель формы (`event-form.ts`, `local-input.ts`) — в `entities/event/model`: её используют страницы создания и редактирования; разметка п
+     - **10:36** — задача 1.4 фазы 5: e2e `organizer-reschedules-event.spec.ts` и `organizer-raises-capacity.spec.ts`; `registerOn` перенесён в `e2e/tests/helpers.ts` (второй потребитель), там же `openEven
+     - **11:04** — по ревью этапа 1 фазы 5 (`ae1e639..f8540cd`), решения человека. Находка 1: ответ `PATCH` больше не пишется в кэш события (вариант б): его счётчики view читает после коммита, и снимок рег
+     - **11:09** — по ревью этапа 1 фазы 5, находка 2 (решение человека — исправить): описание, как и название, сравнивается и отправляется обрезанным (`z.string().trim()` и `changedFields`) — сервер обрез
+     - **11:12** — по ревью этапа 1 фазы 5, решения человека. Находка 3: правило 9 `backend/AGENTS.md` («Event: лимит, дата, организатор — до сервисов фазы 5») заменено фактом: лимит и дата в админке тольк
+     … +11 lines
+
+⏺ Bash(grep -n '^## 2026-11' docs/decisions.md && printf -- '- **12:26** — ■ конец сессии (сессия не была закрыта; время последнего коммита)\n\n## 2026-11-03\n\n- **14:32** — ▶ начало сессии\n' >> docs/decis)
+  ⎿  661:## 2026-11-02
+     - **12:22** — задача 2.3: фаза 5 закрыта. Критерии по фактам: ровно одно напоминание на дату — pytest `test_reminders.py::test_open_window_reminds_each_seat_once` (повторный проход не прибавляет), нов
+     - **12:26** — ■ конец сессии (сессия не была закрыта; время последнего коммита)
+     
+     ## 2026-11-03
+     
+     … +1 lines
+
+⏺ Начало сессии записано в `docs/decisions.md`. Прошлая сессия (2026-11-02) осталась без отметки `■`, поэтому я закрыл её временем последнего коммита — 12:26. Изменения пока не закоммичены и войдут в первый коммит этой сессии.
+  
+  Где остановились:
+  - Фаза 5 закрыта коммитом `cefa4bd`.
+  - Фаза 6 «Доводка фронтенда» в работе. Её критерии: общая навигация и layout, состояния загрузки, ошибки и пустого списка на всех экранах, работа на ширине телефона и единый вид.
+  - В фазе 6 открыты ещё два вопроса: регистрация пользователей (если останется время) и пересмотр правила FSD о разбиении страниц на `features`.
+  - Ветка `feat/reschedule-reminders`, рабочее дерево чистое. Для фазы 6 нужна новая ветка от `main`. Если PR этой ветки ещё не влит, сначала нужно разобраться с ним.
+  
+  Что делаем? Если начинаем фазу 6, сначала напишу spec и задачи по skill `feature-workflow`.
+
+> начинаем фазу 6, пиши spec
+
+⏺ Skill(feature-workflow)
+  ⎿  Launching skill: feature-workflow
+
+⏺ Bash(git fetch -q origin 2>&1; git branch -a --merged origin/main | grep reschedule; git log --oneline origin/main -3; echo ---; ls docs/features/; echo ---; cat docs/features/_template/spec.md; echo ---; )
+  ⎿  * feat/reschedule-reminders
+       remotes/origin/feat/reschedule-reminders
+     5d50ad0 Merge pull request #23 from rbikbov/feat/reschedule-reminders
+     cefa4bd docs: close phase 5 with reminders and rescheduling in place
+     cf21240 test(backend): cover a failing reminder pass in the worker
+     ---
+     … +72 lines
+
+⏺ Bash(git stash -q && git checkout -q main && git pull -q --ff-only && git checkout -q -b feat/frontend-polish && git stash pop -q && git status --short && git log --oneline -1)
+  ⎿  M docs/decisions.md
+     5d50ad0 Merge pull request #23 from rbikbov/feat/reschedule-reminders
+
+⏺ Bash(sed -n '/Фронтенд/,/^## [^Ф]/p' docs/architecture.md | head -150; echo ---; cat docs/features/reschedule/spec.md | head -80)
+  ⎿  (`SessionAuthentication`). Фронтенд читает cookie `csrftoken` и передаёт её значение в
+       заголовке `X-CSRFToken` у изменяющих запросов — в `shared/api/csrf.ts`, одним местом для
+       всех вызовов. Кто вошёл, знает `entities/session` (`GET me`, гость — `null`); guard роутера
+       (`app/router.ts`) отправляет гостя с маршрутов `requiresAuth` на `/login`, а вошедшего с
+       `/login` — на `/org/events`. Участник управляет
+       регистрацией по секретной ссылке с `manage_token` из письма.
+     … +153 lines
+
+⏺ Bash(cd /home/raf/event-registration/frontend && cat package.json | sed -n '/"dependencies"/,/}/p'; find src -type f | grep -v test | sort; echo ---; cat src/app/router.ts; echo ---; cat src/app/App.vue 2>)
+  ⎿  "dependencies": {
+         "@lucide/vue": "^1.64.0",
+         "@tailwindcss/vite": "^4.3.3",
+         "@tanstack/vue-query": "^5.105.0",
+         "@vueuse/core": "^15.0.0",
+         "class-variance-authority": "^0.7.1",
+     … +161 lines
+
+⏺ Создал ветку `feat/frontend-polish` от `main`. Сейчас разбираю, как устроены экраны фронтенда, — от этого зависит spec.
+
+⏺ Bash(cat src/shared/ui/query-state/QueryState.vue src/shared/config/routes.ts; for f in src/pages/*/ui/*.vue; do echo "=== $f $(wc -l <$f)"; grep -nE 'QueryState|RetryAlert|max-w|<main|min-h|logout|Выйти|R)
+  ⎿  <script lang="ts">
+     import type { Ref } from "vue";
+     
+     // What a useQuery result gives; declared here so shared/ui does not depend on the query library.
+     export interface QueryStateSource<T> {
+       data: Readonly<Ref<T | undefined>>;
+     … +220 lines
+
+⏺ Bash(cd /home/raf/event-registration && grep -rn 'logout\|path(' backend/config/urls.py backend/*/urls.py 2>/dev/null | head -20; grep -rln 'empty\|"none"\|noEvents' frontend/src/pages; grep -n '"empty\|"n)
+  ⎿  backend/config/urls.py:23:    path("admin/", admin.site.urls),
+     backend/config/urls.py:24:    path("api/auth/login/", LoginView.as_view(), name="login"),
+     backend/config/urls.py:25:    path("api/auth/logout/", LogoutView.as_view(), name="logout"),
+     backend/config/urls.py:26:    path("api/auth/me/", MeView.as_view(), name="me"),
+     backend/config/urls.py:27:    path("api/org/events/", OrgEventListView.as_view(), name="org-events"),
+     backend/config/urls.py:28:    path("api/org/events/<int:event_id>/", OrgEventView.as_view(), name="org-event"),
+     … +58 lines
+
+⏺ Bash(cat frontend/src/pages/health/ui/HealthPage.vue; sed -n '18,60p' frontend/src/pages/org-events/ui/OrgEventsPage.vue; sed -n '95,160p' frontend/src/pages/org-event/ui/OrgEventLayout.vue; grep -n 'proje)
+  ⎿  <script setup lang="ts">
+     import { useQuery } from "@tanstack/vue-query";
+     import { useI18n } from "vue-i18n";
+     
+     import { healthQuery } from "../api/health";
+     
+     … +145 lines
+
+⏺ Bash(grep -n '"/api/auth/logout/"' -A3 frontend/src/shared/api/schema.d.ts | head; cat frontend/src/entities/session/api/me.ts frontend/src/app/session-expiry.ts | head -60; grep -rn 'function startsAt\|st)
+  ⎿  27:    "/api/auth/logout/": {
+     28-        parameters: {
+     29-            query?: never;
+     30-            header?: never;
+     import { queryOptions } from "@tanstack/vue-query";
+     
+     … +47 lines
+
+⏺ Bash(cd /home/raf/event-registration/frontend && for f in home/ui/HomePage event/ui/EventPage org-events/ui/OrgEventsPage ticket/ui/TicketPage org-event/ui/OrgEventLayout; do echo "== $f"; grep -n -A6 'fun)
+  ⎿  == home/ui/HomePage
+     14:function startsAt(iso: string): string {
+     15-  return d(new Date(iso), { dateStyle: "medium", timeStyle: "short" });
+     16-}
+     17-</script>
+     18-
+     … +34 lines
+
+⏺ Ветку создал. Теперь пишу spec в `docs/features/frontend-polish/spec.md`.
+
+⏺ Write(/home/raf/event-registration/docs/features/frontend-polish/spec.md)
+  ⎿  File created successfully at: /home/raf/event-registration/docs/features/frontend-polish/spec.md (file state is current in your context — no need to Read it back)
+
+⏺ Bash(cd /home/raf/event-registration && wc -l docs/features/frontend-polish/spec.md)
+  ⎿  113 docs/features/frontend-polish/spec.md
+
+⏺ Черновик spec лежит в `docs/features/frontend-polish/spec.md` (113 строк, статус «черновик»). Работаю в ветке `feat/frontend-polish`, созданной от `main`. Закоммичу spec после того, как вы его утвердите.
+  
+  **Что я нашёл в коде.** Общей шапки нет, у каждой страницы свой `<main>` с отступами и шириной. Выйти из кабинета организатора нельзя: эндпоинт `logout` есть, кнопки нет. Неизвестный адрес, в том числе `/events/abc`, открывает пустой экран. `/health` без оформления и без кнопки повтора. Формат даты скопирован в пять страниц. Backend и API в фазе не меняются.
+  
+  **Что предлагает spec:**
+  - **Общий layout** в `app/ui/AppLayout.vue`:
+    - Шапка: слева «События», справа «Вход для организатора» либо «Мои события» и «Выйти».
+    - Общий `<main>` для всех страниц.
+  - **Шапка не запрашивает `me` сама**, а читает его только из кэша. Иначе у гостя на публичных страницах в консоли будет 401: из-за этого guard и сейчас не спрашивает `me` на публичных страницах. Цена: вошедший организатор, открывший `/` в новой вкладке, увидит «Вход». Клик по нему сразу ведёт в `/org/events`.
+  - **Выход:** после него переход на `/`. Если запрос не прошёл, показывается ошибка, а сессия остаётся.
+  - **Экран 404** для неизвестных путей.
+  - **Таблица «экран × состояние»** (загрузка, ошибка с повтором, пусто, не найдено). Задача аудита сверит её с кодом и добавит недостающее. Пока я точно знаю об одном пробеле: на `/health` нет повтора.
+  - **Ширина телефона 360 px:**
+    - e2e в Playwright проходит по всем экранам и проверяет, что у страницы нет горизонтальной прокрутки.
+    - Шапка без бургер-меню.
+  - **Единый вид:**
+    - Два именованных формата даты вместо пяти копий.
+    - Одинаковые заголовки и ссылки «назад».
+    - Новые общие компоненты — только когда у них два потребителя.
+  
+  **Нужно ваше решение по двум вопросам:**
+  1. **Регистрация пользователей.** Предлагаю не включать её в spec: фаза закроется без неё, а в README в «что дальше» появится строка о ней. Если после этапов останется время, сделаем её отдельным этапом с дополнением spec.
+  2. **Дробление страниц на `features`.** Предлагаю не делать его в этой фазе. Фаза и так трогает все экраны, и если перенести код заодно, ревью не отделит доводку от переноса. Лучше вынести это в отдельную задачу или фазу.
+  
+  Ещё в spec есть мелкие допущения, их тоже нужно подтвердить:
+  - ширина 360 px, 320 px не проверяем;
+  - email в шапке скрыт на узком экране, а не обрезан многоточием.
+  
+  Утверждаете spec или что-то поменять? После утверждения запишу решения в `docs/decisions.md` и перейду к задачам.
+
+> @docs/features/frontend-polish/spec.md#38-41  - можно разрешить делать запрос, но обрабатывать 401 и не разлогинивать. Логика разлогинивания только в guard. Обдумать.
+  Для ошибок можно отдельный компонент, 404 - можно (возможно компонент обертка компонента ошибки) как для неизвестных роутов так и для записей которых не существует.
+  @docs/features/frontend-polish/spec.md#17-18 - можно взять в эту фазу. Обдумать.
+
+⏺ Bash(grep -n 'class MeView' -A15 backend/accounts/views.py; grep -n '\.dark' frontend/src/app/styles.css; grep -rn 'me/' backend/accounts/tests* e2e/tests 2>/dev/null | head; grep -n 'unwrap' -A12 frontend)
+  ⎿  43:class MeView(APIView):
+     44-    """The frontend asks who is signed in; the response also hands out the CSRF cookie
+     45-    that it sends back in X-CSRFToken on unsafe requests."""
+     46-
+     47-    @extend_schema(responses={200: UserSerializer})
+     48-    def get(self, request: Request) -> Response:
+     … +31 lines
+
+⏺ Bash(sed -n 50,75p backend/accounts/tests/test_auth_api.py; grep -n 'class LoginView' -A20 backend/accounts/views.py | grep -n 'Response\|csrf' ; grep -rn 'meQuery' frontend/src --include=*.ts --include=*.)
+  ⎿  response = APIClient().post(
+             "/api/auth/login/", {"email": "organizer@example.com", "password": PASSWORD}
+         )
+     
+         assert response.status_code == 400
+     
+     … +23 lines
+
+⏺ Ниже — что я думаю по каждому пункту. Сначала обновлю spec, потом объясню.
+
+⏺ Write(/home/raf/event-registration/docs/features/frontend-polish/spec.md)
+  ⎿  The file /home/raf/event-registration/docs/features/frontend-polish/spec.md has been updated successfully. (file state is current in your context — no need to Read it back)
+
+⏺ Bash(wc -l docs/features/frontend-polish/spec.md; grep -rn 'force?: boolean' frontend/node_modules/vue-router/dist/*.d.*ts 2>/dev/null | head -3)
+  ⎿  153 docs/features/frontend-polish/spec.md
+     frontend/node_modules/vue-router/dist/index-u4XkZVDG.d.ts:2294:  force?: boolean;
+     frontend/node_modules/vue-router/dist/options-B1Pk0SIa.d.cts:1674:  force?: boolean;
+     frontend/node_modules/vue-router/dist/options-B1Pk0SIa.d.mts:1674:  force?: boolean;
+
+⏺ Edit(/home/raf/event-registration/docs/features/frontend-polish/spec.md)
+  ⎿  The file /home/raf/event-registration/docs/features/frontend-polish/spec.md has been updated successfully.
+
+⏺ Обновил spec по вашим трём пунктам: `docs/features/frontend-polish/spec.md`, 150 строк, статус по-прежнему «черновик». Вот что я решил по каждому.
+  
+  **1. Шапка запрашивает `me`, разлогинивает только guard.** Согласен. Есть одна проблема: если шапка будет спрашивать `me` у гостя, браузер сам пишет каждый ответ 401 в консоль как ошибку, и обработка в коде этого не убирает. Поэтому я взял в фазу пункт со строки 18 и меняю API:
+  - **`GET me` для гостя** отвечает 200 `{"user": null}`. Ответ завёрнут в объект, потому что голый `null` DRF отдаёт пустым телом, и фронтенд принял бы его за ошибку. Cookie `csrftoken` выдаётся как раньше.
+  - **Шапка** показывает только ответ `meQuery`. Пока запрос идёт, правая часть пустая, чтобы «Вход» не мигал и не сменялся на «Выйти».
+  - **Решение «гостя — на вход» остаётся только в guard.** Сейчас это правило записано ещё и в `session-expiry`, который при 401 сам уводит на `/login`. Теперь он только обнуляет `me` и повторяет текущую навигацию через `router.replace` с `force: true`, а куда отправить, решает guard. Проверил, что `force` есть в типах установленной версии vue-router.
+  
+  **2. Отдельный компонент ошибки и обёртка 404.** Сделал так:
+  - **`shared/ui/error-state`**: в нём `ErrorState` (заголовок, текст, кнопки или ссылки) и `NotFound` — обёртка над ним со ссылкой «К событиям».
+  - **Где используются:**
+    - неизвестный путь;
+    - несуществующие событие, билет и событие организатора;
+    - ответ 403 на событии организатора («Нет доступа»);
+    - первая неудачная загрузка в `QueryState` (с кнопкой «Повторить»).
+  - **URL не меняется**, перехода на `/404` нет.
+  - **Ошибка повторной загрузки**, когда данные уже на экране, остаётся прежней плашкой над данными.
+  
+  **3. Строка 17 Non-Goals.** Пункты в ней разные, поэтому решил по каждому отдельно:
+  - **Заголовок вкладки — беру.** Он берётся из `meta.title` маршрута, это дёшево. Название события в заголовке не делаю.
+  - **Бургер-меню — не беру.** В шапке не больше трёх пунктов, на 360 px они помещаются в одну строку.
+  - **Тёмную тему — не беру.** В `styles.css` нет тёмной палитры: её придётся сделать с нуля и проверять каждый экран в двух темах.
+  - **Анимации переходов — не беру.**
+  
+  Если хотите бургер-меню или тёмную тему, скажите — добавлю.
+  
+  Остались без ответа два открытых вопроса:
+  1. **Регистрация пользователей:** предлагаю не включать её в spec.
+  2. **Дробление страниц на `features`:** предлагаю не в этой фазе.
+  
+  Утверждаете spec с этими двумя пунктами как есть?
+
+> @docs/features/frontend-polish/spec.md#27-28 - как будто не нравится
+
+⏺ AskUserQuestion()
+  ⎿  The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). STOP what you are doing and wait for the user to
+
+> [Request interrupted by user for tool use]
+
+> Если пользователь был залогинен, потом его сессия истекла и следующий запрос 401 должен отправить его на "/login". Как бекенд будет различать делает запрос гость или залогиненный с истекшим доступом? Насколько вообще нормально отдавать 200/204 для гостя? Посмотри и собери информацию о том как сейчас работает разлогин при 401
+
+⏺ Bash(cd /home/raf/event-registration/frontend && grep -rn 'unauthorized\|routes.login\|meQuery\|setQueryData' src --include=*.ts --include=*.vue | grep -v '\.test\.' ; echo ---; grep -n 'unauthorized\|401')
+  ⎿  (eval):1: no matches found: --include=*.ts
+     ---
+     4:  | "unauthorized"
+     55:  if (status === 401) return "unauthorized";
+     ---
+     import { VueQueryPlugin } from "@tanstack/vue-query";
+     … +23 lines
+
+⏺ Bash(grep -rnE 'unauthorized|routes\.login|meQuery|setQueryData\(|removeQueries|clear\(\)' src | grep -v '\.test\.'; echo ---; cat src/app/query-client.ts; echo ---; sed -n 1,90p src/pages/org-event/ui/Org)
+  ⎿  src/app/session-expiry.ts:4:import { meQuery } from "@/entities/session";
+     src/app/session-expiry.ts:13:    if (!(error instanceof AppError) || error.kind !== "unauthorized") return;
+     src/app/session-expiry.ts:15:    queryClient.setQueryData(meQuery.queryKey, null);
+     src/app/session-expiry.ts:16:    void router.replace(routes.login);
+     src/entities/session/api/me.ts:10:export const meQuery = queryOptions({
+     src/entities/session/api/me.ts:16:      if (error instanceof AppError && error.kind === "unauthorized") return null;
+     … +48 lines
+
+⏺ Bash(sed -n 40,90p src/pages/org-event/ui/OrgEventLayout.vue; ls src/app/*.test.ts; grep -n "it(\|test(" src/app/session-expiry.test.ts src/app/router.test.ts 2>/dev/null; cd ../backend && grep -rn 'DEFAUL)
+  ⎿  function answerOf(error: unknown) {
+       if (!(error instanceof AppError)) return null;
+       if (error.kind === "not_found") return "notFound";
+       if (error.kind === "forbidden") return "foreign";
+       return null;
+     }
+     … +77 lines
+
+⏺ Посмотрел, как сейчас устроен выход при 401. Главное: бэкенд не различает гостя и пользователя с истёкшей сессией и не должен. Редирект на `/login` зависит не от `me`, поэтому ответ `me` гостю на него не влияет.
+  
+  ## Как сейчас работает выход при 401
+  
+  **Backend.** По умолчанию эндпоинты пускают только вошедших (`IsAuthenticated`, `config/settings.py:125`). Сессия истекла, cookie нет или cookie неверная — Django во всех трёх случаях видит `AnonymousUser`, а DRF отвечает 401. Отличить «был вошедшим и сессия кончилась» от «никогда не входил» он не может: о просроченной сессии Django ничего не помнит. `logout` для гостя тоже отвечает 401.
+  
+  **Frontend.** Ответ 401 обрабатывается в четырёх местах.
+  
+  1. **`meQuery`** (`entities/session/api/me.ts:16`) превращает 401 в `null` («никто не вошёл»). Ошибкой запроса это не считается.
+  2. **Guard** (`app/router.ts:46–49`) спрашивает `me` только на маршрутах `requiresAuth` и на `/login`, через `ensureQueryData`: ответ берётся из кэша, если он там есть. `requiresAuth` и `null` — переход на `/login`. Вошедший на `/login` — переход на `/org/events`.
+  3. **`session-expiry`** (`app/session-expiry.ts`) подписан на кэш запросов и мутаций. Любой 401 на маршруте `requiresAuth` ставит `me = null` и делает `router.replace('/login')`. Это второе место с правилом «гостя на вход», помимо guard.
+  4. **Поток событий на панели.** `EventSource` не сообщает, почему соединение отклонено, поэтому при отказе панель перечитывает событие пробой (`OrgEventLayout.vue:65`). Если проба получила 401, сработает `session-expiry` из п. 3.
+  
+  Поэтому «сессия истекла → `/login`» держится не на `me`, а на 401 от запросов организатора (`/api/org/...`). Они требуют входа и при любом варианте `me` продолжат отвечать 401. Решать, что 401 значит «сессия кончилась», может только фронтенд: он знает, что пользователь был на защищённой странице.
+  
+  ## Нормально ли отвечать гостю 200 или 204
+  
+  Встречаются оба подхода, разница в том, что считать ресурсом:
+  - **`/me` как «текущий пользователь».** Без входа такого ресурса нет, и 401 — честный ответ. Так отвечает, например, `GET /user` в API GitHub. Так же DRF ведёт себя по умолчанию.
+  - **«Состояние сессии».** Ресурс есть всегда, и у гостя он пустой, поэтому 200 с `null`. Так, насколько помню, делает `/api/auth/session` в NextAuth (по памяти, не проверял).
+  - **204** подходит хуже всего: он означает «действие выполнено, тела нет» и обычно используется для команд, а не для чтения.
+  
+  Сменить ответ на 200 с `null` можно, но это не исправление ошибки: 401 здесь семантически верный. Мотив был один — строка 401 в консоли браузера.
+  
+  ## Что предлагаю
+  
+  Оставить 401 и сделать так, как вы предлагали изначально:
+  - **Шапка спрашивает `me` на любом экране.** `meQuery` уже превращает 401 в `null` без ошибки, поэтому `session-expiry` на такой ответ не срабатывает и никого не разлогинивает. Шапка просто показывает «Вход».
+  - **Правило «гостя — на вход» оставить только в guard.** `session-expiry` при 401 ставит `me = null` и повторяет текущую навигацию с `force: true`, а куда вести, решает guard. Сценарий с истёкшей сессией не меняется.
+  - **Цена:** у гостя на каждом экране в консоли строка 401 от `me`. На `/login` она есть и сейчас, при проверках фаз 1–5 её принимали. В критерий проверки в браузере записать: «без ошибок в консоли, кроме 401 `me` у гостя».
+  - **API и backend в фазе не меняются.** Строку 27 удалю, «Изменение `GET me`» верну в Non-Goals с этой причиной.
+  
+  Если согласны, поправлю spec. Если строка 28 тоже не нравится (`AppLayout` в слое `app`, а не в `widgets`), скажите — у меня там довод «потребитель один».
+
+> я тоже считаю что 401 семантически верный и не хочу костыли 200/204, оставляем 401, поправь spec. я думаю GET me можно даже не упоминать в non goals вообще. Можно пройтись по "на потом" предыдущих фаз и собрать то что касается фронтенда тоже
+
+⏺ Bash(cd /home/raf/event-registration/docs/features && for d in registration emails checkin realtime reschedule; do echo "=== $d"; awk '/[Нн]а потом/{f=1} f' $d/tasks.md; done)
+  ⎿  === registration
+     ## На потом
+     
+     - ~~Блокировка Event в `register` (3.1) тестами не покрыта~~ — закрыто в 6.1:
+       `registrations/tests/test_concurrency.py`, без блокировки падают 4 теста.
+     - Выход организатора: `POST /api/auth/logout/` есть, кнопки в интерфейсе нет (Non-Goal фазы 1).
+     … +108 lines
+
+⏺ Сначала правлю spec под 401.
+
+⏺ Bash(cd /home/raf/event-registration && python3 - <<'EOF')
+  ⎿  143 docs/features/frontend-polish/spec.md
+     12:ошибки и пустого списка, ширина телефона. Backend и API не меняются.
+     43:- **401 — ответ, а не ошибка API.** `GET me` гостю по-прежнему отвечает 401: ресурса «текущий
+     [This command modified 1 file you've previously read: docs/features/frontend-polish/spec.md. Call Read before editing.]
+
+⏺ Bash(t=$(date +%H:%M) && printf -- '- **%s** — spec фазы 6 (черновик): `GET me` гостю остаётся 401 — ресурса «текущий пользователь» без входа нет; шапка запрашивает `me` на любом экране, `meQuery` отдаёт `)
+  ⎿  - **15:31** — spec фазы 6 (черновик): `GET me` гостю оста
+
+⏺ Поправил spec под 401: `docs/features/frontend-polish/spec.md`, теперь 143 строки.
+  - Из spec убрал раздел API, изменение `GET me` и pytest-сценарий. В Non-Goals `GET me` не упоминается.
+  - Добавил в раздел «Сессия»:
+    - шапка спрашивает `me` на любом экране, 401 превращается в `null` и никого не уводит;
+    - на `/login` уводит только guard;
+    - строка 401 `me` в консоли гостя — единственная допустимая ошибка консоли при проверке в браузере.
+  - Решение записал в `docs/decisions.md` в 15:31.
+  
+  ## «На потом» предыдущих фаз, касающееся фронтенда
+  
+  **Уже в spec**
+  - Кнопка выхода и общая шапка с навигацией (фаза 1).
+  
+  **Предлагаю взять, это доводка экранов**
+  1. **Возврат после входа:** `?next=<путь>` (фаза 3). Сейчас после 401 и повторного входа организатор попадает в `/org/events` и заново ищет экран чекина. Это ложится на переделку guard: guard уводит на `/login?next=…`, вход возвращает по `next`. Принимать только внутренний путь (`/…`, не `//…`), иначе получится открытый редирект.
+  2. **Время отметки на входе с датой, если отметка была не сегодня:** «09:15», «31 окт. в 09:15», с годом. Сейчас есть только часы и минуты, и вчерашняя отметка читается как сегодняшняя. Одна функция в `shared/lib` для чекина, билета и таблицы участников. Совпадает с пунктом «единый формат даты».
+  3. **Описание события — `textarea` в форме создания и редактирования.** Сейчас это `<input>`, и переводы строк теряются.
+  4. **Чекин не сбрасывает кэш события (фаза 3)** — вероятно, уже не актуально: с фазы 4 счётчики обновляет поток, а макет держит его на всех вкладках. Проверю и закрою строкой в логе.
+  
+  **На ваше решение**
+  
+  5. **Блокировка «Следующий» на чекине на 1–2 с после ответа**, ваше предложение. Небольшое, предлагаю взять.
+  6. **Описание события в макете организатора:** 3–4 строки и «Развернуть». Это новая функция, а не доводка. Предлагаю не брать.
+  7. **Нестабильные Vitest-тесты.** Падали `TicketPage` «cancels, rereads…», `EventPage:197` и ещё несколько страниц под нагрузкой; по гипотезе — один `flushPromises()` там, где MSW отвечает дольше тика. Фаза трогает все эти страницы, и случайные падения будут мешать её проверкам. Предлагаю отдельной задачей в конце фазы, с ограничением по времени.
+  8. **Постраничная выдача и порядок списков событий.** Нужны правки backend и API. Предлагаю не брать — это не доводка.
+  
+  **Не фронтенд, не беру**
+  - Срок сессии (скользящий или нет).
+  - Запрет регистрации на начавшееся событие.
+  - Настройки `runserver`.
+  - Идея о параллельной работе по контракту.
+  
+  Какие пункты из 1–8 берём? Мой вариант: 1–5 и 7.
+
+> берём 1–7 (6 не только на странице организатора). добавь в spec. 8 можно потом
+
+⏺ Bash(cd /home/raf/event-registration/frontend/src && grep -rn 'description' pages --include=*.vue | grep -v 'Alert\|test' | head -20; grep -rn 'function time\|timeStyle: "short" })' pages | head; grep -n ')
+  ⎿  (eval):1: no matches found: --include=*.vue
+     pages/org-event-participants/ui/OrgEventParticipantsPage.vue:57:function time(iso: string): string {
+     pages/org-event-participants/ui/OrgEventParticipantsPage.vue:58:  return d(new Date(iso), { timeStyle: "short" });
+     pages/org-event-participants/ui/OrgEventParticipantsPage.test.ts:83:    const time = new Intl.DateTimeFormat("ru", { timeStyle: "short" }).format(
+     pages/org-events/ui/OrgEventsPage.vue:16:  return d(new Date(iso), { dateStyle: "medium", timeStyle: "short" });
+     pages/org-checkin/ui/OrgCheckinPage.test.ts:123:    const time = new Intl.DateTimeFormat("ru", { timeStyle: "short" }).format(
+     … +14 lines
+
+⏺ Bash(grep -rn 'description' pages/*/ui/*.vue entities | grep -v 'AlertDescription\|CardDescription' | head -20)
+  ⎿  pages/org-event-edit/ui/OrgEventEditPage.vue:113:const textFields: { name: "title" | "description" | "starts_at"; type: string }[] = [
+     pages/org-event-edit/ui/OrgEventEditPage.vue:115:  { name: "description", type: "text" },
+     pages/org-event-edit/ui/OrgEventEditPage.vue:181:    "description": "Описание",
+     pages/org-event-new/ui/OrgEventNewPage.vue:39:  description: "",
+     pages/org-event-new/ui/OrgEventNewPage.vue:81:const textFields: { name: "title" | "description" | "starts_at"; type: string }[] = [
+     pages/org-event-new/ui/OrgEventNewPage.vue:83:  { name: "description", type: "text" },
+     … +14 lines
+
+⏺ Read(/home/raf/event-registration/docs/features/frontend-polish/spec.md)
+  ⎿  1	# Доводка фронтенда: spec
+     2	
+     3	Фаза — `docs/roadmap.md`, фаза 6. Статус: черновик.
+     4	
+     5	## Что и зачем
+     6	
+     … +138 lines
+
+⏺ Write(/home/raf/event-registration/docs/features/frontend-polish/spec.md)
+  ⎿  The file /home/raf/event-registration/docs/features/frontend-polish/spec.md has been updated successfully. (file state is current in your context — no need to Read it back)
+
+⏺ Bash(cd /home/raf/event-registration && wc -l docs/features/frontend-polish/spec.md && t=$(date +%H:%M) && printf -- '- **%s** — в фазу 6 из «на потом» фаз 1–5 (решение человека): возврат после входа по `?)
+  ⎿  143 docs/features/frontend-polish/spec.md
+
+⏺ Добавил в spec пункты 1–7 из «на потом». Файл: `docs/features/frontend-polish/spec.md`, 143 строки при лимите 150, статус по-прежнему «черновик». Решение о составе фазы записал в `docs/decisions.md`.
+  
+  **Что добавилось:**
+  - **Возврат после входа.**
+    - Guard уводит на `/login?next=<путь>`, после входа пользователь возвращается на `next`.
+    - Вошедший, открывший `/login?next=…`, тоже уходит на `next`.
+    - Новая функция `safeNext` пропускает только внутренний путь: он начинается с `/`, но не с `//` и не с `/\`. Иначе вход ведёт на `/org/events`.
+    - После выхода `next` не передаётся.
+  - **Время отметки на входе.** Функция `formatMoment` в `shared/lib`:
+    - отметка сегодня — «09:15»;
+    - в другой день этого года — «31 окт. в 09:15»;
+    - в другой год — с годом.
+    - День определяется по календарю в часовом поясе браузера.
+    - Используется на чекине, на странице билета и в таблице участников.
+  - **Описание события.**
+    - В формах создания и редактирования — `textarea` (компонент shadcn).
+    - На странице события и в макете организатора — `ExpandableText`: текст свёрнут до 4 строк. «Развернуть» появляется, только если текст действительно обрезан.
+  - **«Следующий» на чекине** неактивна 1 с после ответа.
+  - **Нестабильные тесты Vitest** — отдельный раздел spec.
+    - Гипотеза: тесты ждут один `flushPromises()`, а ответ MSW приходит позже. Исправлять ожиданием результата, без увеличения таймаутов.
+    - Готово, когда 10 прогонов подряд проходят под нагрузкой.
+    - Ограничение 2 часа. Не уложимся — запишу гипотезу и что пробовал в «на потом».
+  - **Устаревший кэш события после чекина** вынесен в крайние случаи как проверка: возможно, он уже не нужен с фазы 4.
+  - **Постраничная выдача и порядок списков событий** — пункт 8 — добавлен в Non-Goals: для него нужен backend.
+  
+  **Допущения, которые я выбрал сам:**
+  - пауза у «Следующий» — 1 с, а не 2;
+  - описание свёрнуто до 4 строк;
+  - проверка нестабильных тестов идёт под нагрузкой: параллельно с `make stack-check-backend` на слоте 1.
+  
+  Открытые вопросы 1 (регистрация пользователей не входит в фазу) и 2 (дробление страниц на `features` — после сдачи) остались в spec с моими предложениями.
+  
+  Утверждаете spec? Если да, запишу утверждение и перейду к `tasks.md`.
+
+> утверждаю, пиши задачи
+
+⏺ Bash(cat docs/features/_template/tasks.md; echo ---; sed -n 1,60p docs/features/reschedule/tasks.md)
+⏺ Bash(sed -i 's/^Фаза — `docs\/roadmap.md`, фаза 6. Статус: черновик./Фаза — `docs\/roadmap.md`, фаза 6. Статус: утверждён 2026-11-03./' docs/features/frontend-polish/spec.md && head -3 docs/features/fronte)
+  ⎿  # <Фича>: задачи
+     
+     Spec — `spec.md`. Одна задача — один коммит; отметка `[x]` — в том же коммите.
+     
+     - [ ] 1. Tracer bullet: <сценарий насквозь>. Готово, когда: <проверка>.
+     - [ ] 2. <Задача>. Готово, когда: <проверка>.
+     … +64 lines
+
+  ⎿  # Доводка фронтенда: spec
+     
+     Фаза — `docs/roadmap.md`, фаза 6. Статус: утверждён 2026-11-03.
+     15:38
+     [This command modified 1 file you've previously read: docs/features/frontend-polish/spec.md. Call Read before editing.]
+
+⏺ Write(/home/raf/event-registration/docs/features/frontend-polish/tasks.md)
+  ⎿  File created successfully at: /home/raf/event-registration/docs/features/frontend-polish/tasks.md (file state is current in your context — no need to Read it back)
+
+⏺ Edit(/home/raf/event-registration/docs/features/frontend-polish/tasks.md)
+  ⎿  <tool_use_error>String to replace not found in file.
+     String:       организатора, карточки списков. Готово, когда: `make stack-check`, снимки
+           экранов до и после в логе не нужны — проверка в браузере этапа.
+     (note: Edit also tried swapping \uXXXX escapes and their characters; neither form matched, so the mismatch is likely elsewhere in old_string. Re-read the file and copy the exact surrounding text.)</to
+
+⏺ Edit(/home/raf/event-registration/docs/features/frontend-polish/tasks.md)
+⏺ Bash(printf -- '- **15:38** — spec фазы 6 (`docs/features/frontend-polish/spec.md`) утверждён человеком; открытые вопросы — по предложению агента: регистрация пользователей и дробление страниц на `features)
+  ⎿  The file /home/raf/event-registration/docs/features/frontend-polish/tasks.md has been updated successfully. (file state is current in your context — no need to Read it back)
+
+  ⎿  утверждён человеком; открытые вопросы — по предложению агента: регистрация пользователей и дробление страниц на `features` — не в этой фазе, строки в README «что дальше».
+
+⏺ Spec отмечен как утверждённый 2026-11-03, запись об этом есть в `docs/decisions.md`. Задачи — в `docs/features/frontend-polish/tasks.md`: 13 задач в пяти этапах. После каждого этапа — ревью агентом `reviewer` и проверка в браузере.
+  
+  **Этап 1. Layout, шапка и сессия**
+  - **1.1.** Tracer bullet: общий `AppLayout`, шапка по `meQuery` в трёх состояниях и выход в одну сторону — успех и переход на `/`.
+  - **1.2.** Выход, остальные случаи: ошибка, 401, двойной клик.
+  - **1.3.** На вход уводит только guard: `session-expiry` через `force`, `?next=` и `safeNext`.
+  - **1.4.** e2e `organizer-logs-out.spec.ts`: выход, а затем возврат по `next` после повторного входа.
+  
+  **Этап 2. Ошибки и состояния**
+  - **2.1.** `ErrorState` и `NotFound`, маршрут 404, замена на событии, билете, в макете и в `QueryState`.
+  - **2.2.** Аудит таблицы «Состояния»: у каждого «есть» в логе будет ссылка на тест. Оформление `/health` и заголовок вкладки.
+  
+  **Этап 3. Описание события и чекин**
+  - **3.1.** `textarea` для описания.
+  - **3.2.** `ExpandableText`: описание свёрнуто до 4 строк, кнопка «Развернуть».
+  - **3.3.** `formatMoment`, тест пишется первым.
+  - **3.4.** Пауза «Следующий» и проверка кэша события после чекина.
+  
+  **Этап 4. Телефон и единый вид**
+  - **4.1.** Два формата даты вместо пяти копий `startsAt`, одинаковые заголовки и ссылки «назад».
+  - **4.2.** e2e на 360 × 740 по всем экранам, найденные проблемы исправить. Проверю, что тест падает: временно добавлю на экран широкую строку.
+  
+  **Этап 5. Тесты и закрытие**
+  - **5.1.** Нестабильные тесты Vitest, не больше 2 часов.
+  - **5.2.** Закрытие фазы: README, `architecture.md`, roadmap.
+  
+  Почему такой порядок:
+  - Сессия идёт первой: на шапку и guard опираются остальные этапы.
+  - Проверка ширины телефона идёт после всех правок вёрстки, чтобы не делать её дважды.
+  - Нестабильные тесты — в конце, по spec. Если они начнут мешать раньше, можно перенести 5.1 в начало: задача ни от чего не зависит.
+  
+  Пока ничего не коммитил. Утверждаете задачи? Тогда закоммичу spec, задачи и лог решений одним коммитом `docs:` и начну исследование для 1.1.
+
+> утверждаю, коммить и начинай
+
+⏺ Bash(sed -i 's/^## Фаза 6. Доводка фронтенда — в работе$/&/' docs/roadmap.md && grep -n 'Фаза 6' -A3 docs/roadmap.md | head -5; git add docs/features/frontend-polish docs/decisions.md && git commit -q -F -)
+  ⎿  118:## Фаза 6. Доводка фронтенда — в работе
+     119-
+     120-Экраны появляются в фазах 1–5; здесь — то, что видно только на собранном приложении.
+     121-Критерии: общая навигация и layout; у всех экранов состояния загрузки, ошибки и пустого
+     ⋯ Backing up original state…
+     ✔ Done backing up original state (cd211b5)!
+     … +12 lines
+
+⏺ Закоммитил (`194d59b`). Начинаю исследование для 1.1. Сначала загружаю skill `fsd-frontend`.
+
+⏺ Skill(fsd-frontend)
+  ⎿  Launching skill: fsd-frontend
+
+⏺ Bash(cd /home/raf/event-registration/frontend && cat AGENTS.md | head -80; echo ----; cat src/app/router.test.ts | head -40; ls src/shared/lib/test 2>/dev/null; ls src/*.ts src/test* 2>/dev/null; cat vites)
+⏺ Bash(cd /home/raf/event-registration/frontend && sed -n 1,140p src/pages/login/ui/LoginPage.test.ts; echo ----; cat src/pages/login/ui/LoginPage.vue | sed -n 1,60p; cat src/shared/lib/i18n.ts)
+⏺ Bash(cd /home/raf/event-registration/frontend && sed -n 1,80p src/pages/org-events/ui/OrgEventsPage.test.ts; cat src/shared/lib/test/index.ts | head -40; ls src/shared/lib/test)
+  ⎿  import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
+     import { flushPromises, mount } from "@vue/test-utils";
+     import { http, HttpResponse } from "msw";
+     import { describe, expect, it } from "vitest";
+     import { createMemoryHistory, createRouter } from "vue-router";
+     
+     … +190 lines
+
+  ⎿  import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
+     import { flushPromises, mount } from "@vue/test-utils";
+     import { http, HttpResponse } from "msw";
+     import { describe, expect, it } from "vitest";
+     import { createMemoryHistory, createRouter } from "vue-router";
+     
+     … +78 lines
+
+  ⎿  # frontend/ — Vue 3 + Vite
+     
+     Команды и инструменты — `docs/development.md`, раздел «Frontend». Как писать код (слои, DI,
+     состояние, тесты) — skill `fsd-frontend`. Здесь — правила, которые действуют всегда.
+     
+     ## Карта
+     … +116 lines
+
+⏺ Bash(grep -rn 'queryKey' src --include=*.ts -r 2>/dev/null | grep -v test | head -20; grep -rln '"main"\|find("main\|get("main' src; grep -n 'logout' -A12 src/shared/api/schema.d.ts | sed -n 1,5p; cat src/)
+  ⎿  (eval):1: no matches found: --include=*.ts
+     27:    "/api/auth/logout/": {
+     28-        parameters: {
+     29-            query?: never;
+     30-            header?: never;
+     31-            path?: never;
+     … +2 lines
+
+⏺ Bash(grep -rn 'queryKey' src | grep -v '\.test\.' | head -20; grep -rln 'find("main\|get("main' src)
+  ⎿  src/entities/event/api/public-events.ts:11:  queryKey: ["events"],
+     src/entities/event/api/public-events.ts:20:  return queryOptions({ queryKey: ["events", id], queryFn: () => readPublicEvent(id) });
+     src/entities/event/api/public-events.ts:26:    queryKey: ["event-probe", id],
+     src/app/session-expiry.ts:15:    queryClient.setQueryData(meQuery.queryKey, null);
+     src/entities/event/api/org-events.ts:10:  queryKey: ["org", "events"],
+     src/entities/event/api/org-events.ts:20:  return queryOptions({ queryKey: ["org", "events", id], queryFn: () => readOrgEvent(id) });
+     … +14 lines
+
+⏺ Bash(sed -n 18,30p src/pages/home/ui/HomePage.vue; sed -n 55,67p src/pages/home/ui/HomePage.vue; grep -n 'Вход\|login' src/pages/home/ui/HomePage.test.ts; grep -rn '<main\|</main>' src/pages | grep -v test)
+  ⎿  <template>
+       <main class="mx-auto max-w-3xl px-4 py-8">
+         <div class="flex items-center justify-between gap-4">
+           <h1 class="text-2xl font-semibold">{{ t("title") }}</h1>
+           <RouterLink class="text-muted-foreground text-sm underline" :to="routes.login">
+             {{ t("login") }}
+     … +47 lines
+
+⏺ Bash(cat src/shared/api/index.ts; sed -n 1,25p src/shared/api/client.ts; sed -n 36,60p src/shared/api/client.ts)
+  ⎿  export { AppError, type AppErrorKind, type FieldErrors } from "./app-error";
+     export { api, unwrap } from "./client";
+     export type { components, paths } from "./schema";
+     import createClient from "openapi-fetch";
+     
+     import { AppError } from "./app-error";
+     … +23 lines
+
+⏺ Исследую для 1.1, как фронтенд обрабатывает ответы 204 без тела. От этого зависит вызов `logout`.
+
+⏺ Bash(cd /home/raf/event-registration && grep -rn '204' frontend/src --include=*.ts -l 2>/dev/null; grep -rln '204' frontend/src; grep -n 'responses={2' backend/*/views.py | head)
+  ⎿  Exit code 1
+     (eval):1: no matches found: --include=*.ts
+
+⏺ Bash(cd /home/raf/event-registration && grep -rln '204' frontend/src; grep -rn 'responses={2' backend/ --include=views.py | head)
+  ⎿  frontend/src/shared/api/csrf.test.ts
+     frontend/src/shared/api/schema.d.ts
+     backend/accounts/views.py:25:        responses={200: UserSerializer, 400: ValidationErrorSerializer},
+     backend/accounts/views.py:36:    @extend_schema(request=None, responses={204: None})
+     backend/accounts/views.py:47:    @extend_schema(responses={200: UserSerializer})
+     backend/events/views.py:35:    @extend_schema(responses={201: EventSerializer, 400: ValidationErrorSerializer})
+
+⏺ Bash(cd /home/raf/event-registration/frontend && grep -n '204' node_modules/openapi-fetch/dist/index.js | head; sed -n 26,40p src/shared/api/client.ts; ls src/shared/api/*.test.ts)
+  ⎿  ugrep: warning: node_modules/openapi-fetch/dist/index.js: No such file or directory
+     export async function unwrap<Data>(request: Promise<ApiResult<Data>>): Promise<Data> {
+       let result: ApiResult<Data>;
+       try {
+         result = await request;
+       } catch (cause) {
+     … +9 lines
+
+⏺ Bash(f=$(find -L node_modules/openapi-fetch/dist -name 'index.mjs' -o -name 'index.js' | head -1); echo $f; grep -n '204' $f | head; grep -n 'unwrap\|it(' src/shared/api/client.test.ts | head -20)
+  ⎿  node_modules/openapi-fetch/dist/index.mjs
+     180:    if (response.status === 204 || request.method === "HEAD" || contentLength === "0" && !response.headers.get("Transfer-Encoding")?.includes("chunked")) {
+     7:import { api, unwrap } from "./client";
+     9:describe("unwrap", () => {
+     10:  it("returns data of a successful response", async () => {
+     15:    await expect(unwrap(api.GET("/api/health/"))).resolves.toEqual({
+     … +6 lines
+
+⏺ Bash(sed -n 178,186p node_modules/openapi-fetch/dist/index.mjs)
+  ⎿  }
+         const contentLength = response.headers.get("Content-Length");
+         if (response.status === 204 || request.method === "HEAD" || contentLength === "0" && !response.headers.get("Transfer-Encoding")?.includes("chunked")) {
+           return response.ok ? { data: void 0, response } : { error: void 0, response };
+         }
+         if (response.ok) {
+     … +3 lines
+
+⏺ Edit(/home/raf/event-registration/docs/features/frontend-polish/tasks.md)
+  ⎿  The file /home/raf/event-registration/docs/features/frontend-polish/tasks.md has been updated successfully. (file state is current in your context — no need to Read it back)
+
+⏺ Пишу тест вперёд для `unwrapEmpty`.
+
+⏺ Read(/home/raf/event-registration/frontend/src/shared/api/client.test.ts)
+  ⎿  1	import { http, HttpResponse } from "msw";
+     2	import { describe, expect, it } from "vitest";
+     3	
+     4	import { server } from "@/shared/lib/test/msw";
+     5	
+     6	import { AppError } from "./app-error";
+     … +53 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯
+     
+     
+      Test Files  1 failed (1)
+           Tests  3 failed | 4 passed (7)
+        Start at  15:45:34
+     … +1 lines
+
+⏺ Bash(pnpm exec vitest run src/shared/api/client.test.ts 2>&1 | grep -m3 -E 'TypeError|Error:' ; python3 - <<'EOF')
+  ⎿  TypeError: unwrapEmpty is not a function
+     TypeError: unwrapEmpty is not a function
+     TypeError: unwrapEmpty is not a function
+           Tests  7 passed (7)
+
+⏺ Тесты проходят. Убираю дублирование между `unwrap` и `unwrapEmpty`.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  error?: unknown;
+       response: Response;
+     }
+     
+     // Turns an openapi-fetch result into data or an AppError, so callers never look at
+     // statuses or Response objects.
+     … +22 lines
+
+⏺ Теперь `logout` в `entities/session` и общий корень ключей запросов организатора.
+
+⏺ Bash(sed -n 1,35p src/entities/event/api/org-events.ts; cat src/entities/event/index.ts; sed -n 15,30p src/pages/org-event-participants/api/registrations.ts)
+  ⎿  import { queryOptions } from "@tanstack/vue-query";
+     
+     import { api, unwrap } from "@/shared/api";
+     import type { components, paths } from "@/shared/api";
+     import { sseSource, type LiveSource } from "@/shared/lib/live-source";
+     
+     … +70 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  1:import { queryOptions } from "@tanstack/vue-query";
+     3:import { api, unwrap } from "@/shared/api";
+     4:import type { components } from "@/shared/api";
+     6:import type { RegistrationCounts } from "../model/participant-pages";
+     7:import type { RegistrationStatus } from "../model/status-filter";
+
+⏺ Bash(sed -i '3i import { orgQueryKey } from "@/entities/event";' src/pages/org-event-participants/api/registrations.ts && sed -i '3a\\' src/pages/org-event-participants/api/registrations.ts && head -8 src/)
+  ⎿  import { queryOptions } from "@tanstack/vue-query";
+     
+     import { orgQueryKey } from "@/entities/event";
+     
+     import { api, unwrap } from "@/shared/api";
+     import type { components } from "@/shared/api";
+     … +3 lines
+
+⏺ Bash(sed -i '4{/^$/d}' src/pages/org-event-participants/api/registrations.ts && head -6 src/pages/org-event-participants/api/registrations.ts)
+  ⎿  import { queryOptions } from "@tanstack/vue-query";
+     
+     import { orgQueryKey } from "@/entities/event";
+     import { api, unwrap } from "@/shared/api";
+     import type { components } from "@/shared/api";
+     [This command modified 1 file you've previously read: src/pages/org-event-participants/api/registrations.ts. Call Read before editing.]
+
+⏺ Теперь пишу тест шапки, затем `AppLayout`.
+
+⏺ Write(/home/raf/event-registration/frontend/src/app/ui/AppLayout.test.ts)
+⏺ Write(/home/raf/event-registration/frontend/src/app/ui/AppLayout.vue)
+  ⎿  File created successfully at: /home/raf/event-registration/frontend/src/app/ui/AppLayout.test.ts (file state is current in your context — no need to Read it back)
+
+  ⎿  File created successfully at: /home/raf/event-registration/frontend/src/app/ui/AppLayout.vue (file state is current in your context — no need to Read it back)
+
+⏺ Bash(cat > src/app/App.vue <<'EOF')
+  ⎿  Tests  6 passed (6)
+
+⏺ Шапка работает. Убираю `<main>` у страниц и ссылку «Вход» с главной.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  src/pages/org-events/ui/OrgEventsPage.vue
+     src/pages/login/ui/LoginPage.vue
+     src/pages/health/ui/HealthPage.vue
+     src/pages/home/ui/HomePage.vue
+     src/pages/org-event-new/ui/OrgEventNewPage.vue
+     src/pages/ticket/ui/TicketPage.vue
+     … +23 lines
+
+⏺ Bash(grep -c 'routes\.' src/pages/home/ui/HomePage.vue; sed -i 's/import { eventPath, routes } from "@\/shared\/config";/import { eventPath } from "@\/shared\/config";/' src/pages/home/ui/HomePage.vue && s)
+  ⎿  0
+     POSTGRES_PORT=5433 BACKEND_PORT=8001 FRONTEND_PORT=5174 MAILPIT_PORT=8026 MAILPIT_SMTP_PORT=1026 docker compose -p event-registration-s1 up -d --wait postgres
+     
+     The command 'docker' could not be found in this WSL 2 distro.
+     We recommend to activate the WSL integration in Docker Desktop settings.
+     
+     … +5 lines
+
+⏺ Bash(make check-frontend 2>&1 | grep -vE '^\s*✓' | tail -30)
+  ⎿  cd frontend && pnpm lint
+     
+     > frontend@0.0.0 lint /home/raf/event-registration/frontend
+     > eslint .
+     
+     
+     … +7 lines
+
+⏺ Bash(sed -n 9p frontend/src/pages/home/ui/HomePage.test.ts && sed -i '9s/import { eventPath, routes } from/import { eventPath } from/' frontend/src/pages/home/ui/HomePage.test.ts && make check-frontend 2>&)
+  ⎿  import { eventPath, routes } from "@/shared/config";
+      Test Files  30 passed (30)
+           Tests  283 passed (283)
+
+⏺ Проверки фронтенда проходят: 30 файлов, 283 теста. Обновляю документацию под новые модули.
+
+⏺ Bash(cd /home/raf/event-registration/frontend && python3 - <<'EOF')
+  ⎿  15:src/entities/event/  события: orgEventsQuery / orgEventQuery(id) / orgEventLive(id) / orgEventProbe(id) (организатор), publicEventsQuery / publicEventQuery(id) / publicEventLive(id) / publicEventPr
+
+⏺ Bash(sed -i '15s|(организатор), publicEventsQuery|(организатор; ключи — с префиксом `orgQueryKey`, выход сбрасывает их по нему), publicEventsQuery|' AGENTS.md && sed -n 15p AGENTS.md | cut -c1-200; cd .. &)
+  ⎿  src/entities/event/  события: orgEventsQuery / orgEventQuery(id) / orgEventLive(id) / orgEventProbe(id) (организатор; ключи — с префиксом `orgQueryKey`, выход �
+      M docs/features/frontend-polish/tasks.md
+      M frontend/AGENTS.md
+      M frontend/src/app/App.vue
+      M frontend/src/entities/event/api/org-events.ts
+      M frontend/src/entities/event/index.ts
+     … +18 lines
+
+⏺ Код задачи 1.1 написан, но закончить её не могу: в этой WSL нет `docker`. Без него не запускается `make stack-check` (Postgres слота 1), а значит и стек для проверки в браузере. Поэтому ничего не коммитил: по правилам задача готова только после `make stack-check`.
+  
+  Что прошло: `make check-frontend` — ESLint, vue-tsc и Vitest, 30 файлов и 283 теста, зелёные.
+  
+  **Что сделано:**
+  - **`AppLayout`** (`frontend/src/app/ui/`) — шапка и общий `<main>`, подключён в `App.vue`.
+    - Пока ответа на `me` нет, правая часть шапки пустая.
+    - Гостю или при ошибке запроса шапка показывает «Вход для организатора».
+    - Организатору — «Мои события», email (с ширины `sm`) и «Выйти».
+    - Шапка запрашивает `me` сама, но на страницах организатора не повторяет запрос, который только что сделал guard (`refetchOnMount: false`).
+  - **Выход.** Функция `logout` в `entities/session`. После успешного выхода `me` в кэше становится `null`, затем переход на `/`, затем удаляются запросы организатора. Ушёл со страницы до удаления намеренно: открытая страница запросила бы удалённые данные заново.
+  - **`unwrapEmpty` в `shared/api`** — нужен для ответов 204 без тела, `logout` — первый такой. Тесты я написал до кода и сначала увидел, как они падают.
+  - **`orgQueryKey`** — общий префикс ключей запросов организатора. Выход удаляет запросы по нему.
+  - **Страницы:**
+    - у 8 страниц свой `<main>` заменён на `<div>` с прежней шириной, отступы теперь даёт общий `<main>`;
+    - вход больше не растягивается на весь экран (`min-h-screen` убран);
+    - ссылка «Вход для организатора» с главной ушла в шапку.
+  - **Документация:** обновлены `frontend/AGENTS.md` и `shared/api/AGENTS.md`; исследование записано в лог `tasks.md`.
+  
+  **Что нужно от вас:** включить WSL-интеграцию в Docker Desktop (Settings → Resources → WSL Integration) для этого дистрибутива и сказать мне. После этого я запущу `make stack-check`, проверю в браузере на слоте 1 сценарий «вход → «Выйти» → `/`», закоммичу 1.1 и продолжу.
+
+> включил
+
+⏺ Bash(make stack-check 2>&1 | grep -E 'error|Error|FAIL|failed|passed|Tests |✖|make:' | tail -20)
+  ⎿  ELIFECYCLE  Command failed with exit code 1.
+     make[1]: *** [Makefile:47: format-check] Error 1
+     make: *** [Makefile:147: stack-check] Error 2
+
+⏺ Bash(make stack-check 2>&1 | grep -B2 -A8 'format-check\|prettier' | head -30)
+  ⎿  > event-registration@0.0.0 format:check /home/raf/event-registration
+     > prettier --check .
+     
+     Checking formatting...
+     [warn] frontend/src/entities/event/api/org-events.ts
+     [warn] Code style issues found in the above file. Run Prettier with --write to fix.
+     … +4 lines
+
+⏺ Bash(pnpm exec prettier --write frontend/src/entities/event/api/org-events.ts >/dev/null && git diff --stat frontend/src/entities/event/api/org-events.ts && make stack-check 2>&1 | grep -E 'error|Error|FAI)
+  ⎿  frontend/src/entities/event/api/org-events.ts | 12 +++++++++---
+      1 file changed, 9 insertions(+), 3 deletions(-)
+     All checks passed!
+     ======================== 296 passed in 82.83s (0:01:22) ========================
+      Test Files  30 passed (30)
+           Tests  283 passed (283)
+     … +1 lines
+
+⏺ `make stack-check` проходит. UI менялся, поэтому запускаю ещё `make stack-e2e`.
+
+⏺ Bash(make stack-e2e 2>&1 | grep -E 'passed|failed|flaky|Error|✘|make:' | tail -20)
+  ⎿  ✘   5 [chromium] › tests/participant-registers.spec.ts:5:1 › participants get the only seat, then a place on the waitlist (3.9s)
+       ✘   6 [chromium] › tests/participant-opens-ticket.spec.ts:5:1 › the ticket email leads to the ticket page, where the participant cancels (4.6s)
+       ✘  14 [chromium] › tests/waitlisted-gets-promoted.spec.ts:13:1 › a cancelled seat goes to the waitlist head, who gets an email with the ticket (3.6s)
+         Error: expect(received).toEqual(expected) // deep equality
+         > 39 |   expect(consoleErrors).toEqual([]);
+         Error Context: test-results/participant-opens-ticket-t-1b632-ere-the-participant-cancels-chromium/error-context.md
+     … +10 lines
+
+⏺ Bash(cd /home/raf/event-registration/e2e && grep -rn 'consoleErrors' tests | head -20; cat AGENTS.md | grep -n -i 'консол' )
+  ⎿  tests/participant-registers.spec.ts:12:  const consoleErrors: string[] = [];
+     tests/participant-registers.spec.ts:14:    if (message.type() === "error") consoleErrors.push(message.text());
+     tests/participant-registers.spec.ts:42:    if (message.type() === "error") consoleErrors.push(message.text());
+     tests/participant-registers.spec.ts:52:  expect(consoleErrors).toEqual([]);
+     tests/waitlisted-gets-promoted.spec.ts:5:async function participantPage(browser: Browser, consoleErrors: string[]): Promise<Page> {
+     tests/waitlisted-gets-promoted.spec.ts:8:    if (message.type() === "error") consoleErrors.push(message.text());
+     … +10 lines
+
+⏺ Bash(cd /home/raf/event-registration/e2e && sed -n 1,30p tests/helpers.ts; sed -n 1,20p tests/participant-registers.spec.ts; sed -n 36,45p tests/participant-registers.spec.ts; sed -n 1,12p tests/waitlisted)
+  ⎿  import {
+       expect,
+       type APIRequestContext,
+       type Browser,
+       type Locator,
+       type Page,
+     … +84 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  tests/participant-registers.spec.ts 2
+     tests/waitlisted-gets-promoted.spec.ts 1
+     tests/organizer-checks-in.spec.ts 1
+     tests/participant-opens-ticket.spec.ts 1
+       14 passed (15.2s)
+
+⏺ 14 из 14 e2e проходят. Теперь проверка tracer bullet в браузере на слоте 1.
+
+⏺ Bash(make stack-up 2>&1 | tail -3; make stack-demo-users 2>&1 | tail -2; curl -s -o /dev/null -w '%{http_code}\n' http://localhost:5174/)
+  ⎿  Container event-registration-s1-mailpit-1 Healthy 
+      Container event-registration-s1-postgres-1 Healthy 
+      Container event-registration-s1-frontend-1 Healthy 
+     POSTGRES_PORT=5433 BACKEND_PORT=8001 FRONTEND_PORT=5174 MAILPIT_PORT=8026 MAILPIT_SMTP_PORT=1026 docker compose -p event-registration-s1 exec backend python manage.py create_demo_users
+     Demo users are ready.
+     200
+
+⏺ Bash(mkdir -p /tmp/claude-1000/-home-raf-event-registration/d99ac8af-3a3f-414b-9a16-85326a756581/scratchpad/shots && cat > /home/raf/event-registration/e2e/.browser-check.mjs <<'EOF')
+  ⎿  desktop after logout: /
+     desktop org after logout: /login
+     desktop requests: GET /src/shared/api/index.ts, GET /src/shared/api/app-error.ts, GET /src/shared/api/client.ts, GET /src/entities/session/api/logout.ts, GET /src/entities/session/api/me.ts, GET /src/
+     desktop console errors: [
+       'Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:5174/api/auth/me/',
+       'Failed to load resource: the server responded with a status of 401 (Unauthorized) @ http://localhost:5174/api/auth/me/'
+     … +8 lines
+
+⏺ Сценарий проходит. В консоли только 401 от `me`: две загрузки страницы гостем. Смотрю снимки экрана.
+
+⏺ Read(/tmp/claude-1000/-home-raf-event-registration/d99ac8af-3a3f-414b-9a16-85326a756581/scratchpad/shots/desktop-org-events.png)
+  ⎿  (no output)
+
+⏺ Read(/tmp/claude-1000/-home-raf-event-registration/d99ac8af-3a3f-414b-9a16-85326a756581/scratchpad/shots/phone-org-events.png)
+  ⎿  (no output)
+
+⏺ Read(/tmp/claude-1000/-home-raf-event-registration/d99ac8af-3a3f-414b-9a16-85326a756581/scratchpad/shots/phone-login.png)
+  ⎿  (no output)
+
+⏺ Шапка выглядит правильно на десктопе и на 360 px. Отмечаю 1.1, повторяю `make stack-check` (менялись e2e) и коммичу.
+
+⏺ Bash(cd /home/raf/event-registration && python3 - <<'EOF')
+  ⎿  All checks passed!
+     ======================== 296 passed in 91.92s (0:01:31) ========================
+      Test Files  30 passed (30)
+           Tests  283 passed (283)
+
+⏺ Bash(t=$(date +%H:%M) && printf -- '- **%s** — задача 1.1 фазы 6: общий `AppLayout` (шапка и `<main>`) в `app/ui`, выход — `logout` в `entities/session`. Ответ 204 — новый `unwrapEmpty` в `shared/api` (`un)
+  ⎿  ⋯ Backing up original state…
+     ✔ Done backing up original state (aafbfc1)!
+     ⋯ Running tasks for staged files…
+         frontend/**/*.{ts,vue,js} — 20 files
+           ⋯ pnpm --dir frontend exec eslint --fix
+           ⋯ prettier --write
+     … +18 lines
+
+⏺ Задача 1.1 закоммичена (`e02e976`). Перехожу к 1.2: ошибка выхода, 401 и блокировка повторного клика. Начинаю с тестов.
+
+⏺ Bash(cd /home/raf/event-registration/frontend && python3 - <<'EOF')
+  ⎿  × keeps the session and says so when signing out fails 24ms
+          × takes 401 on sign-out as signed out: the session has already ended 18ms
+          × sends one request when sign-out is clicked twice 11ms
+     ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+      FAIL  src/app/ui/AppLayout.test.ts > AppLayout > keeps the session and says so when signing out fails
+      FAIL  src/app/ui/AppLayout.test.ts > AppLayout > takes 401 on sign-out as signed out: the session has already ended
+     … +2 lines
+
+⏺ Bash(pnpm exec vitest run src/app/ui 2>&1 | grep -E '^(Error|AssertionError|TypeError)|Expected|Received|Unable' | head -12)
+  ⎿  Error: Unable to get [role="alert"] within: <div class="flex min-h-screen flex-col">
+     AssertionError: expected '/org/events' to be '/' // Object.is equality
+     Expected: "/"
+     Received: "/org/events"
+     AssertionError: expected undefined to be defined
+
+⏺ Bash(cat > src/entities/session/api/logout.ts <<'EOF')
+  ⎿  Tests  36 passed (36)
+
+⏺ Ошибка выхода осталась бы висеть и на следующих экранах. Сбрасываю её при смене маршрута и добавляю тест.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Tests  10 passed (10)
+
+⏺ Проверяю, что новый тест падает без сброса ошибки:
+
+⏺ Bash(cp src/app/ui/AppLayout.vue /tmp/claude-1000/-home-raf-event-registration/d99ac8af-3a3f-414b-9a16-85326a756581/scratchpad/AppLayout.vue.bak && sed -i 's/  () => signOut.reset(),/  () => undefined,/' s)
+  ⎿  × drops the sign-out error on the next screen 15ms
+     ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+           Tests  1 failed | 9 passed (10)
+           Tests  10 passed (10)
+     [This command modified 1 file you've previously read: src/app/ui/AppLayout.vue. Call Read before editing.]
+
+⏺ Bash(cd /home/raf/event-registration && make stack-check 2>&1 | grep -E 'error|Error|FAIL|failed|passed|Tests |✖|make:' | tail -8 && make stack-e2e 2>&1 | grep -E 'passed|failed|flaky|✘|make:' | tail -5)
+  ⎿  All checks passed!
+     ======================== 296 passed in 86.36s (0:01:26) ========================
+      Test Files  30 passed (30)
+           Tests  287 passed (287)
+       14 passed (15.4s)
+
+⏺ Bash(sed -i 's/^- \[ \] 1.2. Выход:/- [x] 1.2. Выход:/' docs/features/frontend-polish/tasks.md && t=$(date +%H:%M) && printf -- '- **%s** — задача 1.2 фазы 6: 401 на выходе — успех внутри `logout()` (`enti)
+  ⎿  ⋯ Backing up original state…
+     ✔ Done backing up original state (90efb9b)!
+     ⋯ Running tasks for staged files…
+         frontend/**/*.{ts,vue,js} — 3 files
+           ⋯ pnpm --dir frontend exec eslint --fix
+           ⋯ prettier --write
+     … +14 lines
+
+⏺ Задача 1.2 закоммичена (`ce45c5b`). Перехожу к 1.3: на `/login` уводит только guard, плюс `?next=` и `safeNext`. Читаю тесты `session-expiry`.
+
+⏺ Bash(cd /home/raf/event-registration/frontend && cat src/app/session-expiry.test.ts; sed -n 40,110p src/app/router.test.ts; ls src/shared/lib)
+  ⎿  import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
+     import { flushPromises, mount } from "@vue/test-utils";
+     import { http, HttpResponse } from "msw";
+     import { afterEach, describe, expect, it, vi } from "vitest";
+     import { createMemoryHistory, RouterView } from "vue-router";
+     
+     … +211 lines
+
+⏺ Сначала тест `safeNext`:
+
+⏺ Bash(cat > src/shared/lib/safe-next.test.ts <<'EOF')
+⏺ Bash(cat > src/shared/lib/safe-next.ts <<'EOF')
+  ⎿  Error: Failed to resolve import "./safe-next" from "src/shared/lib/safe-next.test.ts". Does the file exist?
+      Test Files  1 failed (1)
+           Tests  no tests
+
+  ⎿  Tests  13 passed (13)
+
+⏺ Теперь тесты guard, `session-expiry` и входа под `?next=`:
+
+⏺ Bash(sed -n 20,40p src/app/router.test.ts)
+  ⎿  function setup() {
+       return createAppRouter(new QueryClient(), createMemoryHistory());
+     }
+     
+     describe("route guard", () => {
+       it("sends a guest from an organizer page to /login", async () => {
+     … +13 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  × sends a guest from an event panel to /login with the way back 10ms
+          × sends a signed-in user from /login to the page they were going to 6ms
+          × returns to the page the organizer was sent from 21ms
+          × sends the organizer to /login and back here when a query gets 401 98ms
+     ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+           Tests  4 failed | 36 passed (40)
+
+⏺ Четыре новых теста падают, как и должны. Реализую:
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Tests  121 passed (121)
+
+⏺ Всё зелёное. Запускаю проверки слота 1:
+
+⏺ Bash(cd /home/raf/event-registration && make stack-check 2>&1 | grep -E 'error|Error|FAIL|failed|passed|Tests |✖|make:|warn' | tail -8 && make stack-e2e 2>&1 | grep -E 'passed|failed|flaky|✘|make:' | tail )
+  ⎿  ok 47 - a marker before any day heading is a warning
+     # Subtest: report lists sessions, the total in hours and minutes, and warnings
+     ok 48 - report lists sessions, the total in hours and minutes, and warnings
+     All checks passed!
+     ======================== 296 passed in 83.08s (0:01:23) ========================
+     Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+     … +3 lines
+
+⏺ Bash(sed -i 's/^- \[ \] 1.3. Решает только guard/- [x] 1.3. Решает только guard/' docs/features/frontend-polish/tasks.md && sed -i 's|`/\\` — нет|&|' docs/features/frontend-polish/tasks.md && t=$(date +%H:)
+  ⎿  ⋯ Backing up original state…
+     ✔ Done backing up original state (4d9f0f9)!
+     ⋯ Running tasks for staged files…
+         frontend/**/*.{ts,vue,js} — 8 files
+           ⋯ pnpm --dir frontend exec eslint --fix
+           ⋯ prettier --write
+     … +14 lines
+
+⏺ Bash(cd /home/raf/event-registration/frontend && grep -n 'src/shared/lib/' AGENTS.md && sed -i 's|^src/shared/lib/      утилиты; live-source|src/shared/lib/      утилиты; safe-next — `?next=` входа, только)
+  ⎿  19:src/shared/lib/      утилиты; live-source (`LiveSource` — данные от сервера, `sseSource` — по SSE) и use-live — подписка на время жизни компонента; lib/test/ — MSW, фейк EventSource и setup для Vit
+     19:src/shared/lib/      утилиты; safe-next — `?next=` входа, только путь этого прилож
+     ⋯ Backing up original state…
+     ✔ Done backing up original state (042804d)!
+     ⋯ Running tasks for staged files…
+         *.{mjs,json,md,yml,yaml} — 1 file
+     … +11 lines
+
+⏺ Перехожу к 1.4, e2e выхода.
+
+⏺ Bash(cd /home/raf/event-registration/e2e && cat AGENTS.md | sed -n 1,40p; cat tests/smoke.spec.ts | head -20)
+  ⎿  # e2e/ — Playwright
+     
+     Команды — `docs/development.md`, раздел «E2E». Тесты идут против поднятого стека: человек — `make up` / `make e2e`, агент — `make stack-e2e` (слот 1).
+     
+     ## Правила
+     
+     … +20 lines
+
+⏺ Bash(cat > tests/organizer-logs-out.spec.ts <<'EOF')
+  ⎿  ✘   1 [chromium] › tests/organizer-logs-out.spec.ts:5:1 › the organizer signs out, and signing in again leads back to the page asked for (6.4s)
+         Error: expect(page).toHaveURL(expected) failed
+       1 failed
+       14 passed (15.4s)
+      ELIFECYCLE  Test failed. See above for more details.
+     make: *** [Makefile:169: stack-e2e] Error 1
+
+⏺ Bash(make stack-e2e 2>&1 | grep -A12 'toHaveURL(expected) failed' | head -20)
+  ⎿  Error: expect(page).toHaveURL(expected) failed
+     
+         Expected: "http://localhost:5174/login?next=%2Forg%2Fevents"
+         Received: "http://localhost:5174/login?next=/org/events"
+         Timeout:  5000ms
+     
+     … +7 lines
+
+⏺ Vue Router не кодирует `/` в query. Это нормально, правлю ожидание в тесте.
+
+⏺ Bash(sed -i 's|toHaveURL("/login?next=%2Forg%2Fevents")|toHaveURL("/login?next=/org/events")|' e2e/tests/organizer-logs-out.spec.ts && make stack-e2e 2>&1 | grep -E 'passed|failed|✘|Error:|make:' | tail -4)
+  ⎿  15 passed (15.3s)
+
+⏺ 15 из 15. Проверяю, что новый тест падает без кнопки выхода: временно прячу её.
+
+⏺ Bash(cp frontend/src/app/ui/AppLayout.vue /tmp/claude-1000/-home-raf-event-registration/d99ac8af-3a3f-414b-9a16-85326a756581/scratchpad/AppLayout.vue.bak && sed -i 's|            <Button$|            <Butt)
+  ⎿  50:            <Button v-if="false"
+         Error: locator.click: Test ended.
+       1 failed
+       14 passed (31.1s)
+      ELIFECYCLE  Test failed. See above for more details.
+     ?? e2e/tests/organizer-logs-out.spec.ts
+     … +1 lines
+
+⏺ Bash(make stack-e2e 2>&1 | grep -E 'passed|failed' | tail -2 && make stack-check 2>&1 | grep -E 'All checks|passed in|Tests |FAIL|failed|make:' | tail -4)
+  ⎿  15 passed (16.5s)
+     All checks passed!
+     ======================== 296 passed in 84.67s (0:01:24) ========================
+           Tests  305 passed (305)
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  ⋯ Backing up original state…
+     ✔ Done backing up original state (e0b5ba9)!
+     ⋯ Running tasks for staged files…
+         e2e/**/*.{ts,js} — 1 file
+           ⋯ pnpm --dir e2e exec eslint --fix
+           ⋯ prettier --write
+     … +17 lines
+
+⏺ Bash(sed -i 's/^- база этапа 1 — `5d50ad0`./- база этапа 1 — `194d59b` (коммит со spec и задачами)./' docs/features/frontend-polish/tasks.md && grep -n 'база этапа 1' docs/features/frontend-polish/tasks.md)
+  ⎿  71:- база этапа 1 — `194d59b` (коммит со spec и задачами).
+     ## Этап 1. Layout, шапка и сессия
+     
+     - [x] 1.1. Tracer bullet: выход из шапки насквозь — `AppLayout` в `App.vue` (шапка и общий
+           `<main>`, у страниц свой `<main>` убран), шапка по `meQuery` на любом экране (в полёте —
+           пусто, гость — «Вход для организатора», организатор — «Мои события», «Выйти», email),
+     … +15 lines
+
+⏺ Agent(Review phase 6 stage 1)
+  ⎿  Async agent launched successfully. (This tool result is internal metadata — never quote or paste any part of it, including the agentId below, into a user-facing reply.)
+     agentId: aa9418e62d514a8b5 (internal ID - do not mention to user. Use SendMessage with to: 'aa9418e62d514a8b5', summary: '<5-10 word recap>' to continue this agent.)
+     The agent is working in the background. You will be notified automatically when it completes. You know nothing about its results until that notification arrives — do not report, assume, or predict the
+     Do not duplicate this agent's work — avoid working with the same files or topics it is using.
+     output_file: /tmp/claude-1000/-home-raf-event-registration/a51ec453-ba28-492a-9e3c-e081c795d062/tasks/aa9418e62d514a8b5.output
+     Do NOT Read or tail this file via the shell tool — it is the full subagent JSONL transcript and reading it will overflow your context. If the user asks for progress, say the agent is still running; yo
+
+⏺ Этап 1 (шапка, выход и возврат после входа) готов: 4 коммита, `make stack-check` и `make stack-e2e` (15 из 15) проходят. Сейчас его проверяет агент `reviewer` на диапазоне `194d59b..850369e`. Когда придёт отчёт, покажу его целиком, а решать по находкам будете вы.
+  
+  Что сделано в этапе:
+  - **1.1 — общая шапка и выход** (`e02e976`). Шапка спрашивает `me` на каждом экране. Пока ответа нет, правая часть пустая. Гость видит «Вход для организатора», организатор — «Мои события», email и «Выйти». После выхода шапка переходит на `/` и удаляет запросы организатора.
+    - Для ответа 204 добавил `unwrapEmpty` в `shared/api`.
+    - Четыре e2e падали на 401 от `me` в консоли гостя. Добавил общий `collectConsoleErrors` в `e2e/tests/helpers.ts`: он пропускает только эту ошибку.
+  - **1.2 — неудачный выход** (`ce45c5b`).
+    - Ошибка выхода показывает «Не удалось выйти, повторите», а при переходе на другой экран сообщение пропадает. Этого не было в spec, решил сам.
+    - Ответ 401 на выходе считается успешным выходом.
+    - Пока запрос идёт, кнопка неактивна.
+  - **1.3 — возврат после входа** (`5f1ccbc`). Гостя на `/login?next=<путь>` уводит только guard, `session-expiry` теперь лишь обнуляет `me` и повторяет текущую навигацию.
+    - `safeNext` разбирает `next` так же, как браузер: пропускает путь этого приложения и отклоняет `//host`, `/\host`, путь с табуляцией и полный URL.
+    - Если `next` ведёт на `/login`, после входа открывается `/org/events`.
+  - **1.4 — e2e `organizer-logs-out.spec.ts`** (`850369e`). Проверил, что тест падает, если временно спрятать кнопку «Выйти».
+  
+  Проверка в браузере на слоте 1 при ширине 1280 и 360 px: вход → «Выйти» → `/`, после этого `/org/events` ведёт на вход. В консоли только 401 от `me` гостя. Шапка на телефоне помещается в одну строку. Стек слота 1 пока не выключал: он нужен для проверки этапа в браузере после ревью.
+  
+  Не закоммичено одно: в логе `tasks.md` поправил базу этапа 1 с `5d50ad0` на `194d59b`. Закоммичу вместе с решениями по ревью.
+
+⏺ Ревью этапа 1 пришло. Блокирующих дефектов агент `reviewer` не нашёл, находок четыре. Ниже отчёт целиком, по каждой находке нужно ваше решение.
+  
+  ## Отчёт `reviewer` (диапазон `194d59b..850369e`)
+  
+  Все четыре задачи этапа сделаны по spec, `stack-check` и `stack-e2e` проходят.
+  
+  **1. `frontend/src/app/ui/AppLayout.vue:20` — корректность, лишние запросы**
+  - **Что:** шапка подписана на `meQuery` с `refetchOnMount: false`. Но у `meQuery` и у клиента запросов нет ни `staleTime`, ни `refetchOnWindowFocus: false`. Раньше на `me` никто не был подписан, guard вызывал только `ensureQueryData`. Теперь при каждом возврате фокуса во вкладку на любом экране уходит `GET /api/auth/me/`.
+  - **Почему важно:**
+    - У гостя каждый возврат фокуса добавляет в консоль новый 401. Spec допускает эту ошибку как единственную, но не как повторяющуюся.
+    - У организатора с истёкшей сессией такой запрос вернёт `null`, а это не ошибка: `session-expiry` не сработает, guard не перезапустится. Шапка покажет «Вход для организатора» поверх открытой панели с прежними данными, пока следующий запрос к API не получит 401.
+    - Тестов на это нет. `refetchOnMount: false` убирает только запрос при монтировании, запросы по фокусу остаются.
+  - **Исправление:** в шапке задать `refetchOnWindowFocus: false` (или `staleTime: Infinity` для `me`). Сессию по-прежнему меняют только вход, выход и `session-expiry`. Добавить тест: возврат фокуса не шлёт `GET me`.
+  
+  **2. `frontend/src/app/ui/AppLayout.test.ts:66` — тесты**
+  - **Что:** тест «гость остаётся на странице» монтирует шапку с голым роутером, без guard и без `redirectOnExpiredSession`. Проверка `path === home` в такой обвязке проходит всегда.
+  - **Почему важно:** `session-expiry` больше не проверяет `requiresAuth` и уводит на вход при любом 401. Гостя сейчас спасает только то, что `meQuery` превращает 401 в `null`. Если кто-то уберёт этот `catch` в `me.ts`, гость начнёт уходить на `/login` с публичных страниц, а тест останется зелёным.
+  - **Исправление:** проверять сценарий с `createAppRouter` и `redirectOnExpiredSession`, как в `session-expiry.test.ts`: `me` отвечает 401 на `/`, после паузы путь остаётся `/` и видна ссылка «Вход для организатора».
+  
+  **3. `frontend/src/app/ui/AppLayout.test.ts:62` — нестабильный тест**
+  - **Что:** в тесте «пусто, пока сессия не известна» ответ `me` приходит через 50 мс, а тест заканчивается на `flushPromises()`, который таймеры не ждёт. Ответ доходит до клиента запросов уже после конца теста.
+  - **Почему важно:** это ещё один случай того типа нестабильности, который разбирает этап 5.
+  - **Исправление:** в конце теста дождаться результата через `vi.waitFor` или отмонтировать компонент через `wrapper.unmount()`.
+  
+  **4. `frontend/src/app/router.ts:46` — устаревший комментарий**
+  - **Что:** комментарий говорит, что `me` на публичных страницах не спрашивают, «иначе у гостя 401 в консоли». С этого этапа шапка сама спрашивает `me` на публичных экранах.
+  - **Почему важно:** читатель решит, что на публичных страницах `me` не запрашивается и 401 в консоли гостя там нет.
+  - **Исправление:** заменить фактом: публичные страницы guard не проверяет, сессию показывает шапка, guard решает только для `requiresAuth` и `/login`.
+  
+  **Что сняли решения из `docs/decisions.md`:**
+  - Вход сам выбирает, куда вести после ответа, хотя `/login` в `next` дополнительно исключает guard. Снято решением 16:06: расхождение безвредно, `next=/login` даёт один лишний проход через guard.
+  - Ошибка выхода сбрасывается при смене маршрута. Снято решением 16:02: это объявлено как сверх spec.
+  - `collectConsoleErrors` пропускает 401 `me` и на страницах организатора. Снято решениями 15:31 и 15:58: после выхода это и есть состояние гостя.
+  - Находку 1 решение 15:58 не снимает: там `refetchOnMount: false` обосновано только запросом при монтировании.
+  
+  **Проверено без находок:**
+  - **Слои FSD:** импорты идут только вниз, `orgQueryKey` экспортируется через `index.ts`.
+  - **Сеть:** только через `unwrap` и `unwrapEmpty`, у `unwrapEmpty` есть тесты на 204, 401 и сетевую ошибку.
+  - **Выход:**
+    - 401 обрабатывается внутри `logout()` и до `session-expiry` не доходит;
+    - кнопка неактивна, пока запрос идёт, двойной клик даёт один `POST`;
+    - при ошибке `me` и маршрут не меняются.
+  - **Кэш:** все ключи запросов организатора под префиксом `["org"]`, включая `registrations`.
+  - **`safeNext`:** сравнивает origin через `new URL`, таблица из spec покрыта, плюс табуляция и `javascript:`.
+  - **Guard и `session-expiry`:** guard уводит на `/login?next=…`. `session-expiry` повторяет навигацию с `force: true`.
+  - **Страницы:** свои `<main>` убраны. Тексты в i18n, пустых `catch` и `v-html` нет, персональных данных в логах нет.
+  - **Документация:** `frontend/AGENTS.md` и `shared/api/AGENTS.md` совпадают с кодом.
+  
+  **Прогоны ревьюера:** `stack-check` на копии репозитория (слот 2) — backend 296 тестов, frontend 305, оба зелёные. `stack-e2e` — 15 из 15.
+  
+  **Не проверялось:** вид в браузере, поведение при возврате фокуса в реальном браузере (находка 1 выведена из кода и умолчаний TanStack Query), кнопка «назад» после входа.
+  
+  ## Мои факты к находкам
+  
+  - **К находке 1.** Ревьюер прав: у `meQuery` нет `staleTime`, `refetchOnWindowFocus` в TanStack Query по умолчанию включён. В первом черновике spec я сам записал обновление по фокусу как плюс («шапка узнает о выходе в другой вкладке»), а потом эту строку вырезал. Описанный ревьюером исход хуже: шапка «гостя» над панелью организатора. Варианта два:
+    - **(а) рекомендация ревьюера:** отключить обновление по фокусу, сессию меняют только вход, выход и 401;
+    - **(б)** оставить обновление по фокусу, но если `me` стал `null` на странице организатора, повторять навигацию — решит guard.
+  
+    (а) проще, и у гостя в консоли остаётся одна строка 401. Рекомендую (а).
+  - **Находки 2–4** — согласен, правки небольшие.
+  
+  Как решаете по каждой из четырёх?
+
+> поможет ли нам localstorage или cookie сделать логику понимания залогинен/разлогинен проще чем сейчас и сделать код проще?
+
+⏺ Нет, проще не станет. Сессия в любом случае остаётся на сервере, поэтому cookie или `localStorage` добавят второй источник истины, а 401 всё равно придётся обрабатывать.
+  
+  **Как сейчас.** Сессионная cookie Django — `HttpOnly` (умолчание `SESSION_COOKIE_HTTPONLY = True`). JavaScript её не видит, и это правильно: при XSS скрипт не утащит сессию. Поэтому узнать, вошёл ли пользователь, фронтенд может только у сервера: через `GET me` или по 401 на любом запросе.
+  
+  **Что дала бы метка.** Можно завести метку «вошёл» одним из двух способов:
+  - **cookie без `HttpOnly`**, например `signed_in=1`, которую backend ставит при входе и снимает при выходе;
+  - **запись в `localStorage`**, которую фронтенд делает после входа и стирает после выхода.
+  
+  Плюс у меток один и тот же: шапка не спрашивает `me` у гостя без метки, и строки 401 в консоли нет. Выход в другой вкладке тоже был бы виден сразу: cookie у вкладок общая, у `localStorage` есть событие `storage`.
+  
+  **Почему код не станет проще.**
+  - **Метка может врать.** Сессия кончается на сервере без участия фронтенда: истёк срок в две недели, сессию удалили в админке, сменили пароль. Метка при этом остаётся, и шапка показывает «Выйти» человеку, которого уже нет. Значит, вся нынешняя обработка 401 (`session-expiry` → guard → `/login?next=`) остаётся как есть.
+  - **Добавляется синхронизация.** Метку нужно ставить при входе и снимать при выходе, на 401 и на `me = null`. Если она расходится с `meQuery`, нужно решить, кто прав, и прав всегда сервер. Это новые места для ошибок и новые тесты.
+  - **Cookie-вариант** — ещё и изменение backend: вход и выход ставят и снимают вторую cookie, и её срок нужно держать равным сроку сессии.
+  - **Единственный реальный выигрыш** — убрать строку 401 из консоли гостя. Но вы уже решили считать её допустимой (запись 15:31), а после правки находки 1 она будет одна на загрузку страницы.
+  
+  **Что действительно упрощает.** Правка находки 1 по варианту (а):
+  - в шапке отключить обновление `me` по фокусу (`refetchOnWindowFocus: false`);
+  - сессию меняют ровно три события: вход, выход и 401;
+  - у `me` один владелец — кэш запросов, и решает один guard.
+  
+  После правки гость с загрузкой страницы получает одну строку 401 в консоли. Вкладка организатора узнаёт о выходе в другой вкладке на первом же своём запросе.
+  
+  Если хотите, могу записать в «на потом» метку в `localStorage` как способ убрать 401 из консоли гостя. Но я бы её не делал.
+  
+  Остаются решения по четырём находкам ревью. Моё предложение:
+  1. Находка 1 — вариант (а).
+  2. Находки 2–4 — исправить.
+  
+  Согласны?
+
+> согласен, находка 1 — вариант (а), 2–4 исправить. "на потом" про ls не надо
+
+⏺ Записываю решения и начинаю с находки 1: сначала тест, потом правка.
+
+⏺ Bash(t=$(date +%H:%M) && printf -- '- **%s** — по ревью этапа 1 фазы 6 (`194d59b..850369e`), решения человека. Находка 1 (вариант а, рекомендация ревьюера и агента): шапка не обновляет `me` по фокусу окна )
+  ⎿  × does not ask the session again when the window gets the focus back 35ms
+     ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+     AssertionError: expected 3 to be 1 // Object.is equality
+           Tests  1 failed | 10 passed (11)
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Tests  11 passed (11)
+
+⏺ Bash(cd /home/raf/event-registration && make stack-check 2>&1 | grep -E 'All checks|passed in|Tests |FAIL|failed|make:' | tail -4 && git add -A docs frontend && git commit -q -F - <<'EOF')
+  ⎿  All checks passed!
+     ======================== 296 passed in 83.03s (0:01:23) ========================
+           Tests  306 passed (306)
+     ⋯ Backing up original state…
+     ✔ Done backing up original state (74feba6)!
+     ⋯ Running tasks for staged files…
+     … +16 lines
+
+⏺ Bash(cd /home/raf/event-registration/frontend && python3 - <<'EOF')
+  ⎿  Tests  31 passed (31)
+           Tests  7 passed (7)
+      M frontend/src/app/session-expiry.test.ts
+      M frontend/src/app/ui/AppLayout.test.ts
+     [This command modified 1 file you've previously read: src/app/ui/AppLayout.test.ts. Call Read before editing.]
+
+⏺ Bash(cp src/entities/session/api/me.ts /tmp/claude-1000/-home-raf-event-registration/d99ac8af-3a3f-414b-9a16-85326a756581/scratchpad/me.ts.bak && cp src/app/session-expiry.ts /tmp/claude-1000/-home-raf-eve)
+  ⎿  16:    void router.replace({ path: "/login", query, hash, force: true }); void path;
+          × sends the organizer to /login and back here when a query gets 401 97ms
+          × stays on a public page 34ms
+          × stays there and is offered to sign in 110ms
+     ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+           Tests  3 failed | 4 passed (7)
+     … +2 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Tests  31 passed (31)
+      ELIFECYCLE  Command failed with exit code 1.
+     make: *** [Makefile:147: stack-check] Error 2
+
+⏺ Bash(make stack-check 2>&1 | grep -B3 -A6 -E 'error|warn\]|ELIFECYCLE' | head -30)
+  ⎿  > prettier --check .
+     
+     Checking formatting...
+     [warn] frontend/src/app/session-expiry.test.ts
+     [warn] Code style issues found in the above file. Run Prettier with --write to fix.
+      ELIFECYCLE  Command failed with exit code 1.
+     … +3 lines
+
+⏺ Bash(pnpm exec prettier --write frontend/src/app/session-expiry.test.ts >/dev/null && make stack-check 2>&1 | grep -E 'All checks|passed in|Tests |FAIL|failed|make:' | tail -4)
+  ⎿  All checks passed!
+     ======================== 296 passed in 81.94s (0:01:21) ========================
+           Tests  307 passed (307)
+
+⏺ Bash(git add -A frontend docs && git commit -q -F - <<'EOF')
+  ⎿  ⋯ Backing up original state…
+     ✔ Done backing up original state (eec566d)!
+     ⋯ Running tasks for staged files…
+         frontend/**/*.{ts,vue,js} — 2 files
+           ⋯ pnpm --dir frontend exec eslint --fix
+           ⋯ prettier --write
+     … +23 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  All checks passed!
+     ======================== 296 passed in 82.97s (0:01:22) ========================
+           Tests  307 passed (307)
+     ⋯ Backing up original state…
+     ✔ Done backing up original state (798d8a0)!
+     ⋯ Running tasks for staged files…
+     … +13 lines
+
+⏺ Все четыре находки исправлены. Записываю в лог итог ревью и факт о находке 2, затем проверяю этап в браузере.
+
+⏺ Bash(t=$(date +%H:%M) && printf -- '- **%s** — к находке 2 ревью этапа 1 фазы 6: риск «без `catch` в `me.ts` гость уйдёт с публичной страницы на `/login`» проверен и не подтвердился — 401 `me` как ошибка д)
+  ⎿  - ревью этапа 1 — `194d59b..850369e`, четыре находки исправлены (`f43e0cf`, `bd340f6`, `8e66e85`).
+     
+     ## На потом
+
+⏺ Bash(cd /home/raf/event-registration/e2e && cat > .browser-check.mjs <<'EOF')
+  ⎿  A guest: me requests 1 errors 1
+     B login url /login?next=/org/events
+     B after sign-in /org/events
+     B panel /org/events/2
+     C failed sign-out stays on /org/events/2
+     E tab2 after double click: / logout POSTs 1
+     … +9 lines
+
+⏺ Bash(cat > .browser-check.mjs <<'EOF')
+  ⎿  401 -> /login?next=/org/events/2/checkin
+     after sign-in -> /org/events/2/checkin
+     header: События
+     Мои события
+     demo@example.com
+     Выйти
+     … +4 lines
+
+⏺ Сценарий проходит. Записываю итог проверки в браузере и коммичу лог.
+
+⏺ Bash(cd /home/raf/event-registration && python3 - <<'EOF')
+  ⎿  ⋯ Backing up original state…
+     ✔ Done backing up original state (080084d)!
+     ⋯ Running tasks for staged files…
+         *.{mjs,json,md,yml,yaml} — 2 files
+           ⋯ prettier --write
+     
+     … +8 lines
+
+⏺ Исправил все четыре находки ревью этапа 1, проверки проходят. Этап 1 закрыт, если вы не захотите повторного ревью исправлений.
+  
+  **Исправления:**
+  1. **Шапка больше не спрашивает `me` при возврате фокуса** (`f43e0cf`). Сначала написал тест: до правки после возврата фокуса уходило 3 запроса `me` вместо 1.
+  2. **Тест «гость остаётся на публичной странице»** теперь работает с роутером приложения, guard и `redirectOnExpiredSession` (`bd340f6`). Ревьюер опасался, что без обработки 401 в `me.ts` гостя уведёт на `/login`. Я проверил: не уведёт. 401 дойдёт до `session-expiry`, тот повторит навигацию, и guard пропустит гостя на публичную страницу. Новый тест падает на другой поломке: если `session-expiry` сам уводит на `/login` в обход guard.
+  3. **Тест пустой шапки** дожидается ответа `me` и не оставляет запрос висеть после конца теста (`bd340f6`).
+  4. **Устаревший комментарий в guard** заменён фактом (`8e66e85`).
+  
+  Решения и этот факт записаны в `docs/decisions.md`. «На потом» про `localStorage` не заводил.
+  
+  **Браузер, слот 1.** Все сценарии этапа прошли:
+  - Гость:
+    - при загрузке страницы уходит один запрос `me`, после возврата фокуса новых нет;
+    - `/org/events` открывает `/login?next=/org/events`, после входа он возвращается туда.
+  - Выход:
+    - если запрос `logout` оборван, появляется «Не удалось выйти», панель остаётся на месте;
+    - двойной клик по «Выйти» даёт один `POST`.
+  - **Две вкладки.** Выход во второй вкладке, затем чекин в первой получает 401. Первая уходит на `/login?next=…/checkin`, после входа снова открывается чекин.
+  
+  Первый прогон скрипта неверно проверил последний шаг: ожидание сработало на `…/checkin` внутри `next` ещё на странице входа. Второй прогон проверял по пути страницы и подтвердил возврат на чекин.
+  
+  В консоли были только три ошибки:
+  - 401 от `me` у гостя;
+  - 401 чекина после выхода в другой вкладке (этого и добивается сценарий);
+  - оборванный `logout`, который я сам вызвал в проверке.
+  
+  `make stack-check` проходит: backend 296 тестов, frontend 307. Этап 1 — 9 коммитов от `194d59b` до `36217f5`. Стек слота 1 пока работает, он понадобится для этапа 2.
+  
+  **Нужно ваше решение:** запускать повторное ревью исправлений (`850369e..8e66e85`) или переходить к этапу 2?
+
+> запусти ревью
+
+⏺ Agent(Re-review phase 6 stage 1 fixes)
+  ⎿  Async agent launched successfully. (This tool result is internal metadata — never quote or paste any part of it, including the agentId below, into a user-facing reply.)
+     agentId: a22f17eec39107666 (internal ID - do not mention to user. Use SendMessage with to: 'a22f17eec39107666', summary: '<5-10 word recap>' to continue this agent.)
+     The agent is working in the background. You will be notified automatically when it completes. You know nothing about its results until that notification arrives — do not report, assume, or predict the
+     Do not duplicate this agent's work — avoid working with the same files or topics it is using.
+     output_file: /tmp/claude-1000/-home-raf-event-registration/a51ec453-ba28-492a-9e3c-e081c795d062/tasks/a22f17eec39107666.output
+     Do NOT Read or tail this file via the shell tool — it is the full subagent JSONL transcript and reading it will overflow your context. If the user asks for progress, say the agent is still running; yo
+
+⏺ Запустил повторное ревью исправлений на диапазоне `850369e..36217f5`. Агент `reviewer` проверит, что все четыре находки закрыты и правки не внесли новых дефектов. Отчёт покажу целиком, когда он придёт. Пока ревью идёт, этап 2 не начинаю: если найдутся новые находки, их исправления легли бы поверх этапа 2.
+
+⏺ Повторное ревью исправлений готово. Все четыре находки первого ревью закрыты, новых дефектов в поведении нет. Нашлась одна новая находка — комментарий к тесту. Ниже отчёт целиком.
+  
+  ## Отчёт `reviewer`: повторное ревью, диапазон `850369e..36217f5`
+  
+  **Находка**
+  
+  `frontend/src/app/session-expiry.test.ts:85-86` — комментарий противоречит коду.
+  - **Что:** над тестом «a guest on a public page» написано, что 401 от `me` должен оставаться ответом, иначе обработка 401 уведёт гостя с публичной страницы. Это не так. Ревьюер проверил на копии репозитория: убрал в `me.ts` превращение 401 в `null`, и тест прошёл (7 из 7). Ошибка 401 доходит до `session-expiry`, тот повторяет навигацию, а guard (`router.ts:47`) пропускает публичную страницу. То же показывает соседний тест «stays on a public page» и подтверждает запись в `docs/decisions.md` от 17:02.
+  - **Почему важно:** читатель решит, что тест сторожит обработку 401 в `me.ts`, а он её не сторожит. Ловит он другое: шапка или `session-expiry` сами уводят гостя на `/login`. Это ревьюер тоже проверил: добавил в шапку переход на `/login` при `me === null`, и тест упал.
+  - **Исправление:** заменить комментарий фактом, например «The guest stays on a public page: only the guard sends to /login, and it lets public pages through — not the header, not the 401 handling».
+  
+  **Находки первого ревью**
+  1. **Запрос `me` на каждый фокус — закрыта.**
+     - В шапке теперь `refetchOnWindowFocus: false`, есть тест. Без этой опции тест падает, ревьюер проверил.
+     - Состояние фокуса сбрасывается в `afterEach` и в соседние тесты не попадает.
+  2. **Тест с голым роутером — закрыта.** Тест перенесён в `session-expiry.test.ts` с настоящим роутером приложения, `redirectOnExpiredSession` и `App.vue`. Оговорка — в находке выше.
+  3. **Ответ после конца теста — закрыта.** Тест теперь ждёт кнопку через `vi.waitFor`.
+  4. **Устаревший комментарий в `router.ts` — закрыта.** Новый текст верен.
+  
+  **Прогоны ревьюера** (копия на `36217f5`, слот 2):
+  - `stack-check` проходит: Vitest 307 тестов, линтеры и типы чистые;
+  - `stack-e2e` — 15 из 15;
+  - проверки поломками делались только в копии и откатаны, стек слота 2 остановлен.
+  
+  **Записи в `docs/decisions.md`:**
+  - 16:54 — снятых находок нет;
+  - 17:02 — находку выше не снимает, а подтверждает: там риск признан неподтвердившимся, а комментарий утверждает обратное.
+  
+  **Проверено без находок:**
+  - `refetchOnWindowFocus: false` не мешает выходу по 401 на панели: остальные запросы организатора обновляются по фокусу как раньше;
+  - `useQuery(meQuery)` есть только в шапке;
+  - в изменениях нет пустых `catch`, TODO и эмодзи.
+  
+  **Не находка, для сведения.** Если `me` ответил 5xx, шапка больше не переспрашивает его ни при монтировании, ни по фокусу. «Вход для организатора» остаётся до перезагрузки или перехода на `/login`, где guard спросит `me` заново и вошедшего перенаправит. Это следует из решения 16:54.
+  
+  **Не проверялось:** вид в браузере.
+  
+  ## Мои факты
+  
+  - **Находка.** Ревьюер прав. Я сам установил, что тест не сторожит `me.ts` (запись 17:02), но комментарий в тесте не поправил. Исправление — одна строка.
+  - **5xx от `me`.** Guard на `/login` спросит `me` заново: `ensureQueryData` запрашивает, если данных нет, а после ошибки их нет.
+  
+  Исправить комментарий так, как предлагает ревьюер, и перейти к этапу 2? По процессу третьего ревью не будет, так что это последняя правка этапа 1.
+
+> да, исправь и не переходи к этапу 2. у нас session-expiry и guard универсальные, если добавятся новые страницы/запросы ничего дописывать не нужно кроме пометки "requiresAuth", так? единственное что сбрасывается кеш только me, а если пользователь зайдет под другим аккаунтом, он на секунду увидит список чужих событий?
+
+⏺ Сначала исправляю комментарий.
+
+⏺ Bash(cd /home/raf/event-registration/frontend && sed -n 83,88p src/app/session-expiry.test.ts)
+  ⎿  });
+     
+     // The header asks `me` on every screen, and the guest's answer is a 401. It must stay an answer:
+     // were it an error, the 401 handling above would take the guest off a public page.
+     describe("a guest on a public page", () => {
+       it("stays there and is offered to sign in", async () => {
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Tests  307 passed (307)
+     ⋯ Backing up original state…
+     ✔ Done backing up original state (be48faa)!
+     ⋯ Running tasks for staged files…
+         frontend/**/*.{ts,vue,js} — 1 file
+           ⋯ pnpm --dir frontend exec eslint --fix
+     … +11 lines
+
+⏺ Комментарий исправил (`cd39d23`), этап 2 не начинаю. Теперь ваши вопросы — проверяю по коду.
+
+⏺ Bash(grep -rn 'email' backend/accounts/management/commands/create_demo_users.py | head -5; grep -rn 'new EventSource\|sseSource(' frontend/src --include=*.ts | grep -v test | head; grep -rn 'api\.\(GET\|PO)
+  ⎿  backend/accounts/management/commands/create_demo_users.py:23:        for (email, password), is_admin in ((DEMO_ORGANIZER, False), (DEMO_ADMIN, True)):
+     backend/accounts/management/commands/create_demo_users.py:24:            user, _ = User.objects.get_or_create(email=email)
+     (eval):1: no matches found: --include=*.ts
+     frontend/src/pages/org-checkin/api/checkin.ts:5:    api.POST("/api/org/events/{event_id}/checkin/", {
+     frontend/src/pages/org-event-participants/api/registrations.ts:28:        api.GET("/api/org/events/{event_id}/registrations/", {
+     frontend/src/pages/org-event-edit/api/update-event.ts:6:    api.PATCH("/api/org/events/{event_id}/", { params: { path: { event_id: id } }, body }),
+     … +3 lines
+
+⏺ Комментарий исправлен (`cd39d23`), `make check-frontend` проходит, этап 2 не начинаю.
+  
+  ## 1. Нужно ли что-то кроме `requiresAuth` для новых страниц и запросов
+  
+  Почти ничего, но есть три оговорки.
+  
+  **Что работает само:**
+  - **Новая страница** с `meta: { requiresAuth: true }` защищена guard. Дочерним маршрутам пометка не нужна: Vue Router передаёт `meta` родителя детям, поэтому, например, вкладки макета события защищены пометкой макета.
+  - **Любой запрос через `useQuery` или `useMutation`**, получивший 401, перехватывает `session-expiry`: он подписан на оба кэша, `/login?next=…` выбирает guard. Сейчас все вызовы API идут через них.
+  
+  **Что нужно помнить:**
+  1. **Запрос мимо кэша TanStack Query** — 401 не будет замечен. Пример уже есть: поток событий (`EventSource`) про 401 не сообщает, поэтому макет события при отказе потока делает пробу через `fetchQuery`. Новый поток должен делать так же.
+  2. **Ключ нового запроса организатора** должен начинаться с `orgQueryKey`, иначе выход его не удалит. Это правило уже записано в `frontend/AGENTS.md`, но держится на внимательности: тест или линтер его не проверяет.
+  3. **Функции, которые сами превращают 401 в ответ** (`me` и `logout`), до `session-expiry` его не доносят. Так задумано.
+  
+  ## 2. Увидит ли другой пользователь на секунду чужие события
+  
+  Да, при одном из путей. Это я понял по коду, в браузере не воспроизводил: демо-организатор один, для проверки нужен второй аккаунт.
+  
+  - **Через кнопку «Выйти»** — нет. Выход удаляет все запросы с префиксом `orgQueryKey`, это проверяет тест.
+  - **Через 401** (сессия истекла или кто-то вышел в другой вкладке) — да:
+    1. `session-expiry` ставит `me` в `null`, но запросы организатора остаются в кэше. Без подписчиков TanStack Query хранит их 5 минут (`gcTime`).
+    2. На `/login?next=…` входит другой организатор.
+    3. Он сразу видит кэш предыдущего: список событий, шапку события, а на вкладке «Участники» — имена и email участников. Только потом приходит свежий ответ, а для чужого события — 403.
+  
+    Это утечка персональных данных, а не просто мигание.
+  
+  **Что предлагаю.** Удалять запросы организатора не только при выходе, но и при успешном входе, перед переходом. Вход — единственное место, где может смениться пользователь, поэтому очистка там закрывает любой путь: 401, вторую вкладку, будущие способы потерять сессию.
+  
+  Очищать в `session-expiry` хуже: пока страница ещё открыта, её запросы при удалении могут уйти заново и снова получить 401.
+  
+  Тест я бы написал так: в кэше лежит список событий, вход возвращает другого пользователя, и после входа на `/org/events` старых данных нет до ответа сервера. Это исправление этапа 1, отдельный коммит до этапа 2.
+  
+  Делать?
+
+> может при 401/логауте проще перезагружать всю страницу или по хорошему всё таки стоит прописать логику обнуления кеша?
+
+⏺ Предлагаю не перезагружать страницу, а очищать кэш в одном месте — при входе. Перезагрузку как вариант я обдумал, ниже почему.
+  
+  ## Полная перезагрузка
+  
+  **Что даёт.**
+  - Всё состояние в памяти пропадает гарантированно: кэш запросов, состояние модулей, всё, что появится потом.
+  - Не нужно соглашение «ключи организатора начинаются с `orgQueryKey`».
+  - Не нужен порядок «сначала уйти со страницы, потом удалить запросы».
+  - Для выхода это частая практика: `location.assign("/")` после `POST logout`.
+  
+  **Чем плохо на 401.**
+  - **Риск бесконечной перезагрузки.** Если какой-то запрос отвечает 401 вошедшему пользователю (ошибка прав на backend, расхождение настроек), получится цикл: перезагрузка → `me` отвечает «вошёл» → страница → 401 → перезагрузка. Остановить его можно только ещё одним механизмом, например счётчиком в `sessionStorage`. Сейчас такой ошибки не будет: `me` и остальные эндпоинты проверяют сессию одним способом. Но если она появится, страница будет перезагружаться бесконечно, а не просто откроет вход.
+  - **Сейчас такого цикла нет.** `session-expiry` ставит `me = null` в кэше, guard показывает вход, и дальше решает человек.
+  - **Тесты.** В jsdom перезагрузку не проверить, поэтому `location` пришлось бы передавать как зависимость. Сценарий подтверждал бы только e2e.
+  - **Медленнее,** особенно на dev-сервере Vite: загружается всё приложение, а не один экран.
+  
+  Итог: для выхода перезагрузка годится, для 401 — нет. А если она есть только у выхода, утечку из моего прошлого ответа она не закрывает: та идёт через 401.
+  
+  ## Что предлагаю
+  
+  Данные предыдущего пользователя могут показаться только тогда, когда появляется новый, то есть при входе. Поэтому:
+  - **Одна функция** (условное имя `forgetUserData(queryClient)`) удаляет из кэша всё, кроме сессии. Префикс `orgQueryKey` больше не нужен, и пропадает правило, которое держится на внимательности (оговорка 2 из прошлого ответа). Публичные данные тоже удалятся, но они просто запросятся заново.
+  - **При входе** функция вызывается перед переходом. Это закрывает любой путь смены пользователя: 401, выход в другой вкладке, будущие способы потерять сессию.
+  - **При выходе** она вызывается там же, где сейчас удаляются запросы организатора, после ухода на `/`. На общем компьютере после выхода в памяти не остаётся данных организатора.
+  - **Тест:** в кэше лежат события первого пользователя, входит второй. Пока сервер не ответил, на `/org/events` чужого списка нет.
+  
+  Это одна функция, два вызова и минус соглашение о ключах. Всё делаю отдельным коммитом исправления этапа 1, до этапа 2.
+  
+  Делать так или всё же перезагрузку при выходе?
+
+> делай с forgetUserData, без перезагрузки. может дополнительную логику о том что предыдущий пользователь и текущий один и тот же и сброс не нужен?
+
+⏺ Сделаю `forgetUserData` без перезагрузки. Отдельную проверку «тот же пользователь — не сбрасывать» добавлять не советую, и вот почему.
+  
+  **Что она дала бы.** Тот же организатор после истёкшей сессии снова входит и сразу видит прежние данные из кэша, без «Загружаем…». Их всё равно перезапросят, и это экономит одну загрузку.
+  
+  **Чего она стоит.**
+  - После 401 `session-expiry` ставит `me = null`, и кто был до этого, уже не известно. Пришлось бы хранить id предыдущего пользователя в отдельном месте, вне `meQuery`.
+  - Это второе состояние сессии, его нужно держать согласованным: вход, выход и 401 его обновляют. Нужны отдельные тесты на ветку «тот же или другой».
+  - Ошибка в этой ветке снова откроет утечку, которую мы закрываем. Выигрыш — один экран загрузки.
+  
+  Если всё же захотите, это изменение на несколько строк поверх `forgetUserData`.
+  
+  Делаю без проверки. Начинаю с теста входа.
+
+⏺ Bash(cd /home/raf/event-registration/frontend && python3 - <<'EOF')
+  ⎿  × forgets what the previous user saw before opening the organizer page 17ms
+     ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+     AssertionError: expected [ { id: 1, title: 'Not yours' } ] to be undefined
+           Tests  1 failed | 11 passed (12)
+
+⏺ Тест падает по ожидаемой причине. Реализую:
+
+⏺ Bash(cat > src/entities/session/api/forget-user-data.ts <<'EOF')
+  ⎿  frontend/AGENTS.md                                    |  4 ++--
+      frontend/src/app/ui/AppLayout.vue                     |  7 +++----
+      frontend/src/entities/event/api/org-events.ts         |  8 +++-----
+      frontend/src/entities/event/index.ts                  |  1 -
+      frontend/src/entities/session/index.ts                |  1 +
+      frontend/src/pages/login/ui/LoginPage.test.ts         | 19 +++++++++++++++++++
+     … +4 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  119:    server.use(http.get("*/api/auth/me/", () => HttpResponse.json(user)));
+     135:      http.get("*/api/auth/me/", () => HttpResponse.json(user)),
+     157:      http.get("*/api/auth/me/", () => HttpResponse.json(user)),
+     [MSW] Error: intercepted a request without a matching request handler:
+          × signs out, forgets the organizer's data and opens the public events 16ms
+     ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+     … +2 lines
+
+⏺ Тестам, которые открывают `/org/events`, нужен обработчик MSW для списка событий. Добавляю его в `mountLayout`.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Tests  11 passed (11)
+
+⏺ Тест проходит. Проверяю, что он ловит обе поломки: выход без `forgetUserData` и вызов до ухода со страницы.
+
+⏺ Bash(B=/tmp/claude-1000/-home-raf-event-registration/d99ac8af-3a3f-414b-9a16-85326a756581/scratchpad/AppLayout.vue.bak; cp src/app/ui/AppLayout.vue $B)
+  ⎿  without:
+          × signs out, forgets the organizer's data and opens the public events 29ms
+     ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+           Tests  1 failed | 10 passed (11)
+     before leaving:
+          × signs out, forgets the organizer's data and opens the public events 27ms
+     … +4 lines
+
+⏺ Тест ловит обе поломки. Запускаю полные проверки слота 1:
+
+⏺ Bash(cd /home/raf/event-registration && make stack-check 2>&1 | grep -E 'All checks|passed in|Tests |FAIL|failed|warn\]|make:' | tail -5 && make stack-e2e 2>&1 | grep -E 'passed|failed|✘' | tail -3)
+  ⎿  [warn] frontend/src/entities/event/api/org-events.ts
+     [warn] frontend/src/pages/login/ui/LoginPage.test.ts
+     [warn] Code style issues found in 2 files. Run Prettier with --write to fix.
+      ELIFECYCLE  Command failed with exit code 1.
+     make: *** [Makefile:147: stack-check] Error 2
+       15 passed (15.8s)
+
+⏺ Bash(pnpm exec prettier --write frontend/src/entities/event/api/org-events.ts frontend/src/pages/login/ui/LoginPage.test.ts >/dev/null && git diff frontend/src/entities/event/api/org-events.ts | head -40 &)
+  ⎿  diff --git a/frontend/src/entities/event/api/org-events.ts b/frontend/src/entities/event/api/org-events.ts
+     index 93fdc4f..ba66089 100644
+     --- a/frontend/src/entities/event/api/org-events.ts
+     +++ b/frontend/src/entities/event/api/org-events.ts
+     @@ -6,11 +6,8 @@ import { sseSource, type LiveSource } from "@/shared/lib/live-source";
+      
+     … +34 lines
+
+⏺ Bash(make stack-check 2>&1 | grep -E '×|FAIL|error TS|Error:|AssertionError' | head -15)
+  ⎿  Command was moved to the background (ID: bxt41hr7b) so that a message that arrived while it was running can reach you; it was not interrupted. Output is being written to: /tmp/claude-1000/-home-raf-ev
+
+⏺ Bash(sleep 1; cat /tmp/claude-1000/-home-raf-event-registration/a51ec453-ba28-492a-9e3c-e081c795d062/tasks/bxt41hr7b.output 2>/dev/null | tail -15)
+  ⎿  (Bash completed with no output)
+
+⏺ The background check is still running; I'll wait for its notification.
+
+⏺ Bash(cat /tmp/claude-1000/-home-raf-event-registration/a51ec453-ba28-492a-9e3c-e081c795d062/tasks/bxt41hr7b.output | tail -20)
+  ⎿  src/pages/login/ui/LoginPage.test.ts(94,17): error TS2769: No overload matches this call.
+     
+     [exited with code 0]
+
+⏺ Bash(cd /home/raf/event-registration/frontend && sed -n 88,98p src/pages/login/ui/LoginPage.test.ts; pnpm exec vue-tsc --noEmit -p tsconfig.app.json 2>&1 | grep -A6 'LoginPage.test' | head -12; ls tsconfig)
+  ⎿  http.post("*/api/auth/login/", () =>
+             HttpResponse.json({ id: 2, email: "other@example.com" }),
+           ),
+         );
+         const { wrapper, router, queryClient } = await mountPage();
+         // Left by the organizer whose session ended with a 401 in this tab.
+     … +14 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  All checks passed!
+     ======================== 296 passed in 82.23s (0:01:22) ========================
+           Tests  308 passed (308)
+
+⏺ Bash(make stack-e2e 2>&1 | grep -E 'passed|failed|✘' | tail -2 && t=$(date +%H:%M) && printf -- '- **%s** — после повторного ревью этапа 1 фазы 6 (вопрос человека): после 401 запросы организатора оставалис)
+  ⎿  15 passed (16.8s)
+     ⋯ Backing up original state…
+     ✔ Done backing up original state (eca1141)!
+     ⋯ Running tasks for staged files…
+         frontend/**/*.{ts,vue,js} — 9 files
+           ⋯ pnpm --dir frontend exec eslint --fix
+     … +14 lines
+
+⏺ Spec должен меняться вместе с кодом, поэтому добавляю в него сброс при входе и включаю правку в тот же коммит.
+
+⏺ Bash(grep -n 'кэш запросов организатора очищен\|После выхода — `/` без `next`' docs/features/frontend-polish/spec.md)
+  ⎿  46:  `/org/events` (открытый редирект). После выхода — `/` без `next`.
+     58:`me` в `null`, кэш запросов организатора очищен, переход на `/`. Ошибка — «Не удалось выйти,
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  145 docs/features/frontend-polish/spec.md
+     ⋯ Backing up original state…
+     ✔ Done backing up original state (47c5a70)!
+     ⋯ Running tasks for staged files…
+         *.{mjs,json,md,yml,yaml} — 1 file
+           ⋯ prettier --write
+     … +10 lines
+
+⏺ Исправил утечку данных прежнего пользователя (`356ecba`). Комментарий из повторного ревью тоже исправлен (`cd39d23`). `make stack-check` проходит: backend 296 тестов, frontend 308. `make stack-e2e` — 15 из 15. Этап 2 не начинал.
+  
+  **Что сделано:**
+  - **`forgetUserData`** в `entities/session` удаляет из кэша все запросы, которых сейчас нет на экране.
+    - При входе вызывается после успешного ответа, до записи `me` и перехода.
+    - При выходе — после ухода на `/`.
+  - **`orgQueryKey` и правило о префиксе ключей убраны.** Сброс больше не зависит от того, какие ключи у запросов. Новый запрос организатора ничего дописывать не требует, достаточно пометки `requiresAuth` у страницы.
+  - **Почему удаляются только неактивные запросы.** Удалённый активный запрос остался бы на экране, но был бы отвязан от кэша.
+  
+  **Тесты:**
+  - **Вход:** в кэше лежат события прежнего организатора, входит другой, и после входа их в кэше нет. До правки тест падал.
+  - **Выход:** тест переделан, теперь страница действительно подписана на список событий. Проверил, что тест ловит обе поломки: выход без сброса и сброс до ухода со страницы.
+  
+  **Ваш вопрос «сбрасывать до запроса»:** оставил «после» в обоих местах. На выходе до запроса страница организатора ещё на экране, и сброс её данные не удалит. На входе разницы нет.
+  
+  **Решения записаны** в `docs/decisions.md`, включая отклонённые варианты:
+  - перезагрузка страницы на 401 и при выходе;
+  - проверка «тот же пользователь — не сбрасывать»;
+  - сброс до запроса.
+  
+  В spec добавлена строка о сбросе при входе.
+  
+  Перехожу к этапу 2?
+
+> сделай worktree от последнего коммита этапа 1 и сделай pr. будь аккуратен, т.к. сейчас над репозиторием работает другой агент
+
+⏺ Сначала смотрю состояние репозитория, ничего не меняя.
+
+⏺ Bash(git status --short --branch | head; git worktree list; git log --oneline -3 feat/frontend-polish; git branch -a --list '*frontend-polish*'; git ls-remote --heads origin 2>/dev/null | grep -i polish; d)
+  ⎿  ## feat/frontend-polish
+      M docs/decisions.md
+      M frontend/src/app/router.ts
+      M frontend/src/pages/event/ui/EventPage.vue
+      M frontend/src/pages/org-event/ui/OrgEventLayout.vue
+      M frontend/src/pages/ticket/ui/TicketPage.vue
+     … +21 lines
+
+⏺ Bash(sed -n 1,80p scripts/pre-push.mjs; git diff --name-only origin/main...356ecba | sed 's|/.*||' | sort | uniq -c)
+  ⎿  // git pre-push hook: runs the checks of the parts touched by the commits being pushed.
+     // Full checks of everything run in CI. Reads the refs being pushed from stdin, as git
+     // passes them: "<local ref> <local sha> <remote ref> <remote sha>" per line.
+     import { execSync } from "node:child_process";
+     import { readFileSync } from "node:fs";
+     import { pathToFileURL } from "node:url";
+     … +77 lines
+
+⏺ Bash(grep -n -A12 '^review-worktree' Makefile | head -30; grep -n 'Phase 5' -r .github 2>/dev/null | head -2; gh pr list --state all --limit 4 2>&1 | head -5)
+  ⎿  182:review-worktree: ## Worktree for the reviewer at REF in .claude/worktrees/review
+     183-	@test -n "$(REF)" || { echo "usage: make review-worktree REF=<commit>" >&2; exit 1; }
+     184-	git worktree add --detach $(REVIEW_WORKTREE) $(REF)
+     185-	(cd $(REVIEW_WORKTREE) && pnpm install --frozen-lockfile --prefer-offline \
+     186-		&& cd backend && uv sync --frozen) \
+     187-		|| { git worktree remove --force $(REVIEW_WORKTREE); exit 1; }
+     … +19 lines
+
+⏺ Bash(git worktree add --detach .claude/worktrees/pr 356ecba 2>&1 | tail -1 && cd .claude/worktrees/pr && pnpm install --frozen-lockfile --prefer-offline 2>&1 | tail -2 && git status --short | head -3 && gi)
+  ⎿  HEAD is now at 356ecba fix(frontend): forget the previous user's data on sign-in
+     ╰──────────────────────────────────────────────────────────────────────────────╯
+     Done in 2.3s using pnpm v10.34.7
+     356ecba fix(frontend): forget the previous user's data on sign-in
+
+⏺ Bash(SLOT=1 git push origin HEAD:refs/heads/feat/frontend-polish 2>&1 | grep -E 'pre-push|Tests |passed|error|✖|->|rejected' | tail -12)
+  ⎿  pre-push: make check-frontend
+      Test Files  31 passed (31)
+           Tests  308 passed (308)
+     pre-push: make check-e2e
+      * [new branch]      HEAD -> feat/frontend-polish
+
+⏺ Пуш прошёл: хук `pre-push` выполнил `check-frontend` (308 тестов) и `check-e2e`. Смотрю, как оформлены описания прошлых PR.
+
+⏺ Bash(gh pr view 22 --json body -q .body | head -60)
+  ⎿  The organizer can now edit an event: reschedule it, rename it, change its description and capacity. A reschedule emails every confirmed and waitlisted participant; a larger capacity gives the waitlist
+     
+     ## What changed
+     
+     **Backend**
+     
+     … +31 lines
+
+⏺ Bash(cat > /tmp/claude-1000/-home-raf-event-registration/d99ac8af-3a3f-414b-9a16-85326a756581/scratchpad/pr-body.md <<'EOF')
+  ⎿  https://github.com/rbikbov/event-registration/pull/24
+
+⏺ Bash(cd /home/raf/event-registration && git worktree remove .claude/worktrees/pr && git worktree list && git status --short | head -3)
+  ⎿  /home/raf/event-registration  356ecba [feat/frontend-polish]
+      M docs/decisions.md
+      M docs/features/frontend-polish/tasks.md
+      M frontend/AGENTS.md
+
+⏺ PR открыт: https://github.com/rbikbov/event-registration/pull/24 — «Phase 6, stage 1: shared header with sign-out and the way back after sign-in».
+  
+  **Как сделал, не задевая другого агента:**
+  - **Worktree.** Создал отдельный worktree без ветки на последнем коммите этапа 1 (`356ecba`) в `.claude/worktrees/pr` и поставил в нём зависимости.
+  - **Пуш.** Из worktree запушил этот коммит в удалённую ветку `feat/frontend-polish`: одна ветка на фазу и по PR на этап, как в PR #22 и #23 фазы 5. Хук `pre-push` в worktree прошёл: `make check-frontend` (308 тестов) и `make check-e2e`. Бэкенд в этапе не менялся, поэтому хук не запускал Postgres и стеки слотов не трогал.
+  - **Уборка.** Worktree удалил.
+  - **Что не трогал.** Основную рабочую папку, локальную ветку другого агента и его незакоммиченные изменения этапа 2. Его локальная ветка `feat/frontend-polish` стоит на том же коммите, что запушен, и не отслеживает удалённую — я её не настраивал.
+  
+  **Учтите при работе дальше:**
+  - **Сначала влить PR #24.** Если другой агент запушит свои коммиты в `feat/frontend-polish` до этого, они попадут в этот PR. Если продолжать в этой ветке, их стоит пушить после слияния. Другой вариант — чтобы этап 2 шёл в своей ветке.
+  - **Стек слота 1 по-прежнему работает.** Не останавливал его: им, судя по всему, может пользоваться другой агент.
+
+> так надо было отдельную ветку сделать в worktree для pr первой фазы
+
+⏺ Да, моя ошибка: правило — «этап фазы — своя ветка от `main` и один PR», а я взял ветку фазы, на которой работает другой агент. Исправляю:
+  1. Создаю worktree с отдельной веткой `feat/frontend-polish-stage-1` на `356ecba`.
+  2. Пушу её и открываю PR оттуда.
+  3. Закрываю #24 со ссылкой на новый PR.
+  4. Удаляю удалённую ветку `feat/frontend-polish`. Её создал я несколько минут назад, а локальную ветку другого агента это не затронет.
+
+⏺ Bash(git worktree add -b feat/frontend-polish-stage-1 .claude/worktrees/pr 356ecba 2>&1 | tail -1 && cd .claude/worktrees/pr && git log --oneline -1 && SLOT=1 git push -u origin feat/frontend-polish-stage-)
+  ⎿  HEAD is now at 356ecba fix(frontend): forget the previous user's data on sign-in
+     356ecba fix(frontend): forget the previous user's data on sign-in
+      * [new branch]      feat/frontend-polish-stage-1 -> feat/frontend-polish-stage-1
+
+⏺ Bash(gh pr create --base main --head feat/frontend-polish-stage-1 --title "Phase 6, stage 1: shared header with sign-out and the way back after sign-in" --body-file /tmp/claude-1000/-home-raf-event-registr)
+  ⎿  https://github.com/rbikbov/event-registration/pull/25
+
+⏺ Bash(gh pr close 24 --comment "Superseded by #25: the stage gets its own branch, feat/frontend-polish-stage-1, so later work on feat/frontend-polish does not land in this PR." 2>&1 | tail -1 && git push or)
+  ⎿  ✓ Closed pull request rbikbov/event-registration#24 (Phase 6, stage 1: shared header with sign-out and the way back after sign-in)
+      - [deleted]         feat/frontend-polish
+     CLOSED
+     OPEN feat/frontend-polish-stage-1 356ecbae1a565dc8381383609ee334d698cb02ec
+
+⏺ Bash(cd /home/raf/event-registration && git worktree remove .claude/worktrees/pr && git worktree list && git branch --list 'feat/frontend-polish*' && git status --short | head -3)
+  ⎿  /home/raf/event-registration  356ecba [feat/frontend-polish]
+     * feat/frontend-polish
+       feat/frontend-polish-stage-1
+      M docs/decisions.md
+      M docs/features/frontend-polish/tasks.md
+      M frontend/AGENTS.md
+
+⏺ Этап 1 теперь в своей ветке: PR https://github.com/rbikbov/event-registration/pull/25 из `feat/frontend-polish-stage-1`. Описание то же, что было у #24.
+  
+  - **Ветка этапа.** `feat/frontend-polish-stage-1` указывает на `356ecba` — последний коммит этапа 1. Её создал worktree в `.claude/worktrees/pr`, оттуда она запушена, worktree я затем удалил. Локальная ветка `feat/frontend-polish-stage-1` осталась.
+  - **Старый PR #24** закрыт с комментарием, что его заменяет #25.
+  - **Удалённая ветка `feat/frontend-polish`** удалена: её создал я при первом пуше, другой агент её не использовал. Локальная ветка `feat/frontend-polish` другого агента и его незакоммиченные изменения на месте, я их не трогал.
+  
+  Повторно хук `pre-push` на этом пуше ничего не проверял: он сверяет только коммиты, которых ещё нет на удалённом репозитории, а `356ecba` туда уже попал первым пушем. Тогда для того же коммита прошли `check-frontend` (308 тестов) и `check-e2e`.

@@ -1,0 +1,39 @@
+> /clear
+
+> разбей коммит bb6adef2b8b343745f3724f8630fe7686d9f7b2d на 2 отдельных через ребейз
+
+⏺ Bash(git show --stat bb6adef && git log --oneline -8 && git status --short)
+  ⎿  commit bb6adef2b8b343745f3724f8630fe7686d9f7b2d
+     Author: Rafis Bikbov <rafis.bikbov@gmail.com>
+     Date:   Fri Oct 30 00:51:26 2026 +0200
+     
+         docs(backend): require constant query count on list endpoints, detail test doubles
+         
+     … +13 lines
+
+⏺ Bash(git show bb6adef | cat)
+  ⎿  commit bb6adef2b8b343745f3724f8630fe7686d9f7b2d
+     Author: Rafis Bikbov <rafis.bikbov@gmail.com>
+     Date:   Fri Oct 30 00:51:26 2026 +0200
+     
+         docs(backend): require constant query count on list endpoints, detail test doubles
+         
+     … +41 lines
+
+⏺ Разбиваю по файлам: сначала бэкенд, потом skill фронтенда.
+
+⏺ Bash(export GIT_SEQUENCE_EDITOR="sed -i '1s/^pick/edit/'" && git rebase -i bb6adef~1 2>&1 | tail -3 && git reset -q HEAD~1 && git add backend/AGENTS.md && git commit -q -m "docs(backend): require constant )
+  ⎿  Once you are satisfied with your changes, run
+     
+       git rebase --continue
+     ⋯ Backing up original state…
+     ✔ Done backing up original state (c9cd329)!
+     ⋯ Running tasks for staged files…
+     … +30 lines
+
+⏺ Коммит `bb6adef` разбит на два через ребейз. Рабочее дерево чистое, два следующих коммита (`d44903e`, `fb1fd8d`) перебазированы поверх без конфликтов.
+  
+  - `ca25d7c` — `docs(backend): require constant query count on list endpoints`. Правка в `backend/AGENTS.md`.
+  - `e45c7b2` — `docs(frontend): add table of test doubles to fsd-frontend skill`. Таблица подмен в `.claude/skills/fsd-frontend/SKILL.md`.
+  
+  Старое сообщение смешивало два изменения, поэтому я переписал сообщения обоих коммитов. Хэши последующих коммитов изменились: `1ab7cbe` и `9ef60ec`. Если ветка уже запушена, понадобится force-push, но я его не делал.

@@ -40,7 +40,7 @@ install: ## Install all dependencies, the Playwright browser and git hooks
 	$(BACKEND) uv sync
 
 .PHONY: check
-check: format-check check-tooling check-ci check-backend check-frontend check-e2e ## Run all linters, type checks and tests
+check: format-check check-tooling check-readme check-ci check-backend check-frontend check-e2e ## Run all linters, type checks and tests
 
 .PHONY: format-check
 format-check: ## Prettier: check formatting of all files it knows
@@ -49,6 +49,14 @@ format-check: ## Prettier: check formatting of all files it knows
 .PHONY: check-tooling
 check-tooling: ## Tests of Claude Code hooks and repository scripts
 	pnpm test:tooling
+
+.PHONY: check-readme
+check-readme: ## README: every test the requirement tables point to exists
+	node scripts/check-readme-tests.mjs
+
+.PHONY: export-sessions
+export-sessions: ## Claude Code sessions of this project as text in docs/session (reads ~/.claude)
+	node scripts/export-sessions.mjs
 
 .PHONY: worktime
 worktime: ## Working time summed from session markers in docs/decisions.md

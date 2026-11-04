@@ -1,0 +1,772 @@
+> /clear
+
+> начинаем 3.1
+
+⏺ Skill(session-handoff)
+  ⎿  Launching skill: session-handoff
+
+⏺ Bash(date '+%Y-%m-%d %H:%M' && make worktime 2>&1 | tail -5 && tail -15 docs/decisions.md && cat docs/features/emails/tasks.md && git log -1 --format='%ci')
+  ⎿  2026-10-31 03:32
+     2026-10-30 21:38 → 2026-10-30 22:28  0 ч 50 мин
+     2026-10-30 22:55 → 2026-10-31 01:50  2 ч 55 мин
+     2026-10-31 01:56 → 2026-10-31 01:59  0 ч 3 мин
+     Итого: 18 ч 33 мин
+     Предупреждение: сессия с 2026-10-31 02:06 не закрыта и не учтена
+     … +93 lines
+
+⏺ Bash(cat docs/features/emails/spec.md && cat backend/registrations/services.py && ls backend/emails backend/emails/* && cat backend/emails/services.py 2>/dev/null; ls backend/registrations backend/registra)
+  ⎿  # Outbox, воркер, письма: spec
+     
+     Фаза — `docs/roadmap.md`, фаза 2. Статус: утверждён 2026-10-30.
+     
+     ## Что и зачем
+     
+     … +408 lines
+
+⏺ Bash(cat backend/registrations/tests/test_emails.py && ls backend/emails/templates/emails && cat backend/emails/templates/emails/ticket.txt && grep -n "Kind\|class\|choices" backend/emails/models.py | head)
+  ⎿  from datetime import timedelta
+     
+     import pytest
+     from django.db import transaction
+     from django.utils import timezone
+     
+     … +115 lines
+
+⏺ Bash(sed -n 1,50p backend/emails/models.py && sed -n 1,40p backend/registrations/tests/test_cancel.py && cat backend/emails/tests/test_services.py | head -60)
+  ⎿  from typing import ClassVar
+     
+     from django.db import models
+     from django.utils import timezone
+     
+     from registrations.models import Registration
+     … +141 lines
+
+⏺ Закрываю прошлую сессию маркером, ставлю начало новой и пишу тесты для 3.1 (сначала тесты, потом код).
+
+⏺ Bash(printf -- '- **03:26** — ■ конец сессии\n- **03:32** — ▶ начало сессии\n' >> docs/decisions.md && tail -3 docs/decisions.md)
+  ⎿  - **03:26** — по повторному ревью этапа 2 фазы 2, находка 1 (решение человека): после успешного отказа страница билета сразу записывает в кэш статус из ответа отказа (без кода и номера), а потом переч
+     - **03:26** — ■ конец сессии
+     - **03:32** — ▶ начало сессии
+
+⏺ Bash(cat >> backend/registrations/tests/test_emails.py <<'EOF')
+  ⎿  register(event.id, "c@x.io", "Cid")
+             cancel(registration.manage_token)
+         
+             register(event.id, "b@x.io", "Bob")
+         
+     >       first, second = emails_of("b@x.io")
+     … +9 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  def cancel(manage_token: str, *, now: datetime | None = None) -> Registration:
+         """Cancel a registration by its manage token; a cancelled seat goes to the waitlist head.
+     
+         The promoted one gets an email with the ticket code, queued in the same transaction.
+         Cancelling twice, or cancelling from the waitlist, promotes nobody. Raises
+         Registration.DoesNotExist for an unknown token.
+     … +7 lines
+
+⏺ Тесты зелёные (3 падали до правки). Записываю решение, отмечаю задачу, запускаю `make stack-check`.
+
+⏺ Bash(cd /home/raf/event-registration && T=$(date +%H:%M) && cat >> docs/decisions.md <<EOF)
+  ⎿  Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+     
+      RUN  v5.0.5 /home/raf/event-registration/frontend
+     
+     
+      Test Files  18 passed (18)
+     … +19 lines
+
+⏺ Bash(make stack-check >/dev/null 2>&1; echo exit=$? && git add -A && git status --short && git commit -q -F - <<'EOF')
+  ⎿  exit=0
+     M  backend/emails/services.py
+     A  backend/emails/templates/emails/promoted.txt
+     A  backend/emails/templates/emails/waitlisted.txt
+     M  backend/registrations/services.py
+     M  backend/registrations/tests/test_emails.py
+     … +21 lines
+
+⏺ Задача 3.1 сделана и закоммичена: `24d77ac feat(backend): email the waitlist position and the promotion`. `make stack-check` проходит.
+  
+  Прошлая сессия (02:06) не была закрыта. Я закрыл её маркером `■` на 03:26 — это время последнего коммита. Новая сессия началась в 03:32.
+  
+  **Что изменилось**
+  - Если `register` ставит участника в лист ожидания, в той же транзакции создаётся письмо `waitlisted` с его номером. Номер считается под блокировкой Event сразу после записи — тот же, что уходит в ответе API.
+  - Если `cancel` освобождает место, первый из листа получает письмо `promoted` с кодом билета. Письмо создаётся в той же транзакции, что и повышение ([services.py](backend/registrations/services.py)).
+  - Номер передаётся в `enqueue_email` новым параметром `position`. Считать его внутри `emails` нельзя: получился бы циклический импорт, а сервис регистрации номер уже посчитал.
+  - Новые шаблоны: [waitlisted.txt](backend/emails/templates/emails/waitlisted.txt) и [promoted.txt](backend/emails/templates/emails/promoted.txt). В письме `waitlisted` кода билета нет: код действует только вместе с местом.
+  - Отдельного кода для оживления после отказа не понадобилось. Новый `ticket_code` меняет ключ дедупликации, поэтому письмо создаётся новое.
+  
+  **Тесты:** добавил 7 в [test_emails.py](backend/registrations/tests/test_emails.py): номер в листе, письмо первому из листа, отсутствие писем при отказе из листа, повторном отказе и пустом листе, оживление на место и в лист. До правки три из них падали.
+  
+  Решение записано в `docs/decisions.md`, задача 3.1 отмечена в `tasks.md`. Следующая — 3.2: e2e-тест, где второй участник получает место после отказа первого.
+
+> обнови main, создай новую ветку под этап 3 от main и перенеси коммит в новую ветку
+
+⏺ Bash(git status --short && git fetch origin 2>&1 | tail -3; git log --oneline -3 origin/main; echo ---; git log --oneline origin/main..feat/ticket-page | head -20; echo ---; git branch -vv | grep ticket-pa)
+  ⎿  From github.com:rbikbov/event-registration
+        190f954..78aa64e  main       -> origin/main
+     78aa64e fix(frontend): show the cancellation even if rereading the ticket fails
+     a0be714 fix(backend): redact ticket tokens in the runserver access log too
+     3ee2f60 fix(backend): keep ticket manage tokens out of the logs
+     ---
+     … +12 lines
+
+⏺ Bash(git diff --stat c5fd481 origin/main | tail -2; echo "diff-exit=$?"; git log --oneline -1 main; git branch -vv | grep ' main ')
+  ⎿  diff-exit=0
+     190f954 docs: close the session in the decision log
+       main                                   190f954 [origin/main: behind 8] docs: close the session in the decision log
+
+⏺ Ветку `feat/ticket-page` уже влили в `origin/main` с rebase: хеши другие, но дерево совпадает с `c5fd481`. Переношу коммит.
+
+⏺ Bash(git switch -q main && git merge -q --ff-only origin/main && git switch -q -c feat/waitlist-emails && git cherry-pick 24d77ac 2>&1 | tail -1 && git branch -f feat/ticket-page origin/feat/ticket-page &&)
+  ⎿  create mode 100644 backend/emails/templates/emails/waitlisted.txt
+     branch 'feat/ticket-page' set up to track 'origin/feat/ticket-page'.
+     c577d65 feat(backend): email the waitlist position and the promotion
+     78aa64e fix(frontend): show the cancellation even if rereading the ticket fails
+     a0be714 fix(backend): redact ticket tokens in the runserver access log too
+       feat/ticket-page                       c5fd481 [origin/feat/ticket-page] fix(frontend): show the cancellation even if rereading the ticket fails
+     … +3 lines
+
+⏺ Коммит перенесён на новую ветку `feat/waitlist-emails`.
+  
+  - **main** обновлён до `origin/main` (`78aa64e`) без merge-коммита. Ветку `feat/ticket-page` в main уже влили с rebase: хеши коммитов другие, но содержимое кода совпадает полностью.
+  - **`feat/waitlist-emails`** создана от main. В ней один коммит — `c577d65 feat(backend): email the waitlist position and the promotion`, это тот же коммит под новым хешем. Конфликтов при переносе не было.
+  - **`feat/ticket-page`** возвращена к `origin/feat/ticket-page` (`c5fd481`). Убранный коммит не был запушен, он остался только в новой ветке.
+  
+  После переноса я не перезапускал `make stack-check`. Код тот же, а main совпадает с прошлым основанием по содержимому, поэтому результат должен быть прежним.
+  
+  Новая ветка ещё не запушена. Когда скажешь, отправлю её через `SLOT=1 git push -u origin feat/waitlist-emails`.
+  
+  Название `feat/waitlist-emails` близко к старой ветке `feat/waitlist`, но это разные ветки. Если хочешь другое имя, переименую.
+
+> делаем 3.2
+
+⏺ Bash(cat e2e/AGENTS.md && ls e2e e2e/tests 2>/dev/null && cat e2e/tests/participant-opens-ticket.spec.ts 2>/dev/null || find e2e -name '*.spec.ts' -not -path '*/node_modules/*')
+  ⎿  # e2e/ — Playwright
+     
+     Команды — `docs/development.md`, раздел «E2E». Тесты идут против поднятого стека: человек — `make up` / `make e2e`, агент — `make stack-e2e` (слот 1).
+     
+     ## Правила
+     
+     … +109 lines
+
+⏺ Bash(cat e2e/tests/participant-registers.spec.ts && sed -n 1,40p e2e/tests/organizer-creates-event.spec.ts && cat e2e/tsconfig.json e2e/playwright.config.ts && grep -rn "листе\|№" frontend/src/pages/ticket)
+  ⎿  import { expect, test } from "@playwright/test";
+     
+     // Created by `create_demo_users` when the backend starts (docs/architecture.md, "Окружение").
+     const ORGANIZER = { email: "demo@example.com", password: "demo" };
+     
+     test("participants get the only seat, then a place on the waitlist", async ({ browser }) => {
+     … +141 lines
+
+⏺ Bash(cat > e2e/tests/helpers.ts <<'EOF')
+  ⎿  import { expect, test } from "@playwright/test";
+     
+     import { createEvent } from "./helpers";
+     
+     test("participants get the only seat, then a place on the waitlist", async ({ browser }) => {
+       const title = `Meetup ${Date.now()}`;
+     … +59 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  4:const ORGANIZER = { email: "demo@example.com", password: "demo" };
+     12:  await page.getByLabel("Email").fill(ORGANIZER.email);
+     29:	cd e2e && pnpm exec playwright install chromium
+     33:check: format-check check-tooling check-ci check-backend check-frontend check-e2e ## Run all linters, type checks and tests
+     103:.PHONY: check-e2e
+     104:check-e2e: ## e2e: ESLint and tsc for the test code (does not run the tests)
+     … +6 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  import { expect, test } from "@playwright/test";
+     
+     import { ORGANIZER } from "./helpers";
+     
+     stack-slot:
+     	@case "$(SLOT)" in [1-9]) ;; *) echo "SLOT must be 1-9; slot 0 is make up" >&2; exit 1 ;; esac
+     … +34 lines
+
+⏺ Bash(make stack-e2e 2>&1 | tail -15 && make check-e2e 2>&1 | tail -4 && npx prettier --check e2e/tests 2>&1 | tail -3)
+  ⎿  > e2e@0.0.0 test /home/raf/event-registration/e2e
+     > playwright test
+     
+     
+     Running 6 tests using 4 workers
+     
+     … +15 lines
+
+⏺ Bash(npx prettier --write e2e/tests/helpers.ts >/dev/null && T=$(date +%H:%M) && cat >> docs/decisions.md <<EOF)
+  ⎿  ⋯ Backing up original state…
+     ✔ Done backing up original state (83166c1)!
+     ⋯ Running tasks for staged files…
+         e2e/**/*.{ts,js} — 4 files
+           ⋯ pnpm --dir e2e exec eslint --fix
+           ⋯ prettier --write
+     … +13 lines
+
+⏺ Тест, переведённый на хелперы, проходит на стеке слота 1. Пишу сценарий 3.2.
+
+⏺ Bash(cat > e2e/tests/waitlisted-gets-promoted.spec.ts <<'EOF')
+  ⎿  Running 1 test using 1 worker
+     
+       ✓  1 [chromium] › tests/waitlisted-gets-promoted.spec.ts:21:1 › a cancelled seat goes to the waitlist head, who gets an email with the ticket (6.7s)
+     
+       1 passed (7.5s)
+
+⏺ Bash(cd /home/raf/event-registration && python3 - <<'EOF')
+  ⎿  149:        pass  # TEMP
+       ✘  1 [chromium] › tests/waitlisted-gets-promoted.spec.ts:21:1 › a cancelled seat goes to the waitlist head, who gets an email with the ticket (9.6s)
+       1) [chromium] › tests/waitlisted-gets-promoted.spec.ts:21:1 › a cancelled seat goes to the waitlist head, who gets an email with the ticket 
+         Error: expect(received).not.toBe(expected) // Object.is equality
+            at helpers.ts:46
+             at emailTo (/home/raf/event-registration/e2e/tests/helpers.ts:46:10)
+     … +4 lines
+
+⏺ Тест падает на строке 52, где ждёт письмо `promoted`, — как и задумано. Возвращаю код и прогоняю весь e2e и `stack-check`.
+
+⏺ Bash(cd /home/raf/event-registration && sed -i 's/^        pass  # TEMP$/        enqueue_email(OutboxEmail.Kind.PROMOTED, first)/' backend/registrations/services.py && git diff --stat backend && make stack)
+  ⎿  ✓  4 [chromium] › tests/smoke.spec.ts:3:1 › frontend reaches the backend and the database through the proxy (3.2s)
+       ✓  1 [chromium] › tests/organizer-creates-event.spec.ts:5:1 › organizer signs in, creates an event and sees it in the list (3.7s)
+       ✓  6 [chromium] › tests/organizer-creates-event.spec.ts:28:1 › organizer sees the field error from the form and stays on it (1.7s)
+       ✓  5 [chromium] › tests/participant-opens-ticket.spec.ts:5:1 › the ticket email leads to the ticket page, where the participant cancels (7.9s)
+       ✓  7 [chromium] › tests/organizer-creates-event.spec.ts:48:1 › a wrong password shows the server error and keeps the login form (3.0s)
+       ✓  3 [chromium] › tests/participant-registers.spec.ts:5:1 › participants get the only seat, then a place on the waitlist (8.6s)
+     … +3 lines
+
+⏺ Bash(T=$(date +%H:%M) && python3 - <<EOF)
+  ⎿  M  docs/decisions.md
+     M  docs/features/emails/tasks.md
+     A  e2e/tests/waitlisted-gets-promoted.spec.ts
+     ⋯ Backing up original state…
+     ✔ Done backing up original state (2b41648)!
+     ⋯ Running tasks for staged files…
+     … +19 lines
+
+⏺ Задача 3.2 сделана: тест проходит на стеке слота 1. Это два коммита в ветке `feat/waitlist-emails`:
+  
+  - **`1ca7d4b` test(e2e): share the event setup and the Mailpit lookup between tests.** Вход организатора, создание события и чтение письма из Mailpit теперь в [helpers.ts](e2e/tests/helpers.ts) — так решили в записи от 02:31 на случай третьего теста. Письмо ищется по адресу и теме, потому что второму участнику приходят два письма: «Лист ожидания» и «Освободилось место». Два существующих теста переведены на хелперы.
+  - **`33a7cf6` test(e2e): promote the waitlist head by email after a cancellation.** Новый тест [waitlisted-gets-promoted.spec.ts](e2e/tests/waitlisted-gets-promoted.spec.ts):
+    1. Событие на 1 место. Второй участник видит «Вы в листе ожидания, №1» на странице регистрации и в письме, а по ссылке из письма открывает свой билет.
+    2. Первый отказывается по ссылке из своего письма с билетом.
+    3. Второму приходит «Освободилось место» с той же ссылкой. По ней открывается билет с кодом из письма, строки «в листе ожидания» нет.
+  
+  **Проверки:**
+  - `make stack-e2e` — все 7 тестов зелёные, `make stack-check` проходит.
+  - Тест проверен на падение: я временно убрал создание письма `promoted` в backend и пересобрал стек. Тест упал на ожидании этого письма, потом я вернул код.
+  
+  Решения записаны в `docs/decisions.md`, задача 3.2 отмечена. Ещё поправил формулировку в записи о хелперах: в первом коммите она была написана с ошибкой.
+  
+  На этом этап 3 закрыт по задачам. По правилу 6 он считается готовым, только когда его проверит агент `reviewer` и ты разберёшь находки. Запустить ревью коммитов `c577d65..33a7cf6`? Ветка пока не запушена.
+
+> да, запусти ревью агентом
+
+⏺ Bash(sed -n '/## Ревью/,/^## [^Р]/p' .claude/skills/feature-workflow/SKILL.md | head -60)
+  ⎿  ## Ревью
+     
+     Агент `reviewer` (`.claude/agents/reviewer.md`) с чистым контекстом, после каждого этапа.
+     Независимость ревью держится на промпте: агент знает только то, что в нём.
+     
+     Передать **только**:
+     … +37 lines
+
+⏺ Agent(Review stage 3 of phase 2)
+  ⎿  Async agent launched successfully. (This tool result is internal metadata — never quote or paste any part of it, including the agentId below, into a user-facing reply.)
+     agentId: afd9c668fa73c3437 (internal ID - do not mention to user. Use SendMessage with to: 'afd9c668fa73c3437', summary: '<5-10 word recap>' to continue this agent.)
+     The agent is working in the background. You will be notified automatically when it completes. You know nothing about its results until that notification arrives — do not report, assume, or predict the
+     Do not duplicate this agent's work — avoid working with the same files or topics it is using.
+     output_file: /tmp/claude-1000/-home-raf-event-registration/efaf606d-1a62-4443-94b3-3d4e4fb35ba7/tasks/afd9c668fa73c3437.output
+     Do NOT Read or tail this file via the shell tool — it is the full subagent JSONL transcript and reading it will overflow your context. If the user asks for progress, say the agent is still running; yo
+
+⏺ Я запустил агента `reviewer` на этап 3 фазы 2 (коммиты `78aa64e..33a7cf6`, ветка `feat/waitlist-emails`). Он работает в фоне со своим контекстом. Как придёт отчёт, покажу его целиком, а решения по находкам за тобой.
+
+⏺ Агент `reviewer` закончил ревью этапа 3. Ниже его отчёт целиком, мои добавления — после него. Решать по каждой находке тебе.
+  
+  ---
+  
+  **Ревью этапа 3 фазы 2**, диапазон `78aa64e..33a7cf6` (`c577d65`, `1ca7d4b`, `33a7cf6`). Блокирующих находок нет, обе находки низкой важности.
+  
+  **Находки**
+  
+  **1. [backend/emails/services.py:21](backend/emails/services.py#L21) — API и контракт (низкая)**
+  - **Что:** в `enqueue_email(kind, registration, *, position: int | None = None)` номер в листе необязателен для любого `kind`. Если вызвать функцию для `WAITLISTED` без `position`, письмо молча уйдёт с текстом «№None» ([waitlisted.txt](backend/emails/templates/emails/waitlisted.txt), строка 3). Сейчас вызов один, в `registrations/services.py:92`, и номер он передаёт.
+  - **Почему важно:** это не проверяют ни типы, ни код при выполнении. Если появится второй вызов для `waitlisted` (например, `rescheduled` в фазе 5 по той же схеме), номер можно забыть, а тесты заметят это, только если проверяют текст письма.
+  - **Исправление:** выбрасывать `ValueError`, если `kind == WAITLISTED and position is None`. Другой вариант — отдельная функция-обёртка для `waitlisted` с обязательным номером. Запись 03:34 объясняет, почему номер передаётся параметром (циклический импорт), но не объясняет, почему без него можно обойтись. Поэтому находку она не снимает.
+  
+  **2. [backend/registrations/tests/test_emails.py:49](backend/registrations/tests/test_emails.py#L49) — Тесты (низкая)**
+  - **Что:** тест отката есть только для `register`. Нет теста, что после отката транзакции `cancel` не остаётся письма `promoted`. А spec относит инвариант «Письмо есть ⇔ изменение закоммичено» и к `register`, и к `cancel`, с уровнем проверки «pytest, сервис».
+  - **Почему важно:** если вызов `enqueue_email` вынести за блок `transaction.atomic()` или в `on_commit`, ни один тест не упадёт.
+  - **Исправление:** тест по образцу строки 49: `cancel(first.manage_token)` внутри `transaction.atomic()` с `raise Rollback`, затем проверить, что писем `promoted` нет и участник из листа остался `waitlisted`. Критерии задачи 3.1 этого теста не требуют, так что это пробел в покрытии, а не недоделанная задача.
+  
+  **Проверки**
+  - `stack-check` на слоте 2 при `33a7cf6`:
+    - Первый прогон упал на Vitest: в `TicketPage.test.ts`, тест «cancels, rereads the ticket and refreshes the events», не нашлась кнопка «Да, отказаться».
+    - Три отдельных прогона этого файла зелёные (11/11). Повторный `stack-check` тоже зелёный: backend 156, frontend 130.
+    - Фронтенд в диапазоне не менялся, поэтому этот сбой агент этапу не засчитывает. Но тест нестабилен: в `confirmCancel` (строки 55–58) кнопку «Да, отказаться» ищут сразу после клика по «Отказаться». Это стоит разобрать отдельно.
+  - `stack-e2e` на слоте 2: 7/7, включая `waitlisted-gets-promoted.spec.ts`.
+  - Стек слота 2 и копия репозитория для ревью удалены.
+  
+  **Решения из `docs/decisions.md`**
+  - Запись 03:34 относится к находке 1, но не снимает её.
+  - Записи 03:43 и 03:47 (про хелперы) объясняют то, что иначе было бы вопросом, поэтому находок по ним нет.
+  
+  **Проверено, находок нет**
+  - `register`: письмо `waitlisted` создаётся под замком Event в той же транзакции. При оживлении номер учитывает новое место в очереди. Повторная регистрация писем не даёт.
+  - `cancel`: письмо `promoted` создаётся в транзакции под замком. Отказ из листа, повторный отказ и отказ при пустом листе писем не дают.
+  - Ключ дедупликации: повысить одну регистрацию дважды без смены кода нельзя. Оживление даёт новое письмо, тест на это есть.
+  - В письме `waitlisted` кода нет, в `promoted` код есть, и ссылка та же, что в письме `waitlisted`.
+  - Тема письма собирается в одну строку, `autoescape off` уместен для простого текста.
+  - Сигналов нет. API, схема, миграции и админка не менялись. Персональных данных в логах нет.
+  - e2e выполняет правила `e2e/AGENTS.md`, сценарий 3.2 выполнен целиком.
+  - Проверка `anti-slop-review` по diff ничего не нашла.
+  
+  **Не проверялось:** браузер (только e2e), точность поиска Mailpit по `to:` / `subject:`, этапы 4 и 5.
+  
+  ---
+  
+  **Мои добавления**
+  - **Находка 1:** вариант с `ValueError` — одна строка в `enqueue_email` и тест на неё.
+  - **Находка 2:** добавить тест можно сразу. Проверю, что он падает, если вынести вызов `enqueue_email` из транзакции.
+  - **Нестабильный Vitest-тест:** у меня 130/130 Vitest-тестов прошли во всех `make stack-check` сессии, сбой я сам не видел. Тест из этапа 2, и в этот этап его разбор не входит. Предлагаю записать его в лог «на потом» в `tasks.md`, если не хочешь разобрать сейчас.
+  
+  Что делаем по находкам 1 и 2 и по нестабильному тесту?
+
+> 1. мне кажется обертки лучше, не?
+  2. делаем.
+  3. нестабильный тест - nexttick там будет лишним?
+
+⏺ Начну с нестабильного теста: посмотрю код, прежде чем отвечать про `nextTick`.
+
+⏺ Bash(cd /home/raf/event-registration/frontend && sed -n 1,80p src/pages/ticket/ui/TicketPage.test.ts && grep -n "confirming\|Отказаться\|Да, отказаться\|v-if" src/pages/ticket/ui/TicketPage.vue | head -20)
+  ⎿  import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
+     import { mount } from "@vue/test-utils";
+     import { http, HttpResponse } from "msw";
+     import { describe, expect, it, vi } from "vitest";
+     import { createMemoryHistory, createRouter } from "vue-router";
+     
+     … +88 lines
+
+⏺ Bash(sed -n 1,66p src/pages/ticket/ui/TicketPage.vue && grep -n "cancels, rereads" -A30 src/pages/ticket/ui/TicketPage.test.ts && cat src/pages/ticket/api/*.ts | head -60)
+  ⎿  <script setup lang="ts">
+     import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
+     import { computed, ref, watch } from "vue";
+     import { useI18n } from "vue-i18n";
+     import { useRoute } from "vue-router";
+     
+     … +110 lines
+
+⏺ Bash(for i in $(seq 1 12); do pnpm exec vitest run 2>&1 | grep -E "FAIL|✗|×" | head -3; done; echo done)
+  ⎿  done
+
+⏺ Bash(for i in $(seq 1 4); do for j in 1 2 3 4; do (pnpm exec vitest run 2>&1 | grep -E "FAIL|No button" | head -3) & done; wait; done; echo done)
+  ⎿  Exit code 137
+
+⏺ Bash(grep -rn "enqueue_email" --include=*.py --include=*.md . | grep -v node_modules | grep -v "\.claude/worktrees")
+  ⎿  (eval):1: no matches found: --include=*.py
+
+⏺ Bash(git grep -n "enqueue_email")
+  ⎿  backend/emails/services.py:21:def enqueue_email(
+     backend/emails/tests/test_services.py:9:from emails.services import enqueue_email
+     backend/emails/tests/test_services.py:36:    enqueue_email(OutboxEmail.Kind.TICKET, registration)
+     backend/emails/tests/test_services.py:51:    enqueue_email(OutboxEmail.Kind.TICKET, registration)
+     backend/emails/tests/test_services.py:52:    enqueue_email(OutboxEmail.Kind.TICKET, registration)
+     backend/emails/tests/test_worker.py:9:from emails.services import BATCH_SIZE, enqueue_email, process_batch
+     … +14 lines
+
+⏺ Bash(grep -n "mypy\|pyright\|basedpyright\|\[tool" backend/pyproject.toml | head; sed -n 1,50p backend/emails/services.py; sed -n 335,348p docs/development.md; sed -n 74,80p docs/architecture.md)
+  ⎿  17:    "django-stubs[compatible-mypy]>=6.1.2",
+     19:    "mypy>=2.4.1",
+     25:[tool.ruff]
+     31:[tool.ruff.lint]
+     38:[tool.ruff.lint.per-file-ignores]
+     42:[tool.mypy]
+     … +75 lines
+
+⏺ Bash(cd /home/raf/event-registration/backend && python3 - <<'EOF')
+  ⎿  registration.cancelled_at = None
+                 registration.ticket_code = new_ticket_code()
+                 registration.save()
+             position = waitlist_position(registration)
+             if confirmed:
+                 enqueue_email(OutboxEmail.Kind.TICKET, registration)
+     … +8 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  37:def _enqueue(
+     38-    kind: OutboxEmail.Kind, registration: Registration, extra: dict[str, object]
+     39-) -> None:
+     40-    """Queue an email about a registration change.
+     Success: no issues found in 65 source files
+
+⏺ Теперь находка 2: тест отката `cancel`.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Command did not complete within its 120s timeout and was moved to the background (ID: b7c3s9b6s). Output is being written to: /tmp/claude-1000/-home-raf-event-registration/6bfbff52-1473-4ae2-9d53-24ca
+
+⏺ Bash(sleep 1; cat /tmp/claude-1000/-home-raf-event-registration/6bfbff52-1473-4ae2-9d53-24cad3d73fca/tasks/b7c3s9b6s.output; docker ps --format '{{.Names}} {{.Status}}' | grep -i postgres)
+  ⎿  (Bash completed with no output)
+
+⏺ ToolSearch(select:TaskStop)
+  ⎿  (no output)
+
+⏺ TaskStop()
+  ⎿  {"message":"Successfully stopped task: b7c3s9b6s (python3 - <<'EOF'\np='registrations/tests/test_emails.py'\ns=open(p).read()\nanchor=\"def test_cancel_from_the_waitlist_queues_no_email\"\nnew='''def 
+
+⏺ Bash(cd /home/raf/event-registration && grep -n "on_commit\|enqueue_email(OutboxEmail.Kind.PROMOTED" backend/registrations/services.py; grep -c "rolled_back_cancel" backend/registrations/tests/test_emails.)
+  ⎿  150:        enqueue_email(OutboxEmail.Kind.PROMOTED, first)
+     1
+     event-registration-s1-worker-1 Restarting (1) 42 seconds ago
+     event-registration-s1-backend-1 Exited (255) 3 minutes ago
+     event-registration-s1-frontend-1 Exited (255) 3 minutes ago
+     event-registration-s1-mailpit-1 Exited (255) 3 minutes ago
+     … +6 lines
+
+⏺ Bash(make stack-up 2>&1 | tail -3 && cd backend && timeout 100 env POSTGRES_PORT=5433 uv run pytest registrations emails -q 2>&1 | tail -2)
+  ⎿  Container event-registration-s1-postgres-1 Healthy 
+      Container event-registration-s1-mailpit-1 Healthy 
+      Container event-registration-s1-frontend-1 Healthy 
+     ............                                                             [100%]
+     84 passed in 21.60s
+
+⏺ Bash(B=/tmp/claude-1000/-home-raf-event-registration/6bfbff52-1473-4ae2-9d53-24cad3d73fca/scratchpad/services.bak && cp registrations/services.py $B && sed -i 's/^        enqueue_email(OutboxEmail.Kind.PRO)
+  ⎿  1
+     registrations/tests/test_emails.py:87: ValueError
+     =========================== short test summary info ============================
+     FAILED registrations/tests/test_emails.py::test_cancel_confirmed_queues_promoted_for_the_waitlist_head
+     1 failed, 10 passed in 3.50s
+     0
+
+⏺ Bash(cd /home/raf/event-registration && T=$(date +%H:%M) && echo "- **$T** — по ревью этапа 3 фазы 2, находка 1 (решение человека): номер в листе обязателен на уровне типов — \`enqueue_waitlisted(registrat)
+  ⎿  ⋯ Backing up original state…
+     ✔ Done backing up original state (784efb2)!
+     ⋯ Running tasks for staged files…
+         backend/**/*.py — 2 files
+           ⋯ uv run --project backend ruff check --fix
+           ⋯ uv run --project backend ruff format
+     … +14 lines
+
+⏺ Находка 1 закоммичена, по находке 2 нужно твоё решение. По нестабильному тесту — ответ ниже.
+  
+  **1. Обёртки** — согласен, и вот почему. С обёртками ошибку ловит mypy ещё до тестов, а `ValueError` сработал бы только при выполнении, и то если тест дойдёт до этого вызова. Коммит `d2f9061`:
+  - для листа ожидания — `enqueue_waitlisted(registration, position: int)`, номер обязателен;
+  - `enqueue_email` принимает только `ticket` и `promoted`. Пробный вызов `enqueue_email(WAITLISTED, …)` mypy отклонил;
+  - mypy нашёл и место в `register`, где номер имеет тип `int | None`. Теперь письмо выбирается по `position is None`, `assert` не понадобился.
+  
+  Запись в `docs/decisions.md` есть. mypy и pytest по `emails` и `registrations` проходят (84 теста), полный `make stack-check` ещё не запускал.
+  
+  **2. Тест отката `cancel`** — написан, но не закоммичен. Я проверил, падает ли он, на варианте ревьюера: перенёс `enqueue_email(PROMOTED)` в `on_commit`. **Тест не упал.** Причина в том, что он оборачивает `cancel` во внешнюю транзакцию и откатывает её. Тогда откатывается всё, что `cancel` записал в БД, а колбэк `on_commit` просто отбрасывается. Такой тест упадёт, только если письмо будет записано через отдельное соединение с БД, а это нереальный сценарий. Перенос в `on_commit` при этом ловит уже существующий тест «отказ → `promoted` первому»: в pytest-django колбэки `on_commit` по умолчанию не выполняются, письма нет, тест падает. Тест отката `register` устроен так же, поэтому он защищает не больше нового.
+  
+  Варианты:
+  - **а)** оставить тест для симметрии с `register` и таблицей инвариантов в spec, понимая, что сам по себе он почти ничего не ловит;
+  - **б)** не добавлять его, а в decisions записать, что перенос в `on_commit` ловит положительный тест (проверено);
+  - **в)** то же, что (б), и убрать бесполезный тест отката `register`.
+  
+  Я бы выбрал (б).
+  
+  **3. Нестабильный Vitest-тест.** `nextTick` там действительно лишний: `await trigger(...)` в Vue Test Utils уже ждёт `nextTick`. Воспроизвести сбой не удалось: 12 последовательных прогонов Vitest все зелёные. Потом я запустил 4 прогона параллельно, кончилась память, и процесс убили. От этого, похоже, упали и контейнеры Docker. У меня гипотеза, которую я не проверял:
+  - MSW в тесте на первый GET отдаёт `confirmed`, на второй — `cancelled`;
+  - если до клика по «Отказаться» случится лишнее перечитывание билета (например, по фокусу окна в jsdom), страница получит `cancelled`, и блок подтверждения пропадёт;
+  - это совпадает с ошибкой `No button "Да, отказаться"`, но лишнее чтение я не поймал.
+  
+  Предлагаю записать это в лог «на потом» в `tasks.md` вместе с гипотезой и разбирать отдельно.
+  
+  Важно: около 03:5x контейнеры Docker остановились, в том числе Postgres и Mailpit слота 0 (твои). Слот 1 я поднял снова, слот 0 не трогал: чтобы запустить его, нужен твой `make up` или `make dev-deps`.
+
+> 1. "enqueue_email" есть смысл помечать чтобы всегда использовался через обертки?
+  2. в
+  3. запиши в лог "на потом" просто в будущем если возникнет чтобы знали что уже было
+
+⏺ По пункту 1 отвечаю: нет, помечать не нужно. `enqueue_email` — не внутренняя функция за обёрткой, а публичная функция для писем с местом. Ей нужны только `kind` и регистрация, и `Literal` уже не пускает туда `WAITLISTED`. Внутренняя часть — `_enqueue`: подчёркивание по соглашению значит «не импортировать снаружи», и сейчас её никто снаружи не вызывает.
+  
+  Теперь делаю (в): убираю тест отката `cancel` и бесполезный тест отката `register`. Сначала проверяю, что перенос в `on_commit` и для `ticket` ловит положительный тест.
+
+⏺ Bash(cd /home/raf/event-registration/backend && git checkout registrations/tests/test_emails.py && B=/tmp/claude-1000/-home-raf-event-registration/6bfbff52-1473-4ae2-9d53-24cad3d73fca/scratchpad/services.b)
+  ⎿  Updated 1 path from the index
+     1
+     FAILED registrations/tests/test_emails.py::test_register_on_a_seat_queues_one_ticket_email
+     FAILED registrations/tests/test_emails.py::test_repeated_register_queues_no_more_emails
+     FAILED registrations/tests/test_emails.py::test_cancel_confirmed_queues_promoted_for_the_waitlist_head
+     FAILED registrations/tests/test_emails.py::test_revival_after_cancel_queues_a_new_email_with_the_new_code
+     … +2 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  check=0
+
+⏺ Bash(git add -A && git status --short && git commit -q -F - <<'EOF')
+  ⎿  M  backend/registrations/tests/test_emails.py
+     M  docs/decisions.md
+     M  docs/features/emails/tasks.md
+     ⋯ Backing up original state…
+     ✔ Done backing up original state (fb8ba24)!
+     ⋯ Running tasks for staged files…
+     … +18 lines
+
+⏺ По всем трём пунктам сделано. `make stack-check` проходит, коммиты в ветке `feat/waitlist-emails`.
+  
+  1. **Обёртки** — коммит `d2f9061`. Отдельно помечать `enqueue_email` не нужно: это обычная функция для писем `ticket` и `promoted`, и письмо листа ожидания в неё уже не передать — не даст mypy. Внутренняя общая часть — `_enqueue`, снаружи её никто не вызывает.
+  2. **Вариант (в)** — коммит `11fc157`. Тест отката `cancel` не добавлял, тест отката `register` удалил. Перед этим проверил:
+     - если перенести письмо `ticket` в `on_commit`, падают 4 положительных теста, а тест отката проходит;
+     - если перенести письмо `promoted`, падает тест «отказ → `promoted` первому».
+  
+     Почему так, записано в `docs/decisions.md`.
+  3. **Нестабильный тест** записан в «На потом» в [tasks.md](docs/features/emails/tasks.md): где упал, что 12 прогонов подряд прошли без сбоя, что `nextTick` не поможет, и непроверенная гипотеза.
+  
+  **Одно расхождение со spec:** в [spec.md](docs/features/emails/spec.md), в таблице «Сценарии приёмки», осталась строка «Откат транзакции регистрации → письма нет | pytest», а такого теста теперь нет. Spec утверждён, поэтому сам я его не правил: решение записано в decisions. Если хочешь, заменю строку ссылкой на положительные тесты.
+  
+  **Повторное ревью:** правила разрешают одно, только на коммиты с исправлениями (`33a7cf6..11fc157`). Запустить?
+  
+  Ветка пока не запушена. Слот 0 по-прежнему остановлен после сбоя Docker — его поднимаешь ты.
+
+> "что nextTick не поможет" это надо убрать с amend. "Если хочешь, заменю строку ссылкой на положительные тесты" не понял. "Откат транзакции регистрации → письма нет | pytest" можно добавить небольшую пометку
+
+⏺ Поясню про строку spec: я предлагал заменить её ссылкой на тесты, которые на деле ловят перенос письма из транзакции. Пометка в самой строке проще, делаю её. И убираю фразу про `nextTick` — всё в последний коммит, он не запушен.
+
+⏺ Bash(grep -n "nextTick" -B2 -A2 docs/features/emails/tasks.md; grep -n "Откат транзакции" docs/features/emails/spec.md)
+  ⎿  78-- Vitest `TicketPage.test.ts` › «cancels, rereads the ticket and refreshes the events» один раз
+     79-  упал у ревьюера этапа 3 (`No button "Да, отказаться"`) и прошёл при повторе; 12
+     80:  последовательных прогонов зелёные, сбой не воспроизведён. `nextTick` не поможет —
+     81-  `await trigger()` его уже ждёт. Гипотеза, не проверена: лишнее перечитывание билета до клика
+     82-  (MSW отдаёт на второй GET `cancelled`) убирает блок подтверждения.
+     129:| Откат транзакции регистрации → письма нет                                                    | pytest            |
+
+⏺ Bash(T=$(grep -o '^\- \*\*[0-9:]*\*\* — по ревью этапа 3 фазы 2, находка 2' docs/decisions.md | grep -o '[0-9][0-9]:[0-9][0-9]') && echo $T && python3 - "$T" <<'EOF')
+  ⎿  04:23
+      docs/features/emails/spec.md  | 20 ++++++++++----------
+      docs/features/emails/tasks.md |  6 +++---
+      2 files changed, 13 insertions(+), 13 deletions(-)
+     129:| Откат транзакции регистрации → письма нет (отдельного теста нет — `decisions.md`, 2026-10-31 04:23) | pytest            |
+     - Чистка отправленных писем старше N дней (шаг 3 цикла воркера в `architecture.md`) —
+     … +6 lines
+
+⏺ Bash(git add -A && git commit -q --amend --no-edit 2>&1 | tail -1; git log --oneline -2 && git show --stat HEAD | tail -5 && git status --short)
+  ⎿  ✔ Done cleaning up temporary files!
+     004a1d3 test(backend): drop the rollback test that could not fail
+     d2f9061 refactor(backend): require the waitlist position by type
+      backend/registrations/tests/test_emails.py | 13 -------------
+      docs/decisions.md                          |  1 +
+      docs/features/emails/spec.md               | 20 ++++++++++----------
+     … +2 lines
+
+⏺ Обе правки внёс в последний коммит через amend, теперь он `004a1d3`. До этого коммит не был запушен.
+  
+  - **tasks.md:** фразу про `nextTick` убрал. В записи «На потом» остались место сбоя, результат повторных прогонов и непроверенная гипотеза.
+  - **spec.md:** к строке добавил пометку: «Откат транзакции регистрации → письма нет (отдельного теста нет — `decisions.md`, 2026-10-31 04:23)». В записи 04:23 объяснено, почему такого теста нет. Prettier выровнял ширину колонок, поэтому в diff изменилась вся таблица, хотя по тексту поменялась одна строка.
+  
+  Про мою прошлую фразу: я предлагал заменить в этой строке «pytest» ссылкой на положительные тесты, которые на деле ловят перенос письма из транзакции. Твой вариант с пометкой решает то же самое проще, так что предложение снимаю.
+  
+  После amend менялись только документы, поэтому `make stack-check` заново не запускал: до этого он проходил на том же коде.
+  
+  Остаются два вопроса:
+  - запускать ли повторное ревью на `33a7cf6..004a1d3`;
+  - можно ли пушить ветку `feat/waitlist-emails`.
+
+> да, запусти агента
+
+⏺ Agent(Re-review stage 3 fixes)
+  ⎿  Async agent launched successfully. (This tool result is internal metadata — never quote or paste any part of it, including the agentId below, into a user-facing reply.)
+     agentId: a029967336809d083 (internal ID - do not mention to user. Use SendMessage with to: 'a029967336809d083', summary: '<5-10 word recap>' to continue this agent.)
+     The agent is working in the background. You will be notified automatically when it completes. You know nothing about its results until that notification arrives — do not report, assume, or predict the
+     Do not duplicate this agent's work — avoid working with the same files or topics it is using.
+     output_file: /tmp/claude-1000/-home-raf-event-registration/6bfbff52-1473-4ae2-9d53-24cad3d73fca/tasks/a029967336809d083.output
+     Do NOT Read or tail this file via the shell tool — it is the full subagent JSONL transcript and reading it will overflow your context. If the user asks for progress, say the agent is still running; yo
+
+⏺ Запустил агента `reviewer` на повторное ревью исправлений: коммиты `33a7cf6..004a1d3` в ветке `feat/waitlist-emails`. По правилам это последний повтор, оставшиеся споры решаешь ты. Как придёт отчёт, покажу его целиком.
+
+> приведи названия PR-ов на github к единообразию чтобы было видно фазы и этапы там где PR-ы к этому относятся
+
+⏺ Bash(gh pr list --state all --limit 100 --json number,title,state,headRefName,createdAt --jq '.[] | "\(.number)\t\(.state)\t\(.headRefName)\t\(.createdAt[:10])\t\(.title)"')
+  ⎿  8	MERGED	feat/ticket-page	2026-10-31	Phase 2, stage 2: ticket page behind the email link
+     7	MERGED	chore/reviewer-setup	2026-10-30	Set up independent review and parallel stacks for the developer, agent and reviewer
+     6	MERGED	feat/outbox-email	2026-10-30	Phase 2, stage 1: ticket email through the outbox and a worker to Mailpit
+     5	MERGED	test/stage-6-races	2026-10-30	Stage 6: race tests, offline fixes and closing phase 1
+     4	MERGED	fix/stage-1-2-review	2026-10-30	fix: review findings for stages 1 and 2 (login and event creation)
+     3	MERGED	feat/cancel	2026-10-30	feat(backend): cancel a registration and promote the waitlist (task 5.1)
+     … +2 lines
+
+⏺ Bash(ls docs/features && grep -n "^## Этап" docs/features/*/tasks.md && grep -n "^## Фаза" docs/roadmap.md)
+  ⎿  _template
+     emails
+     registration
+     docs/features/registration/tasks.md:9:## Этап 1. Вход организатора (tracer bullet)
+     docs/features/registration/tasks.md:26:## Этап 2. Организатор создаёт событие и видит список
+     docs/features/registration/tasks.md:39:## Этап 3. Участник регистрируется на свободное место
+     … +16 lines
+
+⏺ Номера фаз и этапов сверил по `tasks.md` фаз. Формат беру как у #6 и #8: `Phase N, stage M: …`.
+
+⏺ Bash(gh pr edit 1 --title "Phase 1, stage 3: participants register for events" >/dev/null && gh pr edit 2 --title "Phase 1, stage 4: waitlist for full events" >/dev/null && gh pr edit 3 --title "Phase 1, s)
+  ⎿  #8 Phase 2, stage 2: ticket page behind the email link
+     #7 Set up independent review and parallel stacks for the developer, agent and reviewer
+     #6 Phase 2, stage 1: ticket email through the outbox and a worker to Mailpit
+     #5 Phase 1, stage 6: race tests, offline fixes and closing the phase
+     #4 Phase 1, stages 1–2: review fixes for login and event creation
+     #3 Phase 1, stage 5: cancel a registration and promote the waitlist
+     … +2 lines
+
+⏺ Переименовал пять PR, теперь все PR фаз названы одинаково: `Phase N, stage M: …`, как #6 и #8. Номера фаз и этапов сверил по `tasks.md`.
+  
+  | PR  | Новое название                                                     |
+  | --- | ------------------------------------------------------------------ |
+  | #1  | Phase 1, stage 3: participants register for events                 |
+  | #2  | Phase 1, stage 4: waitlist for full events                          |
+  | #3  | Phase 1, stage 5: cancel a registration and promote the waitlist    |
+  | #4  | Phase 1, stages 1–2: review fixes for login and event creation      |
+  | #5  | Phase 1, stage 6: race tests, offline fixes and closing the phase   |
+  | #6  | без изменений                                                       |
+  | #7  | без изменений: настройка ревью и слотов, к фазе не относится        |
+  | #8  | без изменений                                                       |
+  
+  Я убрал префиксы Conventional Commits (`feat:`, `fix:`) и пометки в скобках вроде «(task 5.1)» и «(stage 4)». Отдельных PR для этапов 1–2 фазы 1 нет: их исправления после ревью собраны в #4.
+  
+  PR этапа 3 фазы 2 назову так же: `Phase 2, stage 3: …`.
+  
+  Повторное ревью ещё идёт.
+
+> можем сделать чтобы в будущем pr-ы создавались единообразно если относятся к фазе/этапе?
+
+⏺ Bash(git grep -n -i "pull request\|gh pr\|\bPR\b\|PR-" -- '*.md' .claude | grep -v decisions.md | head -20)
+  ⎿  docs/development.md:181:Сейчас работа идёт прямо в `main` (один разработчик); в команде — ветка и pull request, и CI
+     docs/development.md:182:на PR дополнительно проверит сообщения всех коммитов.
+     docs/development.md:250:| push / PR    | CI           | `make check` и `make e2e` на GitHub Actions                                      |
+     docs/development.md:280:**CI** — `.github/workflows/ci.yml`, на push в `main` и на pull request. Команды те же, что
+     docs/development.md:285:| `checks` | `pnpm install --frozen-lockfile`, `uv sync --frozen`, `make dev-deps`, `make check`; на PR — commitlint по всем коммитам PR |
+     docs/development.md:296:поверхностный, базового коммита PR в нём нет, и commitlint падает с `Invalid revision range`,
+
+⏺ Bash(sed -n 170,190p docs/development.md; ls .github; ls .github/* 2>/dev/null)
+  ⎿  - [ ] задача отмечена `[x]` в roadmap или в `tasks.md` фазы;
+     - [ ] принятые по ходу решения — в [decisions.md](decisions.md) (время — из `date`);
+     - [ ] новая команда, инструмент, проверка, нюанс — в этом файле;
+     - [ ] поведение разошлось со spec — поправлен `spec.md`;
+     - [ ] найденное вне задачи — в «На потом» в `tasks.md`, а не в этот коммит.
+     
+     … +17 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  ⋯ Backing up original state…
+     ✔ Done backing up original state (b1f2f12)!
+     ⋯ Running tasks for staged files…
+         *.{mjs,json,md,yml,yaml} — 3 files
+           ⋯ prettier --write
+     
+     … +8 lines
+
+⏺ Да, сделал. Правило для названий PR теперь в `AGENTS.md`, его читают все агенты в начале каждой сессии. Коммит `1d6306b`, ветка `feat/waitlist-emails`.
+  
+  **Правило** — в [AGENTS.md](AGENTS.md), раздел «Коммиты маленькими шагами»:
+  - у каждого этапа крупной фазы своя ветка от `main` и один PR;
+  - название PR по-английски: `Phase <N>, stage <M>: <что сделано>`;
+  - если в PR несколько этапов — `stages 1–2`, если у фазы нет этапов — `Phase <N>: …`;
+  - PR вне фаз называется без префикса и без `feat:` / `fix:`.
+  
+  **Ещё исправил** шаг 8 в [development.md](docs/development.md): там было написано «работа идёт прямо в `main`», хотя давно уже ветки и PR. Теперь там ветка, PR и ссылка на правило.
+  
+  Решение записано в `docs/decisions.md`.
+  
+  Можно ещё добавить в CI проверку названия PR, тогда неправильное название будет давать красный CI. Я её не добавлял: PR создаёт агент, а правило он видит каждую сессию. Если названия всё же начнут расходиться, добавлю.
+  
+  Повторное ревью ещё идёт. Этот коммит в его диапазон (`33a7cf6..004a1d3`) не входит.
+
+⏺ Повторное ревью исправлений этапа 3 закончилось. Ниже отчёт агента `reviewer` целиком, моё добавление — после него.
+  
+  ---
+  
+  **Повторное ревью этапа 3 фазы 2**, диапазон `33a7cf6..004a1d3`: коммиты `d2f9061` (refactor(backend): require the waitlist position by type) и `004a1d3` (test(backend): drop the rollback test that could not fail). В коде дефектов нет. Есть одна мелкая находка в spec.
+  
+  **Находка: [spec.md:129](docs/features/emails/spec.md#L129), а также строки 47 и 49 — документация расходится с кодом**
+  - **Что:** в строке приёмки «Откат транзакции регистрации → письма нет (отдельного теста нет — …)» в колонке «Уровень» по-прежнему стоит `pytest`. В таблице инвариантов строки 47 и 49 называют защиту только через `enqueue_email`. Но письмо `waitlisted` теперь ставит `enqueue_waitlisted` ([services.py:32](backend/emails/services.py#L32)), а `enqueue_email` принимает только `TICKET` / `PROMOTED`.
+  - **Почему важно:** тот, кто сверяет spec с тестами, будет искать pytest-тест отката, а его нет. Строка 47 обещает «pytest, сервис» для инварианта, который, по записи 04:23, держится на записи в той же транзакции и на положительных тестах. Отдельного теста у него нет.
+  - **Исправление:** в строке 129 в колонке «Уровень» поставить «—» (или «положительные тесты сервиса, см. 04:23»), пометку в скобках оставить. В строках 47 и 49 написать `enqueue_email` / `enqueue_waitlisted` или «постановка письма в outbox».
+  
+  **Проверки**
+  - `make stack-check SLOT=2` на `004a1d3` прошёл: pytest 155, mypy без ошибок, Vitest 130.
+  - `make stack-e2e SLOT=2` — 7 passed. Агент запустил его, хотя API, UI и e2e в диапазоне не менялись: рефакторинг меняет путь постановки письма `waitlisted`, а сценарий 3.2 проверяет это письмо.
+  - Стек и копия слота 2 удалены.
+  - Отдельно проверено, что типы действительно ловят ошибку: mypy отклоняет и `enqueue_email(WAITLISTED, r)`, и вызов с несуженным `OutboxEmail.Kind`.
+  
+  **Что снято решениями из `docs/decisions.md`**
+  - Запись 04:23 (тесты отката). Аргумент верный: тест оборачивает сервис во внешнюю транзакцию и откатывает её, поэтому упасть не может, и удалён правильно. Остаётся только расхождение в spec из находки выше.
+  - Запись 04:12 (ветка по `position is None` вместо `confirmed`). Поведение то же: `waitlist_position` возвращает `None` ровно тогда, когда статус не `waitlisted`.
+  
+  **Проверено без находок**
+  - `enqueue_email` ограничен `Literal[TICKET, PROMOTED]`, у `enqueue_waitlisted` номер `int` обязателен. Ключ `position` в контекст `ticket` / `promoted` больше не попадает, их шаблоны его и не используют. Дедупликация не изменилась.
+  - Других вызовов с прежней сигнатурой нет. Письмо ставится под замком Event в той же транзакции. Мёртвого кода не осталось.
+  - Поиск из `anti-slop-review` по diff ничего не нашёл.
+  
+  **Не проверялось**
+  - Браузер.
+  - [architecture.md:78](docs/architecture.md#L78) всё ещё описывает план `enqueue_email(kind, registration, dedup_key)`. Это раздел «план», его обновляют на этапе 5, поэтому находкой не считается.
+  - Коммит `1d6306b` (правило названий PR) в диапазон не входил.
+  
+  ---
+  
+  **Моё добавление.** Находка верная. Строку 129 я сам правил в прошлый раз и оставил в колонке «Уровень» `pytest`, хотя такого теста нет. Строки 47 и 49 устарели после перехода на обёртки.
+  
+  Предлагаю так:
+  - строка 129: в колонке «Уровень» поставить «—», пометку в скобках оставить;
+  - строка 47: в колонке «Чем защищён» — «постановка письма в outbox в транзакции `register` / `cancel`», в колонке «Тест» — «pytest, сервис (положительные)»;
+  - строка 49: оставить `enqueue_email`. Ранний выход `register` при повторе стоит до любой постановки письма, так что строка по сути верна. Можно и здесь заменить на «постановку письма», для единообразия.
+  
+  Это был последний повтор ревью. После правки spec этап 3 можно закрывать, затем запушить ветку и открыть PR `Phase 2, stage 3: waitlist and promotion emails`. Правлю spec так?
+
+> да, так
+
+⏺ Bash(sed -n 45,50p docs/features/emails/spec.md && sed -n 129p docs/features/emails/spec.md)
+  ⎿  | Инвариант                                          | Чем защищён                                                  | Тест              |
+     | -------------------------------------------------- | ------------------------------------------------------------ | ----------------- |
+     | Письмо есть ⇔ изменение закоммичено                | `enqueue_email` в транзакции `register` / `cancel`           | pytest, сервис    |
+     | Одно изменение — одно письмо                       | `UNIQUE(dedup_key)`, вставка `ON CONFLICT DO NOTHING`        | pytest, сервис    |
+     | Повтор регистрации писем не шлёт                   | ранний выход `register` до `enqueue_email`                   | pytest, сервис    |
+     | Внутри замка Event нет SMTP                        | отправка только в воркере (`concurrency.md`, «Код», п. 5)    | ревью             |
+     … +1 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  | Письмо есть ⇔ изменение закоммичено                | постановка письма в outbox в транзакции `register` / `cancel` | pytest, сервис (положительные) |
+     129:| Откат транзакции регистрации → письма нет (отдельного теста нет — `decisions.md`, 2026-10-31 04:23) | —                 |
+     ⋯ Backing up original state…
+     ✔ Done backing up original state (53023d6)!
+     ⋯ Running tasks for staged files…
+         *.{mjs,json,md,yml,yaml} — 2 files
+     … +11 lines
+
+⏺ Поправил spec, как договорились. Коммит `1030e6f`, ветка `feat/waitlist-emails`.
+  
+  - **Строка 47**, «Письмо есть ⇔ изменение закоммичено»: в колонке «Чем защищён» теперь «постановка письма в outbox в транзакции `register` / `cancel`», в колонке «Тест» — «pytest, сервис (положительные)».
+  - **Строка 129**, «Откат транзакции регистрации → письма нет»: уровень теперь «—», пометка про решение 04:23 осталась.
+  - **Строка 49** не изменилась, как ты согласился: повторная регистрация выходит раньше, чем ставится любое письмо.
+  
+  В `docs/decisions.md` записал это решение и что этап 3 фазы 2 прошёл ревью, а находки разобраны.
+  
+  Ветка не запушена, PR нет. Запушить её через `SLOT=1 git push -u origin feat/waitlist-emails` и открыть PR «Phase 2, stage 3: waitlist and promotion emails»?
+
+> да
+
+⏺ Bash(git log --oneline origin/main..HEAD && SLOT=1 git push -u origin feat/waitlist-emails 2>&1 | tail -6)
+  ⎿  1030e6f docs: align the email invariants in the spec with the tests
+     1d6306b docs: name stage pull requests by phase and stage
+     004a1d3 test(backend): drop the rollback test that could not fail
+     d2f9061 refactor(backend): require the waitlist position by type
+     33a7cf6 test(e2e): promote the waitlist head by email after a cancellation
+     1ca7d4b test(e2e): share the event setup and the Mailpit lookup between tests
+     … +7 lines
+
+⏺ Bash(gh pr view 8 --json body --jq .body | head -40)
+  ⎿  ## Зачем
+     
+     Письмо с билетом (этап 1) ведёт на `/tickets/<manage_token>`, но этой страницы не было.
+     Этап 2 фазы 2 даёт участнику открыть билет из письма: код, номер в листе ожидания или отмена,
+     и отказаться от участия.
+     
+     … +34 lines
+
+⏺ Bash(cat > /tmp/claude-1000/-home-raf-event-registration/6bfbff52-1473-4ae2-9d53-24cad3d73fca/scratchpad/pr-body.md <<'EOF')
+  ⎿  https://github.com/rbikbov/event-registration/pull/9
+
+⏺ Ветку `feat/waitlist-emails` запушил и открыл PR #9 «Phase 2, stage 3: waitlist and promotion emails»: https://github.com/rbikbov/event-registration/pull/9
+  
+  Перед отправкой отработал хук `pre-push`, backend проверялся на Postgres слота 1. В PR 7 коммитов, от `c577d65` до `1030e6f`. Описание в том же стиле, что у #8: зачем, что изменилось, как проверено. Нестабильный Vitest-тест упомянут как известный.
+  
+  CI по PR я не дожидался. Могу проследить через `gh run watch`.
+  
+  Этап 3 фазы 2 закрыт: обе задачи отмечены, ревью и повторное ревью пройдены. Следующий — этап 4: повторы при ошибке SMTP и тест гонки двух воркеров.
+  
+  Слот 0 по-прежнему остановлен после сбоя Docker, его поднимаешь ты (`make up` или `make dev-deps`).

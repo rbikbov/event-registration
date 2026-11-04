@@ -1,0 +1,937 @@
+> /clear
+
+> /session-handoff
+
+⏺ Bash(date '+%Y-%m-%d %H:%M' && git status --short && make worktime 2>&1 | tail -8 && tail -15 docs/decisions.md)
+  ⎿  2026-10-30 01:21
+     node scripts/worktime.mjs
+     2026-10-28 18:45 → 2026-10-29 01:17  6 ч 32 мин
+     2026-10-29 23:29 → 2026-10-29 23:30  0 ч 1 мин
+     2026-10-29 23:32 → 2026-10-30 00:51  1 ч 19 мин
+     Итого: 7 ч 52 мин
+     … +16 lines
+
+⏺ Bash(git log -1 --format='%ci' && grep -n "начало сессии\|конец сессии" docs/decisions.md | tail -4)
+  ⎿  2026-10-30 01:17:43 +0200
+     350:- **23:30** — ■ конец сессии _(задним числом, по времени последнего коммита сессии)_
+     351:- **23:32** — ▶ начало сессии _(время исправлено по указанию человека: маркер был поставлен в 00:48 как 00:48, фактическое начало — после `/clear`; перенесён сюда, чтобы `make worktime` считал сес
+     389:- **00:51** — ■ конец сессии
+     390:- **01:01** — ▶ начало сессии
+
+⏺ Bash(cat >> docs/decisions.md <<'EOF')
+  ⎿  дизайн-токены; выбор и отклонённые варианты записываются в этот лог. Почему: от них
+       зависит вся вёрстка, менять после трёх экранов дороже.
+     - **01:17** — ■ конец сессии _(задним числом, по времени последнего коммита сессии)_
+     - **01:21** — ▶ начало сессии
+     2026-10-30 01:01 → 2026-10-30 01:17  0 ч 16 мин
+     Итого: 8 ч 8 мин
+     … +1 lines
+
+⏺ Bash(git commit -qam "docs: close previous work session and start a new one)
+  ⎿  ⋯ Backing up original state…
+     ✔ Done backing up original state (f155548)!
+     ⋯ Running tasks for staged files…
+         *.{mjs,json,md,yml,yaml} — 1 file
+           ⋯ prettier --write
+     
+     … +70 lines
+
+⏺ Сессия открыта, предыдущую закрыл (без `■`, закрыта временем последнего коммита, 01:17 — 16 минут работы; коммит `a39588d`).
+  
+  **Состояние:** фаза 1 «Регистрация, лист ожидания, отказ» в работе, дерево чистое. Первая неотмеченная задача — **1.1 backend: вход/выход/`me`**:
+  - `POST /api/auth/login/`, `logout/`, `GET me/` (сессия, CSRF);
+  - management-команда демо-учёток (`demo@example.com` / `demo`, `admin@example.com` / `admin`), вызов при старте `backend` в compose;
+  - готово, когда тесты зелёные, `openapi.yaml` обновлён и `docker compose up` создаёт обе учётки.
+  
+  Это tracer bullet и первый проход по `api-change`. Порядок не нарушаю. Приступать к 1.1?
+
+> приступай
+
+⏺ Bash(cat docs/features/registration/spec.md | head -120; cat backend/AGENTS.md; ls backend backend/accounts backend/config; cat .claude/skills/api-change/SKILL.md)
+  ⎿  # Регистрация, лист ожидания, отказ: spec
+     
+     Фаза — `docs/roadmap.md`, фаза 1. Статус: черновик.
+     
+     ## Что и зачем
+     
+     … +247 lines
+
+⏺ Bash(cd /home/raf/event-registration/backend && cat accounts/models.py accounts/admin.py config/urls.py config/health.py conftest.py; ls accounts/tests config/tests; grep -n "REST_FRAMEWORK\|CSRF\|SESSION\)
+  ⎿  from typing import Any, ClassVar
+     
+     from django.contrib.auth.models import AbstractUser
+     from django.contrib.auth.models import UserManager as DjangoUserManager
+     from django.db import models
+     
+     … +224 lines
+
+⏺ Bash(cat Dockerfile; cat accounts/tests/test_user.py | head -30; sed -n 60,110p config/settings.py; grep -n "demo\|createsuperuser\|migrate" ../docs/*.md ../Makefile | head -20)
+  ⎿  FROM python:3.12-slim
+     
+     COPY --from=ghcr.io/astral-sh/uv:0.13.6 /uv /usr/local/bin/uv
+     
+     WORKDIR /app
+     ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy UV_PROJECT_ENVIRONMENT=/opt/venv PATH="/opt/venv/bin:$PATH"
+     … +102 lines
+
+⏺ Bash(mkdir -p accounts/management/commands && touch accounts/management/__init__.py accounts/management/commands/__init__.py)
+  ⎿  ERROR accounts/tests/test_user.py::test_email_is_unique_regardless_of_case - ...
+     ERROR accounts/tests/test_user.py::test_dots_in_local_part_make_a_different_email
+     ERROR accounts/tests/test_user.py::test_authenticate_by_email_in_any_case - d...
+     ERROR accounts/tests/test_user.py::test_create_superuser_sets_admin_flags - d...
+     1 warning, 19 errors in 1.48s
+
+⏺ Postgres not running; start deps.
+
+⏺ Bash(cd /home/raf/event-registration && make dev-deps 2>&1 | tail -3; cd backend && uv run pytest accounts -q 2>&1 | tail -8)
+  ⎿  https://docs.docker.com/go/wsl2/
+     
+     make: *** [Makefile:24: dev-deps] Error 1
+     ERROR accounts/tests/test_create_demo_users.py::test_creates_organizer_and_separate_admin
+     ERROR accounts/tests/test_create_demo_users.py::test_is_idempotent_and_restores_passwords
+     ERROR accounts/tests/test_user.py::test_create_user_stores_email_lowercase - ...
+     … +5 lines
+
+⏺ Bash(cd /home/raf/event-registration && make dev-deps 2>&1 | head -8; docker ps 2>&1 | head -3; which pg_ctl postgres psql; ls /usr/lib/postgresql 2>&1)
+  ⎿  docker compose up -d --wait postgres
+     
+     The command 'docker' could not be found in this WSL 2 distro.
+     We recommend to activate the WSL integration in Docker Desktop settings.
+     
+     For details about using Docker Desktop with WSL 2, visit:
+     … +9 lines
+
+⏺ Bash(ls /usr/lib/postgresql/16/bin 2>&1 | head; pg_lsclusters 2>&1; (pg_isready 2>&1); service postgresql status 2>&1 | head -3)
+  ⎿  clusterdb
+     createdb
+     createuser
+     dropdb
+     dropuser
+     pg_amcheck
+     … +7 lines
+
+⏺ Bash(cd /home/raf/event-registration/backend && cat > accounts/serializers.py <<'EOF')
+  ⎿  --- a/backend/Dockerfile
+     +++ b/backend/Dockerfile
+     -CMD ["sh", "-c", "python manage.py migrate --noinput && uvicorn config.asgi:application --host 0.0.0.0 --port 8000"]
+     +CMD ["sh", "-c", "python manage.py migrate --noinput && python manage.py create_demo_users && uvicorn config.asgi:application --host 0.0.0.0 --port 8000"]
+     --- a/backend/config/urls.py
+     +++ b/backend/config/urls.py
+     … +24 lines
+
+⏺ Bash(make schema 2>&1 | tail -8; make lint-backend typecheck-backend 2>&1 | tail -15; git status --short)
+  ⎿  cd backend && uv run python manage.py spectacular --validate --fail-on-warn --file openapi.yaml
+     cd frontend && pnpm gen:api
+     
+     > frontend@0.0.0 gen:api /home/raf/event-registration/frontend
+     > openapi-typescript ../backend/openapi.yaml -o src/shared/api/schema.d.ts
+     
+     … +19 lines
+
+⏺ bash(cd /home/raf/event-registration/backend && python3 - <<'EOF')
+  ⎿  <tool_use_error>Error: No such tool available: bash. Tool names are case-sensitive: call Bash instead.</tool_use_error>
+
+⏺ Fixing the one mypy error in the `me` view, then re-running lint and types.
+
+⏺ Bash(cd /home/raf/event-registration/backend && python3 - <<'EOF')
+  ⎿  |
+     
+     Found 1 error.
+     make: *** [Makefile:57: lint-backend] Error 1
+      backend/openapi.yaml                |  91 ++++++++++++++++++++++++-
+      frontend/src/shared/api/schema.d.ts | 132 +++++++++++++++++++++++++++++++++++-
+     … +1 lines
+
+⏺ Bash(make lint-backend 2>&1 | head -20)
+  ⎿  cd backend && uv run ruff check .
+     S101 Use of `assert` detected
+       --> accounts/views.py:44:9
+        |
+     42 |     def get(self, request: Request) -> Response:
+     43 |         # IsAuthenticated (the default permission) keeps AnonymousUser out of this branch.
+     … +7 lines
+
+⏺ Bash(cd /home/raf/event-registration/backend && python3 - <<'EOF')
+  ⎿  cd backend && uv run ruff check .
+     All checks passed!
+     cd backend && uv run ruff format --check .
+     27 files already formatted
+     cd backend && uv run mypy .
+     Success: no issues found in 23 source files
+
+⏺ Код для 1.1 написан, но тесты не запускались, и задачу я не отметил и не закоммитил. Тестам нужен Postgres, а его нет. В этом WSL нет `docker` (Docker Desktop не подключён к дистрибутиву), а серверного Postgres нет: стоит только клиент `psql`.
+  
+  **Что сделано (в рабочем дереве, без коммита):**
+  - Эндпоинты `POST /api/auth/login/`, `POST /api/auth/logout/` и `GET /api/auth/me/` лежат в [accounts/views.py](backend/accounts/views.py), сериализаторы — в [accounts/serializers.py](backend/accounts/serializers.py), маршруты — в [config/urls.py](backend/config/urls.py).
+    - Неверный пароль, неизвестный email и неактивный пользователь дают один и тот же ответ 400.
+    - `me` без сессии отдаёт 403 и выставляет CSRF-cookie.
+  - Команда [create_demo_users](backend/accounts/management/commands/create_demo_users.py) создаёт `demo@example.com` / `demo` (организатор, без `is_staff`) и `admin@example.com` / `admin` (администратор). Повторный запуск сбрасывает пароли. Она вызывается при старте контейнера `backend`: правка в [Dockerfile](backend/Dockerfile) между `migrate` и `uvicorn`.
+  - Тесты написаны вперёд: [test_auth_api.py](backend/accounts/tests/test_auth_api.py) (вход, ошибки, `me`, выход, CSRF на выходе) и [test_create_demo_users.py](backend/accounts/tests/test_create_demo_users.py).
+  - `make schema` выполнен, `openapi.yaml` и `schema.d.ts` обновлены.
+  
+  **Проверено:** `make lint-backend` и `make typecheck-backend` проходят. Это не доказывает, что тесты зелёные.
+  
+  **Не проверено:** pytest и `docker compose up`. Критерии задачи 1.1 по тестам и по созданию учёток в compose пока не подтверждены.
+  
+  Что сделать вам: включить WSL-интеграцию Docker Desktop для этого дистрибутива, после чего `make dev-deps` заработает. Либо укажите другой доступный Postgres. Дальше я запущу тесты и `make check` и закоммичу задачу вместе с отметкой в `tasks.md` и записью в `decisions.md`.
+
+> запустил Docker Desktop
+
+⏺ Bash(make dev-deps 2>&1 | tail -4 && cd backend && uv run pytest -q 2>&1 | tail -15)
+  ⎿  Container event-registration-postgres-1 Starting 
+      Container event-registration-postgres-1 Started 
+      Container event-registration-postgres-1 Waiting 
+      Container event-registration-postgres-1 Healthy 
+     ......................                                                   [100%]
+     22 passed in 7.88s
+
+⏺ Bash(cd /home/raf/event-registration && make check 2>&1 | tail -25)
+  ⎿  > frontend@0.0.0 test /home/raf/event-registration/frontend
+     > vitest run
+     
+     (!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+       - import "./vite.config" without a file extension (vitest.config.ts:3:24). Add the file extension
+     Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+     … +18 lines
+
+⏺ Now check the compose criterion.
+
+⏺ Bash(docker compose up -d --build --wait backend 2>&1 | tail -4; curl -s -c /tmp/cj -X POST localhost:8000/api/auth/login/ -H 'Content-Type: application/json' -d '{"email":"demo@example.com","password":"de)
+  ⎿  Container event-registration-postgres-1 Waiting 
+      Container event-registration-backend-1 Waiting 
+      Container event-registration-postgres-1 Healthy 
+      Container event-registration-backend-1 Healthy 
+     {"id":4,"email":"demo@example.com"}
+     {"id":5,"email":"admin@example.com"}
+     … +1 lines
+
+⏺ Bash(sed -n 170,190p docs/architecture.md; grep -n "createsuperuser" -B4 -A3 docs/development.md; grep -n "POST /api/auth\|api/auth" docs/architecture.md)
+  ⎿  | редактирование события: перенос даты, изменение лимита                                                                           | 5    |
+     | общая навигация, layout, состояния, ширина телефона                                                                              | 6    |
+     
+     ## Окружение и демо-данные
+     
+     - **Реализовано:** `make up` поднимает `postgres`, `backend`, `frontend` с healthcheck.
+     … +22 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  **План — организатор, сессия + CSRF (фазы 1, 3, 4, 5):**
+     
+     - `POST /api/auth/login/`, `POST /api/auth/logout/`, `GET /api/auth/me/`
+     - `GET/POST /api/org/events/`, `GET/PATCH /api/org/events/{id}/` (перенос → письма;
+       лимит → повышение из листа)
+     - `GET /api/org/events/{id}/registrations/?status=`
+     … +4 lines
+
+⏺ Задача 1.1 готова и закоммичена: `5c137d4`. Рабочее дерево чистое.
+  
+  **Проверено:**
+  - `make check` проходит целиком: backend, frontend и e2e-линт.
+  - pytest: 22 теста зелёные, из них новые для входа, выхода, `me`, CSRF на выходе и команды демо-учёток.
+  - Compose: после `docker compose up --build` в запущенном контейнере `backend` вход `demo@example.com` / `demo` и `admin@example.com` / `admin` возвращает 200. Контейнер `backend` я потом остановил.
+  
+  **Документы:** задача отмечена `[x]` в `tasks.md`. В `architecture.md` разделы про вход и демо-учётки переведены в «реализовано». Команда `create_demo_users` описана в `development.md`, решение про единый ответ 400 при ошибке входа записано в `decisions.md`.
+  
+  **Следующая задача — 1.2:** выбрать UI-библиотеку и дизайн-токены до любого кода фронтенда. Это решение за вами: нужен ваш выбор библиотеки, прежде чем я запишу его и установлю. Вариантов я пока не готовил. Подготовить сравнение с рекомендацией?
+
+> я думаю shadcn. нужно настроить его так чтобы компоненты попадали в shared/ui/shadcn а shared/ui оставить под самописные. или есть варианты лучше?
+
+⏺ Bash(cd /home/raf/event-registration/frontend && cat package.json | sed -n 1,50p; ls src src/shared src/shared/* | head -40; cat AGENTS.md | head -60; cat vite.config.ts; cat tsconfig.app.json 2>/dev/null )
+  ⎿  {
+       "name": "frontend",
+       "version": "0.0.0",
+       "private": true,
+       "type": "module",
+       "scripts": {
+     … +136 lines
+
+⏺ Ваш вариант рабочий. Для Vue нужен **shadcn-vue**: оригинальный shadcn написан под React. Он стоит на Reka UI (доступные примитивы) и Tailwind.
+  
+  **Раскладка по папкам.** В `components.json` пути задаются алиасами. Нужные значения:
+  - `ui` → `@/shared/ui/shadcn`;
+  - `utils` → `@/shared/lib/utils`;
+  - `lib` → `@/shared/lib`.
+  
+  Тогда сгенерированные компоненты окажутся в `shared/ui/shadcn/`, а `shared/ui/` останется под самописные. Компоненты внутри `shadcn/` ссылаются друг на друга в пределах одного слоя, так что правило `boundaries` их не заденет.
+  
+  **Что придётся учесть:**
+  - Нужен Tailwind v4 с плагином для Vite. Вместе с ним ставятся `reka-ui`, `class-variance-authority`, `clsx`, `tailwind-merge` и иконки `lucide-vue-next`.
+  - Код shadcn копируется в репозиторий и попадает под наш ESLint и `vue-tsc`. Если сгенерированный файл не проходит правила (`any`, импорты), править его нужно в самом файле, а правила не ослаблять.
+  - Добавлять только то, что есть на экранах: примерно `button`, `input`, `label`, `card`, `alert`, `table`. Остальное — по мере появления потребителя.
+  
+  **Альтернативы:**
+  - **PrimeVue или Naive UI.** Готовые стилизованные компоненты, в репозитории кода нет. Дизайн-токены переопределять сложнее, а бандл тяжелее. Для пяти экранов с формами это может быть быстрее. Но вы выбираете shadcn, чтобы код компонентов лежал у вас.
+  - **Reka UI без стилей и собственный CSS.** Максимум контроля, но вся вёрстка на нас. Для сроков фазы это дороже.
+  
+  Рекомендую shadcn-vue. Если подтверждаете, я:
+  1. установлю и настрою его;
+  2. добавлю `button`, `input`, `label`, `card`, `alert`;
+  3. запишу выбор и отклонённые варианты в `decisions.md`;
+  4. опишу подключение в `development.md` и `frontend/AGENTS.md`;
+  5. закоммичу задачу 1.2.
+  
+  Подтверждаете?
+
+> да, shadcn-vue.
+  стоит сделать так:
+  ```utils → @/shared/lib/shadcn/utils;
+  lib → @/shared/shadcn/lib.```
+  ?
+
+⏺ Почти. Первая строка подходит, вторую я бы изменил.
+  
+  - **`utils → @/shared/lib/shadcn/utils`.** Это нужно только для `cn()`. Пока этот хелпер понадобится и самописным компонентам в `shared/ui/`, ему лучше лежать нейтрально: `@/shared/lib/utils`. Вложенная папка `shadcn` внутри `lib` здесь ничего не даёт.
+  - **`lib → @/shared/shadcn/lib`.** Так появится новый сегмент `shared/shadcn/` рядом с `api`, `lib` и `ui`. По FSD `shared` делится на сегменты по назначению, а не по источнику кода, и это нарушит ваше же правило «всё от shadcn лежит в одном месте». Лучше положить в ту же папку: `@/shared/ui/shadcn/lib`.
+  
+  Итог: `ui` → `@/shared/ui/shadcn`, `components` → `@/shared/ui/shadcn`, `utils` → `@/shared/lib/utils`, `lib` → `@/shared/ui/shadcn/lib`.
+  
+  В новом сегменте `shared/shadcn/` смысла нет. Весь сгенерированный код остаётся в `shared/ui/shadcn/`.
+  
+  Я не уверен, как CLI shadcn-vue использует `lib` и `composables`, и проверю это при установке. Если CLI сгенерирует код иначе, подстрою пути и скажу, что поменялось.
+  
+  Начинать установку с такими путями?
+
+> да, я опечатался. начинай
+
+⏺ Bash(cat src/main.ts src/app/App.vue eslint.config.* | head -120; ls; cat .prettierrc* 2>/dev/null; ls ../.prettier* 2>/dev/null)
+  ⎿  import { mountApp } from "@/app";
+     
+     mountApp("#app");
+     <template>
+       <RouterView />
+     </template>
+     … +115 lines
+
+⏺ Bash(pnpm add tailwindcss @tailwindcss/vite reka-ui class-variance-authority clsx tailwind-merge lucide-vue-next tw-animate-css 2>&1 | tail -8; cat vitest.config.ts; cat tsconfig.json; ls src/app; cat src/)
+  ⎿  + tailwind-merge ^3.7.0
+     + tailwindcss ^4.3.3
+     + tw-animate-css ^1.4.0
+     
+     ..                                       |  +33 +++
+     .. prepare$ husky
+     … +57 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Progress: resolved 1, reused 0, downloaded 0, added 0
+     Progress: resolved 98, reused 58, downloaded 32, added 0
+     Progress: resolved 340, reused 240, downloaded 83, added 0
+     Progress: resolved 391, reused 290, downloaded 87, added 0
+      WARN  5 deprecated subdependencies found: deep-diff@1.0.2, glob@11.1.0, glob@7.2.3, inflight@1.0.6, source-map-resolve@0.6.0
+     Packages: +384
+     … +16 lines
+
+⏺ Bash(cat > tsconfig.json <<'EOF')
+  ⎿  - src/shared/ui/shadcn/card/CardAction.vue
+       - src/shared/ui/shadcn/card/CardContent.vue
+       - src/shared/ui/shadcn/card/CardDescription.vue
+       - src/shared/ui/shadcn/card/CardFooter.vue
+       - src/shared/ui/shadcn/card/CardHeader.vue
+       - src/shared/ui/shadcn/card/CardTitle.vue
+     … +14 lines
+
+⏺ Bash(git diff package.json; find src/shared -newer components.json -type f | grep -v schema; cat src/app/styles.css | head -30; grep -rn "from \"@/" src/shared/ui | head -5; pnpm lint 2>&1 | tail -20; pnpm)
+  ⎿  diff --git a/frontend/package.json b/frontend/package.json
+     index 7c59333..ee0c720 100644
+     --- a/frontend/package.json
+     +++ b/frontend/package.json
+     @@ -14,8 +14,19 @@
+          "gen:api": "openapi-typescript ../backend/openapi.yaml -o src/shared/api/schema.d.ts"
+     … +68 lines
+
+⏺ Bash(grep -rhn "lucide\|@vueuse\|from \"cn\"\|reka-ui" src/shared/ui | sort | uniq -c | head; grep -rn "@/shared/lib/utils" src | head -3; ls src/shared/lib; git status --short src/shared/lib)
+  ⎿  1 2:import type { LabelProps } from "reka-ui"
+           1 2:import type { PrimitiveProps } from "reka-ui"
+           9 3:import { cn } from "cn"
+           1 3:import { useVModel } from "@vueuse/core"
+           2 4:import { cn } from "cn"
+           1 4:import { reactiveOmit } from "@vueuse/core"
+     … +4 lines
+
+⏺ Bash(cat > src/shared/lib/utils.ts <<'EOF')
+  ⎿  Done in 1.3s using pnpm v10.34.7
+     19:  "iconLibrary": "lucide"
+     38:shared/    инфраструктура без бизнес-правил: api, lib, ui, config
+     89:└── ui/               компоненты (PascalCase.vue) и их тесты
+     93:по роли (`helpers.ts`, `utils.ts`, `types.ts`). Уровни логики: `ui` → composable / фабрика
+     131:`src/pages/health/ui/HealthPage.test.ts`.
+
+⏺ Bash(sed -n 90,96p ../.claude/skills/fsd-frontend/SKILL.md)
+  ⎿  ```
+     
+     Сегменты создаются по необходимости. Имена — по предметной области (`seats-left.ts`), а не
+     по роли (`helpers.ts`, `utils.ts`, `types.ts`). Уровни логики: `ui` → composable / фабрика
+     (что вызвать и в каком порядке) → чистые функции (данные на входе — данные на выходе).
+     SHOULD: любое нетривиальное правило или преобразование — чистая функция с unit-тестом.
+
+⏺ Bash(git mv -f src/shared/lib/utils.ts src/shared/lib/class-names.ts 2>/dev/null || mv src/shared/lib/utils.ts src/shared/lib/class-names.ts)
+  ⎿  > frontend@0.0.0 lint /home/raf/event-registration/frontend
+     > eslint .
+     
+     
+     > frontend@0.0.0 typecheck /home/raf/event-registration/frontend
+     > vue-tsc -b
+     … +4 lines
+
+⏺ Bash(cd /home/raf/event-registration && grep -n "^## \|^### " docs/development.md | sed -n 1,30p; date +%H:%M)
+  ⎿  9:## Содержание
+     24:## Что установить
+     34:## Первая настройка
+     46:## Запуск
+     77:## Команды
+     110:## Как вести задачу
+     … +10 lines
+
+⏺ Bash(sed -n 338,358p docs/development.md)
+  ⎿  ## Frontend
+     
+     - Vue 3 + Vite + TypeScript (`strict`, `noUncheckedIndexedAccess`), vue-router,
+       `@tanstack/vue-query` для серверных данных.
+     - Слои Feature-Sliced Design в `frontend/src/`: `app` (приложение, роутер, QueryClient) →
+       `pages` → `widgets` → `features` → `entities` → `shared`. Импорт — только в нижние слои, в
+     … +14 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  8. Тесты: сеть — только MSW (`server.use()` в каждом тесте), свои модули не мокаются через
+        `vi.mock` — зависимости передаются явно (skill `fsd-frontend`, раздел про DI).
+     34:9. Компонент из `shared/ui/shadcn/` не правится: нужен другой вид — обёртка в `shared/ui/`
+     37:8. Тесты: сеть — только MSW (`server.use()` в каждом тесте), свои модули не мокаются через
+
+⏺ Порядок пунктов 8 и 9 перепутался. Исправляю.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  6. Имена: компоненты — `PascalCase.vue`, остальные файлы — `kebab-case.ts`, composable —
+        `use-<что>.ts` с функцией `use<Что>`. Тест — рядом: `<файл>.test.ts`.
+     7. Без `any`, `@ts-ignore`, `as unknown as`, пустых `catch`, `console.log`. Каждый промис —
+        `await` или `void` с обработкой ошибки внутри.
+     8. Тесты: сеть — только MSW (`server.use()` в каждом тесте), свои модули не мокаются через
+        `vi.mock` — зависимости передаются явно (skill `fsd-frontend`, раздел про DI).
+     … +7 lines
+
+⏺ Bash(make check >/dev/null 2>&1; echo exit=$?; git add -A && git commit -qm "build(frontend): add shadcn-vue with Tailwind v4 and design tokens)
+  ⎿  exit=0
+     ⋯ Cleaning up temporary files…
+     ✔ Done cleaning up temporary files!
+     f1a7873 build(frontend): add shadcn-vue with Tailwind v4 and design tokens
+
+⏺ Задача 1.2 готова и закоммичена: `f1a7873`. `make check` проходит целиком (exit 0), дерево чистое.
+  
+  **Что сделано:**
+  - Подключены Tailwind v4 (плагин в `vite.config.ts`) и shadcn-vue.
+  - Установлены `button`, `input`, `label`, `card`, `alert`. Они лежат в `frontend/src/shared/ui/shadcn/`, а `shared/ui/` вне этой папки остаётся под самописные.
+  - Дизайн-токены (нейтральная светлая тема) — CSS-переменные в `src/app/styles.css`. Тёмной темы нет.
+  - Решение и отклонённые варианты записаны в `decisions.md`. Подключение описано в `development.md` и `frontend/AGENTS.md`.
+  
+  **Отличия от того, о чём договорились:**
+  - `cn()` лежит в `src/shared/lib/class-names.ts`, а не в `utils.ts`. Skill `fsd-frontend` запрещает имена файлов по роли. Алиас `utils` в `components.json` указывает на этот файл.
+  - Правила ESLint `multi-word-component-names` и `require-default-prop` отключены только для `shared/ui/shadcn/`: это соглашение сгенерированного кода.
+  
+  **Два неожиданных момента с CLI, оба описаны в `development.md`:**
+  - Без `paths` в корневом `tsconfig.json` CLI падает с ошибкой `resolvedPaths: Required`.
+  - Он подставил в импорты npm-пакет `cn` и добавил лишние зависимости (`cn`, `@lucide/vue`). Я заменил импорты на `@/shared/lib/class-names`, убрал эти зависимости и свой `lucide-vue-next` (иконок пока нет).
+  
+  В браузере я не смотрел: экранов ещё нет, токены проверены только сборкой.
+  
+  **Следующая задача — 1.3:** передача `X-CSRFToken` в `shared/api`, страница `/login`, guard маршрутов. Продолжать?
+
+> продолжай
+
+⏺ Bash(cd /home/raf/event-registration/frontend && cat src/shared/api/AGENTS.md src/shared/api/client.ts src/shared/api/client.test.ts src/shared/api/index.ts; ls src/shared/lib/test src/pages/health src/pag)
+  ⎿  # src/shared/api — сеть и ошибки
+     
+     - `api` (openapi-fetch) + `unwrap()` — единственный путь к backend. `unwrap` возвращает
+       данные или бросает `AppError`; сетевую ошибку — как `kind: "network"`.
+     - `AppError.kind` выводится из HTTP-статуса в `app-error.ts` и только там. Новый статус или
+       новый `kind` — правка `kindForStatus` и новый случай в `app-error.test.ts`.
+     … +334 lines
+
+⏺ Bash(cat src/shared/api/app-error.ts src/pages/health/api/health.ts; grep -n "zod" ../docs/decisions.md | head -3; grep -n "\"/api/auth" -A30 src/shared/api/schema.d.ts | head -50; cat index.html)
+  ⎿  // The only error type above shared/api. Code decides by `kind`, never by message text.
+     export type AppErrorKind =
+       | "network"
+       | "unauthorized"
+       | "forbidden"
+       | "not_found"
+     … +104 lines
+
+⏺ Bash(pnpm add zod 2>&1 | grep -E "zod|Done"; cat src/shared/ui/shadcn/button/index.ts | head -5; cat src/shared/ui/shadcn/alert/index.ts | head; grep -n "UserSerializer\|    User:" src/shared/api/schema.d.)
+  ⎿  + zod ^4.6.7
+     .. prepare: Done
+     Done in 1.6s using pnpm v10.34.7
+     import type { VariantProps } from "class-variance-authority";
+     import { cva } from "class-variance-authority";
+     
+     … +13 lines
+
+⏺ Bash(grep -n "LoginRequest\|        Login" -A5 src/shared/api/schema.d.ts | head -14; grep -n "variant" src/shared/ui/shadcn/alert/index.ts | head -4)
+  ⎿  94:        Login: {
+     95-            /** Format: email */
+     96-            email: string;
+     97-            password: string;
+     98-        };
+     99-        User: {
+     … +3 lines
+
+⏺ Now the code: CSRF middleware first (test first).
+
+⏺ Bash(cat > src/shared/api/csrf.test.ts <<'EOF')
+  ⎿  Tests  17 passed (17)
+
+⏺ Bash(mkdir -p src/entities/session/api src/pages/login/{api,model,ui} src/pages/org-events/ui)
+  ⎿  import { VueQueryPlugin } from "@tanstack/vue-query";
+     import { createApp } from "vue";
+     
+     import App from "./App.vue";
+     import { queryClient } from "./query-client";
+     import { router } from "./router";
+     … +5 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  > frontend@0.0.0 lint /home/raf/event-registration/frontend
+     > eslint .
+     
+     
+     > frontend@0.0.0 typecheck /home/raf/event-registration/frontend
+     > vue-tsc -b
+     … +2 lines
+
+⏺ Bash(cd /home/raf/event-registration && (docker compose up -d --build --wait 2>&1 | tail -3); ls e2e; cat e2e/playwright.config.ts | head -30)
+  ⎿  Container event-registration-postgres-1 Healthy 
+      Container event-registration-backend-1 Healthy 
+      Container event-registration-frontend-1 Healthy 
+     AGENTS.md
+     CLAUDE.md
+     eslint.config.js
+     … +24 lines
+
+⏺ Bash(cd /home/raf/event-registration/e2e && S=/tmp/claude-1000/-home-raf-event-registration/affcf89a-54d0-4909-834f-8e8c4b6be921/scratchpad && cat > $S/login-check.mjs <<'EOF')
+  ⎿  guest -> http://localhost:5173/org/events
+     empty errors: [ 'Обязательное поле', 'Обязательное поле' ]
+     wrong: Неверный email или пароль
+     after login -> http://localhost:5173/org/events События
+     signed-in /login -> http://localhost:5173/login
+     logout with csrf: 204 console errors: [
+     … +3 lines
+
+⏺ Bash(S=/tmp/claude-1000/-home-raf-event-registration/affcf89a-54d0-4909-834f-8e8c4b6be921/scratchpad && cat > $S/guard-check.mjs <<'EOF')
+  ⎿  guest redirected to http://localhost:5173/login
+     signed-in /login redirected to http://localhost:5173/org/events
+
+⏺ Проверка в браузере прошла. Теперь документация, `make check` и коммит задачи 1.3.
+
+⏺ Bash(cd /home/raf/event-registration && docker compose stop frontend backend >/dev/null 2>&1; python3 - <<'EOF')
+  ⎿  - **Реализовано:** вход организатора (`/api/auth/login|logout|me/`) и CSRF-заголовок на фронтенде (`shared/api/csrf.ts`) — сессия Django + CSRF (`SessionAuthentication`).
+       Фронтенд читает cookie `csrftoken` и передаёт её значение в заголовке `X-CSRFToken` у
+       изменяющих запросов — в `shared/api`, одним местом для всех вызовов. Участник управляет
+       регистрацией по секретной ссылке с `manage_token` из письма.
+     
+     ## Модель данных
+     … +2 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  exit=0
+
+⏺ Bash(git add -A && git commit -qm "feat(frontend): add organizer login page, CSRF header and route guard)
+  ⎿  ⋯ Cleaning up temporary files…
+     ✔ Done cleaning up temporary files!
+     5ca3ecf feat(frontend): add organizer login page, CSRF header and route guard
+
+⏺ Задача 1.3 готова и закоммичена: `5ca3ecf`. `make check` проходит (exit 0), дерево чистое.
+  
+  **Что сделано:**
+  - **CSRF.** [csrf.ts](frontend/src/shared/api/csrf.ts) ставит `X-CSRFToken` из cookie `csrftoken` на все изменяющие запросы. На `GET` заголовка нет, без cookie он тоже не отправляется (три теста).
+  - **Кто вошёл.** Срез `entities/session` с `meQuery`: гость — это `null`, а не ошибка.
+  - **Страница `/login`.** Проверка формы через zod (первая форма, поэтому пакет поставлен). Ошибки полей показываются без запроса. Неверный пароль даёт «Неверный email или пароль», сбой сервера — отдельный текст. На время запроса кнопка заблокирована.
+  - **Guard.** Реализован в [app/router.ts](frontend/src/app/router.ts). Гость с `/org/events` уходит на `/login`, вошедший с `/login` — на `/org/events`. Сессия кэшируется, повторные переходы не делают запросов. Сервер, недоступный при проверке, обрывает переход, а не считается гостем. `/org/events` пока заглушка с заголовком «События».
+  
+  **Проверено:**
+  - Vitest: 32 теста зелёные.
+  - В Chromium на живом стеке: гость перенаправляется на `/login`, пустая форма показывает ошибки, неверный пароль даёт сообщение, `demo@example.com` / `demo` попадает на `/org/events`, вошедший с `/login` уходит обратно, `POST` выхода с токеном возвращает 204.
+  - В консоли браузера только ожидаемые 403 (гость на `me`) и 400 (неверный пароль).
+  
+  **Отклонение от spec.** Spec ожидает, что 401/403 фронтенд приводит к `unauthorized`, но в коде 403 — это `forbidden`. Гостя на `me` я распознаю по обоим видам ошибки. Про 403 на чужое событие это пока не решает: в задаче 2.2 решим, как его показывать.
+  
+  **Следующая задача — 1.4:** убрать пометки «ЧЕРНОВИК» и «ПРОВЕРИТЬ» из skill `api-change` по факту этапа. Это закрывает этап 1. Продолжать?
+
+> @frontend/src/app/router.ts#13-14  перенеси на что-то типа /health , а для главной страницы сделай отдельный page с ссылками на страницы
+
+⏺ Bash(ls e2e/tests; grep -rn "Состояние сервиса\|localhost:5173/\"\|goto(" e2e/tests | head; grep -rn "HealthPage\|страница здоровья\|health" docs/*.md README.md frontend/AGENTS.md | grep -vi "healthcheck\|)
+  ⎿  smoke.spec.ts
+     e2e/tests/smoke.spec.ts:4:  await page.goto("/");
+     e2e/tests/smoke.spec.ts:6:  await expect(page.getByRole("heading", { name: "Состояние сервиса" })).toBeVisible();
+     docs/roadmap.md:29:- [x] Backend: health endpoint, OpenAPI-схема и проверка её актуальности
+     docs/roadmap.md:32:- [x] Frontend: Vue, страница health, ESLint, vue-tsc, Vitest, FSD-каркас
+     docs/development.md:193:   (пример — `backend/config/health.py`).
+     … +6 lines
+
+⏺ Bash(cat e2e/tests/smoke.spec.ts; sed -n 160,167p docs/architecture.md)
+  ⎿  import { expect, test } from "@playwright/test";
+     
+     test("frontend reaches the backend and the database through the proxy", async ({ page }) => {
+       await page.goto("/");
+     
+       await expect(page.getByRole("heading", { name: "Состояние сервиса" })).toBeVisible();
+     … +10 lines
+
+⏺ Bash(mkdir -p frontend/src/pages/home/ui && cat > frontend/src/pages/home/ui/HomePage.vue <<'EOF')
+  ⎿  exit=0
+     [This command modified 3 files you've previously read: e2e/tests/smoke.spec.ts, docs/architecture.md, frontend/src/app/router.ts. Call Read before editing.]
+
+⏺ Bash(docker compose up -d --build --wait >/dev/null 2>&1; cd e2e && pnpm exec playwright test 2>&1 | tail -6; cd .. && docker compose stop frontend backend >/dev/null 2>&1)
+  ⎿  Running 1 test using 1 worker
+     
+       ✓  1 [chromium] › tests/smoke.spec.ts:3:1 › frontend reaches the backend and the database through the proxy (732ms)
+     
+       1 passed (1.4s)
+
+⏺ Bash(git add -A && git commit -qm "feat(frontend): move health to /health and add home page with links)
+  ⎿  ✔ Done cleaning up temporary files!
+     c84e1b8 feat(frontend): move health to /health and add home page with links
+
+⏺ Страница состояния сервиса теперь на `/health`, а `/` — новая страница `home` со ссылками на «Вход для организатора» (`/login`), «События организатора» (`/org/events`) и «Состояние сервиса» (`/health`). Закоммичено: `c84e1b8`, дерево чистое.
+  
+  - **Проверено:** `make check` проходит. Новый тест на `HomePage` проверяет, что на странице три ссылки в этом порядке. Смоук-тест e2e теперь открывает `/health` и проходит на живом стеке.
+  - **Документы:** `architecture.md` обновлён, в `decisions.md` добавлена запись.
+  - **Дальше по плану:** публичный список событий на этапе 3 заменит содержимое `/`, ссылки с главной тогда придётся пересмотреть.
+  
+  Задача 1.4 (убрать «ЧЕРНОВИК» и «ПРОВЕРИТЬ» из skill `api-change`) осталась невыполненной. Берусь за неё?
+
+> Как насчет выносить в константы тексты/роуты и тп? Пока не делай, сначала обсудим
+
+⏺ Тексты в константы выносить не стоит, а вот пути маршрутов — да.
+  
+  **Пути маршрутов (стоит выносить)**
+  - `"/login"` и `"/org/events"` уже повторяются в `router.ts`, guard'е, `LoginPage`, `HomePage` и тестах. Опечатка в одном месте даст тихий 404, который тип не поймает.
+  - В этапе 2–3 появятся маршруты с параметрами (`/events/:id`). Для них нужны функции-построители вроде `routes.event(id)`, чтобы строки не склеивались руками.
+  - Страницы не могут импортировать `app/router.ts`: слой `app` выше. Значит, константы должны лежать в `shared`. По skill там есть сегмент `config`, например `shared/config/routes.ts`, с объектом `routes = { home: "/", login: "/login", orgEvents: "/org/events", health: "/health" }`.
+  - Альтернатива — именованные маршруты vue-router (`{ name: "login" }`). Но имя тоже строка, а чтобы проверять её на типах, нужна дополнительная настройка типов. Константы с путями проще и проверяются `vue-tsc`.
+  
+  **Тексты интерфейса (не выносить)**
+  - Правило 5 `frontend/AGENTS.md` прямо требует держать тексты в шаблоне компонента: читать экран, где текст лежит рядом с разметкой, проще, чем прыгать по константам.
+  - i18n в задании нет, а выносить «под будущий перевод» — это то, что запрещает правило «ничего на будущее».
+  - Исключение — текст, который повторяется в нескольких местах. Сейчас такого нет. Если «Не удалось выполнить запрос, попробуйте позже» окажется на третьей странице, вынесем общую функцию `messageFor(kind)` в `shared`. Это решение на третий случай, не раньше.
+  
+  **Остальное**
+  - Имя cookie и заголовка в `csrf.ts`, ключи запросов (`["session", "me"]`) и пути API уже локальны или типизированы схемой — выносить нечего.
+  - Лимиты вроде `capacity` 1–10000 попадут в бэкенд-константы, когда появятся модели. Здесь это не обсуждаем.
+  
+  **Предлагаю:** только `shared/config/routes.ts`, плюс правило в `frontend/AGENTS.md` («пути маршрутов — только из `routes`») и тест, который не даёт расхождения с `router.ts`. Рефакторинг — отдельным коммитом перед 1.4. Или оставить как есть до этапа 2, когда появятся параметрические маршруты? Рекомендую сделать сейчас: переделывать придётся ровно те же пять файлов, но с большим числом мест использования.
+
+> роуты - окей. i18n - давай внедрим, судя по документации это не сложно, хочу чтобы тексты были рядом
+
+⏺ Начну с маршрутов: они независимы и идут отдельным коммитом. Потом i18n.
+
+⏺ Bash(cd /home/raf/event-registration/frontend && ls src/shared; grep -rn '"/login"\|"/org/events"\|"/health"\|"/"' src --include=*.ts --include=*.vue | grep -v "api/schema")
+  ⎿  api
+     lib
+     ui
+     (eval):1: no matches found: --include=*.ts
+
+⏺ Bash(cd /home/raf/event-registration/frontend && grep -rnE '"/(login|org/events|health)?"|to="/' src --exclude=schema.d.ts)
+  ⎿  src/pages/login/ui/LoginPage.vue:32:    await router.push("/org/events");
+     src/app/router.ts:14:      { path: "/", component: HomePage },
+     src/app/router.ts:15:      { path: "/health", component: HealthPage },
+     src/app/router.ts:16:      { path: "/login", component: LoginPage },
+     src/app/router.ts:17:      { path: "/org/events", component: OrgEventsPage, meta: { requiresAuth: true } },
+     src/app/router.ts:23:    if (to.meta.requiresAuth && user === null) return "/login";
+     … +20 lines
+
+⏺ Bash(mkdir -p src/shared/config && cat > src/shared/config/routes.ts <<'EOF')
+  ⎿  import { routes } from "@/shared/config";
+     import type { QueryClient } from "@tanstack/vue-query";
+     import { createRouter, type RouterHistory } from "vue-router";
+     
+     import { meQuery } from "@/entities/session";
+     import { HealthPage } from "@/pages/health";
+     … +6 lines
+
+⏺ Bash(git checkout src/app/router.ts && python3 - <<'EOF')
+  ⎿  Updated 1 path from the index
+     16:    expect(hrefs).toEqual([routes.login, routes.orgEvents, routes.health]);
+     
+     > frontend@0.0.0 lint /home/raf/event-registration/frontend
+     > eslint .
+     
+     … +13 lines
+
+⏺ Bash(cd /home/raf/event-registration && python3 - <<'EOF')
+  ⎿  exit=0
+     ✔ Done cleaning up temporary files!
+     053a61f refactor(frontend): take route paths from shared routes constant
+     [This command modified 1 file you've previously read: frontend/AGENTS.md. Call Read before editing.]
+
+⏺ Bash(cd /home/raf/event-registration/frontend && pnpm add vue-i18n 2>&1 | grep -E "^\+|ERR"; pnpm add -D @intlify/unplugin-vue-i18n 2>&1 | grep -E "^\+|ERR|WARN.*peer"; cat src/shared/lib/test/setup.ts; ca)
+  ⎿  + vue-i18n ^11.4.16
+      WARN  Issues with peer dependencies found
+     + @intlify/unplugin-vue-i18n ^11.2.8
+     import { afterAll, afterEach, beforeAll } from "vitest";
+     
+     import { server } from "./msw";
+     … +10 lines
+
+⏺ Bash(pnpm install 2>&1 | grep -iA6 "peer" | head -14)
+  ⎿  (Bash completed with no output)
+
+⏺ Bash(pnpm ls @intlify/unplugin-vue-i18n vite vue-i18n 2>&1 | tail -6; pnpm why vite 2>&1 | head -3; cat node_modules/@intlify/unplugin-vue-i18n/package.json | grep -A8 peerDependencies)
+  ⎿  │
+     │   devDependencies:
+     ├── @intlify/unplugin-vue-i18n@11.2.8
+     └── vite@8.3.5
+     
+     3 packages
+     … +18 lines
+
+⏺ Bash(cat src/pages/org-events/ui/OrgEventsPage.vue src/pages/home/ui/HomePage.vue; cat src/app/index.ts; grep -rn "Тексты\|тексты" ../docs/*.md ../.claude/skills/*/SKILL.md ../frontend/AGENTS.md | head)
+  ⎿  <template>
+       <main class="mx-auto max-w-3xl px-4 py-8">
+         <h1 class="text-2xl font-semibold">События</h1>
+       </main>
+     </template>
+     <script setup lang="ts">
+     … +33 lines
+
+⏺ Infrastructure first (plugin, factory, one converted page), then the rest.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Tests  3 passed (3)
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  12:import { Card, CardContent, CardHeader, CardTitle } from "@/shared/ui/shadcn/card";
+     54:        <CardTitle as="h1">{{ t("title") }}</CardTitle>
+     
+     > frontend@0.0.0 lint /home/raf/event-registration/frontend
+     > eslint .
+     
+     … +10 lines
+
+⏺ Bash(pnpm build 2>&1 | grep -v "^$" | head -20)
+  ⎿  > frontend@0.0.0 build /home/raf/event-registration/frontend
+     > vue-tsc -b && vite build
+     vite v8.3.5 building client environment for production...
+     transforming...
+     [unplugin-vue-i18n]  Invalid linked format (error code: 10) in /home/raf/event-registration/frontend/src/pages/login/ui/LoginPage.vue
+       target message: Введите email в формате name@example.com
+     … +14 lines
+
+⏺ Bash(sed -i "s/name@example.com/name{'@'}example.com/" src/pages/login/ui/LoginPage.vue && pnpm test 2>&1 | grep -E "Tests|FAIL|×"; pnpm build 2>&1 | tail -2; pnpm lint 2>&1 | tail -3)
+  ⎿  Tests  33 passed (33)
+     
+     ✓ built in 780ms
+     > frontend@0.0.0 lint /home/raf/event-registration/frontend
+     > eslint .
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  exit=0
+     [This command modified 2 files you've previously read: frontend/AGENTS.md, docs/development.md. Call Read before editing.]
+
+⏺ Bash(git status --short | head -20; docker compose up -d --build --wait >/dev/null 2>&1; S=/tmp/claude-1000/-home-raf-event-registration/affcf89a-54d0-4909-834f-8e8c4b6be921/scratchpad; node $S/login-check)
+  ⎿  M docs/decisions.md
+      M docs/development.md
+      M frontend/AGENTS.md
+      M frontend/package.json
+      M frontend/src/app/index.ts
+      M frontend/src/pages/health/ui/HealthPage.test.ts
+     … +18 lines
+
+⏺ Проверка в браузере прошла, коммичу i18n.
+
+⏺ Bash(git add -A && git commit -qm "feat(frontend): add vue-i18n with component-local Russian messages)
+  ⎿  ✔ Done cleaning up temporary files!
+     09ddb58 feat(frontend): add vue-i18n with component-local Russian messages
+     053a61f refactor(frontend): take route paths from shared routes constant
+     c84e1b8 feat(frontend): move health to /health and add home page with links
+
+⏺ Оба изменения закоммичены, `make check` проходит, дерево чистое.
+  
+  **Маршруты — `053a61f`.** Все пути лежат в `shared/config/routes.ts` и используются в роутере, guard'е, `router.push`, ссылках и тестах. В `frontend/AGENTS.md` добавлено правило 10.
+  
+  **i18n — `09ddb58`.**
+  - Подключены `vue-i18n` и `@intlify/unplugin-vue-i18n`. У каждого компонента (`HomePage`, `LoginPage`, `HealthPage`, `OrgEventsPage`) свой блок `<i18n lang="json" locale="ru">` рядом с шаблоном, тексты берутся через `useI18n({ useScope: "local" })`.
+  - Экземпляр создаёт `createAppI18n()` из `shared/lib/i18n.ts`. Им же подключаются тесты компонентов, потому что страницы не могут импортировать слой `app`.
+  - Правило 5 в `AGENTS.md` обновлено, `development.md` и `decisions.md` тоже. Эта запись отменяет часть решения от 22:49 («тексты прямо в шаблоне»), а язык интерфейса остаётся русским.
+  
+  Что проверено: 34 теста Vitest, сборка, а вход и guard я прогнал в Chromium на живом стеке; e2e-смоук тоже проходит.
+  
+  **Две ловушки, обе описаны в документах:**
+  - Символ `@` в сообщении vue-i18n считает ссылкой на другое сообщение, и сборка падает. Писать нужно `{'@'}`. Для этого есть тест на подсказку «name@example.com».
+  - Ключи в `t()` типами не проверяются, а проверяют их только тесты компонентов. Типизировать ключи я не стал: настройка без потребителя.
+  
+  В браузере я проверял только вход и guard. Ссылки на главной и страницу `/health` смотрели тесты и e2e-смоук, глазами — нет.
+  
+  Остаётся **1.4**: убрать «ЧЕРНОВИК» и «ПРОВЕРИТЬ» из skill `api-change`. Берусь?
+
+> берись
+
+⏺ Bash(grep -n "ошиб\|detail" docs/architecture.md | head; grep -n "unauthorized" docs/features/registration/spec.md docs/*.md frontend/src/shared/api/AGENTS.md | head)
+  ⎿  141:   ошибки — повтор с нарастающей паузой, после N попыток — `failed`. `SKIP LOCKED` позволяет
+     docs/features/registration/spec.md:52:(`validation` — 400, `unauthorized` — 401/403, `not_found` — 404, остальное — `unknown`; 403 на чужое событие фронтенд показывает как «нет доступа»).
+     docs/development.md:349:  ошибки различаются только по `kind` (`network`, `unauthorized`, `not_found`, `conflict`,
+
+⏺ Bash(sed -n 102,112p docs/architecture.md)
+  ⎿  - `GET /api/events/`, `GET /api/events/{id}/` — с числом свободных мест
+     - `POST /api/events/{id}/registrations/` `{email, name}` → `{status, position?}`; кода билета
+       в ответе нет — он приходит только письмом, иначе любой получил бы чужой билет, введя чужой
+       email
+     - `POST /api/tickets/{manage_token}/cancel/` — отказ (фаза 1: API и тесты, токен в тестах
+       берётся из БД — пользователю он приходит только письмом в фазе 2)
+     … +5 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  exit=0
+
+⏺ Bash(git add -A && git commit -qm "docs: finalize api-change skill after the first endpoint)
+  ⎿  ✔ Done cleaning up temporary files!
+     aabdc5d docs: finalize api-change skill after the first endpoint
+
+⏺ Задача 1.4 готова и закоммичена: `aabdc5d`. Этап 1 «Вход организатора» закрыт целиком (1.1–1.4). `make check` проходит, дерево чистое.
+  
+  **Что изменено в skill `api-change`:**
+  - Убраны пометка «ЧЕРНОВИК» и все «ПРОВЕРИТЬ».
+  - В «Права» теперь решённое правило: через `get_org_event` чужое событие даёт 403, несуществующее 404. Раньше там было «тот же ответ, что и несуществующее».
+  - В «Ошибки» записан фактический формат. Тело — DRF по умолчанию, фронтенд читает только статус и выводит из него `AppError.kind`. Гость на закрытом эндпоинте получает 403, а неверный логин — 400.
+  - Добавлены образцы: `test_auth_api.py` как образец теста эндпоинта, `test_logout_requires_csrf_token` для CSRF, `accounts/views.py` для `@extend_schema`.
+  
+  **Правка в spec.** В spec 403 приводился к `unauthorized`, а в коде `app-error.ts` это `forbidden`. Я исправил spec, код не трогал. Запись есть в `decisions.md`.
+  
+  Роадмап-критерий этапа 1 «организатор входит» выполнен. Критерий «создаёт событие» относится к этапу 2.
+  
+  Следующая задача — **2.1**: приложение `events`, модель `Event` с миграцией и админкой, `for_organizer`, `get_org_event`, `GET/POST /api/org/events/` со счётчиками через `annotate`. Это первый эндпоинт со списком и первая миграция фазы. Продолжать?
+
+> "В «Ошибки» записан фактический формат. Тело — DRF по умолчанию, фронтенд читает только статус и выводит из него AppError.kind." - а если в форме нужно будет показывать ошибки конкретного поля?
+  "Гость на закрытом эндпоинте получает 403" - 401 не правильнее?
+
+⏺ Оба замечания справедливые.
+  
+  **1. Ошибки конкретных полей**
+  
+  Моя формулировка про «фронтенд тело не читает» верна только для текущего состояния: форм с ошибками от сервера пока нет. Формы создания события и регистрации они понадобятся: `starts_at` в прошлом, `capacity` вне 1–10000, email занят. Обоснование в skill («форма показывает по своим кодам, а не по тексту сервера») тоже оказалось слабым. Свои коды у формы есть только для клиентской валидации, а серверные ошибки приходят без кодов.
+  
+  Проблема в том, что DRF по умолчанию отдаёт только английский текст: `{"capacity": ["Ensure this value is greater than or equal to 1."]}`. Показывать его в русском интерфейсе нельзя.
+  
+  Рекомендую такой вариант:
+  - Кастомный exception handler в DRF отдаёт для 400 коды: `{"errors": {"capacity": ["min_value"]}}`. Коды DRF знает (`exc.get_codes()`).
+  - `unwrap()` кладёт их в `AppError` (`fields`). Выше `shared/api` по-прежнему нет `Response`.
+  - Форма сопоставляет код с текстом в своём `<i18n>`, как сейчас в логине.
+  - Это меняет контракт, поэтому формат нужно описать в схеме OpenAPI и в skill.
+  
+  Сделать это логично в 2.1–2.2, когда появится первая форма с серверной валидацией. Тогда формат проверится на настоящем случае. Скорректировать skill сейчас, пока не решено, я бы не стал.
+  
+  **2. Гость: 401 или 403**
+  
+  401 правильнее. Ваше замечание вскрывает и реальный дефект: сейчас гость и чужое событие дают одинаковый 403 с `kind: forbidden`, и фронтенд их не различает. А нужно разное поведение: гость или протухшая сессия ведут на `/login`, чужое событие показывает «нет доступа».
+  
+  Причина такого поведения в DRF: он возвращает 401 только если у первого класса аутентификации есть `authenticate_header` (по RFC 401 требует заголовок `WWW-Authenticate`). У `SessionAuthentication` его нет, поэтому DRF молча заменяет 401 на 403.
+  
+  Исправление маленькое: подкласс `SessionAuthentication` с `authenticate_header` (например, возвращающий `"Session"`), указать его в `REST_FRAMEWORK`. Тогда:
+  - гость или нет сессии → 401, `kind: unauthorized`;
+  - чужое событие → 403, `kind: forbidden`;
+  - ошибка CSRF у вошедшего остаётся 403, и это корректно.
+  
+  Придётся поправить два теста (`me` и `logout` без сессии), `openapi.yaml`, строки таблицы в spec, `architecture.md` и skill. Фронтенд менять почти не нужно: `entities/session` уже понимает оба вида ошибки.
+  
+  Предлагаю сначала отдельным коммитом перейти на 401 (это маленькая правка на этапе 1), а формат ошибок полей решить при 2.1. Делаю?
+
+> Делай. Формат ошибок можешь записать как черновик, т.к. текущего контекста не будет
+
+⏺ Bash(make dev-deps >/dev/null 2>&1; cat > backend/accounts/authentication.py <<'EOF')
+  ⎿  44:    assert client.get("/api/auth/me/").status_code == 401
+     58:def test_me_without_session_is_401_and_sets_csrf_cookie() -> None:
+     61:    assert response.status_code == 401
+     83:    assert client.get("/api/auth/me/").status_code == 401
+     86:def test_logout_without_session_is_401() -> None:
+     87:    assert APIClient().post("/api/auth/logout/").status_code == 401
+     … +3 lines
+
+⏺ Bash(cd /home/raf/event-registration && make schema >/dev/null 2>&1; git status --short; grep -rn "403" frontend/src --include=*.ts --include=*.vue -l | grep -v schema; grep -rn "403" docs/architecture.md )
+  ⎿  M backend/accounts/tests/test_auth_api.py
+      M backend/config/settings.py
+     ?? backend/accounts/authentication.py
+     (eval):1: no matches found: --include=*.ts
+     .claude/skills/api-change/SKILL.md:37:  `get_org_event(user, id)`: несуществующее — 404, чужое — 403 (решение от 01:17 в
+     .claude/skills/api-change/SKILL.md:39:  пользователь A по id события B получает 403, а не данные.
+     … +12 lines
+
+⏺ Bash(sed -n 56,61p docs/features/registration/spec.md; sed -n 111p docs/features/registration/spec.md; sed -n 57,60p .claude/skills/api-change/SKILL.md; grep -n "status: 403" frontend/src -r)
+  ⎿  | `POST /api/auth/login/`                    | `{email, password}`                         | 200 `{id, email}`, cookie сессии                              | 400 неверные данные   |
+     | `POST /api/auth/logout/`                   | —                                           | 204                                                           | 403 без сессии/CSRF   |
+     | `GET /api/auth/me/`                        | —                                           | 200 `{id, email}`                                             | 403 без сессии        |
+     | `GET /api/org/events/`                     | —                                           | 200 `[Event + confirmed, waitlisted]`, только свои            | 403                   |
+     | `POST /api/org/events/`                    | `{title, description, starts_at, capacity}` | 201 Event                                                     | 400 поля; 403         |
+     | `GET /api/events/`                         | —                                           | 200 `[{id, title, starts_at, capacity, free_seats}]`, будущие | —                     |
+     … +6 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  exit=2
+     Errors:   0 (0 unique)
+     SchemaGenerationError: Failing as requested due to warnings
+     -      - error
+
+⏺ Bash(grep -B15 "Failing as requested" /tmp/check.log | head -30)
+  ⎿  All checks passed!
+     cd backend && uv run ruff format --check .
+     28 files already formatted
+     cd backend && uv run mypy .
+     Success: no issues found in 24 source files
+     cd backend && uv run python manage.py makemigrations --check --dry-run
+     … +10 lines
+
+⏺ Схема не генерируется: drf-spectacular не знает мой подкласс аутентификации. Добавляю для него расширение схемы.
+
+⏺ Bash(cd /home/raf/event-registration/backend && cat accounts/apps.py; python3 - <<'EOF')
+  ⎿  Exit code 1
+     from django.apps import AppConfig
+     
+     
+     class AccountsConfig(AppConfig):
+         name = "accounts"
+     … +28 lines
+
+⏺ Bash(cd /home/raf/event-registration/backend && grep -n "class SessionScheme" -B2 -A14 .venv/lib/python3.12/site-packages/drf_spectacular/authentication.py)
+  ⎿  5-
+     6-
+     7:class SessionScheme(OpenApiAuthenticationExtension):
+     8-    target_class = 'rest_framework.authentication.SessionAuthentication'
+     9-    name = 'cookieAuth'
+     10-    priority = -1
+     … +11 lines
+
+⏺ Bash(cat >> accounts/authentication.py <<'EOF')
+  ⎿  cd backend && uv run python manage.py spectacular --validate --fail-on-warn --file openapi.yaml
+     exit=2
+     accounts/authentication.py:19: error: Call to untyped function "__init_subclass__" in typed context  [no-untyped-call]
+     Found 1 error in 1 file (checked 24 source files)
+     make: *** [Makefile:62: typecheck-backend] Error 1
+
+⏺ Bash(sed -i 's/^class SessionAuthenticationWith401Scheme(SessionScheme):/class SessionAuthenticationWith401Scheme(SessionScheme):  # type: ignore[no-untyped-call]  # drf-spectacular extension base is untyp)
+  ⎿  exit=0
+     
+     
+     class SessionAuthenticationWith401Scheme(SessionScheme):  # type: ignore[no-untyped-call]  # drf-spectacular extension base is untyped
+         """Documents the subclass in OpenAPI exactly as the session cookie scheme it extends."""
+     
+     … +1 lines
+
+⏺ Bash(docker compose up -d --build --wait >/dev/null 2>&1; S=/tmp/claude-1000/-home-raf-event-registration/affcf89a-54d0-4909-834f-8e8c4b6be921/scratchpad; node $S/guard-check.mjs 2>&1 | tail -3; curl -s -o)
+  ⎿  guest redirected to http://localhost:5173/login
+     signed-in /login redirected to http://localhost:5173/org/events
+     me guest: 401
+     ✔ Done cleaning up temporary files!
+     204c338 fix(backend): answer anonymous API requests with 401 instead of 403
+
+⏺ Гость на закрытом эндпоинте теперь получает 401. Закоммичено: `204c338`, `make check` проходит, дерево чистое.
+  
+  **Что изменено:**
+  - **Backend.** Подкласс `SessionAuthenticationWith401` в [accounts/authentication.py](backend/accounts/authentication.py) отдаёт заголовок `WWW-Authenticate: Session`, и DRF перестаёт подменять 401 на 403. Ошибка CSRF у вошедшего остаётся 403, это закрыто тестом.
+  - **Схема OpenAPI.** Пришлось зарегистрировать расширение для drf-spectacular: без него `--fail-on-warn` не генерировал схему. Сама схема не изменилась. В расширении есть `# type: ignore[no-untyped-call]` с причиной: базовый класс drf-spectacular без типов.
+  - **Тесты.** Тесты `me` и `logout` без сессии теперь ждут 401, плюс проверка заголовка.
+  - **Frontend.** `entities/session` считает гостем только `unauthorized`; 403 там теперь обычная ошибка. Тест guard'а переведён на 401.
+  - **Документы.** Исправлены таблица API и сценарии приёмки в spec, раздел «Ошибки» в skill `api-change`. Запись в `decisions.md` от 03:20 отменяет «гость → 403» из записи от 03:05.
+  
+  **Проверено:** `make check` и живой стек. Гость на `/org/events` уходит на `/login`, вошедший с `/login` уходит на `/org/events`, `curl` на `me` без сессии даёт 401. Вход и выход я отдельно не перепроверял, только guard.
+  
+  **Формат ошибок полей** записан черновиком в двух местах:
+  - в skill `api-change`, раздел «Ошибки» (блок «ЧЕРНОВИК»);
+  - в `decisions.md`, запись 03:20.
+  
+  Предложение там такое: свой exception handler отдаёт коды, `{"errors": {"capacity": ["min_value"]}}`. `unwrap()` кладёт их в `AppError.fields`, а форма подбирает текст в своём `<i18n>`. Отметка о задаче 2.1 добавлена в `tasks.md`: там нужно решить формат и убрать пометку.
+  
+  Дальше — **2.1**: приложение `events`, модель `Event` и миграция, `for_organizer` / `get_org_event`, `GET/POST /api/org/events/`. Продолжать?

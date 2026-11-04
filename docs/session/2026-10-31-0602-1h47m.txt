@@ -1,0 +1,1253 @@
+> /clear
+
+> начинаем фазу 3
+
+⏺ Skill(session-handoff)
+  ⎿  Launching skill: session-handoff
+
+⏺ Bash(make worktime 2>&1 | tail -5; date '+%Y-%m-%d %H:%M'; tail -15 docs/decisions.md; git status --short; git log --oneline -3 main; git branch --show-current)
+⏺ Skill(feature-workflow)
+  ⎿  2026-10-31 02:06 → 2026-10-31 03:26  1 ч 20 мин
+     2026-10-31 03:32 → 2026-10-31 04:43  1 ч 11 мин
+     2026-10-31 04:48 → 2026-10-31 05:37  0 ч 49 мин
+     2026-10-31 05:39 → 2026-10-31 05:53  0 ч 14 мин
+     Итого: 22 ч 7 мин
+     2026-10-31 06:02
+     … +19 lines
+
+  ⎿  Launching skill: feature-workflow
+
+⏺ Bash(git fetch -q 2>&1; git log --oneline -3 origin/main; git branch -a --contains e47419f; gh pr list --state all --limit 3 2>&1; ls docs/features; grep -n "Фаза 3" -A40 docs/roadmap.md | head -70)
+  ⎿  07a31ba fix(backend): log the stack of a bug in sending, without its message
+     38e40ed docs: note the flaky event page test from the stage 4 review
+     6f622c8 fix(backend): keep a batch's sent emails when one fails with a bug
+     * feat/phase-2-close
+       remotes/origin/feat/phase-2-close
+     11	Phase 2, stage 5: close the email phase	feat/phase-2-close	OPEN	2026-10-31T04:00:24Z
+     … +46 lines
+
+⏺ Bash(sed -n 1,85p docs/roadmap.md; wc -l docs/architecture.md; grep -n "^#" docs/architecture.md)
+  ⎿  # Дорожная карта
+     
+     Фазы работы до сдачи (2026-11-05). Статус фазы — в заголовке: `не начата`, `в работе`,
+     `готова`. Фаза готова, когда выполнены критерии, `make check` и CI проходят, разделы фазы в
+     `docs/architecture.md` приведены к коду, а строки таблицы «требование → тест» в README для
+     её требований ссылаются на реальные тесты.
+     … +90 lines
+
+⏺ Bash(sed -n 1,239p docs/architecture.md)
+  ⎿  # Архитектура
+     
+     Как устроена система и почему. У каждого раздела — статус: **реализовано** (описание
+     совпадает с кодом) или **план (фаза N)** — согласованный проект, который уточняется в spec
+     фазы. При закрытии фазы её разделы приводятся к коду и получают статус «реализовано».
+     Обоснования выборов и отклонённые варианты — в [decisions.md](decisions.md), фазы — в
+     … +233 lines
+
+⏺ Bash(cd /home/raf/event-registration/backend && ls; ls registrations events 2>/dev/null; grep -n "checked_in\|class \|status" registrations/models.py | head -30; grep -rn "path(" */urls.py config/urls.py |)
+  ⎿  AGENTS.md
+     CLAUDE.md
+     Dockerfile
+     __pycache__
+     accounts
+     config
+     … +78 lines
+
+⏺ Bash(cd /home/raf/event-registration && sed -n 1,60p backend/registrations/models.py; grep -n "checked_in\|ticket_code" backend/registrations/services.py | head; grep -n "Organizer\|org" backend/events/vie)
+  ⎿  import secrets
+     from typing import ClassVar
+     
+     from django.db import models
+     from django.utils import timezone
+     
+     … +53 lines
+
+⏺ Bash(git switch -c feat/checkin && git rev-parse --short HEAD && date '+%H:%M'; grep -n "with_registration_counts" -A12 backend/events/models.py | head -20; tail -3 docs/decisions.md | cut -c1-80)
+  ⎿  Switched to a new branch 'feat/checkin'
+     e47419f
+     06:03
+     21:    def with_registration_counts(self) -> Self:
+     22-        # Statuses are Registration.Status values; events cannot import registrations (it imports
+     23-        # events), so the counts go through the reverse relation by string value.
+     … +13 lines
+
+⏺ Now I'll add the session start marker and a draft task list to the roadmap, then send the list to you for approval.
+
+⏺ Bash(printf -- '- **06:03** — ▶ начало сессии\n' >> docs/decisions.md && python3 - <<'EOF')
+  ⎿  docs/decisions.md |  1 +
+      docs/roadmap.md   | 19 +++++++++++++++++++
+      2 files changed, 20 insertions(+)
+
+⏺ AskUserQuestion()
+  ⎿  The user answered: "Фаза 3 (чекин и статистика), черновик задач в docs/roadmap.md: 1) tracer bullet: checked_in_at + атомарный UPDATE + POST /api/org/events/{id}/checkin/ → 200/404 + экран чекина; 2) 
+
+⏺ Bash(grep -n "21:25\|крупн" docs/decisions.md | head -8 | cut -c1-400)
+  ⎿  79:- **21:25** — каркас: тонкий сквозной путь (health endpoint с проверкой БД, своя модель
+     87:- **21:25** — инструменты backend: uv, ruff, mypy + django-stubs, pytest-django на настоящем
+     91:- **21:25** — процесс фичи: PRD не пишется, его роль играет `docs/task.md`; spec (до 150
+     92:  строк) и tasks — только для трёх крупных механизмов: регистрация и лист ожидания, outbox и
+     95:- **21:25** — `pre-push` проверяет только затронутую отправляемыми коммитами часть (backend
+     98:- **21:25** — хук Claude Code `PostToolUse`: ruff или eslint + prettier на файл сразу после
+     … +2 lines
+
+⏺ Bash(sed -n 91,95p docs/decisions.md; date '+%H:%M')
+  ⎿  - **21:25** — процесс фичи: PRD не пишется, его роль играет `docs/task.md`; spec (до 150
+       строк) и tasks — только для трёх крупных механизмов: регистрация и лист ожидания, outbox и
+       письма, realtime. Почему: полный цикл PRD → spec → tasks на каждую фичу не укладывается в
+       срок, а требования уже сформулированы в задании.
+     - **21:25** — `pre-push` проверяет только затронутую отправляемыми коммитами часть (backend
+     06:09
+
+⏺ Записываю ваше решение про отказ после чекина в лог решений, пока вопрос про spec открыт:
+
+⏺ Bash(printf -- '- **06:09** — фаза 3 (решение человека): отказ от билета после чекина запрещён — `POST /api/tickets/{manage_token}/cancel/` у отмеченного билета → 409, регистрация не меняется, повышения из)
+  ⎿  - **06:09** — фаза 3 (решение человека): отказ от б
+
+⏺ AskUserQuestion()
+  ⎿  The user answered: "Фаза 3: после решения «отказ после чекина → 409» появилась гонка «отказ против чекина» и меняется API фазы 2. Где вести фазу?"="давай подумаем запрещать ли после чекина, как принят
+
+⏺ Короткий ответ: да, запрещать принято. В билетных системах отмеченный билет считается использованным, и сдать его уже нельзя. Ниже то, в чём я уверен без поиска. Если нужны конкретные правила платформ со ссылками (Eventbrite, Luma, Meetup, Timepad), могу поискать, по памяти утверждать не буду.
+  
+  **Как это обычно устроено**
+  - **Использованный билет не возвращают.** Это правило билетных касс, транспорта и концертных систем: после прохода контроля билет погашен.
+  - **Самостоятельный отказ часто закрывают к началу события.** После старта менять регистрацию через ссылку уже нельзя. Чекин на входе обычно идёт в последние минуты перед началом, так что одно правило закрывает почти все случаи.
+  - **Ошибку исправляет организатор, а не участник.** Если отметили не того, в приложении для входа есть «снять отметку». Это действие организатора, а не отказ участника.
+  
+  **Почему запрет правильнее для нас**
+  - Чекин — это факт «пришёл». Если после него разрешить отказ, человек будет уже в зале, а его место отдадут первому из листа ожидания. Тот получит письмо «вам дали место» на событие, которое уже идёт, в заполненный зал.
+  - Счётчик «пришло» не будет врать: отменённых, но отмеченных регистраций не бывает.
+  
+  **Что запрет стоит**
+  - В API отказа добавится 409, на экране билета появится состояние «вы уже прошли на событие, отказ невозможен».
+  - Гонка «отказ против чекина» закрывается дёшево. Отказ уже берёт замок Event, к нему добавляется `SELECT … FOR UPDATE` на строку регистрации. `UPDATE` чекина сам блокирует эту строку, поэтому два действия выстраиваются в очередь: кто первый, тот и победил. Плюс один тест гонки.
+  
+  **Альтернатива: закрыть самостоятельный отказ к `starts_at`.** Чекин до начала это не покрывает (вход открывают раньше), поэтому запрет после чекина всё равно нужен. Получилось бы два правила вместо одного. Я бы так не делал.
+  
+  Моя рекомендация — оставить запрет (решение 06:09 уже в логе). «Снять отметку» не делать: в задании его нет, это Non-Goal. Если подтверждаете, остаётся вопрос, где вести фазу. С этой гонкой и изменением API фазы 2 я по-прежнему за короткий spec в `docs/features/checkin/`.
+
+> окей, я убедился насчет запретить отказ после чекина. давай все фазы дальше вести в features
+
+⏺ Записываю решение, правлю правило в roadmap и skill, затем пишу spec фазы 3.
+
+⏺ Bash(grep -rn "крупн\|фазы 1, 2, 4\|небольш" --include=*.md . | grep -v node_modules | grep -v "decisions.md" | cut -c1-220; cat docs/features/_template/spec.md; cat docs/features/_template/tasks.md; wc -l)
+  ⎿  (eval):1: no matches found: --include=*.md
+     # <Фича>: spec
+     
+     Фаза — `docs/roadmap.md`, фаза N. Статус: черновик | утверждён ГГГГ-ММ-ДД.
+     
+     <!-- До 150 строк. Процесс — skill feature-workflow. -->
+     … +63 lines
+
+⏺ Bash(grep -rn "крупн\|фазы 1, 2, 4\|небольш" AGENTS.md README.md docs .claude e2e frontend/AGENTS.md backend/AGENTS.md 2>/dev/null | grep -v "docs/decisions.md" | cut -c1-240; cat docs/features/emails/task)
+  ⎿  docs/architecture.md:219:| панель события организатора (счётчики, участники), чекин (ввод кода, крупный ответ «пропущен / уже отмечен в 18:42 / не на
+     docs/features/emails/spec.md:87:найден»; `confirmed` — крупный код, событие, кнопка «Отказаться»; `waitlisted` — «вы в листе
+     AGENTS.md:36:docs/roadmap.md       фазы, статусы, критерии, задачи небольших фаз
+     AGENTS.md:53:6. Этап крупной фазы (или фаза без spec) не готов, пока по нему не прошёл агент `reviewer` и
+     AGENTS.md:88:- Этап крупной фазы — своя ветка от `main` и один PR. Название PR — по-английски:
+     AGENTS.md:104:| `anti-slop-review` | перед коммитом крупного изменения и перед сдачей: мусор и утверждения без подтверждения |
+     … +53 lines
+
+⏺ Чтобы spec опирался на код, смотрю текущий сервис отказа, вьюхи и виды ошибок фронтенда:
+
+⏺ Bash(sed -n 60,140p backend/registrations/services.py; sed -n 1,80p backend/registrations/views.py; grep -rn "kind" frontend/src/shared/api/*.ts | head -20; sed -n 1,40p docs/features/registration/spec.md)
+  ⎿  event = Event.objects.select_for_update().get(pk=event_id)
+             # Read after the lock: a time taken before it lets a later request queue ahead of an
+             # earlier one and shifts the positions already reported.
+             now = now or timezone.now()
+             existing = Registration.objects.filter(event=event, email=email).first()
+             if existing is not None and existing.status != Registration.Status.CANCELLED:
+     … +208 lines
+
+⏺ Bash(sed -n 1,75p frontend/src/shared/api/app-error.ts; ls frontend/src/pages/org-events frontend/src/entities/event; cat backend/config/exceptions.py | head -40; date '+%H:%M')
+  ⎿  // The only error type above shared/api. Code decides by `kind`, never by message text.
+     export type AppErrorKind =
+       | "network"
+       | "unauthorized"
+       | "forbidden"
+       | "not_found"
+     … +95 lines
+
+⏺ Bash(cat frontend/src/shared/api/client.ts | head -80; ls frontend/src/shared/api)
+  ⎿  import createClient from "openapi-fetch";
+     
+     import { AppError } from "./app-error";
+     import { csrfMiddleware } from "./csrf";
+     import type { paths } from "./schema";
+     
+     … +40 lines
+
+⏺ Write(/home/raf/event-registration/docs/features/checkin/spec.md)
+  ⎿  File created successfully at: /home/raf/event-registration/docs/features/checkin/spec.md (file state is current in your context — no need to Read it back)
+
+⏺ Write(/home/raf/event-registration/docs/features/checkin/tasks.md)
+⏺ Bash(wc -l docs/features/checkin/spec.md && python3 - <<'EOF')
+  ⎿  File created successfully at: /home/raf/event-registration/docs/features/checkin/tasks.md (file state is current in your context — no need to Read it back)
+
+  ⎿  103 docs/features/checkin/spec.md
+     её требований ссылаются на реальные тесты.
+     
+     Задачи небольших фаз — списком прямо здесь. У крупных механизмов (фазы 1, 2, 4) — свои
+     `docs/features/<slug>/spec.md` и `tasks.md`, здесь только ссылка. Задача отмечается `[x]` в
+     том же коммите, который её выполняет (хэш в тот же коммит не вписать — он зависит от
+     … +14 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  .claude/skills/session-handoff/SKILL.md:38:1. Отметить задачу `[x]` в `docs/roadmap.md` или в `tasks.md` фазы.
+     AGENTS.md:53:6. Этап крупной фазы (или фаза без spec) не готов, пока по нему не прошёл агент `reviewer` и
+     AGENTS.md:88:- Этап крупной фазы — своя ветка от `main` и один PR. Название PR — по-английски:
+     docs/development.md:185:Этап крупной фазы — ветка от `main` и pull request; название PR — по правилу из
+     docs/development.md:200:Как выглядит история крупной фазы:
+
+⏺ Bash(sed -n 52,54p AGENTS.md; sed -n 184,186p docs/development.md; sed -n 199,201p docs/development.md; grep -n "без spec\|нет spec\|Нет spec" .claude/skills/feature-workflow/SKILL.md .claude/agents/review)
+  ⎿  [docs/development.md](docs/development.md) в том же коммите.
+     6. Этап крупной фазы (или фаза без spec) не готов, пока по нему не прошёл агент `reviewer` и
+        человек не разобрал его находки. Как передавать — skill `feature-workflow`, «Ревью».
+     Actions на GitHub или `gh run watch`. Красный CI — первая задача, прежде чем брать следующую.
+     Этап крупной фазы — ветка от `main` и pull request; название PR — по правилу из
+     [AGENTS.md](../AGENTS.md) («Коммиты маленькими шагами»). CI на PR дополнительно проверит
+     … +6 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  [docs/development.md](docs/development.md) в том же коммите.
+     6. Этап фазы не готов, пока по нему не прошёл агент `reviewer` и человек не разобрал его находки. Как передавать — skill `feature-workflow`, «Ревью».
+     
+     112:- Spec: <путь к spec.md или «docs/roadmap.md, раздел фазы M»>.
+     3:description: Независимое ревью изменений с чистым контекстом. Использовать после завершения задачи или фазы, перед тем как считать её готовой. Передать путь к spec.md фазы (или раздел фазы в docs/ro
+     23:3. Если передан `spec.md` — сверь изменения со сценариями приёмки и контрактами: всё ли
+     … +3 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  06:19
+      .claude/skills/feature-workflow/SKILL.md | 10 +++++-----
+      .claude/skills/session-handoff/SKILL.md  |  8 ++++----
+      AGENTS.md                                |  8 ++++----
+      docs/decisions.md                        |  2 ++
+      docs/development.md                      |  6 +++---
+     … +2 lines
+
+⏺ Bash(sed -i 's/2026-10-31 06:20/2026-10-31 06:19/' docs/roadmap.md .claude/skills/feature-workflow/SKILL.md && printf -- '- **06:19** — spec и tasks в `docs/features/<slug>/` — у каждой фазы дальше (3–7), )
+  ⎿  .claude/skills/feature-workflow/SKILL.md:19:2026-10-31 06:19 отменяет «только для крупных ме�
+     docs/roadmap.md:9:ссылка (решение от 2026-10-31 06:19); задачи фазы 0 — списком пря
+
+⏺ Spec и задачи готовы, пока не закоммичены: жду вашего утверждения.
+  
+  - **Spec:** [docs/features/checkin/spec.md](docs/features/checkin/spec.md), 103 строки.
+  - **Задачи:** [docs/features/checkin/tasks.md](docs/features/checkin/tasks.md), 4 этапа и 9 задач. Первая задача — tracer bullet: чекин кода насквозь, от миграции до экрана. Затем этап «один раз» (повтор, 409, отказ после чекина, обе гонки), панель события, e2e и закрытие фазы.
+  
+  **Правило «spec у каждой фазы».** Поправил его везде, где оно было записано: [roadmap.md](docs/roadmap.md), [development.md](docs/development.md), [AGENTS.md](AGENTS.md) (п. 6 и правило про PR), skills `feature-workflow` и `session-handoff`. Вариант «фаза без spec» оттуда убран. Решение записано в лог в 06:19.
+  
+  **Что проверить при утверждении:**
+  
+  1. **Коды ответа чекина отличаются от `architecture.md`.** Там «уже отмечен» — 409, а «не подтверждён» — 422. В spec «уже отмечен» — это 200 с `result: "already_checked_in"` (имя и время первой отметки), а «не подтверждён» (лист ожидания или отказ) — 409.
+     - Зачем: для экрана на входе повтор — обычный ответ с данными. `unwrap` во фронтенде не отдаёт тело ошибки, и вариант с 409 потребовал бы расширять `AppError` ради одного поля.
+     - 422 во фронтенде превращается в ошибку формы (`kind: validation`), а здесь речь о состоянии билета.
+     - Если согласны, `architecture.md` поправлю по spec.
+  2. **Гонка отказа против чекина.** Отказ под замком Event берёт ещё и строку регистрации `FOR UPDATE`. Дополнительно в БД появляется ограничение `CHECK (checked_in_at IS NULL OR status = 'confirmed')`.
+  3. **Задачи «сброс `checked_in_at` при оживлении» из черновика больше нет.** После запрета отказа отмеченная регистрация не может стать отменённой, значит и оживлять с отметкой нечего. Это гарантирует `CHECK`.
+  4. **Остальные допущения:**
+     - чужое событие — 404, а не 403;
+     - список участников без пагинации;
+     - в ответе чекина имя участника, без email;
+     - время отметки в часовом поясе браузера;
+     - окна чекина по времени события нет: отметить можно в любой момент (в Non-Goals).
+  
+  После утверждения закоммичу смену правила, spec и задачи и начну задачу 1.1.
+
+> 1. "unwrap во фронтенде не отдаёт тело ошибки, и вариант с 409 потребовал бы расширять AppError ради одного поля" - если учесть что у нас django есть смысл пересмотреть это? как чаще делают кодами или телом? или на данном этапе уже лучше оставить как есть?
+  2. ок.
+  3. разве было где-то оживление после отказа?
+  4. 
+  чужое событие - 403 мне кажется точнее (есть, но нельзя).
+  список участников без пагинации - ок.
+  в ответе чекина имя участника, без email - почему?
+  время отметки в часовом поясе браузера - ок.
+  окна чекина по времени события нет: отметить можно в любой момент (в Non-Goals) - ок
+  
+  
+  создай новую ветку от обновленного main.
+
+⏺ Bash(git fetch -q && gh pr view 11 --json state,mergedAt -q '.state+" "+.mergedAt' && git log --oneline -3 origin/main)
+  ⎿  MERGED 2026-10-31T04:10:27Z
+     d4a390c docs: close phase 2 and start phase 3
+     751f45a docs: fix the worker comment and the race tests status from the stage 5 review
+     a91081b docs: record the base of phase 2, stage 5
+
+⏺ Bash(git diff --stat e47419f origin/main; git switch -q main && git pull -q --ff-only && git branch -D feat/checkin && git switch -c feat/checkin && git log --oneline -1 && git status --short)
+  ⎿  Exit code 1
+     error: Your local changes to the following files would be overwritten by checkout:
+     	AGENTS.md
+     	docs/decisions.md
+     	docs/development.md
+     	docs/roadmap.md
+     … +2 lines
+
+⏺ Bash(git stash push -u -q -m phase3-docs && git switch -q main && git pull -q --ff-only && git branch -D feat/checkin && git switch -c feat/checkin && git stash pop -q && git log --oneline -1 && git status)
+  ⎿  Deleted branch feat/checkin (was e47419f).
+     Switched to a new branch 'feat/checkin'
+     d4a390c docs: close phase 2 and start phase 3
+      M .claude/skills/feature-workflow/SKILL.md
+      M .claude/skills/session-handoff/SKILL.md
+      M AGENTS.md
+     … +4 lines
+
+⏺ Bash(sed -i 's/База этапа 1 — `e47419f` (ветка `feat\/checkin` от `feat\/phase-2-close`: PR #11 ещё не влит)./База этапа 1 — `d4a390c` (`main` после слияния PR #11)./' docs/features/checkin/tasks.md && sed)
+  ⎿  docs/features/checkin/tasks.md:1
+     docs/decisions.md:1
+     67:- `UNIQUE(event, email)`; повторная регистрация после отказа «оживляет» строку: место или лист
+     69:  выдаётся новый, `manage_token` остаётся прежним: ссылка из старого письма управляет и
+     [This command modified 1 file you've previously read: docs/features/checkin/tasks.md. Call Read before editing.]
+
+⏺ Bash(grep -n "for_organizer\|404 → \`not_found\`\|Чужое событие" docs/features/checkin/spec.md | cut -c1-200)
+  ⎿  43:| `POST /api/org/events/{id}/checkin/`                | `{code}`                         | 200 `{result: "checked_in" \| "already_checked_in", name, checked_in_at}`                                 
+     44:| `GET /api/org/events/{id}/`                         | —                                | 200 `{id, title, description, starts_at, capacity, confirmed, waitlisted, checked_in, free_seats}`      
+     45:| `GET /api/org/events/{id}/registrations/?status=`   | `status` — необязательный фильтр | 200 `[{id, name, email, status, position?, checked_in_at}]` по `queued_at, id`; `p
+     49:- Эндпоинты организатора — сессия + CSRF; событие ищется через `for_organizer`, поэтому
+     87:2. Чужое событие — 404, а не 403: не раскрывать, что событие существует.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  4
+     06:35
+     [This command modified 1 file you've previously read: docs/features/checkin/spec.md. Call Read before editing.]
+
+⏺ Bash(printf -- '- **06:35** — фаза 3 (решение человека): событие другого организатора в эндпоинтах `/api/org/events/{id}/…` → 403, несуществующее → 404. Отклонено: 404 для обоих, чтобы не раскрывать сущест)
+  ⎿  (Bash completed with no output)
+
+⏺ Bash(grep -n "existing.status != Registration.Status.CANCELLED\|registration.ticket_code = new_ticket_code" backend/registrations/services.py; grep -rn "def test.*reviv\|def test.*after_cancel\|again_after)
+  ⎿  65:        if existing is not None and existing.status != Registration.Status.CANCELLED:
+     86:            registration.ticket_code = new_ticket_code()
+     backend/registrations/tests/test_cancel.py:114:def test_register_after_cancel_revives_the_row_with_a_new_ticket_code(event: Event) -> None:
+     backend/registrations/tests/test_cancel.py:133:def test_register_after_cancel_on_a_full_event_goes_to_the_waitlist_tail(event: Event) -> None:
+     backend/registrations/tests/test_cancel.py:146:def test_revived_from_the_waitlist_goes_to_the_tail(event: Event) -> None:
+
+⏺ Ветку пересоздал от обновлённого `main` (d4a390c, PR #11 влит). Незакоммиченные документы перенёс, базу этапа 1 в логе поправил. 403 для события другого организатора внёс в spec и записал в лог (06:35).
+  
+  **1. Коды или тело.** В Django/DRF обычно так: статус задаёт класс ответа, а тело — подробности. В DRF у исключений есть `default_code`, тело ошибки по умолчанию — `{"detail": …}`. У нас 400 уже отдаёт `{"errors": {field: [code]}}`. По этой схеме «уже отмечен» выглядел бы как 409 с `{"code": "already_checked_in", "checked_in_at": …, "name": …}`.
+  
+  Вопрос в другом: считать ли повтор ошибкой. Для экрана на входе это штатный ответ с данными: показать имя и время первой отметки. Поэтому 200 с `result` тоже обычный вариант, так ведут себя идемпотентные операции, которые возвращают текущее состояние.
+  
+  | | 200 + `result` | 409 + тело |
+  | --- | --- | --- |
+  | Фронтенд | без изменений | `AppError` учится нести тело ошибки, а чекин — разбирать его |
+  | Схема | ответ описан в OpenAPI | тело 409 описывается отдельно |
+  | Потребители тела ошибки | — | один (п. 3 правил: ничего «на будущее») |
+  
+  Рекомендую оставить 200 + `result`. Если тело ошибок понадобится в другом месте (например, 400 при изменении лимита в фазе 5), расширим `AppError` тогда, под реального потребителя.
+  
+  **3. Оживление после отказа есть, с фазы 1.** Повторная регистрация того же email после отказа не создаёт новую строку, а переиспользует отменённую: [services.py:65](backend/registrations/services.py#L65) пропускает `cancelled`, [services.py:86](backend/registrations/services.py#L86) выдаёт новый `ticket_code`. Тесты: [test_cancel.py:114](backend/registrations/tests/test_cancel.py#L114) и следующие. Описание — в [architecture.md:67](docs/architecture.md#L67).
+  
+  Отдельная задача про сброс `checked_in_at` не нужна. Отменить отмеченный билет теперь нельзя, а `CHECK (checked_in_at IS NULL OR status = 'confirmed')` гарантирует, что у отменённой строки отметки нет.
+  
+  **4. Почему только имя, без email.** Ответ показывается крупно на экране у входа, его видит очередь. Показывать там адрес — значит раскрывать персональные данные без пользы: человека на входе сверяют по имени, а код уже однозначно указывает на билет. Email организатор видит в таблице участников на панели. Минус тоже есть: у двух «Иванов» одно имя не различит их. Если для вас важнее сверка, можно отдавать email и показывать его маской (`iv***@gmail.com`).
+  
+  Жду ваших решений по п. 1 (оставить 200 + `result` или 409 с телом) и по email. После этого закоммичу смену правила, spec и задачи и начну задачу 1.1.
+
+> 1. ок, 200.
+  3. у нас есть ограничение регистрации на событие которое уже случилось?
+  4. можно отдавать email с бека сразу с маской, так не лучше?
+
+⏺ Bash(grep -n "начавш" docs/architecture.md docs/features/registration/spec.md | cut -c1-200; grep -n "name, checked_in_at\|В ответе чекина\|Расходится" docs/features/checkin/spec.md | cut -c1-120)
+  ⎿  docs/features/registration/spec.md:21:- Запрет регистрации на уже начавшееся событие.
+     docs/architecture.md:127:- `GET /api/events/` — будущие события с числом свободных мест (заполненные остаются в списке); `GET /api/events/
+     43:| `POST /api/org/events/{id}/checkin/`                | `{code}`                         | 200 `{result: "checked_in"
+     81:1. **Расходится с `architecture.md`:** там «уже отмечен» — 409, «не подтвержд
+     90:4. В ответе чекина — имя участника, без email: организатор на входе �
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  43:| `POST /api/org/events/{id}/checkin/`                | `{code}`                         | 200 `{result: "checked_in" \| "already_checked
+     61:  блокируется на время запроса. Крупный ответ на всю ширину: «Пропущен — Им�
+     91:   `iv***@gmail.com` — первые два символа имени ящика (у ящика короче трёх — один), д�
+     06:41
+     [This command modified 1 file you've previously read: docs/features/checkin/spec.md. Call Read before editing.]
+
+⏺ Bash(printf -- '- **06:41** — фаза 3 (решение человека): ответ чекина «уже отмечен» — 200 с `result: "already_checked_in"`, а не 409 из `architecture.md`; «билет не подтверждён» — 409, а не 422. Почему: дл)
+  ⎿  (Bash completed with no output)
+
+⏺ Записал оба решения в лог (06:41) и внёс в spec. Маска собирается на backend: так полный адрес не уходит в ответ сети. Поле называется `masked_email`, чтобы его не приняли за настоящий адрес.
+  
+  **3. Запрета на регистрацию после начала события нет.** Это сознательное решение фазы 1:
+  - в Non-Goals её spec ([registration/spec.md:21](docs/features/registration/spec.md#L21)) прямо записано «Запрет регистрации на уже начавшееся событие»;
+  - в [architecture.md:127](docs/architecture.md#L127) — «регистрация на начавшееся событие не запрещена»;
+  - публичный список показывает только будущие события, но страница события по id и `POST` регистрации работают и для прошедших.
+  
+  Для фазы 3 это значит одно: можно зарегистрироваться уже во время события и сразу пройти чекин. Противоречий со spec чекина нет. Если хотите закрыть регистрацию с `starts_at`, это отдельное изменение API фазы 1: добавлю его задачей в эту фазу или в «на потом». Скажите, куда.
+  
+  Если spec в остальном утверждаете, следующим шагом:
+  1. приведу «Инварианты» и «API» в [architecture.md](docs/architecture.md) к spec;
+  2. закоммичу это вместе со сменой правила, spec и задачами;
+  3. начну задачу 1.1.
+
+> да, ок
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Exit code 1
+     Checking formatting...
+     [warn] .claude/skills/django-security/SKILL.md
+     [warn] .claude/skills/vue-best-practices/SKILL.md
+     [warn] .claude/skills/vue-router-best-practices/SKILL.md
+     [warn] .claude/skills/vue-testing-best-practices/SKILL.md
+     … +1 lines
+
+⏺ Bash(cp docs/decisions.md /tmp/claude-1000/-home-raf-event-registration/31f9757f-faa6-4483-8ee8-ed59ed9a64cb/scratchpad/decisions.full && python3 - <<'EOF')
+  ⎿  .claude/skills/feature-workflow/SKILL.md | 10 +++++-----
+      .claude/skills/session-handoff/SKILL.md  |  8 ++++----
+      AGENTS.md                                |  8 ++++----
+      docs/decisions.md                        |  2 ++
+      docs/development.md                      |  6 +++---
+      5 files changed, 18 insertions(+), 16 deletions(-)
+     … +35 lines
+
+⏺ Skill(api-change)
+  ⎿  Launching skill: api-change
+
+⏺ Bash(cat backend/AGENTS.md docs/rules/db-migrations.md | sed -n 1,200p)
+  ⎿  # backend/ — Django + DRF
+     
+     Команды и инструменты — `docs/development.md`, раздел «Backend». Здесь — правила для кода.
+     
+     ## Структура
+     
+     … +70 lines
+
+⏺ Bash(cat docs/rules/concurrency.md | sed -n 1,80p; cat backend/events/views.py backend/events/serializers.py; ls backend/events/tests backend/registrations/tests backend/registrations/migrations; grep -rn )
+  ⎿  # Блокировки и тесты гонок
+     
+     Правила для кода, который меняет места, очередь или другие общие счётчики, и для тестов этого
+     кода. Пример — `backend/registrations/services.py` и `backend/registrations/tests/test_concurrency.py`;
+     очередь писем — `backend/emails/services.py` и `backend/emails/tests/test_concurrency.py`.
+     
+     … +164 lines
+
+⏺ Bash(sed -n 1,60p backend/events/tests/test_org_events_api.py; cat backend/registrations/admin.py; sed -n 1,30p backend/registrations/tests/test_services.py; cat backend/conftest.py | head -60)
+  ⎿  from datetime import timedelta
+     from typing import Any
+     
+     import pytest
+     from django.db import IntegrityError
+     from django.utils import timezone
+     … +118 lines
+
+⏺ Bash(cat backend/registrations/serializers.py; sed -n 1,20p backend/events/models.py; sed -n 1,30p backend/registrations/services.py; sed -n 1,40p backend/registrations/tests/test_registration_api.py; grep)
+  ⎿  from typing import Any
+     
+     from rest_framework import serializers
+     
+     from events.models import Event
+     from registrations.models import Registration
+     … +146 lines
+
+⏺ Исследование закончено. Записываю находки в лог задач и пишу тесты задачи 1.1 до кода:
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  (eval):8: no matches found: --include=*.py
+
+⏺ Write(/home/raf/event-registration/backend/registrations/tests/test_checkin.py)
+  ⎿  File created successfully at: /home/raf/event-registration/backend/registrations/tests/test_checkin.py (file state is current in your context — no need to Read it back)
+
+⏺ Bash(cd /home/raf/event-registration/backend && python3 - <<'EOF')
+  ⎿  (Bash completed with no output)
+
+⏺ Теперь тесты эндпоинта: статус, тело, права, CSRF.
+
+⏺ Write(/home/raf/event-registration/backend/registrations/tests/test_checkin_api.py)
+  ⎿  File created successfully at: /home/raf/event-registration/backend/registrations/tests/test_checkin_api.py (file state is current in your context — no need to Read it back)
+
+⏺ Bash(cd /home/raf/event-registration && grep -n "stack-check-backend\|POSTGRES_PORT" Makefile | head -5; docker ps --format '{{.Names}} {{.Ports}}' | head)
+  ⎿  118:STACK_POSTGRES_PORT = $(call slot_port,5432)
+     120:STACK_COMPOSE = POSTGRES_PORT=$(STACK_POSTGRES_PORT) BACKEND_PORT=$(call slot_port,8000) \
+     134:	POSTGRES_PORT=$(STACK_POSTGRES_PORT) $(MAKE) check
+     136:.PHONY: stack-check-backend
+     137:stack-check-backend: stack-postgres ## make check-backend against the Postgres of slot SLOT
+     event-registration-s1-postgres-1 0.0.0.0:5433->5432/tcp, [::]:5433->5432/tcp
+     … +2 lines
+
+⏺ Bash(cd /home/raf/event-registration/backend && POSTGRES_PORT=5433 uv run pytest registrations/tests/test_checkin.py registrations/tests/test_checkin_api.py -q 2>&1 | tail -6)
+  ⎿  from registrations.services import check_in, mask_email
+     E   ImportError: cannot import name 'check_in' from 'registrations.services' (/home/raf/event-registration/backend/registrations/services.py)
+     =========================== short test summary info ============================
+     ERROR registrations/tests/test_checkin.py
+     !!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+     1 error in 0.32s
+
+⏺ Падает по ожидаемой причине. Пишу модель, сервис, доступ к событию организатора, сериализаторы и view:
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  registrations/migrations/0002_add_registration_checked_in_at.py
+         + Add field checked_in_at to registration
+         + Create constraint registration_checked_in_is_confirmed on model registration
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  ['from django.contrib import admin', 'from django.urls import path', 'from accounts.views import LoginView, LogoutView, MeView', 'from config.health import HealthView', 'from events.views import OrgEv
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  .....................                                                    [100%]
+     21 passed in 10.95s
+
+⏺ 21 тест зелёный. Обновляю схему и типы и прогоняю полную проверку на слоте 1:
+
+⏺ Bash(cd /home/raf/event-registration && make schema 2>&1 | tail -3 && git diff --stat backend/openapi.yaml frontend/src/shared/api/schema.d.ts && make stack-check > /tmp/claude-1000/-home-raf-event-registr)
+  ⎿  ✨ openapi-typescript 7.13.0
+     🚀 ../backend/openapi.yaml → src/shared/api/schema.d.ts [95ms]
+      backend/openapi.yaml                | 77 ++++++++++++++++++++++++++++++++++
+      frontend/src/shared/api/schema.d.ts | 82 +++++++++++++++++++++++++++++++++++++
+      2 files changed, 159 insertions(+)
+     exit=2
+     … +4 lines
+
+⏺ Bash(sed -n 320,358p /tmp/claude-1000/-home-raf-event-registration/31f9757f-faa6-4483-8ee8-ed59ed9a64cb/scratchpad/check.log)
+  ⎿  cd backend && uv run ruff check .
+     I001 [*] Import block is un-sorted or un-formatted
+       --> registrations/views.py:1:1
+        |
+      1 | / from typing import Any
+      2 | |
+     … +33 lines
+
+⏺ Ошибка только в порядке импортов. Чиню и прогоняю ещё раз:
+
+⏺ Bash(cd /home/raf/event-registration/backend && uv run ruff check --fix -q registrations/views.py && cd .. && make stack-check > /tmp/claude-1000/-home-raf-event-registration/31f9757f-faa6-4483-8ee8-ed59ed)
+  ⎿  exit=2
+     321:All checks passed!
+     357:make[1]: *** [Makefile:58: lint-backend] Error 1
+     359:make: *** [Makefile:134: stack-check] Error 2
+     [This command modified 1 file you've previously read: ../../../tmp/claude-1000/-home-raf-event-registration/31f9757f-faa6-4483-8ee8-ed59ed9a64cb/scratchpad/check.log. Call Read before editing.]
+
+⏺ Bash(sed -n 321,357p /tmp/claude-1000/-home-raf-event-registration/31f9757f-faa6-4483-8ee8-ed59ed9a64cb/scratchpad/check.log)
+  ⎿  All checks passed!
+     cd backend && uv run ruff format --check .
+     unformatted: File would be reformatted
+       --> registrations/migrations/0002_add_registration_checked_in_at.py:7:1
+        |
+     6  | class Migration(migrations.Migration):
+     … +31 lines
+
+⏺ Миграция ещё не закоммичена, поэтому форматировать её можно. Заодно смотрю SQL миграции (п. 7 правил миграций):
+
+⏺ Bash(cd /home/raf/event-registration/backend && uv run ruff format -q registrations/migrations/0002_add_registration_checked_in_at.py && POSTGRES_PORT=5433 uv run python manage.py sqlmigrate registrations )
+  ⎿  BEGIN;
+     --
+     -- Add field checked_in_at to registration
+     --
+     ALTER TABLE "registrations_registration" ADD COLUMN "checked_in_at" timestamp with time zone NULL;
+     --
+     … +10 lines
+
+⏺ Bash(date +%H:%M && python3 - <<'EOF')
+  ⎿  06:50
+
+⏺ Bash(printf -- '- **06:50** — задача 1.1 фазы 3: `get_org_event(user, id)` — в новом `events/services.py`, бросает `Http404` и `PermissionDenied` Django (DRF сам отдаёт 404 и 403), а не исключения DRF: сер)
+  ⎿  M  backend/config/urls.py
+     A  backend/events/services.py
+     M  backend/openapi.yaml
+     A  backend/registrations/migrations/0002_add_registration_checked_in_at.py
+     M  backend/registrations/models.py
+     M  backend/registrations/serializers.py
+     … +31 lines
+
+⏺ Задача 1.1 закоммичена (d6dd63e). Перехожу к 1.2, экрану чекина. Сначала правила фронтенда:
+
+⏺ Skill(fsd-frontend)
+  ⎿  Launching skill: fsd-frontend
+
+⏺ Bash(cd /home/raf/event-registration/frontend && cat AGENTS.md | sed -n 1,80p; cat src/app/router.ts; find src/pages/org-events src/pages/ticket -type f | head -20)
+  ⎿  # frontend/ — Vue 3 + Vite
+     
+     Команды и инструменты — `docs/development.md`, раздел «Frontend». Как писать код (слои, DI,
+     состояние, тесты) — skill `fsd-frontend`. Здесь — правила, которые действуют всегда.
+     
+     ## Карта
+     … +86 lines
+
+⏺ Bash(cat src/shared/config/routes.ts 2>/dev/null || ls src/shared/config; cat src/pages/ticket/api/ticket.ts src/pages/ticket/index.ts; cat src/pages/org-events/ui/OrgEventsPage.vue)
+  ⎿  // Every in-app path lives here: pages cannot import app/router.ts, and a path typed twice
+     // is a silent 404 after one of them changes.
+     export const routes = {
+       home: "/",
+       event: "/events/:id(\\d+)",
+       health: "/health",
+     … +100 lines
+
+⏺ Bash(cat src/pages/ticket/ui/TicketPage.vue | sed -n 1,80p; sed -n 1,70p src/pages/ticket/ui/TicketPage.test.ts; ls src/shared/ui/shadcn)
+  ⎿  <script setup lang="ts">
+     import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
+     import { computed, ref, watch } from "vue";
+     import { useI18n } from "vue-i18n";
+     import { useRoute } from "vue-router";
+     
+     … +150 lines
+
+⏺ Bash(sed -n 80,200p src/pages/ticket/ui/TicketPage.vue; cat src/pages/org-events/ui/OrgEventsPage.test.ts | sed -n 1,50p; ls src/pages/org-event-new/ui; grep -n "Input\|Label\|form" src/pages/org-event-new)
+  ⎿  <Card v-else-if="ticket">
+           <CardHeader>
+             <CardHeading :level="1" class="text-2xl">{{ ticket.event.title }}</CardHeading>
+             <p class="text-muted-foreground text-sm">{{ startsAt(ticket.event.starts_at) }}</p>
+           </CardHeader>
+           <CardContent class="grid gap-4">
+     … +135 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  10:  orgCheckin: "/org/events/:id(\\d+)/checkin",
+     22:export function checkinPath(eventId: number): string {
+     23:  return `/org/events/${eventId}/checkin`;
+     export { eventPath, routes, ticketPath } from "./routes";
+
+⏺ Bash(sed -i 's/export { eventPath, routes, ticketPath } from ".\/routes";/export { checkinPath, eventPath, routes, ticketPath } from ".\/routes";/' src/shared/config/index.ts && mkdir -p src/pages/org-chec)
+  ⎿  1:148:    "/api/org/events/{event_id}/checkin/": {
+
+⏺ Write(/home/raf/event-registration/frontend/src/pages/org-checkin/ui/OrgCheckinPage.vue)
+  ⎿  File created successfully at: /home/raf/event-registration/frontend/src/pages/org-checkin/ui/OrgCheckinPage.vue (file state is current in your context — no need to Read it back)
+
+⏺ Подключаю маршрут, добавляю ссылку «Чекин» в список событий организатора и пишу тест страницы:
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  title: "Workshop",
+                 description: "",
+                 starts_at: "2030-06-01T18:00:00Z",
+                 capacity: 30,
+                 confirmed: 12,
+                 waitlisted: 3,
+     … +54 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  (!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+       - import "./vite.config" without a file extension (vitest.config.ts:3:24). Add the file extension
+     Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+     
+      RUN  v5.0.5 /home/raf/event-registration/frontend
+     
+     … +5 lines
+
+⏺ Тесты страницы зелёные. Полная проверка:
+
+⏺ Bash(cd /home/raf/event-registration && make stack-check > /tmp/claude-1000/-home-raf-event-registration/31f9757f-faa6-4483-8ee8-ed59ed9a64cb/scratchpad/check.log 2>&1; echo exit=$?; grep -nE " passed| fai)
+  ⎿  exit=0
+     321:All checks passed!
+     363:============================= 188 passed in 58.09s =============================
+     386: Test Files  19 passed (19)
+     387:      Tests  134 passed (134)
+
+⏺ Bash(make stack-up > /tmp/claude-1000/-home-raf-event-registration/31f9757f-faa6-4483-8ee8-ed59ed9a64cb/scratchpad/up.log 2>&1; echo exit=$?; tail -3 /tmp/claude-1000/-home-raf-event-registration/31f9757f-)
+  ⎿  Exit code 2
+     exit=0
+      Container event-registration-s1-backend-1 Healthy 
+      Container event-registration-s1-postgres-1 Healthy 
+      Container event-registration-s1-frontend-1 Healthy 
+     sed: can't read e2e/helpers.ts: No such file or directory
+
+⏺ Bash(ls e2e e2e/tests; sed -n 1,80p e2e/tests/helpers.ts)
+  ⎿  e2e:
+     AGENTS.md
+     CLAUDE.md
+     eslint.config.js
+     node_modules
+     package.json
+     … +69 lines
+
+⏺ Bash(cat > /tmp/claude-1000/-home-raf-event-registration/31f9757f-faa6-4483-8ee8-ed59ed9a64cb/scratchpad/checkin-walk.cjs <<'EOF')
+  ⎿  register 201
+     code from email TWQMHRYL
+     url http://localhost:5174/org/events/1/checkin focused code
+     answer: Пропущен |  | Иван Петров |  | wa***@example.com
+     field after: "" focused code
+     answer: Билет не найден
+     … +6 lines
+
+⏺ Read(/tmp/claude-1000/-home-raf-event-registration/31f9757f-faa6-4483-8ee8-ed59ed9a64cb/scratchpad/checkin-ok.png)
+  ⎿  (no output)
+
+⏺ Экран выглядит как задумано. Отмечаю 1.2 и коммичу:
+
+⏺ Bash(sed -i 's/^- \[ \] 1.2 frontend:/- [x] 1.2 frontend:/' docs/features/checkin/tasks.md && git add -A frontend/src docs/features/checkin/tasks.md && git status --short && git commit -q -m "feat(frontend)
+  ⎿  M  docs/features/checkin/tasks.md
+     M  frontend/src/app/router.ts
+     A  frontend/src/pages/org-checkin/api/checkin.ts
+     A  frontend/src/pages/org-checkin/index.ts
+     A  frontend/src/pages/org-checkin/ui/OrgCheckinPage.test.ts
+     A  frontend/src/pages/org-checkin/ui/OrgCheckinPage.vue
+     … +24 lines
+
+⏺ Этап 1 закончен (d6dd63e, bc51af4). Перед ревью по процессу ещё `make stack-e2e`, потому что менялись API и UI:
+
+⏺ Bash(make stack-e2e > /tmp/claude-1000/-home-raf-event-registration/31f9757f-faa6-4483-8ee8-ed59ed9a64cb/scratchpad/e2e.log 2>&1; echo exit=$?; grep -nE "passed|failed|flaky|✘" /tmp/claude-1000/-home-raf-e)
+  ⎿  exit=0
+     183:  7 passed (15.3s)
+
+⏺ Agent(Review phase 3 stage 1)
+  ⎿  Async agent launched successfully. (This tool result is internal metadata — never quote or paste any part of it, including the agentId below, into a user-facing reply.)
+     agentId: a0bb84d158470403a (internal ID - do not mention to user. Use SendMessage with to: 'a0bb84d158470403a', summary: '<5-10 word recap>' to continue this agent.)
+     The agent is working in the background. You will be notified automatically when it completes. You know nothing about its results until that notification arrives — do not report, assume, or predict the
+     Do not duplicate this agent's work — avoid working with the same files or topics it is using.
+     output_file: /tmp/claude-1000/-home-raf-event-registration/6bfbff52-1473-4ae2-9d53-24cad3d73fca/tasks/a0bb84d158470403a.output
+     Do NOT Read or tail this file via the shell tool — it is the full subagent JSONL transcript and reading it will overflow your context. If the user asks for progress, say the agent is still running; yo
+
+⏺ Этап 1 фазы 3 (tracer bullet: чекин по коду от миграции до экрана) готов. Ревьюер по нему ещё работает, отчёт покажу целиком, когда придёт.
+  
+  **Что сделано за сессию:**
+  - **Процесс.** Правило «spec и задачи в `docs/features/<slug>/` у каждой фазы» записано в roadmap, `development.md`, `AGENTS.md` и skills (1c77d45).
+  - **Spec и задачи фазы 3:** [spec.md](docs/features/checkin/spec.md) и [tasks.md](docs/features/checkin/tasks.md), 4 этапа. `architecture.md` приведён к spec (9b4ad8a). Ваши решения записаны в лог: отказ после чекина запрещён, ответы чекина 200 / 409, чужое событие 403, email в ответе чекина с маской.
+  - **1.1 backend (d6dd63e):**
+    - поле `checked_in_at` и ограничение `CHECK (checked_in_at IS NULL OR status = 'confirmed')`;
+    - сервис `check_in`: один условный `UPDATE`, код принимается в любом регистре, с пробелами и дефисами;
+    - эндпоинт `POST /api/org/events/{id}/checkin/` возвращает имя и `masked_email`;
+    - `get_org_event` (403 / 404) в новом `events/services.py`.
+  - **1.2 frontend (bc51af4):** экран `/org/events/:id/checkin`. Крупный «Пропущен», или «Билет не найден», или ошибка. После ответа поле очищается и остаётся в фокусе. В списке событий организатора есть кнопка «Чекин».
+  
+  **Что проверено:**
+  - `make stack-check` проходит: backend 188 тестов, Vitest 134, линтеры и схема.
+  - `make stack-e2e`: 7 из 7.
+  - В браузере (headless Chromium на слоте 1) проверил весь путь. Код из письма в Mailpit, введённый как `twqm-HRYL`, дал «Пропущен — Иван Петров, wa\*\*\*@example.com», а `ZZZZZZZZ` — «Билет не найден». В консоли только сетевые записи об ожидаемых 401 (гость на странице входа) и 404. Скриншот: `/tmp/claude-1000/-home-raf-event-registration/31f9757f-faa6-4483-8ee8-ed59ed9a64cb/scratchpad/checkin-ok.png`.
+  
+  **Пока работает не так, как в spec:** повторный чекин и билет из листа ожидания сейчас отвечают 404. 200 `already_checked_in` и 409 появятся в задаче 2.1, это записано в лог.
+  
+  **Две поправки к моим прошлым сообщениям:**
+  - Правило «чужое событие → 403» уже было в логе с 2026-10-29 01:17. Вы его подтвердили, а моя запись 06:35 его дублирует, хотя противоречия нет.
+  - Строка про смену правила в `roadmap.md` попала не в коммит с правилом (1c77d45), а в коммит со spec (9b4ad8a).
+  
+  Стек слота 1 ещё поднят: понадобится для правок по ревью, потом остановлю (`make stack-down`).
+
+⏺ Пришёл отчёт ревьюера по этапу 1. По находке 1 ревьюер сам пишет, что в браузере её не воспроизводил. Прежде чем показать отчёт, проверяю её на слоте 1, чтобы приложить факт: Чекин → назад → снова Чекин, без перезагрузки.
+
+⏺ Bash(cat > /tmp/claude-1000/-home-raf-event-registration/31f9757f-faa6-4483-8ee8-ed59ed9a64cb/scratchpad/focus-walk.cjs <<'EOF')
+  ⎿  first visit focused: code
+     second visit focused: BODY
+
+⏺ Ревьюер закончил этап 1 фазы 3 (диапазон 9b4ad8a..bc51af4): четыре находки, все во фронтенде. Ниже его отчёт целиком, ничего не правил. Под находкой 1 добавил факт из своей проверки.
+  
+  ---
+  
+  ## Ревью этапа 1 фазы 3 (чекин), диапазон 9b4ad8a..bc51af4
+  
+  Коммиты на месте: d6dd63e (backend), bc51af4 (frontend).
+  
+  ### Находки (от важной к менее важной)
+  
+  **1. [OrgCheckinPage.vue:60](frontend/src/pages/org-checkin/ui/OrgCheckinPage.vue#L60) — корректность и расхождение со spec**
+  - **Что:** при первом показе фокус в поле кода ставит только HTML-атрибут `autofocus`. Скрипт ставит фокус (`show()`, строка 41) только после ответа сервера. В SPA браузер выполняет `autofocus` один раз за жизнь документа: если флаг autofocus processed уже стоит, атрибут у элемента, вставленного позже, игнорируется. Поэтому при повторном переходе на экран без перезагрузки (Чекин → список событий → Чекин) поле останется без фокуса. Тест проверяет фокус только после ответа, первый показ не проверяет. В браузере это не воспроизводилось, вывод сделан по спецификации HTML.
+  - **Почему важно:** spec, раздел UI, требует «поле кода с фокусом». У входа организатор первым делом вводит код, а без фокуса первый ввод пропадёт.
+  - **Исправление:** ставить фокус в `onMounted` через template ref, а не через атрибут. Тот же ref использовать в `show()` вместо `document.getElementById("code")`. Добавить в тест проверку `document.activeElement` сразу после монтирования.
+  
+  > **Факт (моя проверка в Chromium на слоте 1):** при первом заходе фокус в поле `code`, после «назад» и повторного перехода на Чекин фокус на `BODY`. Находка воспроизводится.
+  
+  **2. [OrgCheckinPage.vue:29](frontend/src/pages/org-checkin/ui/OrgCheckinPage.vue#L29) — ошибки и `AppError.kind`**
+  - **Что:** `onError` отделяет от остальных ошибок только `not_found`. Все другие ответы, включая 403 `forbidden` (чужое событие), 401 `unauthorized` (кончилась сессия) и 400, показывают одно и то же: «Не удалось отметить, повторите». Кроме того, 404 по несуществующему событию (spec: «нет события или нет такого кода») экран показывает как «Билет не найден», и так на каждый введённый код.
+  - **Почему важно:** если истекла сессия или открыто чужое событие, организатор у входа видит совет «повторите», хотя повтор никогда не поможет. При неверном id события каждого участника отвергают как «Билет не найден». Spec, раздел API, задаёт для этих случаев отдельные `kind`, а правило ревью требует различать ошибки по `kind`. Состояния этапа 2 («нет связи», «не подтверждён») сюда не входят, они ещё не сделаны.
+  - **Исправление:** для `unauthorized` и `forbidden` показывать свои тексты: «Сессия истекла — войдите снова» и «Это событие другого организатора». Либо записать в `docs/decisions.md`, что до этапа 3 эти статусы осознанно сведены к общей ошибке. Неверный id события ловить, когда появится `GET /api/org/events/{id}/` (этап 3), и показывать «Событие не найдено», а не ответ по билету.
+  
+  **3. [OrgCheckinPage.test.ts:87](frontend/src/pages/org-checkin/ui/OrgCheckinPage.test.ts#L87) — тесты**
+  - **Что:** тест называется «does not send an empty code», но проверяет только, что у кнопки есть `disabled`. Сам он отправляет форму через `trigger("submit")` в обход кнопки и не проверяет, ушёл ли запрос. Обработчика для `CHECKIN` в нём нет, а необработанный запрос в MSW даёт ошибку мутации, а не падение теста.
+  - **Почему важно:** если убрать защиту `code.value.trim() === ""` в `submit()` (строка 64), тест всё равно пройдёт. Название обещает то, что тест не проверяет.
+  - **Исправление:** через `server.use` повесить обработчик со счётчиком вызовов и проверить, что вызовов 0. Либо проверить, что нет `[role="alert"]` и `[data-answer]`.
+  
+  **4. [OrgCheckinPage.vue:40](frontend/src/pages/org-checkin/ui/OrgCheckinPage.vue#L40) — асинхронность и UI**
+  - **Что:** пока запрос идёт, поле не заблокировано (`<Input>`, строка 57, без `disabled` и `readonly`), а `show()` по ответу затирает `code.value = ""`.
+  - **Почему важно:** организатор, который начал вводить код следующего участника, пока ждёт ответа, потеряет набранное. Сценарий «следующий участник уже у стойки» прямо описан в комментарии к `show()`.
+  - **Исправление:** на время запроса сделать поле `readonly`, либо очищать его только если его значение всё ещё равно отправленному коду (`if (code.value === typed)`).
+  
+  ### Проверки
+  - `make -C .claude/worktrees/review stack-check SLOT=2` — прошло: backend 188 passed (среди них `test_checkin.py`: 12, `test_checkin_api.py`: 9), frontend lint и typecheck чистые, Vitest 134 passed, e2e lint и typecheck чистые.
+  - `make -C .claude/worktrees/review stack-e2e SLOT=2` — 7 passed. Сценария чекина в e2e пока нет, он запланирован на этап 4.
+  - Стек слота 2 остановлен, копия репозитория удалена.
+  
+  ### Решения из `docs/decisions.md`
+  - По записям 06:35, 06:41 и 06:50 ревьюер сам не поднимал, а значит и не снимал, такие кандидаты: 403 для чужого события и 404 для несуществующего; проверка события до разбора тела; поле и `CHECK` в одной миграции; нормализация кода в сервисе; повтор чекина и `waitlisted`/`cancelled` дают 404 до задачи 2.1; маска email на backend.
+  - Находок 1–4 ни одна запись не касается. Решений по задаче 1.2 (фронтенд) в логе нет.
+  
+  ### Проверено, находок нет
+  - **Атомарность:** условный `UPDATE … WHERE event, ticket_code, status=confirmed, checked_in_at IS NULL` внутри `atomic`, затем `get()`. `CHECK registration_checked_in_is_confirmed` есть и в модели, и в миграции, тест ограничения есть.
+  - **Миграция 0002:** новая, nullable-поле, существующие строки ограничению удовлетворяют. Закоммиченные миграции не тронуты.
+  - **Авторизация и CSRF:** `IsAuthenticated` по умолчанию даёт 401 без сессии, 403 для чужого события. Тест CSRF есть.
+  - **Схема:** `openapi.yaml` и `schema.d.ts` обновлены, `extend_schema` описывает 200, 400, 403 и 404.
+  - **Нормализация кода:** регистр, пробелы и дефис покрыты тестами. Маска email соответствует spec.
+  - **Тесты задачи 1.1:** все обещанные есть («отмечен», «неизвестный код», «код чужого события», «чужое событие», «нормализация»).
+  - **Админка:** `RegistrationAdmin` только для чтения, новое поле видно в режиме просмотра.
+  - **Персональные данные в логах:** нет, новых логов нет.
+  - **Фронтенд:** импорты идут вниз, путь берётся из `routes` и `checkinPath`, тексты в `<i18n>`, тест ссылки «Чекин» в списке есть. Двойной Enter отсекает `isPending`.
+  - **Мусор:** закомментированного кода, TODO, эмодзи, рекламного тона и `v-html` в diff нет.
+  
+  ### Не проверялось
+  - Экран в браузере ревьюер не открывал, в том числе пункт готовности «код из письма проходит» и поведение `autofocus` из находки 1.
+  - Тесты гонок по этому этапу не гонялись 20 раз: тестов гонки чекина в нём нет, это этап 2.
+  
+  ---
+  
+  Ваше решение нужно по каждой находке 1–4. По находке 2 ревьюер предлагает два варианта: сейчас показывать отдельные тексты для 401 и 403, или записать в лог, что до этапа 3 они сведены к общей ошибке. Неверный id события в любом случае относится к этапу 3. Решения запишу в `docs/decisions.md` и исправлю, потом будет повторное ревью только на коммиты с исправлениями. Стек слота 1 пока поднят.
+
+> 1. исправление - ок.
+  2. сейчас. в этапе 3 просто расширим.
+  3. исправление - ок.
+  4. readonly
+
+⏺ Принял все четыре решения. Сначала смотрю, как shadcn `Input` отдаёт DOM-элемент, чтобы поставить фокус через template ref:
+
+⏺ Bash(cd /home/raf/event-registration/frontend && cat src/shared/ui/shadcn/input/Input.vue; grep -rn "useTemplateRef\|onMounted" src --include=*.vue | head)
+  ⎿  <script setup lang="ts">
+     import type { HTMLAttributes } from "vue";
+     import { useVModel } from "@vueuse/core";
+     import { cn } from "@/shared/lib/class-names";
+     
+     const props = defineProps<{
+     … +30 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  ❯ src/pages/org-checkin/ui/OrgCheckinPage.test.ts (5 tests | 2 failed) 292ms
+          × puts the cursor into the code field when the screen opens 64ms
+          × lets a confirmed ticket in, shows who it is and is ready for the next code 158ms
+      FAIL  src/pages/org-checkin/ui/OrgCheckinPage.test.ts > OrgCheckinPage > puts the cursor into the code field when the screen opens
+      FAIL  src/pages/org-checkin/ui/OrgCheckinPage.test.ts > OrgCheckinPage > lets a confirmed ticket in, shows who it is and is ready for the next code
+      Test Files  1 failed (1)
+     … +1 lines
+
+⏺ Новый тест падает, как и ожидалось. Но упал и прежний тест фокуса после ответа, смотрю почему:
+
+⏺ Bash(pnpm exec vitest run src/pages/org-checkin 2>&1 | grep -A25 "FAIL .*lets a confirmed" | head -40)
+  ⎿  FAIL  src/pages/org-checkin/ui/OrgCheckinPage.test.ts > OrgCheckinPage > lets a confirmed ticket in, shows who it is and is ready for the next code
+     AssertionError: expected <input data-slot="input" …(5)></input> to be <input data-slot="input" …(5)></input> // Object.is equality
+     
+     If it should pass with deep equality, replace "toBe" with "toStrictEqual"
+     
+     Expected: <input data-slot="input" …(5)></input>
+     … +20 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  2
+           Tests  5 passed (5)
+
+⏺ Все 5 тестов зелёные. Прогоняю проверки фронтенда, записываю решение и коммичу исправление находки 1:
+
+⏺ Bash(cd /home/raf/event-registration && make check-frontend > /tmp/claude-1000/-home-raf-event-registration/31f9757f-faa6-4483-8ee8-ed59ed9a64cb/scratchpad/fe.log 2>&1; echo exit=$?; grep -E "error|Tests ")
+  ⎿  exit=0
+           Tests  135 passed (135)
+     07:13
+
+⏺ Bash(printf -- '- **07:13** — по ревью этапа 1 фазы 3, находка 1 (решение человека): фокус в поле кода при открытии экрана чекина ставит `onMounted` через template ref, а не атрибут `autofocus`. Почему: `a)
+  ⎿  ⋯ Backing up original state…
+     ✔ Done backing up original state (5717f08)!
+     ⋯ Running tasks for staged files…
+         frontend/**/*.{ts,vue,js} — 2 files
+           ⋯ pnpm --dir frontend exec eslint --fix
+           ⋯ prettier --write
+     … +13 lines
+
+⏺ Находка 2. Сначала тесты для 401 и 403, они должны упасть:
+
+⏺ Bash(cd /home/raf/event-registration/frontend && python3 - <<'EOF')
+  ⎿  × asks to sign in again when the session has ended 22ms
+          × says the event belongs to another organizer 18ms
+     ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+           Tests  2 failed | 5 passed (7)
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Tests  7 passed (7)
+
+⏺ 7 из 7. Проверки фронтенда и коммит:
+
+⏺ Bash(cd /home/raf/event-registration && make check-frontend > /tmp/claude-1000/-home-raf-event-registration/31f9757f-faa6-4483-8ee8-ed59ed9a64cb/scratchpad/fe.log 2>&1; echo exit=$?; grep -E "error|Tests ")
+  ⎿  exit=0
+           Tests  137 passed (137)
+     07:14
+
+⏺ Bash(printf -- '- **07:14** — по ревью этапа 1 фазы 3, находка 2 (решение человека): экран чекина различает ошибки по `AppError.kind` уже сейчас — `unauthorized` → «Сессия истекла — войдите снова» со ссылк)
+  ⎿  ⋯ Backing up original state…
+     ✔ Done backing up original state (e49e4af)!
+     ⋯ Running tasks for staged files…
+         frontend/**/*.{ts,vue,js} — 2 files
+           ⋯ pnpm --dir frontend exec eslint --fix
+           ⋯ prettier --write
+     … +13 lines
+
+⏺ Bash(cd /home/raf/event-registration/frontend && python3 - <<'EOF')
+  ⎿  1
+          × does not send an empty code 22ms
+     ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+           Tests  1 failed | 6 passed (7)
+           Tests  7 passed (7)
+      M src/pages/org-checkin/ui/OrgCheckinPage.test.ts
+     … +1 lines
+
+⏺ Без защиты тест падает, с защитой проходит, страница восстановлена (в `git status` изменён только тест). Коммичу:
+
+⏺ Bash(cd /home/raf/event-registration && date +%H:%M && printf -- '- **07:16** — по ревью этапа 1 фазы 3, находка 3 (решение человека): тест «пустой код не отправляется» считает запросы к чекину через обраб)
+  ⎿  07:15
+     ⋯ Backing up original state…
+     ✔ Done backing up original state (0004952)!
+     ⋯ Running tasks for staged files…
+         frontend/**/*.{ts,vue,js} — 1 file
+           ⋯ pnpm --dir frontend exec eslint --fix
+     … +14 lines
+
+⏺ Bash(sed -i 's/^- \*\*07:16\*\* — по ревью этапа 1 фазы 3, находка 3/- **07:15** — по ревью этапа 1 фазы 3, находка 3/' docs/decisions.md && git add docs/decisions.md && git commit -q --amend --no-edit && )
+  ⎿  ⋯ Backing up original state…
+     ✔ Done backing up original state (a65931a)!
+     ⋯ Running tasks for staged files…
+         *.{mjs,json,md,yml,yaml} — 1 file
+           ⋯ prettier --write
+     
+     … +9 lines
+
+⏺ Bash(cd /home/raf/event-registration/frontend && python3 - <<'EOF')
+  ⎿  × keeps the field read-only while the code is being checked 25ms
+     ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+     AssertionError: expected undefined to be defined
+           Tests  1 failed | 7 passed (8)
+
+⏺ Падает по ожидаемой причине. Добавляю `readonly` на время запроса:
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Tests  8 passed (8)
+     exit=0
+           Tests  138 passed (138)
+     07:16
+
+⏺ Bash(printf -- '- **07:16** — по ревью этапа 1 фазы 3, находка 4 (решение человека): поле кода на экране чекина — `readonly`, пока идёт запрос. Почему: ответ очищает поле, и код следующего участника, набра)
+  ⎿  ⋯ Backing up original state…
+     ✔ Done backing up original state (8b35b27)!
+     ⋯ Running tasks for staged files…
+         frontend/**/*.{ts,vue,js} — 2 files
+           ⋯ pnpm --dir frontend exec eslint --fix
+           ⋯ prettier --write
+     … +17 lines
+
+⏺ Bash(make stack-check > /tmp/claude-1000/-home-raf-event-registration/31f9757f-faa6-4483-8ee8-ed59ed9a64cb/scratchpad/check.log 2>&1; echo check=$?; grep -nE " passed| failed|  Tests " /tmp/claude-1000/-ho)
+  ⎿  check=0
+     363:============================= 188 passed in 58.42s =============================
+     386: Test Files  19 passed (19)
+     387:      Tests  138 passed (138)
+     e2e=0
+       7 passed (14.1s)
+     … +2 lines
+
+⏺ Agent(Re-review phase 3 stage 1 fixes)
+  ⎿  Async agent launched successfully. (This tool result is internal metadata — never quote or paste any part of it, including the agentId below, into a user-facing reply.)
+     agentId: a339f4b05e379c6de (internal ID - do not mention to user. Use SendMessage with to: 'a339f4b05e379c6de', summary: '<5-10 word recap>' to continue this agent.)
+     The agent is working in the background. You will be notified automatically when it completes. You know nothing about its results until that notification arrives — do not report, assume, or predict the
+     Do not duplicate this agent's work — avoid working with the same files or topics it is using.
+     output_file: /tmp/claude-1000/-home-raf-event-registration/6bfbff52-1473-4ae2-9d53-24cad3d73fca/tasks/a339f4b05e379c6de.output
+     Do NOT Read or tail this file via the shell tool — it is the full subagent JSONL transcript and reading it will overflow your context. If the user asks for progress, say the agent is still running; yo
+
+⏺ Все четыре находки этапа 1 исправлены по вашим решениям, отдельными коммитами. Каждое решение записано в `docs/decisions.md`. Повторное ревью только по исправлениям (bc51af4..7d53268) запущено, результат покажу целиком, как придёт.
+  
+  | # | Коммит | Что сделано |
+  | --- | --- | --- |
+  | 1 | 7131fcc | Фокус в поле кода ставится при открытии экрана, через template ref вместо `autofocus`. |
+  | 2 | a150359 | 401 → «Сессия истекла — войдите снова» со ссылкой «Войти», 403 → «Это событие другого организатора». |
+  | 3 | c57dc4f | Тест пустого кода считает запросы и ждёт 0. |
+  | 4 | 7d53268 | Поле `readonly`, пока идёт запрос. Выбрал `readonly`, а не `disabled`: поле остаётся в фокусе, и после ответа можно сразу печатать. |
+  
+  - **Находка 1.** Ref заодно исправил и хрупкий `getElementById("code")` в `show()`: упавший тест оставлял своё поле в документе, и следующий тест фокусировал чужое.
+  - **Находка 2.** «Событие не найдено» для несуществующего id добавил в задачу 3.2: экран чекина там начнёт загружать событие.
+  
+  Новые тесты падали до правок. Тест пустого кода я дополнительно проверил на падение: временно убрал защиту в `submit()`, он упал.
+  
+  **Проверки после исправлений:**
+  - `make stack-check`: backend 188, Vitest 138, всё зелёное.
+  - `make stack-e2e`: 7 из 7.
+  - В Chromium на слоте 1 фокус в поле теперь есть и при первом, и при повторном заходе на экран (до правки при повторном был `BODY`).
+  
+  Время в записи лога по находке 3 я сначала поставил на минуту позже, чем показал `date`. Исправил через amend, коммит ещё не был запушен.
+
+⏺ Пришло повторное ревью, две находки. Перед тем как показать, сверяю с кодом главное утверждение первой: что глобальный редирект на 401 уже есть.
+
+⏺ Bash(cd /home/raf/event-registration/frontend && sed -n 1,40p src/app/session-expiry.ts; grep -n "redirectOnExpiredSession" src/app/index.ts; grep -n "it(" src/app/session-expiry.test.ts)
+  ⎿  import type { QueryClient } from "@tanstack/vue-query";
+     import type { Router } from "vue-router";
+     
+     import { meQuery } from "@/entities/session";
+     import { AppError } from "@/shared/api";
+     import { routes } from "@/shared/config";
+     … +24 lines
+
+⏺ Повторное ревью этапа 1 фазы 3 по исправлениям (bc51af4..7d53268) готово, в нём две находки. Ниже отчёт целиком, ничего не правил. К находке 1 добавил факты из кода. Это был единственный разрешённый повтор ревью, дальше решаете вы.
+  
+  ---
+  
+  Повторное ревью этапа 1 фазы 3, диапазон bc51af4..7d53268. Это 4 коммита: 7131fcc, a150359, c57dc4f, 7d53268. Затронуты два файла: [OrgCheckinPage.vue](frontend/src/pages/org-checkin/ui/OrgCheckinPage.vue) и [OrgCheckinPage.test.ts](frontend/src/pages/org-checkin/ui/OrgCheckinPage.test.ts).
+  
+  ## Находки
+  
+  **1. OrgCheckinPage.vue:58 (и 91–94, ключи i18n `signedOut`/`signIn`) — мёртвый код, дублирует поведение слоя app**
+  
+  - **Что:** в приложении уже есть глобальный обработчик `redirectOnExpiredSession` ([session-expiry.ts:21–23](frontend/src/app/session-expiry.ts#L21-L23), подключён в `app/index.ts:15`).
+    - Он подписан на `MutationCache` и при любом 401 на маршруте с `requiresAuth` обнуляет `meQuery` и делает `router.replace(routes.login)`. Маршрут `/org/events/:id/checkin` как раз с `requiresAuth` (`app/router.ts:26`).
+    - Поэтому ветку `signedOut` с текстом «Сессия истекла — войдите снова» и ссылкой «Войти» в настоящем приложении не видно: страница размонтируется сразу после ошибки, в лучшем случае алерт мигнёт на миг.
+    - Тест «asks to sign in again when the session has ended» проходит только потому, что `mountPage` собирает роутер без `redirectOnExpiredSession` и без guard. Тест проверяет состояние, которого у пользователя не бывает.
+  - **Почему важно:**
+    - Для 401 находка 2 первого ревью фактически уже была закрыта глобальным редиректом, а в коде появились ветка, два сообщения и тест на сценарий, которого в приложении нет.
+    - Кто будет поддерживать экран, решит, что экран сам обрабатывает конец сессии, и сломает или задублирует общий механизм.
+    - Ветка и сама по себе работала бы неверно: пока пользователь ещё в кэше, ссылка «Войти» через guard (`router.ts:35`) вела бы обратно на `/org/events`.
+  - **Исправление:**
+    - Удалить ветку `signedOut`, ключи `signedOut`/`signIn`, импорт `routes`, тест на 401 и вспомогательный маршрут login в `mountPage`.
+    - Если нужна гарантия для 401: тест уровня app (смонтированный экран чекина + 401 → путь `/login`) или ссылка на существующий `session-expiry.test.ts:40` («sends the organizer to /login when a mutation gets 401»).
+    - Ветку `foreign` (403) оставить.
+  
+  > **Факты (сверил с кодом):** `redirectOnExpiredSession` есть и подключён в [app/index.ts:15](frontend/src/app/index.ts#L15). Он слушает и запросы, и мутации, срабатывает только на маршрутах с `requiresAuth`. Тест «sends the organizer to /login when a mutation gets 401» есть в [session-expiry.test.ts:40](frontend/src/app/session-expiry.test.ts#L40). То, что механизм уже есть, я пропустил, когда исправлял находку 2.
+  
+  **2. OrgCheckinPage.vue:41–45, 87–96, 98–114 — корректность UI (код до диапазона, но в том же файле и рядом с исправлением находки 2)**
+  
+  - **Что:** при ошибке, отличной от `not_found` (`failed`, `foreign`), `onError` не трогает `answer`. Если перед этим код прошёл, под красным алертом «Не удалось отметить, повторите» остаётся крупный зелёный блок «Пропущен — <Имя прошлого участника>». Блок относится к предыдущему коду, а в поле — текущий, неотмеченный.
+  - **Почему важно:** на входе организатор ориентируется по крупному зелёному блоку. При сетевом сбое на втором участнике экран показывает «Пропущен» с чужим именем, и участника могут пропустить без отметки. Позже это даст рассинхрон списка присутствующих.
+  - **Исправление:**
+    - В `onError` для остальных `kind` сбрасывать `answer.value = null` (или скрывать блок ответа, пока `failure !== null`).
+    - Добавить тест: успешный код, затем 500 на следующем; блока `[data-answer="checked_in"]` нет, алерт есть.
+    - Состояние «нет связи» запланировано на этап 2. Если правку откладывают туда, это нужно явно отметить, потому что поведение есть уже сейчас.
+  
+  > Здесь хочу отметить одно расхождение со spec, решать вам. В spec, раздел UI, сказано «„Нет связи, повторите“ (без смены последнего ответа)». Я так написал, чтобы при сбое не терялся последний ответ. Ревьюер прав в том, что зелёный «Пропущен» рядом с ошибкой читается как ответ на текущий код. Если принимаете его исправление, эту строку spec поправлю в том же коммите.
+  
+  ## Проверки
+  
+  - `make -C .claude/worktrees/review stack-check SLOT=2` на 7d53268 прошёл без ошибок. Vitest: 19 файлов, 138 тестов зелёные; lint и typecheck frontend и e2e чистые. Хвост вывода backend-части ревьюер не смотрел, но make завершился без Error.
+  - `stack-e2e SLOT=2`: 7 из 7 прошли. Сценариев чекина в e2e пока нет, они в этапе 4.
+  - `stack-down SLOT=2` и `review-worktree-remove` выполнены: копия удалена, тома и сеть слота 2 удалены.
+  
+  ## Что дали решения из docs/decisions.md
+  
+  - Находку 1 (дублирование 401) решение 07:14 не снимает. Его аргумент «совет „повторите“ при кончившейся сессии не помогает» верен, но 401 на этом маршруте уже перехватывает `redirectOnExpiredSession`: пользователь и так не увидит «повторите», его уводят на `/login`. Остаётся только 403 → `foreign`, и эта часть решения обоснована.
+  - Находку 2 (зелёный блок после сбоя) решения дня не затрагивают.
+  - Решения 07:13 (фокус через `onMounted` и template ref) и 07:16 (`readonly`, а не `disabled`; отклонён вариант «очищать, только если в поле тот же код») согласуются с кодом, претензий к ним нет.
+  
+  ## Проверено без находок
+  
+  - **Исправление 1 (фокус):** `onMounted(focusCode)` через `useTemplateRef` на обёртке. Комментарий объясняет причину (shadcn `Input` не отдаёт элемент), `Input.vue` это подтверждает. Тест «puts the cursor into the code field» проверяет `document.activeElement`. Тесты размонтируются в `afterEach`.
+  - **Исправление 2 (403):** различение по `AppError.kind`, а не по тексту. Текст 403 совпадает со spec («событие другого организатора» → `forbidden`).
+  - **Исправление 3:** тест пустого кода считает запросы через MSW. `enter()` вызывает `trigger("submit")` на форме в обход disabled-кнопки, поэтому без защиты в `submit()` тест падает.
+  - **Исправление 4:** `:readonly="isPending"`. `readonly` сохраняет фокус. Тест проверяет атрибут во время отложенного ответа MSW и его снятие после ответа. Повторный Enter во время запроса блокирует `isPending` в `submit()`.
+  - **Мусор:** закомментированного кода, TODO, эмодзи, `v-html`, console и пустых catch в diff нет. Пути через `routes`, тексты в локальном i18n.
+  
+  ## Не проверялось
+  
+  - Экран в браузере ревьюер не смотрел (у него нет браузера): появляется ли алерт на 401 до редиректа, работают ли фокус и `readonly` в реальном Chromium. Фокус в Chromium я проверял сам после исправлений: при первом и повторном заходе он в поле.
+  - Backend в диапазоне не менялся, поэтому не перепроверялся.
+  
+  ---
+  
+  По каждой находке нужно ваше решение. По находке 2 два варианта: исправить сейчас (и поправить строку spec про «без смены последнего ответа») или отложить в задачу 2.3 с явной пометкой в логе. Стек слота 1 пока поднят.
+
+> 1. нужно дописать на потом чтобы router.replace был с redirect или next. еще надо дописать на потом рефреш сессии, у нас же с этим нет проблем? "Удалить ветку signedOut, ключи signedOut/signIn, импорт routes, тест на 401 и вспомогательный маршрут login в mountPage." - ок.
+  2. что если блок "пропущен" показывать либо вместо формы либо вместо попапа, т.е. пока организатор не нажмет крестик или "ок" он не может вводить нового?
+
+⏺ Bash(cd /home/raf/event-registration/backend && grep -n "SESSION\|CSRF_COOKIE" config/settings.py; grep -rn "next\|redirect" ../frontend/src/pages/login/ui/LoginPage.vue | head -5)
+  ⎿  (Bash completed with no output)
+
+⏺ Bash(cd /home/raf/event-registration/frontend && python3 - <<'EOF')
+  ⎿  Tests  7 passed (7)
+
+⏺ Тесты зелёные, 7 из 7. Записываю два пункта в «на потом»:
+
+⏺ Bash(cd /home/raf/event-registration && python3 - <<'EOF')
+  ⎿  07:33
+
+⏺ Bash(make check-frontend > /tmp/claude-1000/-home-raf-event-registration/31f9757f-faa6-4483-8ee8-ed59ed9a64cb/scratchpad/fe.log 2>&1; echo exit=$?; grep -E "error|Tests " /tmp/claude-1000/-home-raf-event-r)
+  ⎿  exit=0
+           Tests  137 passed (137)
+     ⋯ Backing up original state…
+     ✔ Done backing up original state (a19fe99)!
+     ⋯ Running tasks for staged files…
+         frontend/**/*.{ts,vue,js} — 2 files
+     … +15 lines
+
+⏺ П. 1 сделан (cfede96): ветка 401 удалена вместе с текстами и тестом, оба пункта записаны в «на потом» в [tasks.md](docs/features/checkin/tasks.md), решение — в логе (07:33).
+  
+  **Про сессию.** Проблемы с «рефрешем» в том смысле, как у JWT, у нас нет: это сессия Django, обновлять токен не нужно. Но есть похожая проблема со сроком. Настроек сессии в `settings.py` нет, поэтому действуют умолчания Django:
+  - сессия живёт 2 недели с момента входа;
+  - активность её не продлевает (`SESSION_SAVE_EVERY_REQUEST = False`).
+  
+  Организатор, который вошёл 13 дней назад, может потерять сессию посреди чекина. Простое решение — скользящий срок (`SESSION_SAVE_EVERY_REQUEST = True`), но это запись в таблицу сессий на каждый запрос. Записал как вопрос без решения.
+  
+  **П. 2: ответ вместо формы, пока организатор не нажмёт «Следующий».** Идея хорошая, я бы сделал так.
+  
+  - **Не модальное окно, а панель на месте формы.** Модалка тянет за собой новый компонент (focus trap, закрытие по Esc и клику мимо), а панель — это тот же `v-if`. Выглядит так же крупно.
+  - **Кнопка «Следующий» сразу в фокусе, Enter её нажимает.** Для организатора это одно лишнее нажатие на участника: код, Enter, посмотрел, Enter. Мышь не нужна, очередь почти не замедлится.
+  - **Находка 2 решается сама.** Ответ виден только до «Следующий», а при новом коде формы с ошибкой рядом со старым зелёным блоком просто не бывает.
+  - **Ошибки запроса (сеть, 500, 403) остаются алертом над формой, а код в поле сохраняется.** Код не обработан, его нужно отправить ещё раз, поэтому прятать форму здесь не нужно.
+  - **`readonly` во время запроса остаётся,** «печатать вперёд» по-прежнему нельзя.
+  
+  Что поменяется:
+  - раздел UI в spec: «после ответа поле очищается и снова в фокусе» станет «ответ на месте формы до „Следующий“»; строка «без смены последнего ответа» уходит;
+  - `OrgCheckinPage.vue` и тесты;
+  - в задаче 2.3 состояния «уже отмечен» и «не подтверждён» тоже покажу этой панелью.
+  
+  Если согласны, сделаю это одним коммитом как исправление находки 2. Повторного ревью по правилу больше нет: проверю в браузере и покажу результат.
+
+> 1. "SESSION_SAVE_EVERY_REQUEST = True" дергать с фронтенда специальную ручку каждый час?
+  2. возможно еще стоит "на потом" добавить небольой таймер (1-2 секунды) с disabled на кнопку "следующий" чтобы не кликнуть случайно
+
+⏺ Разбираю оба вопроса, а пока пишу панель ответа вместо формы.
+
+⏺ Bash(grep -n "Чекин\*\*" -A8 docs/features/checkin/spec.md; grep -n "Двойной Enter" docs/features/checkin/spec.md; cat frontend/src/pages/org-checkin/ui/OrgCheckinPage.vue | sed -n 30,125p)
+  ⎿  60:- **Чекин** `/org/events/:id/checkin`: поле кода с фокусом, отправка по Enter, кнопка
+     61-  блокируется на время запроса. Крупный ответ на всю ширину: «Пропущен — Имя, iv\*\*\*@gmail.com» (зелёный),
+     62-  «Уже отмечен в ЧЧ:ММ — Имя» (жёлтый), «Билет не найден» (красный), «Билет не подтверждён:
+     63-  лист ожидания или отказ» (красный), «Нет связи, повторите» (без смены последнего ответа).
+     64-  После ответа поле очищается и снова в фокусе — следующий участник.
+     65-- **Страница билета** (фаза 2): отмеченный билет — «Вы отмечены на входе в ЧЧ:ММ», кнопки
+     … +100 lines
+
+⏺ Bash(cd /home/raf/event-registration/frontend && python3 - <<'EOF')
+  ⎿  59:  it("puts the cursor into the code field when the screen opens", async () => {
+     66:  it("lets a confirmed ticket in and shows who it is instead of the form", async () => {
+     87:  it("brings back an empty, focused field for the next participant", async () => {
+     101:  it("says the ticket is not found until the organizer moves on", async () => {
+     112:  it("keeps the code for a retry when the check-in fails", async () => {
+     126:  it("says the event belongs to another organizer", async () => {
+     … +8 lines
+
+⏺ Новые тесты падают, в том числе сценарий ревьюера (успех, затем 500). Переписываю страницу:
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  × keeps the field read-only while the code is being checked 29ms
+     ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+           Tests  1 failed | 7 passed (8)
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Tests  8 passed (8)
+
+⏺ Spec под новое поведение экрана, затем проверки и проход в браузере:
+
+⏺ Bash(cd /home/raf/event-registration && python3 - <<'EOF')
+  ⎿  109 docs/features/checkin/spec.md
+     exit=0
+           Tests  138 passed (138)
+     [This command modified 1 file you've previously read: docs/features/checkin/spec.md. Call Read before editing.]
+
+⏺ Bash(cat > /tmp/claude-1000/-home-raf-event-registration/31f9757f-faa6-4483-8ee8-ed59ed9a64cb/scratchpad/panel-walk.cjs <<'EOF')
+  ⎿  answer: Пропущен | Анна Смирнова | pa***@example.com | form visible: 1 | focused: code
+     after Enter: focused: code | value: ""
+     double Enter: answer on screen: 1 | focused: code
+     console errors: [
+       'Failed to load resource: the server responded with a status of 401 (Unauthorized)'
+     ]
+
+⏺ Bash(grep -n "frontend:" -A25 docker-compose.yml | grep -nE "volumes|src|command|build" ; grep -n "stack-up\|пересобр\|rebuild" docs/development.md | head -5)
+  ⎿  2:68-    build:
+     18:84-volumes:
+     121:| `make stack-up` / `stack-e2e` / `stack-down` `SLOT=<N>`       | стек слота (см. «E2E»): поднять / e2e против него / удалить с томами                     |
+     126:| `make schema`                                                 | пересобрать `backend/openapi.yaml` и типы фронтенда `schema.d.ts` после изменения API    |
+     424:  умолчанию плюс номер слота. Цели: `make stack-up` / `stack-e2e` / `stack-check` /
+
+⏺ Bash(make stack-up > /tmp/claude-1000/-home-raf-event-registration/31f9757f-faa6-4483-8ee8-ed59ed9a64cb/scratchpad/up.log 2>&1; echo up=$?; node /tmp/claude-1000/-home-raf-event-registration/31f9757f-faa6-)
+  ⎿  up=0
+     answer: Пропущен | Анна Смирнова | pa***@example.com | form visible: 0 | focused: Следующий
+     after Enter: focused: code | value: ""
+     double Enter: answer on screen: 1 | focused: Следующий
+     console errors: [
+       'Failed to load resource: the server responded with a status of 401 (Unauthorized)'
+     … +1 lines
+
+⏺ Read(/tmp/claude-1000/-home-raf-event-registration/31f9757f-faa6-4483-8ee8-ed59ed9a64cb/scratchpad/checkin-panel.png)
+  ⎿  (no output)
+
+⏺ Bash(grep -n "образ\|пересобира" docs/development.md | head -8)
+  ⎿  77:- `worker` — тот же образ `backend` с командой `python manage.py run_worker`: берёт из outbox
+     161:**4. Тест вперёд — для логики.** Сервисы backend, чистые функции, преобразования: сначала
+
+⏺ Bash(grep -n "stack-up" docs/development.md | head; grep -n "stack-up:" -A6 Makefile)
+  ⎿  121:| `make stack-up` / `stack-e2e` / `stack-down` `SLOT=<N>`       | стек слота (см. «E2E»): поднять / e2e против него / удалить с томами                     |
+     424:  умолчанию плюс номер слота. Цели: `make stack-up` / `stack-e2e` / `stack-check` /
+     141:stack-up: stack-slot ## Stack of slot SLOT: frontend on 5173+SLOT, Mailpit on 8025+SLOT
+     142-	$(STACK_COMPOSE) up -d --build --wait
+     143-
+     144-.PHONY: stack-e2e
+     … +3 lines
+
+⏺ Это нюанс окружения, а такие по правилу 5 записываются в `development.md`. Смотрю раздел про слоты:
+
+⏺ Bash(sed -n 418,432p docs/development.md)
+  ⎿  что запускает проверяющий; `make e2e` поднимает его сам. Другой адрес — `E2E_BASE_URL`.
+       Письма тесты читают через API Mailpit: `E2E_MAILPIT_URL` (по умолчанию
+       `http://localhost:8025`; `make stack-e2e` передаёт Mailpit своего слота). Ящик общий и не
+       чистится — тест ищет своё письмо по уникальному адресу получателя.
+     - Слоты — чтобы человек, агент и ревьюер работали одновременно. Слот — compose-проект
+       `event-registration-s<N>` со своими контейнерами, томами и портами: каждый порт — порт по
+     … +9 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Traceback (most recent call last):
+       File "<stdin>", line 11, in <module>
+       File "<stdin>", line 2, in rep
+     AssertionError: ('docs/features/checkin/tasks.md', '  продление. Решения пока нет.\n')
+     07:42
+
+⏺ Bash(grep -n "Решения пока нет" docs/features/checkin/tasks.md; git diff --stat)
+  ⎿  69:  продлением. Решения пока нет.
+      docs/development.md                                |  4 +-
+      docs/features/checkin/spec.md                      | 12 ++---
+      .../pages/org-checkin/ui/OrgCheckinPage.test.ts    | 38 +++++++++++++---
+      .../src/pages/org-checkin/ui/OrgCheckinPage.vue    | 52 ++++++++++++----------
+      4 files changed, 70 insertions(+), 36 deletions(-)
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  ⋯ Backing up original state…
+     ✔ Done backing up original state (29f9e5b)!
+     ⋯ Running tasks for staged files…
+         frontend/**/*.{ts,vue,js} — 2 files
+           ⋯ pnpm --dir frontend exec eslint --fix
+           ⋯ prettier --write
+     … +13 lines
+
+⏺ Финальная проверка этапа 1:
+
+⏺ Bash(make stack-check > /tmp/claude-1000/-home-raf-event-registration/31f9757f-faa6-4483-8ee8-ed59ed9a64cb/scratchpad/check.log 2>&1; echo check=$?; grep -nE " passed| failed|  Tests " /tmp/claude-1000/-ho)
+  ⎿  check=0
+     363:============================= 188 passed in 58.55s =============================
+     386: Test Files  19 passed (19)
+     387:      Tests  138 passed (138)
+     e2e=0
+       7 passed (12.2s)
+
+⏺ Этап 1 фазы 3 готов, все находки обоих ревью разобраны по вашим решениям. `make stack-check` зелёный (backend 188, Vitest 138), `make stack-e2e` проходит 7 из 7.
+  
+  **1. Пинг сессии раз в час не нужен.** Если включить `SESSION_SAVE_EVERY_REQUEST = True`, срок продлевает любой запрос организатора, а у входа запросы идут постоянно. Пинг из вкладки ещё и вреден: пока вкладка открыта, сессия не истекала бы вообще, в том числе на брошенном ноутбуке. Записал это в «на потом» рядом с вопросом о сроке сессии. Возврат на прежний экран после входа (`?next=`) тоже там.
+  
+  **2. Таймер на «Следующий» записал в «на потом».** Проверил в Chromium, что сейчас двойной Enter ответ не пропускает: второе нажатие приходит, пока идёт запрос, и отсекается. Убрать ответ непрочитанным может только Enter, нажатый уже после ответа, например при автоповторе клавиши.
+  
+  **Исправления после повторного ревью:**
+  - **Находка 1 (cfede96).** Убрал сообщение «Сессия истекла» вместе с тестом: при 401 приложение и так уводит на вход.
+  - **Находка 2 (552a2a5).** Ответ теперь стоит на месте формы, пока организатор не нажмёт «Следующий». Кнопка сразу в фокусе, Enter её нажимает, затем возвращается пустое поле в фокусе. Если запрос не прошёл, над формой появляется ошибка, а код остаётся в поле для повтора. Раздел UI в spec поправлен. Тест ревьюера «успех, затем 500» падал до правки.
+  - В Chromium проверил весь путь, скриншот: `/tmp/claude-1000/-home-raf-event-registration/31f9757f-faa6-4483-8ee8-ed59ed9a64cb/scratchpad/checkin-panel.png`.
+  
+  **Попутно нашёл нюанс окружения.** Исходники в стек слота не монтируются, фронтенд собирается в образ. Поэтому первый проход в браузере показал старую версию, пока я не пересобрал стек. Записал в [development.md](docs/development.md): после правки нужен `make stack-up`.
+  
+  По правилу «один этап — одна ветка и PR» этап 1 можно пушить и открывать PR «Phase 3, stage 1: check a ticket in by its code». Пушить и открывать PR? Или продолжить в этой же ветке этап 2 (повтор, 409, запрет отказа после чекина, обе гонки)? Стек слота 1 пока поднят.
+
+> пр
+
+⏺ Bash(gh pr view 10 --json body -q .body | head -40)
+  ⎿  ## Зачем
+     
+     До этапа 4 первая же ошибка SMTP роняла всю пачку: письма оставались `pending` без счёта
+     попыток, а если Mailpit долго недоступен, воркер бесконечно пробовал их снова. Этап 4 фазы 2
+     закрывает инварианты spec «ошибка SMTP не теряет письмо» и «два воркера не отправляют одно
+     письмо».
+     … +34 lines
+
+⏺ Bash(gh pr view 10 --json body -q .body | sed -n 40,80p)
+  ⎿  остановлен и запущен → воркер жив и отправил следующее письмо. Проверено через API и shell,
+       не в браузере.
+     - Ревью агентом `reviewer`: две находки (таймаут, перехват только `OSError`) исправлены.
+       Повторное ревью: одна находка — ошибка в коде выглядела в логе как сбой сети; теперь она
+       пишется как `ERROR` со стеком, без текста сообщения.
+     - Известное: Vitest `EventPage.test.ts:197` один раз упал у ревьюера и прошёл при повторе —
+     … +3 lines
+
+⏺ Пушу ветку. Хук `pre-push` проверит backend на Postgres слота 1:
+
+⏺ Bash(SLOT=1 git push -u origin feat/checkin 2>&1 | tail -6)
+  ⎿  remote: Create a pull request for 'feat/checkin' on GitHub by visiting:        
+     remote:      https://github.com/rbikbov/event-registration/pull/new/feat/checkin        
+     remote: 
+     To github.com:rbikbov/event-registration.git
+      * [new branch]      feat/checkin -> feat/checkin
+     branch 'feat/checkin' set up to track 'origin/feat/checkin'.
+
+⏺ Bash(cat > /tmp/claude-1000/-home-raf-event-registration/31f9757f-faa6-4483-8ee8-ed59ed9a64cb/scratchpad/pr-body.md <<'EOF')
+  ⎿  https://github.com/rbikbov/event-registration/pull/12
+
+⏺ Написано для: тех, кто ревьюит PR на GitHub.
+  
+  PR открыт: https://github.com/rbikbov/event-registration/pull/12, «Phase 3, stage 1: check a ticket in by its code». Ветка `feat/checkin` запушена, хук `pre-push` прошёл на Postgres слота 1.
+  
+  Описание построено по образцу PR #10: зачем, что изменилось, как проверено. В нём:
+  - смена правила процесса;
+  - модель, сервис, эндпоинт и экран;
+  - явная пометка, что повторный чекин пока отвечает 404 (исправится в этапе 2);
+  - итоги обоих ревью и пункты «на потом».
+  
+  CI на PR ещё идёт, результат я не смотрел. Могу дождаться его через `gh run watch` или начать этап 2 в новой ветке от `feat/checkin`. Стек слота 1 пока поднят.

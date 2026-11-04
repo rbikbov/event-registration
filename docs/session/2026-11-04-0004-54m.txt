@@ -1,0 +1,897 @@
+> /clear
+
+> Начинай 5.1
+
+⏺ Skill(session-handoff)
+  ⎿  Launching skill: session-handoff
+
+⏺ Bash(make worktime 2>&1 | tail -5; date '+%H:%M'; tail -15 docs/decisions.md; ls docs/features/)
+  ⎿  2026-11-03 18:50 → 2026-11-03 19:24  0 ч 34 мин
+     2026-11-03 19:27 → 2026-11-03 20:24  0 ч 57 мин
+     Итого: 51 ч 31 мин
+     Предупреждение: конец 2026-11-03 20:51: нет начала сессии
+     Предупреждение: сессия с 2026-11-03 23:55 не закрыта и не учтена
+     00:04
+     … +22 lines
+
+⏺ Bash(git log -3 --format='%ci %s'; sed -n '/Этап 5/,/Этап 6/p' docs/features/frontend-polish/tasks.md)
+  ⎿  2026-11-04 00:03:12 +0200 docs: show the past-events tab on the public list too
+     2026-11-04 00:00:14 +0200 docs: add past-events tabs and page-number pagination to phase 6, stage 5
+     2026-11-03 23:56:22 +0200 docs: plan phase 6, stage 5 from the deferred items
+     ## Этап 5. Отложенное: навигация, формы, списки событий
+     
+     Из «на потом» этой фазы и фазы 4 (решение от 2026-11-03 23:55). Spec — «Этап 5».
+     … +35 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  - **00:02** — вкладки «Предстоящие» / «Прошедшие» — и на `/`, фильтр `period` — у обоих списков (решение человека; отменяет «на `/` вкладки нет» из записи 00:00). Регистрацию на начавшееся событие не 
+     - **00:03** — ■ конец сессии
+     - **00:04** — ▶ начало сессии
+     feat/frontend-polish-stage-5
+     показ), пауза у «Следующий» на чекине, нестабильные тесты Vitest. Этап 5 — отложенное по ходу
+     фазы и постраничные списки событий: единственное место фазы, где меняются backend и API.
+     … +165 lines
+
+⏺ Bash(cd /home/raf/event-registration/frontend && cat src/app/ui/AppLayout.vue; grep -rln "aria-current\|RouterLink" src | grep -v test; ls src/shared/ui src/shared/ui/*)
+  ⎿  <script setup lang="ts">
+     import { useMutation, useQuery, useQueryClient } from "@tanstack/vue-query";
+     import { computed, watch } from "vue";
+     import { useI18n } from "vue-i18n";
+     import { useRoute, useRouter } from "vue-router";
+     
+     … +124 lines
+
+⏺ Bash(cat src/pages/org-event/ui/OrgEventLayout.vue; cat src/shared/ui/card-heading/*; cat src/shared/ui/AGENTS.md 2>/dev/null; ls src/pages/org-event/ui src/app/ui; grep -n "currentPath\|active\|exact" -r )
+  ⎿  <script setup lang="ts">
+     import { useQuery, useQueryClient } from "@tanstack/vue-query";
+     import { computed, ref, watch } from "vue";
+     import { useI18n } from "vue-i18n";
+     import { useRoute } from "vue-router";
+     
+     … +231 lines
+
+⏺ Bash(cat src/app/router.ts | head -80; cat src/shared/config/routes.ts 2>/dev/null || ls src/shared/config)
+  ⎿  import type { QueryClient } from "@tanstack/vue-query";
+     import { createRouter, type RouterHistory } from "vue-router";
+     
+     import { meQuery } from "@/entities/session";
+     import { EventPage } from "@/pages/event";
+     import { HealthPage } from "@/pages/health";
+     … +110 lines
+
+⏺ Bash(cat src/shared/ui/shadcn/button/index.ts; cat src/shared/ui/shadcn/button/Button.vue; grep -n "aria-current\|myEvents\|signIn\|tab" src/app/ui/AppLayout.test.ts src/pages/org-event/ui/OrgEventLayout.t)
+  ⎿  import type { VariantProps } from "class-variance-authority";
+     import { cva } from "class-variance-authority";
+     
+     export { default as Button } from "./Button.vue";
+     
+     export const buttonVariants = cva(
+     … +151 lines
+
+⏺ Bash(grep -n "secondary\|accent\|--primary" src/app/styles.css; grep -n "myEvents\|signIn\|aria-current" src/app/ui/AppLayout.test.ts | head)
+  ⎿  11:  --color-primary: var(--primary);
+     12:  --color-primary-foreground: var(--primary-foreground);
+     13:  --color-secondary: var(--secondary);
+     14:  --color-secondary-foreground: var(--secondary-foreground);
+     17:  --color-accent: var(--accent);
+     18:  --color-accent-foreground: var(--accent-foreground);
+     … +6 lines
+
+⏺ Bash(sed -n 1,80p src/app/ui/AppLayout.test.ts; ls src/shared/lib/test)
+  ⎿  import { focusManager, QueryClient, useQuery, VueQueryPlugin } from "@tanstack/vue-query";
+     import { flushPromises, mount } from "@vue/test-utils";
+     import { http, HttpResponse } from "msw";
+     import { afterEach, describe, expect, it, vi } from "vitest";
+     import { defineComponent, h } from "vue";
+     import { createMemoryHistory, createRouter, RouterView } from "vue-router";
+     … +77 lines
+
+⏺ Пишу тест компонента первым.
+
+⏺ Bash(mkdir -p src/shared/ui/nav-link && cat > src/shared/ui/nav-link/NavLink.test.ts <<'EOF')
+  ⎿  ⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯
+     
+     
+      Test Files  1 failed (1)
+           Tests  no tests
+        Start at  00:05:26
+     … +1 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Tests  5 passed (5)
+
+⏺ Компонент готов, тесты зелёные. Подключаю его в шапку и вкладки макета.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  docs/decisions.md                                  |  2 ++
+      frontend/src/app/ui/AppLayout.vue                  | 13 ++++-------
+      frontend/src/pages/org-event/ui/OrgEventLayout.vue | 27 ++++++++--------------
+      3 files changed, 16 insertions(+), 26 deletions(-)
+     }
+     
+     … +30 lines
+
+⏺ Bash(sed -n 80,140p src/app/ui/AppLayout.test.ts)
+  ⎿  server.use(http.get("*/api/auth/me/", () => HttpResponse.json({}, { status: 401 })));
+     
+         const { wrapper } = await mountLayout();
+         await flushPromises();
+     
+         expect(links(wrapper)).toEqual([
+     … +55 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Test Files  9 passed (9)
+           Tests  116 passed (116)
+
+⏺ Bash(cd /home/raf/event-registration && date '+%H:%M' && python3 - <<'EOF')
+  ⎿  00:06
+      docs/decisions.md                                  |  2 ++
+      docs/features/frontend-polish/tasks.md             |  2 +-
+      frontend/AGENTS.md                                 |  2 +-
+      frontend/src/app/ui/AppLayout.test.ts              | 25 ++++++++++++++++++++
+      frontend/src/app/ui/AppLayout.vue                  | 13 ++++-------
+     … +2 lines
+
+⏺ Bash(cat >> docs/decisions.md <<'EOF')
+  ⎿  M  docs/decisions.md
+     M  docs/features/frontend-polish/tasks.md
+     M  frontend/AGENTS.md
+     M  frontend/src/app/ui/AppLayout.test.ts
+     M  frontend/src/app/ui/AppLayout.vue
+     M  frontend/src/pages/org-event/ui/OrgEventLayout.vue
+     … +3 lines
+
+⏺ Перед коммитом — полная проверка `make stack-check` (слот 1).
+
+⏺ Bash(make stack-check > /tmp/claude-1000/-home-raf-event-registration/347e2a72-c17c-48d7-ac20-72996901fd31/scratchpad/check.log 2>&1; echo exit=$?; grep -iE "error|fail|✗|×" /tmp/claude-1000/-home-raf-even)
+  ⎿  exit=0
+     # fail 0
+     
+     > e2e@0.0.0 typecheck /home/raf/event-registration/e2e
+     > tsc --noEmit
+     
+     … +1 lines
+
+⏺ `make stack-check` прошёл. Коммичу.
+
+⏺ Bash(git commit -q -F - <<'EOF')
+  ⎿  ⋯ Backing up original state…
+     ✔ Done backing up original state (8c2fbc1)!
+     ⋯ Running tasks for staged files…
+         frontend/**/*.{ts,vue,js} — 6 files
+           ⋯ pnpm --dir frontend exec eslint --fix
+           ⋯ prettier --write
+     … +13 lines
+
+⏺ Задача 5.1 готова, коммит `47b0959`.
+  
+  **Что сделано**
+  - Добавил компонент `NavLink` (`frontend/src/shared/ui/nav-link/`): это ссылка в виде маленькой кнопки. Текущая страница выделена тёмной заливкой и получает `aria-current="page"`, остальные ссылки — прозрачные, как раньше были вкладки.
+  - В шапке через него теперь идут «Мои события» и «Вход для организатора». На вкладках макета события он заменил прежнюю ручную подсветку. Логотип «События» оставил обычной ссылкой.
+  - Текущая страница определяется по точному совпадению адреса. У вкладки «Участники» тот же путь, что у всего макета, и при нестрогом сравнении она подсвечивалась бы и на «Чекине». Из-за этого на странице события «Мои события» в шапке не выделены: раздел там показывают вкладки. Если хочется, чтобы шапка выделяла «Мои события» на всех страницах организатора, — скажите, переделаю.
+  - Подсветку более светлой заливкой (`secondary`) не взял: в нашей палитре она совпадает с цветом при наведении, и текущую ссылку нельзя было бы отличить от наведённой.
+  - Записал решение в `docs/decisions.md`, отметил задачу в `tasks.md`, добавил компонент в карту `frontend/AGENTS.md`.
+  
+  **Проверка**
+  - Тесты Vitest для компонента: подсвечена ровно одна нужная ссылка, «Участники» не подсвечены на «Чекине», на чужой странице ничего не подсвечено. Для шапки: подсвечена текущая ссылка у организатора и у гостя, на `/` в меню ничего не выделено.
+  - `make stack-check` прошёл.
+  - В браузере новый вид шапки я не смотрел и e2e не запускал.
+  
+  **Сессии**
+  - Сессия от 23:55 осталась незакрытой. Закрыл её временем последнего коммита (00:03) и начал новую в 00:04.
+  - `make worktime` ещё предупреждает, что у конца сессии 2026-11-03 20:51 нет начала: запись в 20:39 сделана без «▶». Прошлые записи не трогаю. Скажите, если её нужно поправить.
+  
+  Дальше — задача 5.2: курсор у кнопок.
+
+> Давай 5.2
+
+⏺ Bash(cd /home/raf/event-registration/frontend && cat src/app/styles.css | sed -n 1,10p; sed -n 60,200p src/app/styles.css; grep -rn "aria-disabled" src --include=*.vue | head)
+  ⎿  @import "tailwindcss";
+     @import "tw-animate-css";
+     
+     @custom-variant dark (&:is(.dark *));
+     
+     @theme inline {
+     … +5 lines
+
+⏺ Bash(wc -l src/app/styles.css; sed -n 30,80p src/app/styles.css; grep -rn "aria-disabled" src | head; grep -rn "disabled" src --include='*.vue' | grep -v shadcn | head -20)
+  ⎿  56 src/app/styles.css
+       --radius: 0.625rem;
+       --background: oklch(1 0 0);
+       --foreground: oklch(0.145 0 0);
+       --card: oklch(1 0 0);
+       --card-foreground: oklch(0.145 0 0);
+     … +42 lines
+
+⏺ Bash(cat src/shared/ui/shadcn/input/Input.vue | grep -o 'disabled:[a-z-]*' ; grep -n "stack-up\|stack-e2e\|stack-down\|STACK\|5174\|5173\|8001" ../Makefile | head -20)
+  ⎿  disabled:pointer-events-none
+     disabled:cursor-not-allowed
+     disabled:opacity-
+     11:up: ## Build and start the whole stack; open http://localhost:5173
+     131:STACK_POSTGRES_PORT = $(call slot_port,5432)
+     132:STACK_FRONTEND_PORT = $(call slot_port,5173)
+     … +17 lines
+
+⏺ Bash(cat >> src/app/styles.css <<'EOF')
+  ⎿  <p class="mt-2 text-xl wrap-anywhere">{{ answer.name }}</p>
+           </div>
+           <div v-else class="rounded-lg bg-red-600 p-6 text-white" :data-answer="answer.kind">
+             <p class="text-4xl font-bold">
+               {{ answer.kind === "not_found" ? t("notFound") : t("notConfirmed") }}
+             </p>
+     … +35 lines
+
+⏺ Bash(cd /home/raf/event-registration && sed -n 125,175p Makefile; grep -rn "demo@\|password" e2e/*.ts e2e/**/*.ts 2>/dev/null | head -5; ls e2e)
+  ⎿  # Slot stacks: separate compose projects with their own containers, volumes and ports, so
+     # the developer (slot 0, `make up`), the agent (slot 1) and the reviewer (slot 2) can run
+     # at the same time. Every port is the default plus the slot number. The project name is
+     # global to the Docker daemon, hence the repository prefix.
+     SLOT ?= 1
+     slot_port = $(shell echo $$(($(1) + $(SLOT))))
+     … +59 lines
+
+⏺ Bash((make stack-up && make stack-demo-users) 2>&1 | tail -4; ls e2e/tests)
+  ⎿  Container event-registration-s1-backend-1 Healthy 
+      Container event-registration-s1-frontend-1 Healthy 
+     POSTGRES_PORT=5433 BACKEND_PORT=8001 FRONTEND_PORT=5174 MAILPIT_PORT=8026 MAILPIT_SMTP_PORT=1026 docker compose -p event-registration-s1 exec backend python manage.py create_demo_users
+     Demo users are ready.
+     helpers.ts
+     organizer-checks-in.spec.ts
+     … +12 lines
+
+⏺ Bash(sed -n 1,40p e2e/tests/organizer-checks-in.spec.ts; grep -n "checkin" frontend/src/pages/org-checkin/api/*.ts | head; ls e2e/node_modules/ e2e/node_modules/@playwright)
+  ⎿  import { expect, test } from "@playwright/test";
+     
+     import {
+       collectConsoleErrors,
+       createEvent,
+       emailTo,
+     … +47 lines
+
+⏺ Bash(make stack-seed 2>&1 | tail -1; SP=/tmp/claude-1000/-home-raf-event-registration/347e2a72-c17c-48d7-ac20-72996901fd31/scratchpad; cat > $SP/cursor.cjs <<'EOF')
+  ⎿  Demo events 51 and 52 are ready.
+     login submit: Войти: pointer disabled=false aria-disabled=null
+     create submit: Создать: pointer disabled=false aria-disabled=null
+     checkin empty code: Отметить: not-allowed disabled=true aria-disabled=null
+     next in pause: Следующий: not-allowed disabled=false aria-disabled=true
+     next after pause: Следующий: pointer disabled=false aria-disabled=null
+     … +3 lines
+
+⏺ В браузере всё сходится. Обновляю задачи и лог решений, затем `make stack-check`.
+
+⏺ Bash(T=$(date '+%H:%M') && sed -i 's/^- \[ \] 5\.2\. Курсор кнопок/- [x] 5.2. Курсор кнопок/' docs/features/frontend-polish/tasks.md && cat >> docs/decisions.md <<EOF)
+  ⎿  exit=0
+     > tsc --noEmit
+     
+     make[1]: Leaving directory '/home/raf/event-registration'
+
+⏺ Bash(git add -A && git commit -q -F - <<'EOF' 2>&1 | tail -1; git log --oneline -1)
+  ⎿  ✔ Done cleaning up temporary files!
+     daae277 feat(frontend): show pointer and not-allowed cursors on buttons
+
+⏺ Задача 5.2 готова, коммит `daae277`.
+  
+  **Что сделано**
+  - Правила курсора лежат в `frontend/src/app/styles.css`, компоненты shadcn не тронуты.
+  - У активных кнопок курсор-рука (`pointer`). Его нужно было задать явно: Tailwind по умолчанию оставляет кнопкам обычную стрелку.
+  - У неактивных кнопок (`disabled` и `aria-disabled`) — `not-allowed`. Это правило пришлось вынести за пределы слоёв CSS. Кнопка shadcn отключает для неактивного состояния реакцию на указатель, и тогда курсор берётся у родителя. Перебить её стиль может только правило вне слоёв. Клик по неактивной кнопке браузер всё равно не отправляет.
+  - Побочный эффект: при наведении на неактивную кнопку немного меняется фон. Она полупрозрачная, поэтому это почти незаметно.
+  
+  **Проверка в браузере** (стек слота 1, Playwright смотрит курсор элемента под центром кнопки):
+  
+  | Кнопка | Курсор |
+  | --- | --- |
+  | «Войти», «Создать», «Выйти» без запроса, вкладки | `pointer` |
+  | «Отметить» с пустым кодом | `not-allowed` |
+  | «Следующий» в паузе | `not-allowed` |
+  | «Следующий» после паузы | `pointer` |
+  | «Выйти», пока идёт запрос | `not-allowed` |
+  
+  `make stack-check` прошёл. Решение записано в `docs/decisions.md`, задача отмечена в `tasks.md`.
+  
+  Стек слота 1 оставил запущенным, на нём демо-данные. Следующая задача — 5.3: ссылка на `/health` из блока ошибки и строка «Интернет».
+
+> Давай 5.3
+
+⏺ Bash(cd /home/raf/event-registration/frontend && cat src/shared/ui/query-state/QueryState.vue; ls src/pages/health/ui; cat src/pages/health/ui/HealthPage.vue)
+  ⎿  <script lang="ts">
+     import type { Ref } from "vue";
+     
+     // What a useQuery result gives; declared here so shared/ui does not depend on the query library.
+     export interface QueryStateSource<T> {
+       data: Readonly<Ref<T | undefined>>;
+     … +108 lines
+
+⏺ Bash(cat src/shared/ui/error-state/ErrorState.vue src/shared/ui/error-state/NotFound.vue; sed -n 1,60p src/shared/ui/query-state/QueryState.test.ts; cat src/pages/health/ui/HealthPage.test.ts; grep -n vueu)
+  ⎿  <script setup lang="ts">
+     // A screen-sized answer in place of the page content: nothing found, no access, nothing loaded.
+     // The heading level belongs to the page outline: 1 where this is all the page shows.
+     defineProps<{ title: string; text?: string; level: 1 | 2 }>();
+     defineSlots<{ actions?(): unknown }>();
+     </script>
+     … +195 lines
+
+⏺ Bash(grep -rn "@vueuse" src | head -3; grep -rln "QueryState\|query-state" src --include=*.vue | grep -v shared/ui)
+  ⎿  src/shared/ui/shadcn/textarea/Textarea.vue:3:import { useVModel } from "@vueuse/core";
+     src/shared/ui/shadcn/label/Label.vue:4:import { reactiveOmit } from "@vueuse/core";
+     src/shared/ui/shadcn/number-field/NumberFieldIncrement.vue:5:import { reactiveOmit } from "@vueuse/core";
+     (eval):1: no matches found: --include=*.vue
+
+⏺ Пишу тесты первыми: ссылка в блоке ошибки `QueryState` и строка «Интернет» на `/health`.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  × links a failed first load to the service status 13ms
+          × says whether the browser is online, and follows it going off and on 83ms
+          × shows backend and database status 9ms
+          × says the service does not answer on a 503 13ms
+     ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+           Tests  4 failed | 11 passed (15)
+
+⏺ Bash(pnpm exec vitest run src/pages/health 2>&1 | grep -A8 "FAIL" | head -40)
+  ⎿  FAIL  src/pages/health/ui/HealthPage.test.ts > HealthPage > says whether the browser is online, and follows it going off and on
+     Error: Unable to get [data-online] within: <div>
+       <h1 class="text-2xl font-semibold">Состояние сервиса</h1>
+       <!-- The backend answers 200 only when the database answers too: a loaded answer means both
+            work. A down database (503 from the backend) and a down backend (502 from the proxy) are
+            the same `server` error, so the error text names neither. -->
+     … +23 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  × says whether the browser is online, and follows it going off and on 71ms
+          × shows backend and database status 7ms
+          × says the service does not answer on a 503 12ms
+     ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+           Tests  3 failed | 3 passed (6)
+
+⏺ Bash(pnpm exec vitest run src/pages/health -t "shows backend" 2>&1 | grep -E "×|✓|Tests"; git stash -q; pnpm exec vitest run src/pages/health 2>&1 | grep -E "×|Tests"; git stash pop -q)
+  ⎿  Tests  1 passed | 5 skipped (6)
+           Tests  4 passed (4)
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  import RetryAlert from "./RetryAlert.vue";
+     
+     // A failed refetch (window focus, invalidation) keeps the data in TanStack Query and sets
+     // isError: the error goes above the data, which stays on screen, instead of replacing it.
+     const props = withDefaults(
+       defineProps<{
+     … +17 lines
+
+⏺ Bash(pnpm exec vitest run src/pages/health 2>&1 | grep -B2 -A25 "FAIL" | head -50)
+  ⎿  ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+     
+      FAIL  src/pages/health/ui/HealthPage.test.ts > HealthPage > says the service does not answer on a 503
+     Error: Unable to get [role="alert"] h2 within: <div>
+       <h1 class="text-2xl font-semibold">Состояние сервиса</h1>
+       <p class="mt-6" data-online="">Интернет: есть</p>
+     … +22 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Tests  15 passed (15)
+           Tests  15 passed (15)
+           Tests  15 passed (15)
+           Tests  15 passed (15)
+           Tests  15 passed (15)
+
+⏺ Bash(pnpm exec vitest run 2>&1 | grep -E "×|FAIL|Tests |Failed to resolve|router" | head -20)
+  ⎿  Tests  357 passed (357)
+
+⏺ Bash(cd /home/raf/event-registration && grep -n -A15 "^  frontend:" docker-compose.yml | grep -nE "volumes|src|target|command" )
+  ⎿  6:74-      target: ${FRONTEND_TARGET:-dev}
+
+⏺ Bash(make stack-up 2>&1 | tail -1; SP=/tmp/claude-1000/-home-raf-event-registration/347e2a72-c17c-48d7-ac20-72996901fd31/scratchpad; cat > $SP/health.cjs <<EOF)
+  ⎿  Container event-registration-s1-frontend-1 Healthy 
+     Интернет: есть
+     Интернет: нет
+     Интернет: есть
+
+⏺ Read(/tmp/claude-1000/-home-raf-event-registration/347e2a72-c17c-48d7-ac20-72996901fd31/scratchpad/home-error.png)
+  ⎿  (no output)
+
+⏺ Read(/tmp/claude-1000/-home-raf-event-registration/347e2a72-c17c-48d7-ac20-72996901fd31/scratchpad/health-offline.png)
+  ⎿  (no output)
+
+⏺ Bash(sed -i 's|<p class="mt-6" data-online>|<p class="mt-6 font-medium" data-online>|' frontend/src/pages/health/ui/HealthPage.vue && python3 - <<'EOF')
+  ⎿  69:- [x] 5.3. `/health` из интерфейса: в блоке первой ошибки `QueryState` — ссылка «Проверить
+     195:  — задача 5.3.
+     exit=0
+     [This command modified 1 file you've previously read: frontend/AGENTS.md. Call Read before editing.]
+
+⏺ Bash(git add -A && git commit -q -F - <<'EOF' 2>&1 | grep -iE "error|✖" ; git log --oneline -1)
+  ⎿  0d00b2a feat(frontend): link a failed load to /health and show the browser's connection there
+
+⏺ Задача 5.3 готова, коммит `0d00b2a`.
+  
+  **Что сделано**
+  - Если первая загрузка не удалась, `QueryState` теперь показывает ссылку «Проверить состояние сервиса» рядом с «Повторить». Ссылка ведёт на `/health`. На самой `/health` её нет: это решает параметр `healthLink`, а не проверка маршрута внутри `shared/ui`.
+  - На `/health` появилась строка «Интернет: есть / нет». Её даёт `useOnline` из `@vueuse/core`: пакет уже был в зависимостях, он следит за `navigator.onLine` и событиями `online` / `offline`.
+  - В `HealthPage.test.ts` пришлось поправить ожидание старых тестов. Когда новый тест встал первым, тест «503» застревал на «Загружаем…»: ответ MSW приходил позже, чем срабатывал `flushPromises()`. Это та нестабильность, что запланирована на этап 6. В этом файле тесты теперь ждут результат через `vi.waitFor`; в остальных файлах эту правку не делал.
+  
+  **Проверка**
+  - Vitest: ссылка есть в блоке ошибки и её нет на `/health`; строка меняется по событиям `offline` и `online`. Весь Vitest — 357 тестов прошли; файлы `HealthPage` и `QueryState` прогнал пять раз подряд, все зелёные.
+  - В браузере на ширине 360 px, на пересобранном стеке слота 1:
+    - при ошибке списка на `/` ссылка видна и ведёт на `/health`;
+    - после отключения сети в браузере строка показывает «нет», после включения — снова «есть».
+  - `make stack-check` прошёл.
+  
+  Следующая задача — 5.4, формы. В ней есть вопрос, который нужно решить с вами: счётчик символов под полями («5/100») или библиотека форм вместо ручного кода. Сначала изучу оба варианта на наших формах создания и редактирования и вернусь с рекомендацией.
+
+> не нравится. или убрать вообще или сделать как-то логичнее
+
+⏺ AskUserQuestion()
+  ⎿  Your questions have been answered: "Блок ошибки загрузки (на «/» и других экранах): ссылку «Проверить состояние сервиса» под «Повторить» как переделать?"="Вторая кнопка в ряд" selected preview:
+        Не удалось загрузить события
+     
+      [ Повторить ] [ Состояние сервиса ]. You can now continue with these answers in mind.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  docs/features/frontend-polish/spec.md:109:- **`/health` из интерфейса**: в блоке первой ошибки `QueryState` — кнопка-ссылка «Состояние
+     docs/features/frontend-polish/tasks.md:69:- [x] 5.3. `/health` из интерфейса: в блоке первой ошибки `QueryState` — кнопка-ссылка «Состояние
+     docs/features/frontend-polish/tasks.md:193:  — кнопка-ссылка «Состояние сервиса» рядом с «Повторить»; на `/health` — строка «Интернет» по
+
+⏺ Bash(git diff docs/features/frontend-polish/tasks.md | head -30)
+  ⎿  diff --git a/docs/features/frontend-polish/tasks.md b/docs/features/frontend-polish/tasks.md
+     index 23b1b60..d81f44f 100644
+     --- a/docs/features/frontend-polish/tasks.md
+     +++ b/docs/features/frontend-polish/tasks.md
+     @@ -66,8 +66,8 @@ Spec — `spec.md`. Одна задача — один коммит; отмет
+      - [x] 5.2. Курсор кнопок: `pointer` при наведении, `not-allowed` у неактивной (`disabled` и
+     … +18 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Tests  15 passed (15)
+
+⏺ Тесты зелёные. Пересобираю стек и смотрю блок ошибки на 360 px.
+
+⏺ Bash(cd /home/raf/event-registration && make stack-up 2>&1 | tail -1; SP=/tmp/claude-1000/-home-raf-event-registration/347e2a72-c17c-48d7-ac20-72996901fd31/scratchpad; sed -i 's/Проверить состояние сервиса)
+  ⎿  Container event-registration-s1-frontend-1 Healthy 
+     Интернет: есть
+     Интернет: нет
+     Интернет: есть
+
+⏺ Read(/tmp/claude-1000/-home-raf-event-registration/347e2a72-c17c-48d7-ac20-72996901fd31/scratchpad/home-error.png)
+  ⎿  (no output)
+
+⏺ Обе кнопки помещаются в одну строку на 360 px. Прогоняю `make stack-check` и коммичу.
+
+⏺ Bash(make stack-check > /tmp/claude-1000/-home-raf-event-registration/347e2a72-c17c-48d7-ac20-72996901fd31/scratchpad/check.log 2>&1; echo exit=$?; git add -A && git commit -q -F - <<'EOF' 2>&1 | grep -iE )
+  ⎿  exit=0
+     d5098dc fix(frontend): offer the service status as a second button beside the retry
+
+⏺ Bash(cd /home/raf/event-registration/frontend && python3 - <<'EOF')
+  ⎿  diff --git a/frontend/src/pages/health/ui/HealthPage.test.ts b/frontend/src/pages/health/ui/HealthPage.test.ts
+     index 969e9ca..ef35fdd 100644
+     --- a/frontend/src/pages/health/ui/HealthPage.test.ts
+     +++ b/frontend/src/pages/health/ui/HealthPage.test.ts
+     @@ -21,6 +21,19 @@ function mountPage() {
+      }
+     … +57 lines
+
+⏺ Теперь — текст про интернет в блоке ошибки `QueryState`, тест вперёд.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  × says the browser is offline when the first load failed, and follows the connection 22ms
+     ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+           Tests  1 failed | 9 passed (10)
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  20:import { ErrorState } from "@/shared/ui/error-state";
+     70:    <ErrorState
+     84:    </ErrorState>
+           Tests  15 passed (15)
+
+⏺ Тесты зелёные. Обновляю spec, задачи и карту фронтенда под новое решение.
+
+⏺ Bash(cd /home/raf/event-registration && grep -n "Интернет\|online" docs/features/frontend-polish/spec.md docs/features/frontend-polish/tasks.md frontend/AGENTS.md | grep -v "^docs/features/frontend-polish/)
+  ⎿  docs/features/frontend-polish/tasks.md:70:      сервиса» рядом с «Повторить»; на `/health` — строка «Интернет» по `navigator.onLine` и событиям
+     docs/features/frontend-polish/tasks.md:71:      `online` / `offline`. Готово, когда: Vitest — ссылка в блоке ошибки, строка меняется по
+     docs/features/frontend-polish/tasks.md:72:      событиям `offline` и `online`.
+     docs/features/frontend-polish/spec.md:110:  сервиса» рядом с «Повторить»; на `/health` — строка «Интернет: есть / нет» по `navigator.onLine` и
+     docs/features/frontend-polish/spec.md:111:  событиям `online` / `offline`. Это не офлайн-баннер: строка только на `/health`.
+     docs/features/frontend-polish/spec.md:174:| Ошибка загрузки — ссылка на `/health`; на `/health` строка «Интернет» по `offline` / `online`   | Vitest |
+     … +11 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  docs/decisions.md                                  |  1 +
+      docs/features/frontend-polish/spec.md              |  6 ++--
+      docs/features/frontend-polish/tasks.md             |  6 ++--
+      frontend/AGENTS.md                                 |  2 +-
+      frontend/src/pages/health/ui/HealthPage.test.ts    | 32 ++--------------------
+      frontend/src/pages/health/ui/HealthPage.vue        |  9 +-----
+     … +4 lines
+
+⏺ Проверяю в браузере (без сети на `/`), затем `make stack-check`.
+
+⏺ Bash(make stack-up 2>&1 | tail -1; SP=/tmp/claude-1000/-home-raf-event-registration/347e2a72-c17c-48d7-ac20-72996901fd31/scratchpad; cat > $SP/offline.cjs <<EOF)
+  ⎿  Container event-registration-s1-frontend-1 Healthy 
+     health text: Состояние сервиса | Backend и база данных работают
+
+⏺ Bash(cd /home/raf/event-registration/frontend && cat src/app/query-client.ts | head -40)
+  ⎿  import { QueryClient } from "@tanstack/vue-query";
+     
+     import { AppError } from "@/shared/api";
+     
+     // A retry can fix only a lost connection or a server failure, never a 4xx.
+     function shouldRetry(failureCount: number, error: unknown): boolean {
+     … +13 lines
+
+⏺ Режим `networkMode: "always"` — значит, без сети запрос падает и блок ошибки покажется. Проверяю это в браузере.
+
+⏺ Bash(cd /home/raf/event-registration && SP=/tmp/claude-1000/-home-raf-event-registration/347e2a72-c17c-48d7-ac20-72996901fd31/scratchpad; cat > $SP/offline.cjs <<EOF)
+  ⎿  offline: Не удалось загрузить событие | Нет подключения к интернету | Повторить | Состояние сервиса
+     online: Не удалось загрузить событие | Повторить | Состояние сервиса
+
+⏺ Read(/tmp/claude-1000/-home-raf-event-registration/347e2a72-c17c-48d7-ac20-72996901fd31/scratchpad/event-offline.png)
+  ⎿  (no output)
+
+⏺ Bash(make stack-check > /tmp/claude-1000/-home-raf-event-registration/347e2a72-c17c-48d7-ac20-72996901fd31/scratchpad/check.log 2>&1; echo exit=$?; git add -A && git commit -q -F - <<'EOF' 2>&1 | grep -iE )
+  ⎿  exit=0
+     ce574c4 feat(frontend): say "no internet" in the failed-load block instead of on /health
+
+⏺ Сделал оба изменения, коммиты `d5098dc` и `ce574c4`.
+  
+  **Кнопка «Состояние сервиса»** теперь стоит рядом с «Повторить» в одну строку, такого же вида. На ширине 360 px обе помещаются.
+  
+  **Строки «Интернет» на `/health` больше нет.** Вместо неё блок ошибки загрузки без сети пишет под заголовком «Нет подключения к интернету». Когда сеть возвращается, текст исчезает. Пока сеть есть, ничего про интернет не пишется: браузер точно знает только об отсутствии сети, а «сеть есть» ещё не значит, что сервер отвечает.
+  
+  **Проверка**
+  - Vitest: текст появляется по событию `offline` и уходит по `online`.
+  - В браузере на 360 px: открыл список, отключил сеть, перешёл на событие. Показались «Не удалось загрузить событие», «Нет подключения к интернету» и две кнопки; после включения сети строка про интернет пропала.
+  - `make stack-check` прошёл.
+  
+  Плашку, которая появляется над уже загруженными данными, когда их не удалось обновить, я не менял: в ней нет ни текста про интернет, ни кнопки «Состояние сервиса». Если их нужно добавить и туда, скажите.
+  
+  Spec, задачи и лог решений обновлены. Следующая задача — 5.4: выбор между счётчиком символов и библиотекой форм.
+
+> в блоках запросов типа "Не удалось войти, попробуйте позже" и "Не удалось создать событие, попробуйте позже" и тп как будто должно быть про интернет если его нет у пользователя
+
+⏺ Bash(cd /home/raf/event-registration/frontend && grep -rn "попробуйте позже\|повторите\"" src --include=*.vue; grep -rn 'variant="destructive"' src --include=*.vue | grep -v shadcn)
+  ⎿  (eval):1: no matches found: --include=*.vue
+
+⏺ Bash(cd /home/raf/event-registration/frontend && grep -rn "попробуйте позже\|повторите\"" src | grep -v test; echo ---; grep -rn 'Alert v-if\|<Alert' src | grep -v "shadcn\|test" )
+  ⎿  src/app/ui/AppLayout.vue:80:  "signOutError": "Не удалось выйти, повторите"
+     src/pages/org-event-new/ui/OrgEventNewPage.vue:158:  "tryLater": "Не удалось создать событие, попробуйте позже",
+     src/pages/login/ui/LoginPage.vue:108:  "tryLater": "Не удалось войти, попробуйте позже",
+     src/pages/org-checkin/ui/OrgCheckinPage.vue:170:  "failed": "Не удалось отметить, повторите",
+     src/pages/org-checkin/ui/OrgCheckinPage.vue:172:  "offline": "Нет связи, повторите",
+     src/pages/ticket/ui/TicketPage.vue:170:  "cancelFailed": "Не удалось отказаться, попробуйте позже"
+     … +30 lines
+
+⏺ Bash(grep -n "offline\|failure\|network" src/pages/org-checkin/ui/OrgCheckinPage.vue | head -20; grep -n "submitError\|tryLater\|network" src/pages/login/ui/LoginPage.vue src/pages/event/ui/EventPage.vue |)
+  ⎿  87:const failure = computed(() => {
+     90:  if (error.value instanceof AppError && error.value.kind === "network") return "offline";
+     159:    <Alert v-if="failure" variant="destructive" class="mt-6" role="alert">
+     160:      <AlertDescription>{{ t(failure) }}</AlertDescription>
+     172:  "offline": "Нет связи, повторите",
+     src/pages/login/ui/LoginPage.vue:38:const submitError = computed(() => {
+     … +25 lines
+
+⏺ Bash(cat src/shared/ui/query-state/RetryAlert.vue; sed -n 55,70p src/pages/login/ui/LoginPage.vue; sed -n 120,135p src/pages/ticket/ui/TicketPage.vue; cat src/shared/ui/shadcn/alert/AlertDescription.vue | )
+⏺ Bash(sed -n 1,80p src/pages/login/ui/LoginPage.test.ts)
+  ⎿  import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
+     import { flushPromises, mount } from "@vue/test-utils";
+     import { http, HttpResponse } from "msw";
+     import { describe, expect, it } from "vitest";
+     import { createMemoryHistory, createRouter } from "vue-router";
+     
+     … +73 lines
+
+  ⎿  <script setup lang="ts">
+     import { useI18n } from "vue-i18n";
+     
+     import { Alert, AlertDescription } from "@/shared/ui/shadcn/alert";
+     import { Button } from "@/shared/ui/shadcn/button";
+     
+     … +60 lines
+
+⏺ Bash(cat src/shared/lib/test/setup.ts; grep -n "restoreMocks\|mockReset" vite.config.ts vitest.config.ts 2>/dev/null)
+  ⎿  import { afterAll, afterEach, beforeAll } from "vitest";
+     
+     import { server } from "./msw";
+     
+     beforeAll(() => server.listen({ onUnhandledFrame: "error" }));
+     afterEach(() => server.resetHandlers());
+     … +2 lines
+
+⏺ Bash(mkdir -p src/shared/ui/offline-hint && cat > src/shared/lib/test/online.ts <<'EOF')
+  ⎿  Tests  11 passed (11)
+
+⏺ Компонент готов. Встраиваю его в `ErrorState`/`QueryState`, `RetryAlert` и алерты форм.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  src/pages/login/ui/LoginPage.vue:11:import { OfflineHint } from "@/shared/ui/offline-hint";
+     src/pages/login/ui/LoginPage.vue:12:import { Alert, AlertDescription } from "@/shared/ui/shadcn/alert";
+     src/pages/login/ui/LoginPage.vue:66:<OfflineHint />
+     src/pages/event/ui/EventPage.vue:18:import { OfflineHint } from "@/shared/ui/offline-hint";
+     src/pages/event/ui/EventPage.vue:19:import { Alert, AlertDescription } from "@/shared/ui/shadcn/alert";
+     src/pages/event/ui/EventPage.vue:172:<OfflineHint />
+     … +15 lines
+
+⏺ Bash(sed -n 62,70p src/pages/login/ui/LoginPage.vue; git diff --stat)
+  ⎿  <form class="grid gap-4" novalidate @submit.prevent="submit">
+               <Alert v-if="submitError" variant="destructive" role="alert">
+                 <AlertDescription>
+                   <p>{{ submitError }}</p>
+                   <OfflineHint />
+                 </AlertDescription>
+     … +15 lines
+
+⏺ Добавляю тесты: `RetryAlert` и страница входа (сетевая ошибка без сети).
+
+⏺ Bash(cat src/shared/ui/query-state/RetryAlert.test.ts | head -30; grep -n "tryLater\|попробуйте позже\|HttpResponse.error\|network" src/pages/login/ui/LoginPage.test.ts)
+  ⎿  import { mount } from "@vue/test-utils";
+     import { describe, expect, it } from "vitest";
+     
+     import { createAppI18n } from "@/shared/lib/i18n";
+     
+     import { RetryAlert } from ".";
+     … +25 lines
+
+⏺ Bash(sed -n 135,150p src/pages/login/ui/LoginPage.test.ts)
+  ⎿  await fill(wrapper, "demo@example.com", "wrong");
+     
+         expect(wrapper.get('[role="alert"]').text()).toBe("Неверный email или пароль");
+         expect(router.currentRoute.value.path).toBe(routes.login);
+       });
+     
+     … +10 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  × says there is no internet when the request fails offline 52ms
+     ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+      FAIL  src/pages/login/ui/LoginPage.test.ts > LoginPage > says there is no internet when the request fails offline
+           Tests  1 failed | 359 passed (360)
+
+⏺ Bash(pnpm exec vitest run src/pages/login 2>&1 | grep -A12 "FAIL" | head -30; grep -n "networkMode\|QueryClient(" src/pages/login/ui/LoginPage.test.ts)
+  ⎿  FAIL  src/pages/login/ui/LoginPage.test.ts > LoginPage > says there is no internet when the request fails offline
+     Error: Unable to get [role="alert"] within: <div class="mx-auto max-w-sm sm:mt-8">
+       <div data-slot="card" class="bg-card text-card-foreground flex flex-col gap-6 rounded-xl border py-6 shadow-sm w-full">
+         <div data-slot="card-header" class="@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 px-6 has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-6">
+           <h1 data-slot="card-title" class="font-semibold text-2xl leading-tight">Вход для организатора</h1>
+         </div>
+     … +8 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Tests  360 passed (360)
+
+⏺ Весь Vitest зелёный. Проверяю в браузере: вход без сети, затем `make stack-check`.
+
+⏺ Bash(cd /home/raf/event-registration && make stack-up 2>&1 | tail -1; SP=/tmp/claude-1000/-home-raf-event-registration/347e2a72-c17c-48d7-ac20-72996901fd31/scratchpad; cat > $SP/login-offline.cjs <<EOF)
+  ⎿  Container event-registration-s1-frontend-1 Healthy 
+     offline: Не удалось войти, попробуйте позже | Нет подключения к интернету
+     online: Не удалось войти, попробуйте позже
+
+⏺ Read(/tmp/claude-1000/-home-raf-event-registration/347e2a72-c17c-48d7-ac20-72996901fd31/scratchpad/login-offline.png)
+  ⎿  (no output)
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  1
+     exit=0
+
+⏺ Bash(git add -A && git commit -q -F - <<'EOF' 2>&1 | grep -iE "error|✖"; git log --oneline -1)
+  ⎿  5e28b94 feat(frontend): say "no internet" under every failed request while offline
+
+⏺ Готово, коммит `5e28b94`. Если сети нет, строка «Нет подключения к интернету» теперь стоит под текстом ошибки во всех блоках ошибок запросов. Текст самой ошибки не меняется, а когда сеть возвращается, строка пропадает.
+  
+  **Где строка показывается**
+  - Ошибки отправки: вход, создание и сохранение события, регистрация, отказ от билета, выход.
+  - Блок «Не удалось загрузить…» и плашка «Не удалось обновить…» над уже загруженными данными.
+  - Текст живёт в одном месте — в новом компоненте `OfflineHint` в `shared/ui`.
+  
+  Чекин не трогал: при сетевой ошибке он и так пишет «Нет связи, повторите».
+  
+  **Проверка**
+  - Vitest: компонент, плашка обновления и страница входа без сети. Весь Vitest — 360 тестов прошли.
+  - В браузере на 360 px: отключил сеть и нажал «Войти». Появилось «Не удалось войти, попробуйте позже» и под ним «Нет подключения к интернету». После включения сети вторая строка ушла.
+  - `make stack-check` прошёл.
+  
+  Без сети фраза «попробуйте позже» над строкой про интернет звучит не совсем к месту. Можно для этого случая заменить её на «Не удалось войти» без «попробуйте позже», скажите, если нужно.
+  
+  Следующая задача — 5.4: выбор между счётчиком символов и библиотекой форм.
+
+> может лучше в одном месте например под хедером одну плашку сделать и всё?
+
+⏺ Да, так проще. Делаю одну плашку под шапкой в `AppLayout`: «Нет подключения к интернету», пока браузер без сети. Подсказки из блоков ошибок убираю, `OfflineHint` удаляю.
+
+⏺ Bash(git show --stat --format= 5e28b94 ce574c4 | cat)
+  ⎿  docs/decisions.md                                  |  1 +
+      frontend/AGENTS.md                                 |  4 ++--
+      frontend/src/app/ui/AppLayout.vue                  |  6 +++++-
+      frontend/src/pages/event/ui/EventPage.vue          |  6 +++++-
+      frontend/src/pages/login/ui/LoginPage.test.ts      | 18 +++++++++++++++++-
+      frontend/src/pages/login/ui/LoginPage.vue          |  6 +++++-
+     … +23 lines
+
+⏺ Bash(cd /home/raf/event-registration/frontend && git checkout ce574c4 -- src/app/ui/AppLayout.vue src/pages/event/ui/EventPage.vue src/pages/login/ui/LoginPage.test.ts src/pages/login/ui/LoginPage.vue src/)
+  ⎿  M  src/app/ui/AppLayout.vue
+     M  src/pages/event/ui/EventPage.vue
+     M  src/pages/login/ui/LoginPage.test.ts
+     M  src/pages/login/ui/LoginPage.vue
+     M  src/pages/org-event-edit/ui/OrgEventEditPage.vue
+     M  src/pages/org-event-new/ui/OrgEventNewPage.vue
+     … +9 lines
+
+⏺ Тест плашки в `AppLayout` — первым.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Tests  357 passed (357)
+
+⏺ Тесты зелёные. Обновляю документы и смотрю плашку в браузере.
+
+⏺ Bash(cd /home/raf/event-registration && python3 - <<'EOF')
+  ⎿  **`/health` из интерфейса**: в блоке первой ошибки `QueryState` — кнопка-ссылка «Состояние
+       сервиса» рядом с «Повторить»; без сети (`navigator.onLine`, события `online` / `offline`) — там же
+       текст «Нет подключения к интернету». Это не офлайн-баннер: текст только в блоке ошибки.
+     - **Формы**: счётчик символов под полями с пределом («5/100») или библиотека форм вместо
+       ручного кода — выбор после 
+     `styles.css` нет тёмной палитры — новая палитра и проверка экранов в двух темах.
+     … +5 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Container event-registration-s1-frontend-1 Healthy 
+     offline: Не удалось войти, попробуйте позже
+     online: Не удалось войти, попробуйте позже
+     offline: Не удалось загрузить событие | Повторить | Состояние сервиса
+     online: Не удалось загрузить событие | Повторить | Состояние сервиса
+     [This command modified 1 file you've previously read: frontend/AGENTS.md. Call Read before editing.]
+
+⏺ Read(/tmp/claude-1000/-home-raf-event-registration/347e2a72-c17c-48d7-ac20-72996901fd31/scratchpad/event-offline.png)
+  ⎿  (no output)
+
+⏺ Плашка под шапкой, ошибки — прежним текстом. `make stack-check` и коммит.
+
+⏺ Bash(make stack-check > /tmp/claude-1000/-home-raf-event-registration/347e2a72-c17c-48d7-ac20-72996901fd31/scratchpad/check.log 2>&1; echo exit=$?; git add -A && git commit -q -F - <<'EOF' 2>&1 | grep -iE )
+  ⎿  exit=0
+     d5d6c71 refactor(frontend): show one offline notice under the header
+
+⏺ Готово, коммит `d5d6c71`. Теперь без сети под шапкой на любом экране висит одна плашка «Нет подключения к интернету». Когда сеть возвращается, она исчезает. Строки про интернет в блоках ошибок убрал, компонент `OfflineHint` удалил, тексты ошибок остались прежними.
+  
+  **Проверка**
+  - Vitest: плашка появляется по событию `offline` и уходит по `online`. Весь Vitest — 357 тестов прошли.
+  - В браузере на 360 px: без сети плашка видна над «Не удалось загрузить событие» и на странице входа. Сама ошибка при этом — без добавок.
+  - `make stack-check` прошёл.
+  
+  Плашка сейчас нейтральная, серая, как «переподключаюсь…» в макете события. Если она слишком незаметна, могу сделать её красной, как ошибки.
+  
+  В spec вычеркнул из списка «чего не делаем» пункт «офлайн-баннер»: теперь это сделано по вашему решению. Записано в логе решений.
+  
+  Следующая задача — 5.4: выбор между счётчиком символов и библиотекой форм.
+
+> сделай бекап ветки и засквошь коммиты-переделки наверное
+
+⏺ Bash(git status --short; git log --oneline main..HEAD; git rev-parse --abbrev-ref @{u} 2>&1; git branch --list 'backup/*')
+  ⎿  d5d6c71 refactor(frontend): show one offline notice under the header
+     5e28b94 feat(frontend): say "no internet" under every failed request while offline
+     ce574c4 feat(frontend): say "no internet" in the failed-load block instead of on /health
+     d5098dc fix(frontend): offer the service status as a second button beside the retry
+     0d00b2a feat(frontend): link a failed load to /health and show the browser's connection there
+     daae277 feat(frontend): show pointer and not-allowed cursors on buttons
+     … +5 lines
+
+⏺ Bash(git branch backup/frontend-polish-stage-5-before-squash && git reset -q --soft daae277 && git commit -q -F - <<'EOF' 2>&1 | grep -iE "error|✖"; git log --oneline main..HEAD; git diff backup/frontend-p)
+  ⎿  093f775 feat(frontend): link a failed load to /health and show an offline notice
+     daae277 feat(frontend): show pointer and not-allowed cursors on buttons
+     47b0959 feat(frontend): highlight the current page in the header and event tabs
+     c57187a docs: show the past-events tab on the public list too
+     56f961e docs: add past-events tabs and page-number pagination to phase 6, stage 5
+     a942f45 docs: plan phase 6, stage 5 from the deferred items
+     … +1 lines
+
+⏺ Bash(git diff --quiet backup/frontend-polish-stage-5-before-squash HEAD && echo "trees identical"; git show --stat --format= HEAD | cat)
+  ⎿  trees identical
+      docs/decisions.md                                  |  5 ++++
+      docs/features/frontend-polish/spec.md              | 10 +++----
+      docs/features/frontend-polish/tasks.md             |  8 ++---
+      frontend/AGENTS.md                                 |  6 ++--
+      frontend/src/app/ui/AppLayout.test.ts              | 17 +++++++++++
+     … +8 lines
+
+⏺ Сделал.
+  
+  - **Бекап:** ветка `backup/frontend-polish-stage-5-before-squash` указывает на прежнюю вершину `d5d6c71`.
+  - **Сквош:** пять коммитов задачи 5.3 стали одним — `093f775 feat(frontend): link a failed load to /health and show an offline notice`. Коммиты 5.1 (`47b0959`) и 5.2 (`daae277`) остались отдельными.
+  - **Проверка:** `git diff` между бекапом и новой вершиной пустой, содержимое файлов полностью совпадает. Хуки при коммите прошли.
+  - **Лог решений:** все пять записей по ходу переделок остались в `docs/decisions.md`. Прошлые записи по правилам не переписываются, а итоговое решение есть в последней.
+  
+  Ветка ещё не запушена, так что force push не нужен. Бекап можно удалить командой `git branch -D backup/frontend-polish-stage-5-before-squash`, когда он станет не нужен.
+
+> Давай 5.4
+
+⏺ Сначала изучаю, как устроены формы сейчас, — выбор после этого, с вами.
+
+⏺ Bash(cd /home/raf/event-registration/frontend && cat src/entities/event/model/event-form.ts; wc -l src/pages/*/ui/*Page.vue | sort -n | tail -8)
+  ⎿  import { z } from "zod";
+     
+     import type { FieldErrors } from "@/shared/api";
+     
+     import { localInputValue } from "./local-input";
+     
+     … +148 lines
+
+⏺ Bash(sed -n 1,140p src/pages/org-event-new/ui/OrgEventNewPage.vue)
+⏺ Bash(sed -n 1,125p src/pages/org-event-edit/ui/OrgEventEditPage.vue; ls src/pages/org-event-new/ui src/entities/event/ui 2>/dev/null; sed -n 1,60p src/pages/event/ui/EventPage.vue | grep -n "zod\|errors\|f)
+  ⎿  <script setup lang="ts">
+     import { useMutation, useQueryClient } from "@tanstack/vue-query";
+     import { computed, reactive, ref, watch } from "vue";
+     import { useI18n } from "vue-i18n";
+     import { useRouter } from "vue-router";
+     
+     … +134 lines
+
+  ⎿  <script setup lang="ts">
+     import { useMutation, useQueryClient } from "@tanstack/vue-query";
+     import { computed, reactive, ref, watch } from "vue";
+     import { useI18n } from "vue-i18n";
+     
+     import {
+     … +123 lines
+
+⏺ Bash(grep -n "max(" src/pages/event/model/registration-form.ts src/pages/login -r; grep -n "vee-validate\|@tanstack/vue-form\|formkit" package.json; diff <(sed -n '/<template>/,/<\/template>/p' src/pages/o)
+  ⎿  src/pages/event/model/registration-form.ts:23:  email: z.string().trim().min(1, "blank").max(254, "max_length").pipe(z.email("invalid")),
+     src/pages/event/model/registration-form.ts:24:  name: z.string().trim().min(1, "blank").max(200, "max_length"),
+     117
+
+⏺ AskUserQuestion()
+  ⎿  The user doesn't want to proceed with this tool use. The tool use was rejected (eg. if it was a file edit, the new_string was NOT written to the file). To tell you how to proceed, the user said:
+     The user wants to clarify these questions.
+         This means they may have additional information, context or questions for you.
+         Take their response into account and then reformulate the questions if appropriate.
+         Start by asking them what they would like to clarify.
+     
+     … +3 lines
+
+⏺ Что вы хотите уточнить по 5.4? Чтобы было от чего оттолкнуться, вот три варианта, которые я собирался предложить:
+  
+  1. **Счётчик символов (рекомендую).** Под названием и описанием — «12/200» и «0/2000». Пределы берутся из той же схемы `zod`. Считаю длину без пробелов по краям, как её проверяют схема и сервер. Если текст длиннее предела, счётчик краснеет, а ошибка, как и сейчас, появляется при отправке. Атрибут `maxlength` не ставлю: он молча обрезал бы вставленный текст. Объём небольшой, существующие тесты форм остаются как есть.
+  2. **Счётчик и общий компонент полей события.** То же самое, плюс одна разметка полей для создания и редактирования вместо двух почти одинаковых копий. Логика отправки остаётся на страницах.
+  3. **Библиотека форм** (`vee-validate` с `zod`; на ней же построен компонент `Form` из shadcn-vue). Она даёт отметки «поле трогали» и «поле изменили» и проверку при уходе с поля. Цена — переписать четыре формы и их тесты. Обрезку пробелов, числовое поле и подтверждение переноса даты всё равно придётся писать вручную. В конце фазы это рискованно, а выгода небольшая: `zod` и общие коды ошибок у нас уже есть.
+
+> допиши это в 5.4 и закрой сессию чтобы следующей сессии не надо было исследовать
+
+⏺ Bash(cd /home/raf/event-registration && sed -n '/- \[ \] 5.4/,/- \[ \] 5.5/p' docs/features/frontend-polish/tasks.md)
+  ⎿  - [ ] 5.4. Формы: исследование — счётчик символов под полями с пределом («5/100», пределы —
+           `entities/event/model/event-form.ts`) или библиотека форм вместо ручного разбора и ошибок
+           полей; выбор — с человеком, в логе решений. Готово, когда: выбранное сделано на формах
+           создания и редактирования, Vitest форм проходят, у счётчика — тест на предел.
+     - [ ] 5.5. Порядок списков: предстоящие — ближайшие по `starts_at` первыми, прошедшие — недавние
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Checking formatting...
+     [warn] docs/features/frontend-polish/tasks.md
+     [warn] Code style issues found in the above file. Run Prettier with --write to fix.
+     - **00:42** — без сети — одна плашка «Нет подключения к интернету» под шапкой (`AppLayout`, `role="status"`), а не строка в каждом блоке ошибки (решение человека; отменяет `OfflineHint` из записи выше
+     - **00:57** — ■ конец сессии
+
+⏺ Bash(npx prettier --write docs/features/frontend-polish/tasks.md >/dev/null && sed -n '/- \[ \] 5.4/,/- \[ \] 5.5/p' docs/features/frontend-polish/tasks.md | head -40; make worktime 2>&1 | tail -3)
+  ⎿  - [ ] 5.4. Формы: исследование — счётчик символов под полями с пределом («5/100», пределы —
+           `entities/event/model/event-form.ts`) или библиотека форм вместо ручного разбора и ошибок
+           полей; выбор — с человеком, в логе решений. Готово, когда: выбранное сделано на формах
+           создания и редактирования, Vitest форм проходят, у счётчика — тест на предел.
+     
+           Исследование сделано (2026-11-04), выбор — за человеком в начале следующей сессии.
+     … +25 lines
+
+⏺ Bash(git add -A && git commit -q -F - <<'EOF' 2>&1 | grep -iE "error|✖"; git log --oneline -1; git status --short)
+  ⎿  9711935 docs: record the forms research of phase 6, task 5.4 and close the session
+
+⏺ Записал исследование в задачу 5.4 и закрыл сессию, коммит `9711935`.
+  
+  **Что записано в `docs/features/frontend-polish/tasks.md`, задача 5.4.** Задача осталась неотмеченной: выбор за вами. Под ней теперь есть:
+  - как устроены формы сейчас: пределы полей, общие коды ошибок клиента и сервера, особенности формы редактирования и две почти одинаковые копии разметки полей;
+  - три варианта с плюсами и ценой: счётчик символов (моя рекомендация), счётчик плюс общий компонент полей, библиотека `vee-validate`.
+  
+  Следующей сессии останется только выбрать вариант и делать.
+  
+  **Итог сессии** (00:04–00:57, конец записан в `docs/decisions.md`):
+  - `47b0959` — задача 5.1: текущая страница выделена в шапке и во вкладках события.
+  - `daae277` — задача 5.2: курсор-рука у кнопок, «нельзя» у неактивных.
+  - `093f775` — задача 5.3: кнопка «Состояние сервиса» в блоке ошибки загрузки и плашка «Нет подключения к интернету» под шапкой. Это пять коммитов переделок, сведённых в один.
+  - `9711935` — исследование по 5.4 и конец сессии.
+  
+  **Проверки:** перед каждым коммитом с кодом проходил `make stack-check`. Курсор, кнопку «Состояние сервиса» и плашку без сети проверил в браузере на стеке слота 1.
+  
+  **Что ещё открыто:**
+  - Ветка не запушена. Бекап до сквоша — `backup/frontend-polish-stage-5-before-squash`.
+  - Стек слота 1 ещё запущен; остановить можно командой `make stack-down`.
+  - `make worktime` по-прежнему предупреждает о записи 2026-11-03 20:51: у той сессии нет начала. Её я не правил.
+  - Ревью агентом `reviewer` по этапу 5 будет после всех его задач.

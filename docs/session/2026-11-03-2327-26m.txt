@@ -1,0 +1,179 @@
+> /clear
+
+> обнови main, создай новую ветку под этап 5. измени текущий этап 5 на этап 6, а в этап 5 собери всё что мы откладывали "на потом"
+
+⏺ Bash(git fetch -q && git status -sb | head -3 && git log --oneline -3 origin/main && date '+%Y-%m-%d %H:%M %Z' && ls docs/features/ && tail -40 docs/decisions.md)
+⏺ Skill(session-handoff)
+  ⎿  ## feat/frontend-polish-stage-4...origin/feat/frontend-polish-stage-4
+     9b29261 Merge pull request #28 from rbikbov/feat/frontend-polish-stage-4
+     1dcfc9e docs: close the session of phase 6, stage 4
+     4050206 fix(frontend): wrap the event tabs so their focus ring shows whole
+     2026-11-03 23:52 EET
+     _template
+     … +46 lines
+
+  ⎿  Launching skill: session-handoff
+
+⏺ Last session closed (20:51), but commit 1dcfc9e — check time. Let me read tasks.md of the phase.
+
+⏺ Bash(git log -1 --format='%ci' 1dcfc9e && cat docs/features/frontend-polish/tasks.md && grep -n -i "этап\|stage" docs/features/frontend-polish/spec.md | head -40 && grep -rn -i "на потом" docs/features/*/t)
+  ⎿  2026-11-03 21:24:48 +0200
+     # Доводка фронтенда: задачи
+     
+     Spec — `spec.md`. Одна задача — один коммит; отметка `[x]` — в том же коммите.
+     
+     ## Этап 1. Layout, шапка и сессия
+     … +167 lines
+
+⏺ Bash(for f in registration checkin reschedule emails realtime; do echo "=== $f"; sed -n '/^## На потом/,$p' docs/features/$f/tasks.md; done; echo ===SPEC; cat docs/features/frontend-polish/spec.md; echo ==)
+  ⎿  Exit code 1
+     === registration
+     ## На потом
+     
+     - ~~Блокировка Event в `register` (3.1) тестами не покрыта~~ — закрыто в 6.1:
+       `registrations/tests/test_concurrency.py`, без блокировки падают 4 теста.
+     … +108 lines
+
+⏺ Bash(cat docs/features/frontend-polish/spec.md; echo "---ROAD"; sed -n '/Фаза 6/,$p' docs/roadmap.md)
+  ⎿  # Доводка фронтенда: spec
+     
+     Фаза — `docs/roadmap.md`, фаза 6. Статус: утверждён 2026-11-03.
+     
+     ## Что и зачем
+     
+     … +164 lines
+
+⏺ Bash(git checkout -q main && git pull -q --ff-only && git checkout -b feat/frontend-polish-stage-5 && git log --oneline -1)
+  ⎿  Switched to a new branch 'feat/frontend-polish-stage-5'
+     9b29261 Merge pull request #28 from rbikbov/feat/frontend-polish-stage-4
+
+⏺ AskUserQuestion()
+  ⎿  The user answered: "Что из «на потом» положить в новый этап 5 фазы 6? Фронтенд-пункты из «на потом» этой фазы входят точно: ссылка на /health из ErrorState и строка «Интернет»; курсор у кнопок; компон
+
+⏺ Bash(date '+%H:%M' && grep -n "RouterLink\|router-link" frontend/src/app/ui/AppLayout.vue frontend/src/pages/org-event/ui/OrgEventLayout.vue | head; grep -rn "cursor" frontend/src/app/styles.css frontend/s)
+  ⎿  23:55
+     frontend/src/app/ui/AppLayout.vue:44:        <RouterLink class="font-semibold" :to="routes.home">{{ t("events") }}</RouterLink>
+     frontend/src/app/ui/AppLayout.vue:47:            <RouterLink class="hover:underline" :to="routes.orgEvents">
+     frontend/src/app/ui/AppLayout.vue:49:            </RouterLink>
+     frontend/src/app/ui/AppLayout.vue:60:          <RouterLink v-else class="hover:underline" :to="routes.login">
+     frontend/src/app/ui/AppLayout.vue:62:          </RouterLink>
+     … +13 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  ## На потом
+     
+     <!-- Найденное вне задач: что, где, почему не сейчас. -->
+     
+     - ~~ссылки на `/health` в интерфейсе нет: в блоке ошибки загрузки (`ErrorState` в `QueryState`)
+       — ссылка «Проверить состояние сервиса»; на `/health` — строка «Интернет» по
+     … +19 lines
+
+⏺ Теперь spec, roadmap и лог решений.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  (Bash completed with no output)
+
+⏺ Bash(grep -rn "5\.1\|5\.2" docs/features/frontend-polish/*.md docs/roadmap.md | grep -v "^docs/features/frontend-polish/tasks.md:6[0-9]\|tasks.md:[5-9][0-9]:" | head; git add -A && git commit -q -m "docs: )
+  ⎿  docs/features/frontend-polish/tasks.md:188:  — задача 5.2.
+     docs/features/frontend-polish/tasks.md:190:  задача 5.1.
+     ⋯ Backing up original state…
+     ✔ Done backing up original state (fb9bd56)!
+     ⋯ Running tasks for staged files…
+         *.{mjs,json,md,yml,yaml} — 5 files
+     … +10 lines
+
+⏺ Ветка `feat/frontend-polish-stage-5` создана от свежего `main` (после слияния PR #28). Изменения — в коммите `a942f45`, он пока не запушен.
+  
+  **Отвечаю на ваш вопрос:** да, я прошёл по «на потом» всех фаз, включая текущую. Четыре пункта текущей фазы взяты все. Из прошлых фаз взяты только списки событий: их вы и выбрали.
+  
+  **Новый этап 5 «Отложенное: навигация, формы, списки событий»:**
+  - **5.1.** Компонент ссылок навигации: текущий раздел подсвечен и помечен `aria-current`. Он заменит ссылки в шапке и вкладки макета.
+  - **5.2.** Курсор у кнопок: рука при наведении, «запрещено» у неактивной кнопки. Делается в стилях приложения, `shared/ui/shadcn` не трогаем.
+  - **5.3.** Ссылка «Проверить состояние сервиса» в блоке ошибки загрузки и строка «Интернет» на `/health`.
+  - **5.4.** Счётчик символов под полями или библиотека форм. Сначала исследование, выбираете вы.
+  - **5.5.** Один порядок списков `/` и `/org/events`: ближайшие события первыми, при равном времени выше событие с большим `id`.
+  - **5.6.** Постраничная выдача в API.
+  - **5.7.** Постраничный показ на обеих страницах.
+  
+  **Прежний этап 5** (нестабильные тесты Vitest и закрытие фазы) стал этапом 6, задачи теперь 6.1–6.2.
+  
+  **Что ещё поменял в документах:**
+  - **spec.md:** новый раздел «Этап 5» и сценарии приёмки к нему. Из Non-Goals убрал «постраничная выдача и порядок списков»: в этом этапе меняются backend и API.
+  - **roadmap.md:** строка про этап 5.
+  - **decisions.md:** начало сессии и решение о составе этапа.
+  - **tasks.md:** взятые пункты «на потом» зачёркнуты со ссылкой на задачу, в текущей фазе и в фазе 4.
+  
+  **Открытые вопросы этапа** записаны в spec и решаются в начале задач:
+  - 5.4 — счётчик или библиотека форм;
+  - 5.6 — номер страницы или курсор, размер страницы, «Показать ещё» или номера страниц, хранить ли страницу в адресе.
+  
+  **Что не вошло в этап:**
+  - Срок сессии, запрет регистрации на начавшееся событие, настройки под `runserver`, чистка outbox — это backend, вы его не выбрали.
+  - Регистрация пользователей и дробление страниц на `features` по-прежнему идут строкой в «что дальше» README.
+  - Ещё два пункта в варианты я не включил, потому что это не задачи на код. Первый — идея параллельной работы фронтенда в отдельном worktree по контракту API (фаза 4). Второй — один невоспроизведённый сбой браузерной проверки по таймауту. Скажите, если их тоже взять.
+  
+  Начну с задачи 5.1?
+
+> можно еще добавить немного фильтрации типа таба "истекшие" и изменить компонент пагинации чтобы можно было удобно перейти на первую/последнюю и тд страницы
+
+⏺ Bash(grep -n "models\.\(DateTime\|Integer\|Char\)" backend/events/models.py; grep -n "for_organizer\|upcoming" -r backend/events/*.py | grep -v tests; date '+%H:%M'; sed -n '/## Этап 5/,/## Этап 6/p' docs/)
+  ⎿  38:    title = models.CharField(max_length=200)
+     39:    description = models.CharField(max_length=2000, blank=True)
+     40:    starts_at = models.DateTimeField()
+     41:    capacity = models.IntegerField(
+     46:    schedule_version = models.IntegerField(default=1)
+     backend/events/models.py:15:    def for_organizer(self, user: User) -> Self:
+     … +7 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  00:00
+
+⏺ Bash(git add -A && git commit -q -m "docs: add past-events tabs and page-number pagination to phase 6, stage 5)
+  ⎿  56f961e docs: add past-events tabs and page-number pagination to phase 6, stage 5
+     a942f45 docs: plan phase 6, stage 5 from the deferred items
+
+⏺ Добавил оба пункта в этап 5, коммит `56f961e`. Вместо прежних задач 5.5–5.7 теперь четыре:
+  
+  - **5.5. Порядок списков.** Предстоящие идут от ближайших. Прошедшие идут от недавних: «ближайшие первыми» для них не подходит. При одинаковом времени выше событие с большим `id`.
+  - **5.6. API.** Страницы по номеру, в ответе есть общее число событий: без него нельзя перейти сразу на последнюю страницу. У списка организатора появляется фильтр `period=upcoming|past`, по умолчанию предстоящие.
+  - **5.7. Компонент пагинации** в `shared/ui` на основе shadcn `pagination`. В нём кнопки «первая», «предыдущая», номера вокруг текущей с многоточием, «следующая» и «последняя». Если страница одна, пагинация не показывается. Номер страницы хранится в адресе (`?page=`). Компонент будет на `/` и на `/org/events`.
+  - **5.8. Вкладки «Предстоящие» / «Прошедшие»** на `/org/events`. Вкладка тоже в адресе (`?period=past`), при её смене список открывается с первой страницы, у пустой вкладки свой текст.
+  
+  «Прошедшее» здесь значит, что событие уже началось: времени окончания у события нет.
+  
+  Одно решение я принял сам, без вас: **на публичной `/` вкладки «Прошедшие» нет**. Регистрация на начавшееся событие сейчас не запрещена, этот пункт в этап не вошёл. Поэтому публичный список прошедших событий предлагал бы на них зарегистрироваться. Если вкладка нужна и на `/`, нужно сначала запретить такую регистрацию в backend.
+  
+  Открытых вопросов теперь три, решим их в начале задач:
+  - 5.4 — счётчик символов или библиотека форм;
+  - 5.6 — сколько событий на странице;
+  - 5.7 — что показывать на странице за концом списка (`?page=999`): ошибку 404 или последнюю страницу.
+  
+  Решения записаны в `docs/decisions.md`. Spec, roadmap и задачи обновлены. Ветка пока не запушена.
+
+> пусть будет и на /, регистрацию не запрещаем, потому что это останется в "что сделал бы" вместе с тем что у события должно быть время окончания
+
+⏺ Bash(date '+%H:%M' && python3 - <<'EOF')
+  ⎿  00:02
+     ['- [ ] 5.6. API списков (skill `api-change`): постраничная выдача по номеру страницы с общим', '      `period=upcoming|past` (прошедшее — `starts_at` в прошлом), без него — предстоящие;', '      конц
+
+⏺ Bash(sed -n '/- \[ \] 5.6/,/## Этап 6/p;/- \[ \] 6.2/,+3p' docs/features/frontend-polish/tasks.md)
+  ⎿  - [ ] 5.6. API списков (skill `api-change`): постраничная выдача по номеру страницы с общим
+           числом (`count`) у `/` и `/org/events`; у списка организатора — фильтр
+           `period=upcoming|past` (прошедшее — `starts_at` в прошлом), без него — предстоящие;
+           схема, типы фронтенда. Готово, когда: pytest — страницы, последняя страница, страница за
+           концом, оба значения `period` и неверное; `make schema` без расхождений.
+     - [ ] 5.7. Компонент пагинации в `shared/ui` (на основе shadcn `pagination`): «первая»,
+     … +13 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  c57187a docs: show the past-events tab on the public list too
+
+⏺ Сделал: вкладки «Предстоящие» / «Прошедшие» будут и на `/`, коммит `c57187a`.
+  
+  - **5.6:** фильтр `period=upcoming|past` теперь в обоих списках API. Тесты проверяют оба значения и неверное значение в каждом списке.
+  - **5.8:** вкладки на `/` и `/org/events`. В e2e прошедшее событие должно быть только на вкладке «Прошедшие» обоих списков.
+  - **spec:** записал, что со страницы прошедшего события по-прежнему можно зарегистрироваться. Это сделано сознательно.
+  - **6.2:** при закрытии фазы в «что дальше» README добавятся время окончания события и запрет регистрации на начавшееся событие.
+  - В `docs/decisions.md` новая запись отменяет моё прежнее решение «на `/` вкладки нет». Roadmap тоже поправил.
+  
+  В ветке три коммита, она ещё не запушена. Следующая по порядку задача — 5.1, компонент ссылок навигации.

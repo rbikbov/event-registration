@@ -1,0 +1,1311 @@
+> делаем 3.4
+
+⏺ Bash(date '+%Y-%m-%d %H:%M %Z' && tail -30 docs/decisions.md && git log -3 --format='%h %ci %s' && cat docs/features/realtime/tasks.md)
+⏺ Skill(session-handoff)
+  ⎿  <persisted-output>
+     Output too large (46.6KB). Full output saved to: /home/raf/.claude/projects/-home-raf-event-registration/949c05f2-5502-4fe9-b623-6db4085f062d/tool-results/b0kvv5vzj.txt
+     
+     Preview (first 2KB):
+     2026-11-02 03:44 EET
+     - **14:20** — вне задач этапа 1 фазы 4: `make dev-backend` запускает uvicorn с `--reload` вместо `runserver`. Почему: `runserver` — WSGI, асинхронный генератор `StreamingHttpResponse` он читает целико
+     … +3 lines
+
+  ⎿  Launching skill: session-handoff
+
+⏺ Bash(make worktime 2>&1 | tail -5; grep -n '▶\|■' docs/decisions.md | tail -4; tail -c 1500 docs/decisions.md; echo; cat docs/features/realtime/tasks.md)
+  ⎿  2026-10-31 14:05 → 2026-10-31 17:50  3 ч 45 мин
+     2026-10-31 17:52 → 2026-10-31 19:42  1 ч 50 мин
+     2026-10-31 19:52 → 2026-10-31 21:05  1 ч 13 мин
+     Итого: 36 ч 23 мин
+     Предупреждение: сессия с 2026-10-31 21:11 не закрыта и не учтена
+     649:- **19:42** — ■ конец сессии
+     … +139 lines
+
+⏺ Bash(git log -1 --format='%ci' && grep -n '^## ' docs/decisions.md | tail -2 && sed -n '/spec/,$p' docs/features/realtime/spec.md | head -0; wc -l docs/features/realtime/spec.md; cat frontend/AGENTS.md)
+  ⎿  2026-10-31 22:29:27 +0200
+     477:## 2026-10-30
+     529:## 2026-10-31
+     162 docs/features/realtime/spec.md
+     # frontend/ — Vue 3 + Vite
+     
+     … +57 lines
+
+⏺ Bash(python3 - <<'EOF')
+⏺ Skill(fsd-frontend)
+  ⎿  # Realtime (SSE): spec
+     
+     Фаза — `docs/roadmap.md`, фаза 4. Статус: утверждён 2026-10-31.
+     
+     ## Что и зачем
+     
+     … +156 lines
+
+  ⎿  Launching skill: fsd-frontend
+
+⏺ Теперь посмотрю текущий код фронтенда.
+
+⏺ Bash(cd /home/raf/event-registration/frontend/src && find app pages entities shared/config shared/lib -type f | sort && cat app/router.ts shared/config/*.ts entities/event/index.ts)
+  ⎿  app/App.vue
+     app/index.ts
+     app/query-client.test.ts
+     app/query-client.ts
+     app/router.test.ts
+     app/router.ts
+     … +141 lines
+
+⏺ Bash(cat pages/org-event/ui/OrgEventPage.vue pages/org-event/index.ts pages/org-checkin/ui/OrgCheckinPage.vue pages/org-checkin/index.ts entities/event/api/org-events.ts shared/lib/use-live.ts)
+  ⎿  <script setup lang="ts">
+     import { useQuery, useQueryClient } from "@tanstack/vue-query";
+     import { computed } from "vue";
+     import { useI18n } from "vue-i18n";
+     import { useRoute } from "vue-router";
+     
+     … +475 lines
+
+⏺ Bash(cd /home/raf/event-registration && grep -n 'макет\|RouterView\|одной строкой' docs/decisions.md docs/architecture.md | head -20; wc -l frontend/src/pages/org-event/ui/OrgEventPage.test.ts frontend/src)
+  ⎿  docs/decisions.md:640:- **17:33** — экран чекина и панель — один макет события организатора в этапе 3 (решение человека, задача 3.4): `/org/events/:id` держит `GET` события, поток, шапку и 403/404, уч
+       444 frontend/src/pages/org-event/ui/OrgEventPage.test.ts
+       333 frontend/src/pages/org-checkin/ui/OrgCheckinPage.test.ts
+        94 frontend/src/app/router.test.ts
+       871 total
+     helpers.ts
+     … +7 lines
+
+⏺ Bash(cat frontend/src/pages/org-event/ui/OrgEventPage.test.ts)
+  ⎿  import { focusManager, onlineManager, QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
+     import { flushPromises, mount } from "@vue/test-utils";
+     import { http, HttpResponse } from "msw";
+     import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+     import { createMemoryHistory, createRouter } from "vue-router";
+     
+     … +438 lines
+
+⏺ Bash(cat frontend/src/pages/org-checkin/ui/OrgCheckinPage.test.ts | head -150; cat frontend/src/app/router.test.ts; cat e2e/tests/organizer-checks-in.spec.ts e2e/tests/organizer-sees-arrivals-live.spec.ts)
+  ⎿  import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
+     import { flushPromises, mount } from "@vue/test-utils";
+     import { http, HttpResponse } from "msw";
+     import { afterEach, describe, expect, it } from "vitest";
+     import { createMemoryHistory, createRouter } from "vue-router";
+     
+     … +329 lines
+
+⏺ Bash(sed -n 150,400p frontend/src/pages/org-checkin/ui/OrgCheckinPage.test.ts; grep -n 'panelStat' -A6 e2e/tests/helpers.ts; ls frontend/src/shared/ui/query-state; cat frontend/src/shared/ui/query-state/Qu)
+  ⎿  const wrapper = await mountPage();
+     
+         await enter(wrapper, "ABCD2345");
+     
+         expect(wrapper.get('[data-answer="not_confirmed"]').text()).toContain(
+           "Билет не подтверждён: лист ожидания или отказ",
+     … +260 lines
+
+⏺ Bash(cd /home/raf/event-registration/frontend && cat src/pages/org-checkin/api/checkin.ts src/pages/org-event/api/registrations.ts src/pages/org-event/model/status-filter.ts; ls src/shared/ui/shadcn; grep )
+  ⎿  import { api, unwrap } from "@/shared/api";
+     
+     export function checkIn(eventId: number, code: string) {
+       return unwrap(
+         api.POST("/api/org/events/{event_id}/checkin/", {
+           params: { path: { event_id: eventId } },
+     … +114 lines
+
+⏺ Bash(cd /home/raf/event-registration/frontend/src/pages && mkdir -p org-event-participants/ui org-event-participants/model org-event-participants/api && git mv org-event/api/registrations.ts org-event-part)
+  ⎿  org-event
+     org-event-participants
+     org-event/model
+     org-event/ui
+     org-event/api
+     org-event/index.ts
+     … +9 lines
+
+⏺ Bash(rmdir org-event/model org-event/api; ls org-event)
+  ⎿  index.ts
+     ui
+
+⏺ Теперь макет.
+
+⏺ Write(/home/raf/event-registration/frontend/src/pages/org-event/ui/OrgEventLayout.vue)
+  ⎿  File created successfully at: /home/raf/event-registration/frontend/src/pages/org-event/ui/OrgEventLayout.vue (file state is current in your context — no need to Read it back)
+
+⏺ Теперь страница участников (бывшая панель без шапки и потока).
+
+⏺ Bash(cd /home/raf/event-registration/frontend/src/pages/org-event-participants/ui && python3 - <<'EOF')
+  ⎿  <template>
+       <section>
+       <h2 class="text-lg font-semibold">{{ t("participants") }}</h2>
+       <nav class="mt-3 flex flex-wrap gap-2" :aria-label="t('filter')">
+         <Button
+           v-for="value in filters"
+     … +73 lines
+
+⏺ Bash(cd /home/raf/event-registration/frontend/src/pages && sed -i 's|<h2 class="text-lg font-semibold">{{ t("participants") }}</h2>|<h2 class="sr-only">{{ t("participants") }}</h2>|' org-event-participants)
+  ⎿  <script setup lang="ts">
+     import { useMutation } from "@tanstack/vue-query";
+     import { computed, nextTick, onMounted, ref, useTemplateRef } from "vue";
+     import { useI18n } from "vue-i18n";
+     import { useRoute } from "vue-router";
+     
+     … +42 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  [This command modified 1 file you've previously read: src/pages/org-event/ui/OrgEventLayout.vue. Call Read before editing.]
+
+⏺ Типы сходятся. Теперь тесты: разделяю старый тест панели на тест макета и тест участников.
+
+⏺ Bash(cd /home/raf/event-registration/frontend/src/pages && python3 - <<'EOF')
+  ⎿  65:  it("lists the participants with the status, waitlist place and check-in time", async () => {
+     84:  it("asks the server for the status from the URL and marks that filter", async () => {
+     101:  it("switches the filter through the URL", async () => {
+     121:  it("says there are no registrations yet", async () => {
+     123:      http.get(EVENT, () => HttpResponse.json({ ...event, confirmed: 0, waitlisted: 0 })),
+     134:  it("keeps the counters when the participants fail to load, with a retry", async () => {
+     … +2 lines
+
+⏺ Bash(cd /home/raf/event-registration/frontend/src/pages/org-event-participants/ui && python3 - <<'EOF')
+  ⎿  async function mountPage(query: Record<string, string> = {}) {
+       const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+       const router = createRouter({
+         history: createMemoryHistory(),
+         routes: [{ path: routes.orgEvent, component: OrgEventParticipantsPage }],
+       });
+     … +113 lines
+
+⏺ Добавлю тест загрузки участников и правлю тест чекина: событие экран больше не читает.
+
+⏺ Bash(cd /home/raf/event-registration/frontend/src/pages && python3 - <<'EOF')
+  ⎿  (!) Your Vite config uses features that are unsupported by `configLoader: 'native'`, which is planned to become the default in a future major version of Vite:
+       - import "./vite.config" without a file extension (vitest.config.ts:3:24). Add the file extension
+     Set `VITE_CONFIG_NATIVE_IGNORE_WARNING=true` to suppress this warning.
+     
+      RUN  v5.0.5 /home/raf/event-registration/frontend
+     
+     … +5 lines
+
+⏺ Теперь тест макета.
+
+⏺ Write(/home/raf/event-registration/frontend/src/pages/org-event/ui/OrgEventLayout.test.ts)
+  ⎿  File created successfully at: /home/raf/event-registration/frontend/src/pages/org-event/ui/OrgEventLayout.test.ts (file state is current in your context — no need to Read it back)
+
+⏺ Bash(pnpm exec prettier --write src/pages/org-event >/dev/null; pnpm exec vitest run src/pages/org-event/ src/app 2>&1 | grep -v '^\s*$' | tail -30)
+  ⎿  - Expected
+     + Received
+     - 1
+     + 4
+      ❯ src/pages/org-event/ui/OrgEventLayout.test.ts:240:28
+         238|     expect(currentTab(wrapper)).toBe("Участники");
+     … +24 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Tests  18 passed (18)
+
+⏺ Макет зелёный. Добавлю в тест роутера проверку охраны дочернего маршрута и правлю e2e чекина под вкладки.
+
+⏺ Bash(cd /home/raf/event-registration && python3 - <<'EOF')
+  ⎿  (eval):29: no matches found: --include=*.md
+
+⏺ Bash(git grep -n 'Панель события\|Чекин: \|OrgEventPage\|OrgCheckinPage\|pages/org-event\b\|org-checkin' -- ':!docs/decisions.md' ':!frontend/src/pages/org-checkin' | head -30)
+  ⎿  README.md:59:| Повторный чекин отклоняется с временем первой отметки                                        | `test_checkin.py::test_a_repeat_check_in_reports_the_first_time_and_changes_nothing`; `tes
+     README.md:64:| Счётчики события: подтверждено, в листе ожидания, пришло                                     | `events/tests/test_org_event_detail_api.py::test_detail_has_the_event_and_its_counts`, `::
+     README.md:65:| Список участников в порядке очереди, фильтр по статусу                                       | `registrations/tests/test_org_registrations_api.py::test_list_has_every_registration_in_qu
+     docs/architecture.md:233:- **Реализовано:** состояние сервиса (`/health`), вход организатора, создание события, список событий организатора; публичный список событий (`/`) и страница события с регистр
+     docs/features/checkin/spec.md:56:- **Панель события** `/org/events/:id` (из списка событий организатора): название, дата,
+     docs/features/checkin/tasks.md:31:## Этап 3. Панель события
+     … +13 lines
+
+⏺ Обновлю ссылки на тесты в README и правило 4 / карту в `frontend/AGENTS.md`.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  stack-check              make check against the Postgres of slot SLOT (default 1)
+       stack-check-backend      make check-backend against the Postgres of slot SLOT
+       stack-e2e                Start the stack of slot SLOT with the gateway and run Playwright tests
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  03:49
+
+⏺ Bash(cd /tmp/claude-1000/-home-raf-event-registration/949c05f2-5502-4fe9-b623-6db4085f062d/scratchpad && tail -5 check.log; grep -nE 'error|✖|FAIL|failed' check.log | head -20)
+  ⎿  ELIFECYCLE  Command failed with exit code 1.
+     make[1]: *** [Makefile:37: format-check] Error 1
+     make[1]: Leaving directory '/home/raf/event-registration'
+     make: *** [Makefile:136: stack-check] Error 2
+     EXIT 2
+     16: ELIFECYCLE  Command failed with exit code 1.
+     … +1 lines
+
+⏺ Bash(head -16 /tmp/claude-1000/-home-raf-event-registration/949c05f2-5502-4fe9-b623-6db4085f062d/scratchpad/check.log)
+  ⎿  POSTGRES_PORT=5433 BACKEND_PORT=8001 FRONTEND_PORT=5174 MAILPIT_PORT=8026 MAILPIT_SMTP_PORT=1026 docker compose -p event-registration-s1 up -d --wait postgres
+      Container event-registration-s1-postgres-1 Starting 
+      Container event-registration-s1-postgres-1 Started 
+      Container event-registration-s1-postgres-1 Waiting 
+      Container event-registration-s1-postgres-1 Healthy 
+     POSTGRES_PORT=5433 make check
+     … +10 lines
+
+⏺ Таблица в README перевыровнялась — форматирую и запускаю снова.
+
+⏺ Bash(pnpm exec prettier --write README.md e2e frontend/AGENTS.md >/dev/null && make stack-check > /tmp/claude-1000/-home-raf-event-registration/949c05f2-5502-4fe9-b623-6db4085f062d/scratchpad/check.log 2>&)
+  ⎿  EXIT 0
+     321:All checks passed!
+     370:======================== 248 passed in 69.27s (0:01:09) ========================
+     381:✖ 2 problems (0 errors, 2 warnings)
+     400: Test Files  26 passed (26)
+     401:      Tests  192 passed (192)
+     … +1 lines
+
+⏺ Bash(sed -n 372,382p /tmp/claude-1000/-home-raf-event-registration/949c05f2-5502-4fe9-b623-6db4085f062d/scratchpad/check.log; git stash -q && (cd frontend && pnpm exec eslint . 2>&1 | tail -4); git stash p)
+  ⎿  > frontend@0.0.0 lint /home/raf/event-registration/frontend
+     > eslint .
+     
+     
+     /home/raf/event-registration/frontend/src/pages/org-event/ui/OrgEventLayout.test.ts
+       31:38  warning  There is more than one component in this file  vue/one-component-per-file
+     … +30 lines
+
+⏺ Предупреждения линтера — от двух `defineComponent` в тесте макета. Заменю на функциональные компоненты.
+
+⏺ Bash(cd /home/raf/event-registration/frontend && python3 - <<'EOF')
+  ⎿  ⎯⎯⎯⎯⎯⎯ Failed Tests 13 ⎯⎯⎯⎯⎯⎯⎯
+      FAIL  src/pages/org-event/ui/OrgEventLayout.test.ts > OrgEventLayout > answers 403 in place of the tabs
+      FAIL  src/pages/org-event/ui/OrgEventLayout.test.ts > OrgEventLayout > offers a retry when the event fails to load
+      FAIL  src/pages/org-event/ui/OrgEventLayout.test.ts > OrgEventLayout > keeps the header and the tab when a refetch of the event fails
+      FAIL  src/pages/org-event/ui/OrgEventLayout.test.ts > OrgEventLayout > opens the stream once the event has loaded
+      FAIL  src/pages/org-event/ui/OrgEventLayout.test.ts > OrgEventLayout > takes the whole event from a snapshot, for the header and the tab
+     … +9 lines
+
+⏺ Bash(pnpm exec vitest run src/pages/org-event/ 2>&1 | grep -B2 -A12 'answers 403' | head -40)
+  ⎿  RUN  v5.0.5 /home/raf/event-registration/frontend
+     
+     stderr | src/pages/org-event/ui/OrgEventLayout.test.ts > OrgEventLayout > answers 403 in place of the tabs
+     [VUE_ROUTER_R0030] Component "default" in record with path "/org/events/:id(\d+)/checkin" is a function that does not return a Promise. This will break in production if not fixed.
+     ├▶ fix: Return a dynamic import (`() => import("./MyPage.vue")`) from the function, or add a `displayName` if it is a functional component.
+     ╰▶ see: https://router.vuejs.org/guide/advanced/lazy-loading.html
+     … +34 lines
+
+⏺ Роутер принимает функцию за ленивую загрузку; подсказка vue-router — задать `displayName`.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Tests  18 passed (18)
+
+⏺ Vitest и ESLint чистые. Запускаю e2e через шлюз на слоте 1.
+
+⏺ Bash(cd /home/raf/event-registration && make stack-e2e > /tmp/claude-1000/-home-raf-event-registration/949c05f2-5502-4fe9-b623-6db4085f062d/scratchpad/e2e.log 2>&1; echo EXIT $?; grep -E 'passed|failed|fla)
+  ⎿  EXIT 0
+       9 passed (7.9s)
+
+⏺ e2e: 9 из 9 зелёные. Записываю решения, отмечаю задачу и коммичу.
+
+⏺ Bash(date '+%H:%M' && python3 - <<'EOF')
+  ⎿  03:53
+     M  README.md
+     M  docs/decisions.md
+     M  docs/features/realtime/tasks.md
+     M  e2e/tests/organizer-checks-in.spec.ts
+     M  frontend/AGENTS.md
+     … +15 lines
+
+⏺ Финальный `make stack-check` после правки теста.
+
+⏺ Bash(make stack-check > /tmp/claude-1000/-home-raf-event-registration/949c05f2-5502-4fe9-b623-6db4085f062d/scratchpad/check.log 2>&1; echo EXIT $?; grep -nE '✖|passed|Test Files|Tests ' /tmp/claude-1000/-h)
+  ⎿  EXIT 0
+     321:All checks passed!
+     370:======================== 248 passed in 73.15s (0:01:13) ========================
+     393: Test Files  26 passed (26)
+     394:      Tests  192 passed (192)
+
+⏺ Bash(git commit -q -F - <<'EOF')
+  ⎿  ⋯ Backing up original state…
+     ✔ Done backing up original state (ed5f8bf)!
+     ⋯ Running tasks for staged files…
+         frontend/**/*.{ts,vue,js} — 13 files
+           ⋯ pnpm --dir frontend exec eslint --fix
+           ⋯ prettier --write
+     … +18 lines
+
+⏺ Задача 3.4 готова, коммит `d91693b`.
+  
+  **Что получилось**
+  - `/org/events/:id` теперь общий макет события: он один раз загружает событие, держит поток, показывает шапку, ответы 403/404 и вкладки «Участники» / «Чекин». Код макета — `pages/org-event/ui/OrgEventLayout.vue`.
+  - Таблица участников переехала в новый срез `pages/org-event-participants`. Загруженное событие она получает от макета через `RouterView`.
+  - На вкладке «Чекин» шапка в одну строку: название, «Пришло» и «Подтверждено». Числа обновляются из потока.
+  - Форма чекина работает и без события: она видна, пока событие загружается и когда загрузка не удалась. Поэтому снято исключение для `pages/org-checkin` в п. 4 `frontend/AGENTS.md`.
+  - Убрана отмена чужого `GET` в обработчике снимка вместе с её тестом: событие теперь читает только макет.
+  
+  **Где я отошёл от формулировки задачи** (записано в `docs/decisions.md`)
+  - Экрану чекина событие не передаётся. Название и «Пришло» теперь в шапке макета, а форме нужен только id из адреса. Неиспользуемый пропс попал бы в разметку как атрибут.
+  - Заголовок экрана чекина теперь просто название события, а не «Чекин: …». Ссылку «Панель события» заменила вкладка «Участники». Поэтому я поправил `organizer-checks-in.spec.ts`: тест проверяет вкладку и «Пришло» в шапке чекина.
+  
+  **Проверки**
+  - `make stack-check` проходит: backend 248 тестов, Vitest 192.
+  - `make stack-e2e` через шлюз: 9 из 9.
+  - Тест макета проверяет, что переход «Чекин ↔ Участники» оставляет один открытый поток и один `GET`.
+  - В браузере вручную не проверял, только через e2e.
+  
+  Предыдущую сессию закрыл в `docs/decisions.md` временем её последнего коммита (22:29): отметки о конце не было. Новую сессию открыл.
+  
+  Ревью агентом `reviewer` — после 3.5–3.6, на весь фронтенд этапа. Следующая задача — 3.5: постраничная таблица и «Есть обновления».
+
+> на странице чужого события на доли секунды появляется содержание страницы, а потом после 403 пропадает и выводится правильный текст. сделай чтобы не отображалось содержание пока нет данных (пока не убедились что событие "наше")
+
+⏺ Мерцают вкладки и (на «Чекине») форма: они рендерятся вне `QueryState` ещё до ответа `GET`. Покажу их только после того, как запрос события завершился. Форма чекина при этом продолжит работать при ошибке загрузки (500, нет сети): там ответ уже известен, и это не 403/404.
+
+⏺ Bash(cd /home/raf/event-registration/frontend/src/pages/org-event/ui && grep -n 'RouterView\|<nav\|</nav>\|check-in form works\|participants get the loaded\|form needs none' OrgEventLayout.vue)
+  ⎿  16:// tabs keeps the stream. The participants get the loaded event as the `event` prop; the check-in
+     17:// form needs none and is shown before the event has loaded and when its load fails.
+     133:      <nav class="mt-6 flex gap-2 border-b pb-2" :aria-label="t('tabs')">
+     145:      </nav>
+     147:      <!-- The check-in form works without the event: the title above is only a label. -->
+     148:      <RouterView v-if="onCheckin" />
+     … +1 lines
+
+⏺ Bash(sed -n 125,152p OrgEventLayout.vue)
+  ⎿  >
+                   <dt class="text-muted-foreground text-sm">{{ t(`counters.${counter.key}`) }}</dt>
+                   <dd class="mt-1 text-2xl font-semibold">{{ counter.value }}</dd>
+                 </div>
+               </dl>
+             </template>
+     … +22 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Tests  18 passed (18)
+     [This command modified 2 files you've previously read: src/pages/org-event/ui/OrgEventLayout.test.ts, src/pages/org-event/ui/OrgEventLayout.vue. Call Read before editing.]
+
+⏺ Проверю, что новый тест падает без исправления:
+
+⏺ Bash(cp src/pages/org-event/ui/OrgEventLayout.vue /tmp/claude-1000/-home-raf-event-registration/949c05f2-5502-4fe9-b623-6db4085f062d/scratchpad/L.vue && sed -i 's/<template v-if="!event.isPending.value">/<)
+  ⎿  × shows only a loading state on the participants tab until the event arrives 111ms
+          × shows only a loading state on the check-in tab until the event arrives 63ms
+     ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 2 ⎯⎯⎯⎯⎯⎯⎯
+           Tests  2 failed | 16 passed (18)
+      .../src/pages/org-event/ui/OrgEventLayout.test.ts  | 31 +++++++----------
+      frontend/src/pages/org-event/ui/OrgEventLayout.vue | 40 ++++++++++++----------
+     … +2 lines
+
+⏺ Без исправления тест падает, с исправлением проходит. Обновляю правило 4 и лог решений, затем проверки.
+
+⏺ Bash(cd /home/raf/event-registration && python3 - <<'EOF')
+  ⎿  EXIT 0
+     321:All checks passed!
+     370:======================== 248 passed in 67.36s (0:01:07) ========================
+     393: Test Files  26 passed (26)
+     394:      Tests  192 passed (192)
+     [This command modified 2 files you've previously read: frontend/AGENTS.md, ../../../tmp/claude-1000/-home-raf-event-registration/949c05f2-5502-4fe9-b623-6db4085f062d/scratchpad/check.log. Call Read be
+
+⏺ Bash(make stack-e2e > /tmp/claude-1000/-home-raf-event-registration/949c05f2-5502-4fe9-b623-6db4085f062d/scratchpad/e2e.log 2>&1; echo EXIT $?; grep -E 'passed|failed|flaky' /tmp/claude-1000/-home-raf-even)
+  ⎿  EXIT 0
+       9 passed (6.4s)
+     ⋯ Backing up original state…
+     ✔ Done backing up original state (36d7786)!
+     ⋯ Running tasks for staged files…
+         frontend/**/*.{ts,vue,js} — 2 files
+     … +15 lines
+
+⏺ Исправил, коммит `f0319c0`. Пока запрос события не ответил, на странице видны только ссылка «Мои события» и «Загружаем…». Ответ 403 или 404 сразу заменяет «Загружаем…» на правильный текст, и ничего не мелькает.
+  
+  **Причина:** мелькали вкладки «Участники» / «Чекин», а на вкладке «Чекин» ещё и форма ввода кода. Они рисовались ещё до ответа на запрос события, а потом пропадали после 403.
+  
+  **Что изменилось** (`frontend/src/pages/org-event/ui/OrgEventLayout.vue`):
+  - Вкладки и их содержимое появляются только после ответа на запрос события.
+  - Если событие не загрузилось по другой причине (ошибка сервера, нет сети), форма чекина работает, как и раньше. Название события для неё — только подпись.
+  
+  **Проверки:**
+  - Новый тест на обе вкладки проверяет, что до ответа нет ни вкладок, ни содержимого. Без исправления он падает, с исправлением проходит.
+  - `make stack-check` проходит, `make stack-e2e`: 9 из 9.
+  - Решение записано в `docs/decisions.md`, правило 4 в `frontend/AGENTS.md` обновлено.
+
+> почему на странице чекина только "пришло" и "подтверждено" ? добавь все счетчики, так же как сейчас кратко. и еще на чекине вынеси название события в отдельную строчку т.к. оно может быть длинным
+
+⏺ Два счётчика я выбрал сам: в задаче было «одной строкой», и я оставил только нужное на входе. Это моё сокращение, а не требование. Делаю все пять счётчиков в краткой строке, название — отдельной строкой над ними.
+
+⏺ Bash(cd /home/raf/event-registration/frontend/src/pages/org-event/ui && sed -n '/At the entrance/,/^}/p' OrgEventLayout.vue; sed -n '/v-if="onCheckin"$/,/<template v-else>/p;/data-header="compact"/,/<\/dl>)
+  ⎿  // At the entrance the header is one line: the form below it is what the organizer looks at.
+     function counters(loaded: OrgEvent) {
+       if (onCheckin.value) {
+         return [
+           { key: "checkedIn", value: loaded.checked_in },
+           { key: "confirmed", value: loaded.confirmed },
+     … +57 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  (Bash completed with no output)
+
+⏺ Bash(cd /home/raf/event-registration && pnpm exec prettier --write frontend/src/pages/org-event >/dev/null && (cd frontend && pnpm exec vitest run src/pages/org-event 2>&1 | grep -E 'Tests|×') && python3 -)
+  ⎿  Tests  57 passed (57)
+     CHECK 0
+     E2E 0
+       9 passed (6.3s)
+     All checks passed!
+     ======================== 248 passed in 71.30s (0:01:11) ========================
+     … +3 lines
+
+⏺ Bash(git add -A && git commit -q -F - <<'EOF')
+  ⎿  ⋯ Backing up original state…
+     ✔ Done backing up original state (3199ebd)!
+     ⋯ Running tasks for staged files…
+         frontend/**/*.{ts,vue,js} — 2 files
+           ⋯ pnpm --dir frontend exec eslint --fix
+           ⋯ prettier --write
+     … +13 lines
+
+⏺ Готово, коммит `48f0c2d`.
+  
+  **Почему было два счётчика.** В задаче стояло «у чекина — одной строкой», и я сам решил, что на входе нужны только «Пришло» и «Подтверждено». Этого не требовали ни задача, ни spec, так что зря сократил.
+  
+  **Что теперь на вкладке «Чекин»:**
+  - первая строка — название события, сколько бы места оно ни занимало;
+  - под ним краткая строка со всеми пятью счётчиками: «Мест», «Подтверждено», «В листе ожидания», «Пришло», «Свободно». При нехватке места она переносится.
+  
+  Полная шапка вкладки «Участники» с датой и крупными карточками осталась как была.
+  
+  **Проверки:** тест шапки чекина теперь проверяет все пять значений. `make stack-check` проходит, `make stack-e2e` — 9 из 9. В браузере вид глазами не смотрел, проверено только тестами. Решение записано в `docs/decisions.md`.
+
+> давай оставим блок с информацией о событии таким же как и на странице участников. меняем только блоки с счетчиками на текс, т.е. только они уменьшаются, но не в одну строку, а на каждой строке по одному. и кнопка перехода на участников остается там где и была на чекин
+
+⏺ Bash(cd /home/raf/event-registration/frontend/src/pages/org-event/ui && sed -n '/<QueryState/,/<\/QueryState>/p' OrgEventLayout.vue)
+  ⎿  <QueryState
+             v-slot="{ data: loaded }"
+             class="mt-6"
+             :query="event"
+             :error-text="onCheckin ? t('checkinError') : t('error')"
+             :refresh-error-text="onCheckin ? t('checkinRefreshError') : t('refreshError')"
+     … +33 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  321:      expect(wrapper.find('[data-counters="cards"]').exists()).toBe(false);
+     327:      expect(wrapper.find('[data-counters="text"]').exists()).toBe(true);
+
+⏺ Bash(cd /home/raf/event-registration/frontend && python3 - <<'EOF')
+  ⎿  Tests  57 passed (57)
+     [This command modified 1 file you've previously read: src/pages/org-event/ui/OrgEventLayout.test.ts. Call Read before editing.]
+
+⏺ Тесты зелёные. На этот раз посмотрю вид глазами: подниму стек слота 1 и сниму скриншоты обеих вкладок.
+
+⏺ Bash(cd /home/raf/event-registration && sed -n 1,24p e2e/tests/helpers.ts; grep -n 'organizerPage\|createEvent' -A15 e2e/tests/helpers.ts | sed -n 1,60p | grep -v '^--$' | head -50; grep -n 'stack-up' Make)
+  ⎿  import {
+       expect,
+       type APIRequestContext,
+       type Browser,
+       type Locator,
+       type Page,
+     … +57 lines
+
+⏺ Bash(make stack-up >/dev/null 2>&1; echo $?; SP=/tmp/claude-1000/-home-raf-event-registration/949c05f2-5502-4fe9-b623-6db4085f062d/scratchpad; cat > $SP/shot.mjs <<'EOF')
+  ⎿  0
+     node:internal/modules/package_json_reader:314
+       throw new ERR_MODULE_NOT_FOUND(packageName, fileURLToPath(base), null);
+             ^
+     
+     Error [ERR_MODULE_NOT_FOUND]: Cannot find package 'playwright' imported from /home/raf/event-registration/e2e/.shot.mjs
+     … +12 lines
+
+⏺ Bash(SP=/tmp/claude-1000/-home-raf-event-registration/949c05f2-5502-4fe9-b623-6db4085f062d/scratchpad; sed -i 's/from "playwright"/from "@playwright\/test"/' $SP/shot.mjs && cp $SP/shot.mjs ./.shot.mjs && )
+  ⎿  Exit code 1
+     node:internal/modules/run_main:123
+         triggerUncaughtException(
+         ^
+     
+     locator.waitFor: Error: strict mode violation: getByRole('link', { name: 'Чекин' }) resolved to 86 elements:
+     … +23 lines
+
+⏺ После создания приложение возвращает к списку — открою событие по ссылке из списка.
+
+⏺ Bash(SP=/tmp/claude-1000/-home-raf-event-registration/949c05f2-5502-4fe9-b623-6db4085f062d/scratchpad; python3 - "$SP/shot.mjs" <<'EOF')
+  ⎿  /tmp/claude-1000/-home-raf-event-registration/949c05f2-5502-4fe9-b623-6db4085f062d/scratchpad/checkin.png
+     /tmp/claude-1000/-home-raf-event-registration/949c05f2-5502-4fe9-b623-6db4085f062d/scratchpad/participants.png
+
+⏺ Read(/tmp/claude-1000/-home-raf-event-registration/949c05f2-5502-4fe9-b623-6db4085f062d/scratchpad/participants.png)
+  ⎿  (no output)
+
+⏺ Read(/tmp/claude-1000/-home-raf-event-registration/949c05f2-5502-4fe9-b623-6db4085f062d/scratchpad/checkin.png)
+  ⎿  (no output)
+
+⏺ Bash(cd /home/raf/event-registration/frontend && cat src/shared/ui/shadcn/button/index.ts | sed -n 1,40p; grep -rn 'router-link-active\|aria-current\|data-active' src/app/styles.css src/shared/ui | head)
+  ⎿  import type { VariantProps } from "class-variance-authority";
+     import { cva } from "class-variance-authority";
+     
+     export { default as Button } from "./Button.vue";
+     
+     export const buttonVariants = cva(
+     … +31 lines
+
+⏺ Bash(cd /home/raf/event-registration/e2e && SP=/tmp/claude-1000/-home-raf-event-registration/949c05f2-5502-4fe9-b623-6db4085f062d/scratchpad; cat > .dom.mjs <<'EOF')
+  ⎿  ghost null 
+     default page
+
+⏺ Bash(SP=/tmp/claude-1000/-home-raf-event-registration/949c05f2-5502-4fe9-b623-6db4085f062d/scratchpad; python3 - "$SP/shot.mjs" <<'EOF')
+⏺ Read(/tmp/claude-1000/-home-raf-event-registration/949c05f2-5502-4fe9-b623-6db4085f062d/scratchpad/checkin.png)
+  ⎿  (Bash completed with no output)
+
+  ⎿  (no output)
+
+⏺ Выглядит как задумано. Записываю решение, запускаю проверки и коммичу.
+
+⏺ Bash(cd /home/raf/event-registration && python3 - <<'EOF')
+  ⎿  473:- **04:03** — 2.3: два e2e-сценария в `e2e
+     665:- **04:09** — по замечанию человека
+
+⏺ Bash(sed -i 's/Отменяет запись от 04:08 (краткая/Отменяет запись от 04:09 (краткая/' docs/decisions.md && pnpm exec prettier --write docs/decisions.md >/dev/null; make stack-check > /tmp/claude-1000/-home-)
+  ⎿  CHECK 0
+     E2E 0
+       9 passed (6.0s)
+     All checks passed!
+     ======================== 248 passed in 69.17s (0:01:09) ========================
+      Test Files  26 passed (26)
+     … +2 lines
+
+⏺ Bash(git status --short && git add -A && git commit -q -F - <<'EOF')
+  ⎿  M docs/decisions.md
+      M frontend/src/pages/org-event/ui/OrgEventLayout.test.ts
+      M frontend/src/pages/org-event/ui/OrgEventLayout.vue
+     ⋯ Backing up original state…
+     ✔ Done backing up original state (c9fb254)!
+     ⋯ Running tasks for staged files…
+     … +16 lines
+
+⏺ Готово, коммит `fcf3794`.
+  
+  **Как теперь выглядит «Чекин»:**
+  - Блок с информацией о событии такой же, как на «Участниках»: крупное название и дата. Длинное название переносится.
+  - Вместо карточек — пять счётчиков текстом, каждый на своей строке: «Мест 5», «Подтверждено 0», «В листе ожидания 0», «Пришло 0», «Свободно 5».
+  - Переход на «Участников» остался на прежнем месте: вкладки под блоком события, над формой.
+  
+  На вкладке «Участники» ничего не изменилось.
+  
+  **Проверки:**
+  - Обе вкладки посмотрел в браузере на слоте 1 с длинным названием: вид как описан выше.
+  - Тест проверяет, что на чекине те же название и дата, счётчики текстом и все пять значений. На участниках по-прежнему карточки.
+  - `make stack-check` проходит, `make stack-e2e`: 9 из 9.
+  - Решение записано в `docs/decisions.md`.
+  
+  Дальше — задача 3.5.
+
+> переверстал как мне больше нравится, приведи классы в порядок, и еще учти что название/описание события могут быть длинными
+
+⏺ Bash(git status --short && git diff)
+  ⎿  M frontend/src/pages/org-event/ui/OrgEventLayout.vue
+     diff --git a/frontend/src/pages/org-event/ui/OrgEventLayout.vue b/frontend/src/pages/org-event/ui/OrgEventLayout.vue
+     index 4ad9a36..50f47b1 100644
+     --- a/frontend/src/pages/org-event/ui/OrgEventLayout.vue
+     +++ b/frontend/src/pages/org-event/ui/OrgEventLayout.vue
+     @@ -89,30 +89,17 @@ function startsAt(iso: string): string {
+     … +34 lines
+
+⏺ Bash(cd /home/raf/event-registration/frontend && grep -n '"tailwindcss"\|prettier-plugin' package.json ../package.json; cat ../.prettierrc* 2>/dev/null; grep -rn 'title\b\|\.title\|description' src --inclu)
+  ⎿  package.json:26:    "tailwindcss": "^4.3.3",
+     {
+       "printWidth": 100
+     }
+     (eval):1: no matches found: --include=*.vue
+
+⏺ Bash(cd /home/raf/event-registration/frontend && git grep -n -E '\{\{[^}]*(title|description)[^}]*\}\}' -- 'src/*.vue'; grep -rn 'wrap-break-word\|break-words\|wrap-anywhere' node_modules/tailwindcss/dist/)
+  ⎿  <persisted-output>
+     Output too large (212.9KB). Full output saved to: /home/raf/.claude/projects/-home-raf-event-registration/949c05f2-5502-4fe9-b623-6db4085f062d/tool-results/bbc1cwt18.txt
+     
+     Preview (first 2KB):
+     src/pages/event/ui/EventPage.vue:122:      <h1 class="text-2xl font-semibold">{{ loaded.title }}</h1>
+     src/pages/event/ui/EventPage.vue:124:      <p v-if="loaded.description" class="mt-4 whitespace-pre-line">{{ loaded.description }}</p>
+     … +10 lines
+
+⏺ Bash(git grep -n -E '(title|description) *\}\}' -- 'src/*.vue' | cut -c1-200; git grep -n -B6 'event.title }}' -- src/pages/org-events/ui/OrgEventsPage.vue src/pages/home/ui/HomePage.vue | cut -c1-200)
+  ⎿  src/pages/event/ui/EventPage.vue:122:      <h1 class="text-2xl font-semibold">{{ loaded.title }}</h1>
+     src/pages/event/ui/EventPage.vue:124:      <p v-if="loaded.description" class="mt-4 whitespace-pre-line">{{ loaded.description }}</p>
+     src/pages/org-event/ui/OrgEventLayout.vue:92:        <h1 class="text-2xl font-semibold word-break">{{ loaded.title }}</h1>
+     src/pages/org-events/ui/OrgEventsPage.vue:43:                  {{ event.title }}
+     src/pages/ticket/ui/TicketPage.vue:96:          <CardHeading :level="1" class="text-2xl">{{ loaded.event.title }}</CardHeading>
+     src/pages/org-events/ui/OrgEventsPage.vue-37-      <ul v-else class="grid gap-3">
+     … +6 lines
+
+⏺ Bash(git grep -n -E 'title|description' -- src/pages/home/ui/HomePage.vue | head; git grep -n 'whitespace-nowrap\|truncate\|line-clamp' -- 'src/pages/*.vue')
+  ⎿  src/pages/home/ui/HomePage.vue:22:      <h1 class="text-2xl font-semibold">{{ t("title") }}</h1>
+     src/pages/home/ui/HomePage.vue:42:                  event.title
+     src/pages/home/ui/HomePage.vue:59:  "title": "События",
+
+⏺ Bash(sed -n 36,56p src/pages/org-events/ui/OrgEventsPage.vue; sed -n 34,52p src/pages/home/ui/HomePage.vue; sed -n 92,100p src/pages/ticket/ui/TicketPage.vue; sed -n 118,126p src/pages/event/ui/EventPage.v)
+  ⎿  <p v-if="loaded.length === 0" class="text-muted-foreground">{{ t("empty") }}</p>
+           <ul v-else class="grid gap-3">
+             <li v-for="event in loaded" :key="event.id">
+               <Card>
+                 <CardHeader>
+                   <CardHeading :level="2">
+     … +67 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  <QueryState
+             v-slot="{ data: loaded }"
+             class="mt-6"
+             :query="event"
+             :error-text="onCheckin ? t('checkinError') : t('error')"
+             :refresh-error-text="onCheckin ? t('checkinRefreshError') : t('refreshError')"
+     … +25 lines
+
+⏺ Bash(cat src/shared/lib/class-names.ts; python3 - <<'EOF')
+  ⎿  import { clsx, type ClassValue } from "clsx";
+     import { twMerge } from "tailwind-merge";
+     
+     // Merges class lists; later Tailwind utilities win over earlier conflicting ones.
+     export function cn(...inputs: ClassValue[]): string {
+       return twMerge(clsx(inputs));
+     … +1 lines
+
+⏺ Теперь проверю глазами: событие с длинным названием без пробелов и длинным описанием, на ширине 1100 и 375 px.
+
+⏺ Bash(cd /home/raf/event-registration && grep -n 'max_length' backend/events/models.py | head; grep -n 'Описание' frontend/src/pages/org-event-new/ui/OrgEventNewPage.vue | head -2)
+  ⎿  38:    title = models.CharField(max_length=200)
+     39:    description = models.CharField(max_length=2000, blank=True)
+     142:    "description": "Описание",
+
+⏺ Bash(cd /home/raf/event-registration/e2e && SP=/tmp/claude-1000/-home-raf-event-registration/949c05f2-5502-4fe9-b623-6db4085f062d/scratchpad; rm -f $SP/*.png; cat > .shot.mjs <<'EOF')
+  ⎿  Permission for this command was denied by a built-in Claude Code safety check, not by the user. The check stops removals that can delete far more than intended: a system, home or workspace directory, 
+     
+     This check does not fire on a target that cannot expand to the filesystem root: rewrite it as `"${SP:?}"/*.png`, which makes the shell stop with an error instead of running rm when $SP is unset or emp
+
+⏺ Удалять старые скриншоты не нужно: новые их перезапишут. Запускаю без удаления.
+
+⏺ Write(/tmp/claude-1000/-home-raf-event-registration/949c05f2-5502-4fe9-b623-6db4085f062d/scratchpad/long.mjs)
+  ⎿  File created successfully at: /tmp/claude-1000/-home-raf-event-registration/949c05f2-5502-4fe9-b623-6db4085f062d/scratchpad/long.mjs (file state is current in your context — no need to Read it back)
+
+⏺ Bash(cd /home/raf/event-registration/e2e && cp /tmp/claude-1000/-home-raf-event-registration/949c05f2-5502-4fe9-b623-6db4085f062d/scratchpad/long.mjs .long.mjs && node .long.mjs /tmp/claude-1000/-home-raf-)
+  ⎿  org-events-wide 1321/1100
+     participants-wide 1788/1100
+     checkin-wide 1788/1100
+     event-wide 1948/1100
+     home-wide 1321/1100
+     org-events-narrow 1155/375
+     … +4 lines
+
+⏺ Bash(cd /home/raf/event-registration && make stack-up >/dev/null 2>&1; echo $?; curl -s localhost:5174/ | grep -o '@vite/client' | head -1; cd e2e && cp /tmp/claude-1000/-home-raf-event-registration/949c05)
+  ⎿  0
+     @vite/client
+     org-events-wide 1100/1100
+     participants-wide 1100/1100
+     checkin-wide 1100/1100
+     event-wide 1100/1100
+     … +6 lines
+
+⏺ Горизонтального переполнения больше нет ни на одной странице, ни на 1100, ни на 375 px. Смотрю скриншоты.
+
+⏺ Read(/tmp/claude-1000/-home-raf-event-registration/949c05f2-5502-4fe9-b623-6db4085f062d/scratchpad/participants-narrow.png)
+  ⎿  (no output)
+
+⏺ Read(/tmp/claude-1000/-home-raf-event-registration/949c05f2-5502-4fe9-b623-6db4085f062d/scratchpad/participants-wide.png)
+  ⎿  (no output)
+
+⏺ Read(/tmp/claude-1000/-home-raf-event-registration/949c05f2-5502-4fe9-b623-6db4085f062d/scratchpad/org-events-narrow.png)
+  ⎿  (no output)
+
+⏺ Read(/tmp/claude-1000/-home-raf-event-registration/949c05f2-5502-4fe9-b623-6db4085f062d/scratchpad/event-narrow.png)
+  ⎿  (no output)
+
+⏺ Шапка и описание переносятся. В списках карточка с длинным названием ниже первого экрана — сниму именно её.
+
+⏺ Bash(cat > .card.mjs <<'EOF')
+⏺ Read(/tmp/claude-1000/-home-raf-event-registration/949c05f2-5502-4fe9-b623-6db4085f062d/scratchpad/card-org.png)
+⏺ Read(/tmp/claude-1000/-home-raf-event-registration/949c05f2-5502-4fe9-b623-6db4085f062d/scratchpad/card-home.png)
+  ⎿  (Bash completed with no output)
+
+  ⎿  (no output)
+
+  ⎿  (no output)
+
+⏺ Bash(cd /home/raf/event-registration/frontend && grep -n -B2 -A6 'id="description"' src/pages/org-event-new/ui/OrgEventNewPage.vue | head -20)
+  ⎿  (Bash completed with no output)
+
+⏺ Bash(grep -n 'description' src/pages/org-event-new/ui/OrgEventNewPage.vue | head)
+  ⎿  38:  description: "",
+     80:const textFields: { name: "title" | "description" | "starts_at"; type: string }[] = [
+     82:  { name: "description", type: "text" },
+     142:    "description": "Описание",
+
+⏺ Bash(cd /home/raf/event-registration && python3 - <<'EOF')
+  ⎿  [error] No files matching the pattern were found: "../docs/decisions.md".
+     [error] No files matching the pattern were found: "../docs/features/realtime/tasks.md".
+     [error] No files matching the pattern were found: "src/pages".
+     CHECK 2
+     [This command modified 1 file you've previously read: ../../../../tmp/claude-1000/-home-raf-event-registration/949c05f2-5502-4fe9-b623-6db4085f062d/scratchpad/check.log. Call Read before editing.]
+
+⏺ Bash(cd /home/raf/event-registration && pnpm exec prettier --write docs/decisions.md docs/features/realtime/tasks.md frontend/src/pages >/dev/null && make stack-check > /tmp/claude-1000/-home-raf-event-reg)
+  ⎿  CHECK 0
+     # Subtest: an unclosed session is a warning and is not counted
+     ok 44 - an unclosed session is a warning and is not counted
+     # Subtest: a start while another session is open and an end without a start are warnings
+     ok 45 - a start while another session is open and an end without a start are warnings
+     # Subtest: an end before its start is a warning, not negative time
+     … +11 lines
+
+⏺ Bash(make stack-e2e > /tmp/claude-1000/-home-raf-event-registration/949c05f2-5502-4fe9-b623-6db4085f062d/scratchpad/e2e.log 2>&1; echo E2E $?; grep -E 'passed|failed' /tmp/claude-1000/-home-raf-event-regis)
+  ⎿  E2E 0
+       9 passed (7.4s)
+      docs/decisions.md                                  |  1 +
+      docs/features/realtime/tasks.md                    |  3 +++
+      frontend/src/pages/event/ui/EventPage.vue          |  6 ++++--
+      frontend/src/pages/home/ui/HomePage.vue            |  2 +-
+     … +25 lines
+
+⏺ В коммит попал `OrgCheckinPage.vue`, который я сейчас не трогал. Проверю, что там.
+
+⏺ Bash(git show 63ab09f -- frontend/src/pages/org-checkin/ui/OrgCheckinPage.vue | tail -8; make stack-up >/dev/null 2>&1; echo up $?)
+  ⎿  <form v-else class="mt-6 grid gap-2" novalidate @submit.prevent="submit">
+            <Label for="code">{{ t("code") }}</Label>
+     -      <div ref="code-field" class="flex gap-2">
+     +      <div ref="code-field" class="flex gap-2 flex-col sm:flex-row">
+              <Input
+                id="code"
+     … +2 lines
+
+⏺ Bash(git status -sb | head -1 && sed -i 's|<div ref="code-field" class="flex gap-2 flex-col sm:flex-row">|<div ref="code-field" class="flex flex-col gap-2 sm:flex-row">|' frontend/src/pages/org-checkin/ui/)
+  ⎿  ## feat/realtime-event-page...origin/feat/realtime-event-page [ahead 5]
+     ⋯ Backing up original state…
+     ✔ Done backing up original state (38a1550)!
+     ⋯ Running tasks for staged files…
+         frontend/**/*.{ts,vue,js} — 1 file
+           ⋯ pnpm --dir frontend exec eslint --fix
+     … +22 lines
+
+⏺ Вашу вёрстку оставил по сути без изменений, классы привёл в порядок и сделал перенос длинных названий и описаний. Коммит `9a4c1ef`, `make stack-check` и `make stack-e2e` (9 из 9) проходят.
+  
+  **Счётчики** — одна вёрстка для обеих вкладок, как вы сделали: на узком экране текстом по одному на строку, с `sm` — карточками. В классах:
+  - убрал лишнее: `grid-cols-1`, `flex-row`, `p-0`;
+  - `word-break` заменил: такого класса в Tailwind нет;
+  - отступ между подписью и числом теперь `gap-x-2` вместо пары `pl-2` / `sm:pl-0`: в колонке горизонтальный отступ не действует, так что для карточек ничего не меняется;
+  - порядок везде один: сначала базовые классы, потом `sm:`, `md:`, `xl:`;
+  - в форме чекина ваш `flex gap-2 flex-col sm:flex-row` переставил в `flex flex-col gap-2 sm:flex-row`. Эта правка появилась, пока я работал, и попала в тот же коммит.
+  
+  **Длинные название и описание.** Обычный длинный текст и раньше переносился. Ломало вёрстку слово без пробелов, например ссылка: оно растягивало страницу вбок. Исправил в пяти местах:
+  - шапка события организатора;
+  - страница события — название и описание;
+  - страница билета;
+  - карточки в «Моих событиях» и в публичном списке.
+  
+  Взял `wrap-anywhere`, а не `wrap-break-word`: в карточках списков второй не мешает длинному слову растянуть колонку. У заголовков карточек заменил межстрочный интервал `leading-none` из `CardHeading`, иначе строки переноса слипались бы.
+  
+  **Проверил в браузере** на слоте 1, ширина 1100 и 375 px: название из 14 слитных слов и описание со ссылкой в 170 символов переносятся. Страница нигде не шире окна — на списке событий организатора, обеих вкладках события, странице события и публичном списке. Страницу билета глазами не смотрел, там то же изменение.
+  
+  **Нашёл попутно:** описание в форме создания события — однострочное поле, и перевод строки браузер теряет ещё при вводе. Записал в «На потом» в `tasks.md`.
+
+> запиши на потом выводить ли описание на странице события для организатора, если да, то нужно выводить его компактно (по-умолчанию 3-4 первых строк, и если больше то возможность развернуть полностью)
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  ⋯ Backing up original state…
+     ✔ Done backing up original state (7e7b49f)!
+     ⋯ Running tasks for staged files…
+         *.{mjs,json,md,yml,yaml} — 1 file
+           ⋯ prettier --write
+     
+     … +8 lines
+
+⏺ Записал в «На потом» в `docs/features/realtime/tasks.md`, коммит `f5da060`:
+  
+  > Решить, показывать ли описание события организатору в макете события (`pages/org-event`, сейчас — только название и дата). Если да — компактно: по умолчанию первые 3–4 строки, а если текст длиннее — кнопка «Развернуть» для полного описания (идея человека, 2026-11-02).
+
+> делаем 3.5
+
+⏺ Начинаю 3.5. Сначала смотрю текущий код страницы события, публичной сущности и контракт потока и списка участников.
+
+⏺ Bash(cd /home/raf/event-registration/frontend/src && cat entities/event/api/public-events.ts pages/event/api/register.ts; sed -n '/<script setup/,/<\/script>/p' pages/event/ui/EventPage.vue; grep -n '"/api)
+  ⎿  import { queryOptions } from "@tanstack/vue-query";
+     
+     import { api, unwrap } from "@/shared/api";
+     import type { components } from "@/shared/api";
+     
+     export type PublicEventListItem = components["schemas"]["PublicEventList"];
+     … +154 lines
+
+⏺ Bash(grep -n 'org_events_registrations_list\|registrations_list' -A22 shared/api/schema.d.ts | grep -n 'query\|page\|status' | head; sed -n '/<template>/,/<\/template>/p' pages/event/ui/EventPage.vue | hea)
+  ⎿  12:222-            query?: never;
+     27:801-            query?: {
+     28:802-                page?: number;
+     34:808-                status?: "confirmed" | "waitlisted" | "cancelled";
+     <template>
+       <main class="mx-auto max-w-xl px-4 py-8">
+     … +45 lines
+
+⏺ Bash(sed -n 1,64p pages/event/ui/EventPage.test.ts; sed -n 105,150p pages/event/ui/EventPage.test.ts; cat shared/lib/test/fake-event-source.ts | head -40)
+  ⎿  import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
+     import { mount } from "@vue/test-utils";
+     import { http, HttpResponse } from "msw";
+     import { describe, expect, it, vi } from "vitest";
+     import { createMemoryHistory, createRouter } from "vue-router";
+     
+     … +135 lines
+
+⏺ Bash(cd /home/raf/event-registration && grep -n 'PAGE_SIZE\|50\|1_000_000\|1000000' backend/registrations/views.py backend/registrations/*.py 2>/dev/null | head)
+  ⎿  backend/registrations/services.py:192:PAGE_SIZE = 50
+     backend/registrations/services.py:200:    For the organizer, PAGE_SIZE a page from 1; past the end, an empty one. A waitlisted
+     backend/registrations/services.py:216:    ).order_by(*queue_order)[(page - 1) * PAGE_SIZE : page * PAGE_SIZE]
+
+⏺ Bash(grep -rn 'page' backend/registrations/serializers.py backend/registrations/views.py | head)
+  ⎿  backend/registrations/views.py:161:    """A page of the event's participants for the organizer, in queue order, of one status or all.
+     backend/registrations/views.py:163:    The number of pages comes from the counts of the event, not from this response.
+     backend/registrations/views.py:185:            event.id, query.validated_data.get("status"), query.validated_data["page"]
+     backend/registrations/serializers.py:42:    # The upper bound keeps the OFFSET of a page within bigint.
+     backend/registrations/serializers.py:43:    page = serializers.IntegerField(min_value=1, max_value=10**6, default=1)
+     backend/registrations/serializers.py:74:    """The ticket page behind the manage token from the email.
+
+⏺ Пишу модель страниц участников с тестами (тест вперёд).
+
+⏺ Write(/home/raf/event-registration/frontend/src/pages/org-event-participants/model/participant-pages.test.ts)
+⏺ Write(/home/raf/event-registration/frontend/src/pages/org-event-participants/model/participant-pages.ts)
+  ⎿  File created successfully at: /home/raf/event-registration/frontend/src/pages/org-event-participants/model/participant-pages.test.ts (file state is current in your context — no need to Read it back)
+
+  ⎿  File created successfully at: /home/raf/event-registration/frontend/src/pages/org-event-participants/model/participant-pages.ts (file state is current in your context — no need to Read it back)
+
+⏺ Bash(cd /home/raf/event-registration/frontend && pnpm exec eslint src/pages/org-event-participants/model && pnpm exec vitest run src/pages/org-event-participants/model 2>&1 | grep -E 'Tests|×')
+  ⎿  Tests  29 passed (29)
+
+⏺ Чисто. Теперь запрос страницы: счётчики фиксируются в момент начала чтения.
+
+⏺ Write(/home/raf/event-registration/frontend/src/pages/org-event-participants/api/registrations.ts)
+⏺ Bash(sed -n '/<script setup/,/<\/script>/p' src/pages/org-event-participants/ui/OrgEventParticipantsPage.vue; cat src/shared/ui/query-state/RetryAlert.vue | head -30)
+  ⎿  The file /home/raf/event-registration/frontend/src/pages/org-event-participants/api/registrations.ts has been updated successfully. (file state is current in your context — no need to Read it back)
+
+  ⎿  <script setup lang="ts">
+     import { useQuery } from "@tanstack/vue-query";
+     import { computed } from "vue";
+     import { useI18n } from "vue-i18n";
+     import { useRoute } from "vue-router";
+     
+     … +64 lines
+
+⏺ Теперь страница участников: страницы в URL, навигация и «Есть обновления».
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  (Bash completed with no output)
+
+⏺ Bash(sed -n 1,62p src/pages/org-event-participants/ui/OrgEventParticipantsPage.test.ts)
+  ⎿  import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
+     import { flushPromises, mount } from "@vue/test-utils";
+     import { http, HttpResponse } from "msw";
+     import { describe, expect, it, vi } from "vitest";
+     import { createMemoryHistory, createRouter } from "vue-router";
+     
+     … +56 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  Tests  45 passed (45)
+     [This command modified 1 file you've previously read: src/pages/org-event-participants/ui/OrgEventParticipantsPage.test.ts. Call Read before editing.]
+
+⏺ Bash(f=src/pages/org-event-participants/api/registrations.ts; cp $f /tmp/claude-1000/-home-raf-event-registration/949c05f2-5502-4fe9-b623-6db4085f062d/scratchpad/reg.ts && python3 - <<'EOF')
+  ⎿  × offers a refresh for a snapshot that came while the page was read 15ms
+     ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+           Tests  1 failed | 44 passed (45)
+      .../org-event-participants/api/registrations.ts    | 26 +++++++++++++++++-----
+      1 file changed, 20 insertions(+), 6 deletions(-)
+
+⏺ Тест ловит эту ошибку. Теперь страница события: живой источник в сущности и подписка на странице.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  × shows the event with its free seats and the form 1041ms
+          × says there are no seats at 0 1012ms
+          × shows a load error with a retry 1061ms
+          × registers, shows the result and refreshes the lists 1006ms
+          × forgets the result when the route moves to another event 1006ms
+          × shows the same result for a repeated registration 1006ms
+     … +12 lines
+
+⏺ Ожидаемо: в jsdom нет `EventSource`. Добавляю фейк в тесты страницы и тесты на поток.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  193:  "noSeats": "Свободных мест нет, можно встать в лист ожидания",
+          × takes the free seats from a snapshot of the stream 60ms
+     ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+     AssertionError: expected 'Все событияMeetup1 мая 2030 г. в 18:0…' to contain 'Мест нет'
+           Tests  1 failed | 29 passed (30)
+
+⏺ Bash(sed -i 's/expect(wrapper.text()).toContain("Мест нет");/expect(wrapper.text()).toContain("Свободных мест нет");/' src/pages/event/ui/EventPage.test.ts && pnpm exec vitest run src/pages/event 2>&1 | gr)
+  ⎿  Tests  30 passed (30)
+     323:  it("keeps the event and the typed values when a refetch fails", async () => {
+     324-    let fail = false;
+     325-    server.use(
+     326-      http.get("*/api/events/7/", () => (fail ? HttpResponse.error() : HttpResponse.json(event))),
+     327-    );
+     … +21 lines
+
+⏺ Vitest зелёный. Обновляю карту в `frontend/AGENTS.md` и запускаю полные проверки.
+
+⏺ Bash(cd /home/raf/event-registration && python3 - <<'EOF')
+  ⎿  CHECK 0
+     All checks passed!
+     ======================== 248 passed in 68.24s (0:01:08) ========================
+      Test Files  27 passed (27)
+           Tests  229 passed (229)
+     E2E 0
+     … +1 lines
+
+⏺ Write(/tmp/claude-1000/-home-raf-event-registration/949c05f2-5502-4fe9-b623-6db4085f062d/scratchpad/live.mjs)
+  ⎿  File created successfully at: /tmp/claude-1000/-home-raf-event-registration/949c05f2-5502-4fe9-b623-6db4085f062d/scratchpad/live.mjs (file state is current in your context — no need to Read it back)
+
+⏺ Bash(cd /home/raf/event-registration/e2e && cp /tmp/claude-1000/-home-raf-event-registration/949c05f2-5502-4fe9-b623-6db4085f062d/scratchpad/live.mjs .live.mjs && node .live.mjs /tmp/claude-1000/-home-raf-)
+  ⎿  rows page 1: 50
+     rows page 2: 0 http://localhost:5174/org/events/110?page=2
+     visitor free seats updated in 52 ms
+     organizer sees updates; rows still: 5
+     after refresh rows: 6
+     console errors: [
+     … +2 lines
+
+⏺ Read(/tmp/claude-1000/-home-raf-event-registration/949c05f2-5502-4fe9-b623-6db4085f062d/scratchpad/updates.png)
+  ⎿  (no output)
+
+⏺ Выглядит правильно. Записываю решения, отмечаю 3.5 и коммичу.
+
+⏺ Bash(cd /home/raf/event-registration && python3 - <<'EOF')
+  ⎿  M  docs/decisions.md
+     M  docs/features/realtime/tasks.md
+     M  frontend/AGENTS.md
+     M  frontend/src/entities/event/api/public-events.ts
+     M  frontend/src/entities/event/index.ts
+     M  frontend/src/pages/event/ui/EventPage.test.ts
+     … +25 lines
+
+⏺ Задача 3.5 готова, коммит `d46f937`.
+  
+  **Страница события**
+  - Событие загружается один раз, дальше свободные места обновляются из потока. Сама страница событие больше не перечитывает: ни при возврате на вкладку, ни после регистрации.
+  - После своей регистрации свободные места приходят из потока. Список событий по-прежнему обновляется. При этом пришлось точечно поправить одну вещь: обновление списка задевало и само событие, потому что его ключ в кэше лежит под ключом списка. Теперь затрагивается только список.
+  
+  **Таблица участников**
+  - Таблица разбита на страницы по 50, номер страницы хранится в адресе (`?page=`). Под таблицей «Назад», «Страница N из M», «Вперёд». Смена фильтра открывает его первую страницу.
+  - Число страниц считается по счётчикам события, поэтому оно тоже обновляется вживую.
+  - Для номера за последней страницей показывается «На этой странице никого нет.» со ссылкой на последнюю.
+  - **«Есть обновления»**: таблица сама не перечитывается. Если подтверждённых, листа ожидания, отказавшихся или пришедших стало больше или меньше, чем при загрузке страницы, над таблицей появляется плашка с кнопкой «Обновить».
+    - Счётчики запоминаются в момент начала загрузки, а не при ответе. Иначе изменение, случившееся во время загрузки, могло бы потеряться без плашки.
+    - Я проверил, что тест на это падает, если счётчики запоминать при ответе.
+  
+  **Проверки**
+  - `make stack-check` проходит, Vitest теперь 229 тестов. `make stack-e2e`: 9 из 9.
+  - В браузере через шлюз слота 1, событие на 60 мест и 55 регистраций:
+    - «Страница 1 из 2», на страницах 50 и 5 строк;
+    - после ещё одной регистрации у посетителя «свободно» обновилось примерно за 50 мс;
+    - у организатора появилось «Есть обновления» при прежних 5 строках, после «Обновить» строк стало 6.
+  
+  Решения записаны в `docs/decisions.md`. Дальше 3.6 — e2e на это поведение. После него можно отдавать фронтенд этапа (3.4–3.6) на ревью агенту `reviewer`.
+
+> сделай событие от демо и наделай туда разных регистраций более 100 записей
+
+⏺ Делаю на своём стеке, слот 1: `http://localhost:5174`, вход `demo@example.com` / `demo`. Слот 0 ваш, его базу я не трогаю. Регистрации создам через сервисы backend внутри контейнера слота 1: так получатся и отказы, и повышения из листа, и отметки на входе без писем. Смотрю сигнатуры сервисов.
+
+⏺ Bash(grep -n '^def \|^async def ' backend/registrations/services.py backend/events/services.py 2>/dev/null; grep -n 'def register\|def cancel\|def check_in' -A8 backend/registrations/services.py | head -50)
+  ⎿  backend/events/services.py:9:def get_org_event(user: User, event_id: int, queryset: QuerySet[Event] | None = None) -> Event:
+     backend/registrations/services.py:43:def waitlist_position(registration: Registration) -> int | None:
+     backend/registrations/services.py:58:def register(
+     backend/registrations/services.py:116:def _queue_time(event: Event, now: datetime) -> datetime:
+     backend/registrations/services.py:130:def cancel(manage_token: str, *, now: datetime | None = None) -> Registration:
+     backend/registrations/services.py:164:def check_in(event_id: int, code: str, *, now: datetime | None = None) -> CheckInResult:
+     … +39 lines
+
+⏺ Bash(grep -n 'class Registration\|manage_token\|ticket_code\|code = \|class Event\b\|organizer\|starts_at\|capacity' backend/registrations/models.py backend/events/models.py | head -20)
+  ⎿  backend/registrations/models.py:14:def new_ticket_code() -> str:
+     backend/registrations/models.py:18:def new_manage_token() -> str:
+     backend/registrations/models.py:22:class Registration(models.Model):
+     backend/registrations/models.py:35:    ticket_code = models.CharField(
+     backend/registrations/models.py:36:        max_length=TICKET_CODE_LENGTH, unique=True, default=new_ticket_code
+     backend/registrations/models.py:38:    manage_token = models.CharField(max_length=64, unique=True, default=new_manage_token)
+     … +9 lines
+
+⏺ Bash(cat > /tmp/claude-1000/-home-raf-event-registration/949c05f2-5502-4fe9-b623-6db4085f062d/scratchpad/seed.py <<'EOF')
+  ⎿  9 objects imported automatically (use -v 2 for details).
+     
+     event 111 {'confirmed': 80, 'waitlisted': 32, 'cancelled': 18} checked in 25
+
+⏺ Готово. На слоте 1 создано событие от `demo@example.com`: **«Демо: конференция с регистрациями»** (id 111), 80 мест, начало через 30 дней.
+  
+  - Открыть: http://localhost:5174/org/events/111, вход `demo@example.com` / `demo`.
+  - Регистраций 130, у участников русские имена, адреса `guest001@example.com` … `guest130@example.com`.
+  - Итог по базе:
+  
+  | Статус | Сколько |
+  | --- | --- |
+  | Подтверждено | 80 (из них 12 подняты из листа на место отказавшихся) |
+  | В листе ожидания | 32 |
+  | Отказались | 18 (12 с подтверждённого места, 6 из листа) |
+  | Пришло | 25 |
+  
+  Страниц во «Всех» — 3, в «Подтверждённых» — 2, в «Листе ожидания» и «Отказавшихся» — по одной. Сделано через сервисы backend внутри контейнера слота 1, поэтому письма о билетах и повышениях ушли в Mailpit слота 1 (http://localhost:8026).
+  
+  На слоте 1 сейчас сборка за шлюзом, оставшаяся после последнего `make stack-e2e`. Если нужно то же событие на вашем слоте 0 (`make up`), скажите: это ваша база, туда без разрешения не пишу.
+
+> делаем 3.6
+
+⏺ Начинаю 3.6. Смотрю тексты «свободно мест» и хелперы e2e.
+
+⏺ Bash(grep -n '"freeSeats"' frontend/src/pages/event/ui/EventPage.vue; sed -n 31,200p e2e/tests/helpers.ts; cat e2e/AGENTS.md | sed -n 1,80p)
+  ⎿  146:        {{ loaded.free_seats > 0 ? t("freeSeats", loaded.free_seats) : t("noSeats") }}
+     192:  "freeSeats": "Свободно {count} место | Свободно {count} места | Свободно {count} мест",
+     
+     export async function createEvent(
+       browser: Browser,
+       { title, capacity }: { title: string; capacity: number },
+     … +60 lines
+
+⏺ Write(/home/raf/event-registration/e2e/tests/registration-updates-open-pages.spec.ts)
+⏺ Bash(python3 - <<'EOF')
+  ⎿  File created successfully at: /home/raf/event-registration/e2e/tests/registration-updates-open-pages.spec.ts (file state is current in your context — no need to Read it back)
+
+  ⎿  33:  await entrance.getByRole("link", { name: "Чекин" }).click();
+     64:  await second.getByRole("link", { name: "Чекин" }).click();
+     72:  await first.getByRole("link", { name: "Чекин" }).click();
+
+⏺ Bash((cd e2e && pnpm exec eslint tests && pnpm exec prettier --check tests >/dev/null) && make stack-e2e > /tmp/claude-1000/-home-raf-event-registration/949c05f2-5502-4fe9-b623-6db4085f062d/scratchpad/e2e.)
+  ⎿  E2E 0
+       11 passed (11.2s)
+
+⏺ Bash(sed -n '/^stack-e2e:/,/^$/p' Makefile; grep -n 'e2e:' -A6 Makefile | grep -v stack | head -12)
+  ⎿  stack-e2e: export FRONTEND_TARGET := gateway
+     stack-e2e: stack-up ## Start the stack of slot SLOT with the gateway and run Playwright tests
+     	cd e2e && E2E_BASE_URL=http://localhost:$(STACK_FRONTEND_PORT) \
+     		E2E_MAILPIT_URL=http://localhost:$(call slot_port,8025) pnpm test
+     
+     104:check-e2e: ## e2e: ESLint and tsc for the test code (does not run the tests)
+     … +11 lines
+
+⏺ Bash(cd /home/raf/event-registration/e2e && cp tests/registration-updates-open-pages.spec.ts /tmp/claude-1000/-home-raf-event-registration/949c05f2-5502-4fe9-b623-6db4085f062d/scratchpad/a.ts && cp tests/o)
+  ⎿  ✘  2 [chromium] › tests/registration-updates-open-pages.spec.ts:16:1 › a registration updates the free seats on an open event page and flags the panel (7.2s)
+       ✘  1 [chromium] › tests/organizer-sees-arrivals-live.spec.ts:44:1 › a check-in at one entrance updates the arrivals on another check-in screen (8.5s)
+       1) [chromium] › tests/organizer-sees-arrivals-live.spec.ts:44:1 › a check-in at one entrance updates the arrivals on another check-in screen 
+         Error: expect(locator).toHaveText(expected) failed
+         Expected: "1"
+         Received: "0"
+     … +7 lines
+
+⏺ Bash(cp /tmp/claude-1000/-home-raf-event-registration/949c05f2-5502-4fe9-b623-6db4085f062d/scratchpad/b.ts tests/organizer-sees-arrivals-live.spec.ts && python3 - <<'EOF')
+  ⎿  Error: expect(locator).toHaveText(expected) failed
+         Expected: "1"
+         Received: "0"
+           48 |   await expect(panel.getByText("Есть обновления")).toBeVisible();
+           49 |   await expect(panel.getByText("Регистраций пока нет")).toBeVisible();
+           50 |   await panel.getByRole("button", { name: "Обновить" }).click();
+     … +3 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  CHECK 0
+     All checks passed!
+     ======================== 248 passed in 67.34s (0:01:07) ========================
+           Tests  229 passed (229)
+     [This command modified 1 file you've previously read: ../../../tmp/claude-1000/-home-raf-event-registration/949c05f2-5502-4fe9-b623-6db4085f062d/scratchpad/check.log. Call Read before editing.]
+
+⏺ Bash(git add -A && git commit -q -F - <<'EOF')
+  ⎿  ⋯ Backing up original state…
+     ✔ Done backing up original state (9fb456b)!
+     ⋯ Running tasks for staged files…
+         e2e/**/*.{ts,js} — 2 files
+           ⋯ pnpm --dir e2e exec eslint --fix
+           ⋯ prettier --write
+     … +14 lines
+
+⏺ Задача 3.6 готова, коммит `abe1493`. Этап 3 закрыт по задачам.
+  
+  **Два новых e2e:**
+  - `registration-updates-open-pages.spec.ts`: участник регистрируется в своём контексте. На открытой у другого человека странице события «Свободно 2 места» сменяется на «Свободно 1 место». На панели организатора «Подтверждено» становится 1, а над пустой таблицей появляется «Есть обновления». После «Обновить» в таблице появляется строка участника.
+  - Второй тест в `organizer-sees-arrivals-live.spec.ts`: отметка на одном экране чекина меняет «Пришло» на другом экране чекина.
+  
+  Оба теста проверяют, что обновление пришло без перезагрузки страницы.
+  
+  **Проверки:**
+  - `make stack-e2e`: 11 из 11.
+  - `make stack-check` проходит.
+  - Проверил, что тесты ловят поломку: обрывал поток по очереди у посетителя, у панели и у второго экрана чекина. Каждый раз тест падал на нужной проверке: «Свободно 1 место» не появлялось, «Подтверждено» и «Пришло» оставались 0. После этого временные правки откатил.
+  
+  **Дальше по правилам проекта** — ревью этапа агентом `reviewer`: фронтенд и e2e, задачи 3.4–3.6, коммиты от `5cecd16` до `abe1493`. Этап не считается готовым, пока вы не разберёте его находки. Запустить ревью?
+
+> да, запускай ревью
+
+⏺ Bash(sed -n '/## Ревью/,/^## [^Р]/p' .claude/skills/feature-workflow/SKILL.md; git log --oneline aa6e6ef..HEAD)
+  ⎿  ## Ревью
+     
+     Агент `reviewer` (`.claude/agents/reviewer.md`) с чистым контекстом, после каждого этапа.
+     Независимость ревью держится на промпте: агент знает только то, что в нём.
+     
+     Передать **только**:
+     … +45 lines
+
+⏺ Agent(Review phase 4 stage 3 frontend)
+  ⎿  Async agent launched successfully. (This tool result is internal metadata — never quote or paste any part of it, including the agentId below, into a user-facing reply.)
+     agentId: a104bcccb15b25498 (internal ID - do not mention to user. Use SendMessage with to: 'a104bcccb15b25498', summary: '<5-10 word recap>' to continue this agent.)
+     The agent is working in the background. You will be notified automatically when it completes. You know nothing about its results until that notification arrives — do not report, assume, or predict the
+     Do not duplicate this agent's work — avoid working with the same files or topics it is using.
+     output_file: /tmp/claude-1000/-home-raf-event-registration/949c05f2-5502-4fe9-b623-6db4085f062d/tasks/a104bcccb15b25498.output
+     Do NOT Read or tail this file via the shell tool — it is the full subagent JSONL transcript and reading it will overflow your context. If the user asks for progress, say the agent is still running; yo
+
+⏺ Ревью запущено: агент `reviewer` с чистым контекстом смотрит фронтенд и e2e этапа 3, коммиты `aa6e6ef..abe1493`. Ему переданы только spec, задачи 3.4–3.6 текстом, список того, что ещё не сделано (этап 4), и диапазон коммитов.
+  
+  Когда агент закончит, покажу отчёт целиком, ничего не отбирая. Решения по находкам ваши.
+
+⏺ Ревью этапа 3 (фронтенд и e2e, коммиты `aa6e6ef..abe1493`) закончено. Блокирующих находок нет, мелких три. Ниже весь отчёт без отбора; я пока ничего не правил.
+  
+  ### Находки
+  
+  **1. Адрес чекина с `/` на конце даёт неверную вкладку и прячет форму.** Корректность, `frontend/src/pages/org-event/ui/OrgEventLayout.vue:24`.
+  - Макет узнаёт вкладку сравнением строк: `route.path === checkinPath(id)`. Роутер по умолчанию пускает адрес `/org/events/7/checkin/` на маршрут чекина, но в `route.path` косая черта остаётся, и сравнение не срабатывает.
+  - Что получается на экране чекина:
+    - текущей отмечена вкладка «Участники»;
+    - тексты ошибок берутся от участников, без «чекин работает»;
+    - если событие не загрузилось, формы нет, хотя по правилу п. 4 `frontend/AGENTS.md` она должна работать;
+    - если событие загрузилось, экран чекина получает пропс `event`, который не объявляет, и в разметке оказывается атрибут `event="[object Object]"`. Именно этого я хотел избежать в решении от 03:53.
+  - Предложение ревьюера: определять вкладку по совпавшей записи маршрута (`route.matched.at(-1)?.path === routes.orgCheckin`) или по имени маршрута. Добавить тест на адрес с `/` на конце.
+  
+  **2. Неверный комментарий в `frontend/src/pages/org-checkin/ui/OrgCheckinPage.vue:21-23`.**
+  - Комментарий приписывает экрану чекина то, что делает макет: чтение события, шапку и ответы на 403/404.
+  - Ещё он говорит, что форма работает до загрузки события. Это неверно с решения от 04:09: до ответа запроса формы нет.
+  - Предложение ревьюера: «A tab of the event layout (pages/org-event), which reads the event and answers 403/404. The form needs only the id from the route, so it stays usable when the event's load fails otherwise.»
+  
+  **3. Spec расходится с кодом, `docs/features/realtime/spec.md:105-106`.**
+  - В spec осталась фраза «`GET` того же ключа с экрана чекина снимок отменяет». В задаче 3.4 эту отмену убрали, а своего `GET` у экрана чекина больше нет.
+  - Предложение ревьюера: удалить фразу или пометить, что так было до этапа 3.
+  
+  ### Что ревьюер не стал считать находками из-за записей в `docs/decisions.md`
+  - Шапка чекина не «одной строкой», как в формулировке 3.4: вы заменили её общей вёрсткой счётчиков.
+  - Экран чекина не получает событие пропсом: форме нужен только id. Довод верен, кроме случая из находки 1.
+  - После регистрации страница события не перечитывает событие. Пока поток не открыт, у зарегистрировавшегося остаётся прежнее число мест. Повторное подключение потока — это этап 4, а выбор сделан сознательно.
+  
+  ### Проверено без находок
+  - **Макет:** один запрос события без фоновых перезапросов. Поток открывается после загрузки. 403/404 показываются до основного содержимого, до ответа запроса нет ни вкладок, ни формы. При смене вкладки поток не переоткрывается (есть тест), при уходе со страницы закрывается.
+  - **Таблица участников:** границы `?page=` как у backend, число страниц из счётчиков. Гонку «снимок во время загрузки» ревьюер разобрал: изменение не теряется, лишняя плашка безопасна, тест есть. «Обновить» заблокирована на время запроса. Все состояния на месте: загрузка, ошибка, неудачное обновление, пусто, страница за концом.
+  - **Страница события:** путь потока сверяется с контрактом API, список событий обновляется с `exact: true`, поток переезжает на другое событие вместе с адресом.
+  - **Код:** границы слоёв FSD, пути только из `routes`. Нет пустых `catch`, `console`, `v-html`, `any`, `TODO`.
+  - **e2e:** два отдельных контекста, ожидания по состоянию, уникальные данные, проверка, что страница не перезагружалась.
+  - Ссылки на тесты в README существуют.
+  - На слоте 2 у ревьюера `make stack-check` прошёл (pytest 248, Vitest 229), `make stack-e2e` — 11 из 11.
+  
+  ### Не проверялось
+  - Вёрстку в браузере ревьюер не смотрел: узкий и широкий экран, перенос длинных названий, отсутствие мелькания при 403/404.
+  - `docs/architecture.md` устарел, но его обновление — задача 4.4.
+  
+  Если примете все три, исправлю: находку 1 — по записи маршрута, с тестом на адрес с `/` на конце; 2 и 3 — правкой текста. Что берём?
+
+> 1. ок. 2 и 3 правим тексты - ок
+
+⏺ Делаю все три. Сначала находка 1: тест вперёд.
+
+⏺ Bash(cd /home/raf/event-registration/frontend && python3 - <<'EOF')
+  ⎿  × is the check-in tab at an address with a trailing slash 10ms
+     ⎯⎯⎯⎯⎯⎯⎯ Failed Tests 1 ⎯⎯⎯⎯⎯⎯⎯
+           Tests  1 failed | 89 passed (90)
+
+⏺ Тест воспроизводит находку. Исправляю: вкладку определяю по совпавшей записи маршрута.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  9:import { checkinPath, orgEventPath, routes } from "@/shared/config";
+     58:  { key: "checkin", to: checkinPath(eventId.value), current: onCheckin.value },
+           Tests  102 passed (102)
+       | { kind: "not_found" }
+       | { kind: "not_confirmed" };
+     
+     … +4 lines
+
+⏺ Зелёные. Теперь находка 3 — фраза в spec.
+
+⏺ Bash(cd /home/raf/event-registration && sed -n 100,112p docs/features/realtime/spec.md)
+  ⎿  ## UI
+     
+     - **Панель события**: событие читается одним `GET` (он даёт 403/404 — `EventSource` статус не
+       отдаёт), затем открывается поток, и снимок заменяет событие в кэше `orgEventQuery(id)`.
+       Фоновых перезапросов события у панели нет: `GET`, прочитавший событие до снимка, ответил бы
+       после него старыми счётчиками; кэш с прошлого визита обновляет первый снимок. `GET` того же
+     … +7 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  CHECK 0
+     All checks passed!
+     ======================== 248 passed in 71.31s (0:01:11) ========================
+           Tests  230 passed (230)
+     E2E 0
+       11 passed (10.6s)
+     … +1 lines
+
+⏺ Bash(git add -A && git status --short && git commit -q -F - <<'EOF')
+  ⎿  M  docs/decisions.md
+     M  docs/features/realtime/spec.md
+     M  frontend/src/pages/org-checkin/ui/OrgCheckinPage.vue
+     M  frontend/src/pages/org-event/ui/OrgEventLayout.test.ts
+     M  frontend/src/pages/org-event/ui/OrgEventLayout.vue
+     ⋯ Backing up original state…
+     … +18 lines
+
+⏺ Все три находки исправлены, коммит `e4f51e1`.
+  
+  1. **Адрес чекина с `/` на конце.** Вкладку чекина макет теперь узнаёт по маршруту, на который попал адрес, а не по сравнению строк пути (`OrgEventLayout.vue:24`). Добавил тест на адрес `/org/events/7/checkin/`: до исправления он падал, теперь проходит. Проверяет, что выбрана вкладка «Чекин», показан текст ошибки «…чекин работает» и форма видна при ошибке загрузки события.
+  2. **Комментарий в `OrgCheckinPage.vue`** заменил текстом из предложения ревьюера: событие читает и отвечает на 403/404 макет, а форме нужен только id из адреса.
+  3. **Spec, раздел «UI».** Фразу про отмену `GET` экрана чекина пометил как поведение до этапа 3: в макете у события один читатель, и отмена не нужна. В том же абзаце было «событие им — пропсом», хотя пропсом событие получают только участники. Это я исправил сам, ревьюер этого не отмечал.
+  
+  **Проверки:** `make stack-check` проходит, Vitest 230 тестов (на один больше), `make stack-e2e` — 11 из 11. Решения записаны в `docs/decisions.md`.
+  
+  По skill `feature-workflow` можно один раз повторить ревью — только на коммит с исправлениями (`abe1493..e4f51e1`). Запустить его или сразу открывать PR этапа 3?
+
+> нужно дописать в на потом пагинацию для страниц событий и сортировку по времени+id (т.е. показываем от новых к старым, а если время одинаковое, то выше тот у кого id больше т.к. он позже создан)
+
+⏺ Bash(sed -n 12,22p backend/events/models.py && python3 - <<'EOF')
+  ⎿  class EventQuerySet(models.QuerySet["Event"]):
+         def for_organizer(self, user: User) -> Self:
+             return self.filter(organizer=user).order_by("starts_at", "id")
+     
+         def upcoming(self) -> Self:
+             return self.filter(starts_at__gt=timezone.now()).order_by("starts_at", "id")
+     … +17 lines
+
+⏺ Записал в «На потом» в `docs/features/realtime/tasks.md`, коммит `d3cd886`:
+  
+  > Списки событий (организатора `/org/events` и публичный `/`): постраничная выдача и порядок от новых к старым — по времени по убыванию, при равном времени выше событие с большим `id` (оно создано позже). Сейчас оба списка целиком и по возрастанию: `for_organizer` и `upcoming` в `events/models.py` — `order_by("starts_at", "id")`. Уточнить, какое время (`starts_at`) и тот же ли порядок у публичного списка ближайших событий (идея человека, 2026-11-02).
+  
+  В конце заметки я оставил два вопроса — к моменту, когда дойдёт до реализации:
+  - Время — это время начала события (`starts_at`)? «Позже создано» вы относили только к `id`.
+  - Публичный список показывает ближайшие события. Если перевернуть порядок, самые близкие окажутся внизу.
+  
+  Вопрос по ревью остаётся открытым: повторить его на коммит с исправлениями или открывать PR этапа 3?
+
+> ревью не надо. показываем везде самые ближайшие, да "starts_at"
+
+⏺ Обновляю заметку и записываю оба решения; затем, раз повторного ревью не будет, открываю PR этапа 3.
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  ⋯ Backing up original state…
+     ✔ Done backing up original state (f8f70d2)!
+     ⋯ Running tasks for staged files…
+         *.{mjs,json,md,yml,yaml} — 2 files
+           ⋯ prettier --write
+     
+     … +9 lines
+
+⏺ Допишу в лог `tasks.md` итог этапа, как у прошлых этапов, и посмотрю, как оформлен PR этапа 2.
+
+⏺ Bash(gh pr view 18 --json body -q .body | head -40)
+  ⎿  e2e now run behind nginx in front of the built frontend, as behind a production proxy, and cover the live «Пришло» counter with two organizer contexts.
+     
+     ## What changed
+     
+     **Infra**
+     - `frontend/Dockerfile` has two stages: `dev` (Vite, as before) and `gateway` (`vite build` served by nginx 1.30.6 on the same port). `frontend/nginx.conf` serves `dist/` with `index.html` for unknown
+     … +24 lines
+
+⏺ Bash(python3 - <<'EOF')
+  ⎿  ⋯ Backing up original state…
+     ✔ Done backing up original state (4d6256c)!
+     ⋯ Running tasks for staged files…
+         *.{mjs,json,md,yml,yaml} — 1 file
+           ⋯ prettier --write
+     
+     … +26 lines
+
+⏺ Пушу ветку (`SLOT=1 git push`, хук `pre-push` проверит backend на Postgres слота 1).
+
+⏺ Bash(SLOT=1 git push 2>&1 | tail -6)
+  ⎿  > e2e@0.0.0 typecheck /home/raf/event-registration/e2e
+     > tsc --noEmit
+     
+     To github.com:rbikbov/event-registration.git
+        aa6e6ef..721b3c6  feat/realtime-event-page -> feat/realtime-event-page
+
+⏺ Bash(cat > /tmp/claude-1000/-home-raf-event-registration/949c05f2-5502-4fe9-b623-6db4085f062d/scratchpad/pr.md <<'EOF')
+  ⎿  https://github.com/rbikbov/event-registration/pull/19
+
+⏺ Открыл PR этапа 3: https://github.com/rbikbov/event-registration/pull/19 («Phase 4, stage 3: live event page, event layout and paged participants»).
+  
+  **Записано:**
+  - **Списки событий** — в «На потом» в `tasks.md`. Оба списка, организатора и публичный, постранично и в одном порядке: сначала ближайшие по `starts_at`, при одинаковом `starts_at` выше событие с большим `id`. Сейчас списки выводятся целиком, а при одинаковом времени выше меньший `id`.
+  - **Решения в `docs/decisions.md`:** повторного ревью не будет, и порядок списков событий.
+  - **Лог этапа 3 в `tasks.md`:** итог ревью и проверки в браузере, как у прошлых этапов.
+  
+  **Что в PR:**
+  - весь этап 3: backend (3.1–3.3), фронтенд и e2e (3.4–3.6), исправления по обоим ревью;
+  - проверки: `make stack-check` проходит, `make stack-e2e` — 11 из 11, проверка в браузере;
+  - в разделе «Not in this PR» перечислен этап 4.
+  
+  Перед отправкой хук `pre-push` проверил backend на Postgres слота 1 — прошло.
+  
+  После слияния следующий шаг — этап 4: обрыв и переподключение потока.

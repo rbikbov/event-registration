@@ -117,38 +117,40 @@ make down   # остановить; данные БД остаются в том
 Основной вход — `make`; `make help` печатает все цели с описанием. Новая команда должна
 появиться и в Makefile, и в этой таблице.
 
-| Команда                                                       | Что делает                                                                               |
-| ------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| **Окружение**                                                 |                                                                                          |
-| `make install`                                                | зависимости Node и backend, браузер Playwright (chromium), git-хуки                      |
-| `make dev-deps`                                               | поднять Postgres и Mailpit в Docker и дождаться готовности                               |
-| `make dev-backend` / `make dev-frontend`                      | локальные dev-серверы (см. «Запуск»)                                                     |
-| `make dev-worker`                                             | локальный воркер писем: outbox → Mailpit (`manage.py run_worker`)                        |
-| `make up` / `make down` / `make logs`                         | весь стек в Docker                                                                       |
-| **Проверки**                                                  |                                                                                          |
-| `make check`                                                  | всё, кроме запуска e2e: форматирование, линтеры, типы, схема, тесты — то же, что CI      |
-| `make check-backend`                                          | ruff, mypy, миграции, схема, pytest                                                      |
-| `make check-frontend`                                         | ESLint, vue-tsc, Vitest                                                                  |
-| `make check-e2e`                                              | ESLint и tsc для кода e2e-тестов (сами тесты не запускает)                               |
-| `make check-tooling`                                          | тесты хуков Claude Code и `scripts/` (`node:test`)                                       |
-| `make check-ci`                                               | workflow GitHub Actions: actionlint и существование тегов actions (нужна сеть)           |
-| `make format-check`                                           | Prettier: форматирование всех файлов                                                     |
-| `make lint-backend` / `typecheck-backend` / `test-backend`    | по отдельности: ruff / mypy / pytest (pytest нужен `make dev-deps`)                      |
-| `make lint-frontend` / `typecheck-frontend` / `test-frontend` | по отдельности: ESLint / vue-tsc / Vitest                                                |
-| `make migrations-check`                                       | падает, если модели изменены, а миграция не создана                                      |
-| `make schema-check`                                           | падает, если `openapi.yaml` или `schema.d.ts` устарели или у view нет описания для схемы |
-| `make demo-users` / `make stack-demo-users SLOT=<N>`          | демо-учётки в запущенном стеке / в стеке слота (см. «Создать организатора»)              |
-| `make seed` / `make stack-seed SLOT=<N>`                      | демо-события с участниками в запущенном стеке / в стеке слота (см. «Демо-данные»)        |
-| `make e2e`                                                    | поднять стек (`make up`) со шлюзом nginx и прогнать Playwright против него               |
-| `make stack-up` / `stack-e2e` / `stack-down` `SLOT=<N>`       | стек слота (см. «E2E»): поднять / e2e против него / удалить с томами                     |
-| `make stack-check SLOT=<N>`                                   | `make check` на Postgres слота, а не на Postgres из `make dev-deps`                      |
-| `make stack-check-backend SLOT=<N>`                           | `make check-backend` на Postgres слота                                                   |
-| `make review-worktree REF=<sha>` / `review-worktree-remove`   | копия репозитория для агента `reviewer` на коммите `<sha>` / удалить её                  |
-| **Изменения**                                                 |                                                                                          |
-| `make schema`                                                 | пересобрать `backend/openapi.yaml` и типы фронтенда `schema.d.ts` после изменения API    |
-| `make fmt`                                                    | отформатировать всё: `eslint --fix`, Prettier, `ruff check --fix`, `ruff format`         |
-| **Прочее**                                                    |                                                                                          |
-| `make worktime`                                               | время работы по маркерам сессий в `decisions.md` (см. «Коммиты, решения, прогресс»)      |
+| Команда                                                       | Что делает                                                                                                                                             |
+| ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Окружение**                                                 |                                                                                                                                                        |
+| `make install`                                                | зависимости Node и backend, браузер Playwright (chromium), git-хуки                                                                                    |
+| `make dev-deps`                                               | поднять Postgres и Mailpit в Docker и дождаться готовности                                                                                             |
+| `make dev-backend` / `make dev-frontend`                      | локальные dev-серверы (см. «Запуск»)                                                                                                                   |
+| `make dev-worker`                                             | локальный воркер писем: outbox → Mailpit (`manage.py run_worker`)                                                                                      |
+| `make up` / `make down` / `make logs`                         | весь стек в Docker                                                                                                                                     |
+| **Проверки**                                                  |                                                                                                                                                        |
+| `make check`                                                  | всё, кроме запуска e2e: форматирование, линтеры, типы, схема, тесты — то же, что CI                                                                    |
+| `make check-backend`                                          | ruff, mypy, миграции, схема, pytest                                                                                                                    |
+| `make check-frontend`                                         | ESLint, vue-tsc, Vitest                                                                                                                                |
+| `make check-e2e`                                              | ESLint и tsc для кода e2e-тестов (сами тесты не запускает)                                                                                             |
+| `make check-tooling`                                          | тесты хуков Claude Code и `scripts/` (`node:test`)                                                                                                     |
+| `make check-readme`                                           | README: каждый тест из таблиц «Требования и тесты» существует — файл, функция, название; ссылки на тесты вне таблиц не проверяются, поэтому их там нет |
+| `make check-ci`                                               | workflow GitHub Actions: actionlint и существование тегов actions (нужна сеть)                                                                         |
+| `make format-check`                                           | Prettier: форматирование всех файлов                                                                                                                   |
+| `make lint-backend` / `typecheck-backend` / `test-backend`    | по отдельности: ruff / mypy / pytest (pytest нужен `make dev-deps`)                                                                                    |
+| `make lint-frontend` / `typecheck-frontend` / `test-frontend` | по отдельности: ESLint / vue-tsc / Vitest                                                                                                              |
+| `make migrations-check`                                       | падает, если модели изменены, а миграция не создана                                                                                                    |
+| `make schema-check`                                           | падает, если `openapi.yaml` или `schema.d.ts` устарели или у view нет описания для схемы                                                               |
+| `make demo-users` / `make stack-demo-users SLOT=<N>`          | демо-учётки в запущенном стеке / в стеке слота (см. «Создать организатора»)                                                                            |
+| `make seed` / `make stack-seed SLOT=<N>`                      | демо-события с участниками в запущенном стеке / в стеке слота (см. «Демо-данные»)                                                                      |
+| `make e2e`                                                    | поднять стек (`make up`) со шлюзом nginx и прогнать Playwright против него                                                                             |
+| `make stack-up` / `stack-e2e` / `stack-down` `SLOT=<N>`       | стек слота (см. «E2E»): поднять / e2e против него / удалить с томами                                                                                   |
+| `make stack-check SLOT=<N>`                                   | `make check` на Postgres слота, а не на Postgres из `make dev-deps`                                                                                    |
+| `make stack-check-backend SLOT=<N>`                           | `make check-backend` на Postgres слота                                                                                                                 |
+| `make review-worktree REF=<sha>` / `review-worktree-remove`   | копия репозитория для агента `reviewer` на коммите `<sha>` / удалить её                                                                                |
+| **Изменения**                                                 |                                                                                                                                                        |
+| `make schema`                                                 | пересобрать `backend/openapi.yaml` и типы фронтенда `schema.d.ts` после изменения API                                                                  |
+| `make fmt`                                                    | отформатировать всё: `eslint --fix`, Prettier, `ruff check --fix`, `ruff format`                                                                       |
+| **Прочее**                                                    |                                                                                                                                                        |
+| `make worktime`                                               | время работы по маркерам сессий в `decisions.md` (см. «Коммиты, решения, прогресс»)                                                                    |
+| `make export-sessions`                                        | сессии Claude Code проекта — текстом в `docs/session/` (см. «Коммиты, решения, прогресс»)                                                              |
 
 Команды Django — из `backend/` через uv: `uv run python manage.py <команда>`.
 
@@ -306,6 +308,7 @@ docs: close phase 1 (registration)
 | `e2e/**`                                                                                                      | `make check-e2e`                                                                                                                               |
 | `.github/**`                                                                                                  | `make check-ci`                                                                                                                                |
 | `.claude/hooks/**`, `scripts/**`                                                                              | `make check-tooling`                                                                                                                           |
+| `README.md`, `backend/**`, `frontend/**`, `e2e/**`                                                            | ещё `make check-readme`: переименованный тест ломает ссылку в README                                                                           |
 | `Makefile`, `docker-compose.yml`, `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `.prettierrc.json` | проверки всех частей                                                                                                                           |
 | только документация                                                                                           | ничего                                                                                                                                         |
 
@@ -367,6 +370,23 @@ docs: describe pre-push hook
 
 **Прогресс** — [roadmap.md](roadmap.md): фазы со статусом и критериями, задачи с
 отметками. Задача отмечается в том же коммите, который её выполняет.
+
+**Экспорт сессий агента** — `make export-sessions` (`scripts/export-sessions.mjs`): каждая
+сессия Claude Code этого проекта (`~/.claude/projects/<путь проекта, кроме букв и цифр —
+«-»>/*.jsonl`) — текстом в формате, близком к `/export`, в `docs/session/`. Встроенный
+`/export` выгружает только текущую сессию, а открыть старую через `--resume` ради экспорта —
+дописать в неё. Исходники только читаются. Не попадают, как и в `/export`, мысли модели и
+переписка субагентов, а также то, что в запрос добавляет среда: уведомления о фоновых задачах,
+контекст IDE, вывод команд после `!` (сама команда остаётся). Имя файла — `ГГГГ-ММ-ДД-ЧЧММ-<время работы>.txt`: местное время первой реплики и сумма
+пауз между репликами основной сессии, каждая — не больше 15 минут (`48m`, `2h05m`). Время
+примерное: сессия, открытая на ночь, не считается сутками работы, но и пауза на чтение длиннее
+15 минут обрезается. Файлы сортируются по времени. Дополнить папку после новых сессий —
+запустить `make export-sessions` ещё раз: он перезаписывает файлы, добавляет новые сессии и
+удаляет прежнюю выгрузку той же сессии (то же начало, другое время работы), остальные файлы не
+трогает — выгрузка сессии, чей `.jsonl` Claude Code уже удалил, остаётся. Идущая сессия
+выгружается до последней записанной реплики. Другая папка
+сессий или вывода — `node scripts/export-sessions.mjs <папка .jsonl> <куда>`. В тексте
+остаётся то, что было в выводе команд: перед коммитом просмотреть файлы.
 
 ## Backend
 
@@ -512,7 +532,7 @@ test_…` и `django.test.AsyncClient`. Цикл событий — один н�
 Code); правило по теме — `docs/rules/<тема>.md`.
 
 Процедуры («как сделать X по шагам») — skills в `.claude/skills/`: `session-handoff`,
-`feature-workflow`, `fsd-frontend`, `anti-slop-review`, `api-change` (черновик); агент
+`feature-workflow`, `fsd-frontend`, `anti-slop-review`, `api-change`; агент
 независимого ревью — `.claude/agents/reviewer.md`. Источник — шаблон
 [rbikbov/frontend-starter](https://github.com/rbikbov/frontend-starter), адаптированный под
 Django + Vue. Шаблоны spec и задач фазы — `docs/features/_template/`.

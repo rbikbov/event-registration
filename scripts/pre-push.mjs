@@ -32,6 +32,12 @@ const PARTS = [
     match: /^(\.claude\/hooks|scripts)\//,
     command: "make check-tooling",
   },
+  {
+    // A renamed or deleted test breaks a README reference, so code changes check it too.
+    name: "README test references",
+    match: /^(README\.md$|backend\/|frontend\/|e2e\/)/,
+    command: "make check-readme",
+  },
 ];
 
 export function commandsFor(files, slot) {
