@@ -5,7 +5,7 @@
 // (background task notifications, IDE context, shell output) are left out. A file is named
 // after the local time of the session's first message and the time worked in it, so running it
 // again overwrites the files of finished sessions and adds the new ones.
-import { mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -131,6 +131,15 @@ export function exportSession(records, timeZone) {
   return { name, text: out.join("\n") };
 }
 
+// The files of earlier exports of the same session: same start, other time worked. Only those
+// go — an export whose .jsonl Claude Code has since removed stays.
+export function staleExports(existing, name) {
+  const start = name.slice(0, "YYYY-MM-DD-HHMM-".length);
+  return existing.filter(
+    (file) => file !== name && file.startsWith(start) && file.endsWith(".txt"),
+  );
+}
+
 function parseLines(text) {
   return text.split("\n").flatMap((line) => {
     try {
@@ -151,6 +160,7 @@ function main() {
   for (const file of files) {
     const session = exportSession(parseLines(readFileSync(join(from, file), "utf8")), timeZone);
     if (!session) continue;
+    for (const stale of staleExports(readdirSync(to), session.name)) rmSync(join(to, stale));
     writeFileSync(join(to, session.name), session.text);
     written++;
   }

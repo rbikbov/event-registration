@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 
-import { claudeProjectDir, exportSession } from "./export-sessions.mjs";
+import { claudeProjectDir, exportSession, staleExports } from "./export-sessions.mjs";
 
 const at = (minute) => `2026-11-04T17:${String(minute).padStart(2, "0")}:00.000Z`;
 const user = (minute, content, extra = {}) => ({
@@ -97,4 +97,26 @@ test("drops the blocks the environment adds to a prompt, with their contents", (
   ];
   // What the person typed after "!" stays, its output is the environment's.
   assert.equal(exportSession(records, "UTC").text, "> разбей коммит на два\n\n> ! git status\n");
+});
+
+test("a pasted text loses only its tags, and the error output of a command is dropped", () => {
+  const records = [
+    user(1, '<pasted_content id="a1">текст задачи</pasted_content> сделай это'),
+    user(2, "<bash-input>make x</bash-input><bash-stderr>boom</bash-stderr>"),
+  ];
+  assert.equal(exportSession(records, "UTC").text, "> текст задачи сделай это\n\n> ! make x\n");
+});
+
+// A session still going is exported again with more time worked: its older file goes, the
+// exports of other sessions stay (their .jsonl may be gone from ~/.claude by now).
+test("an earlier export of the same session is stale, others are not", () => {
+  const existing = [
+    "2026-11-04-1922-3h06m.txt",
+    "2026-11-04-1922-3h09m.txt",
+    "2026-11-04-1804-1h10m.txt",
+    "notes.md",
+  ];
+  assert.deepEqual(staleExports(existing, "2026-11-04-1922-3h09m.txt"), [
+    "2026-11-04-1922-3h06m.txt",
+  ]);
 });
