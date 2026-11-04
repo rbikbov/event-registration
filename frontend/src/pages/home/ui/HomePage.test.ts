@@ -6,7 +6,7 @@ import { createMemoryHistory, createRouter } from "vue-router";
 
 import HomePage from "./HomePage.vue";
 
-import { eventPath } from "@/shared/config";
+import { eventPath, routes } from "@/shared/config";
 import { createAppI18n } from "@/shared/lib/i18n";
 import { server } from "@/shared/lib/test/msw";
 
@@ -18,12 +18,37 @@ function page<T>(results: T[]) {
 async function mountPage(
   queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } }),
 ) {
-  const router = createRouter({ history: createMemoryHistory(), routes: [] });
+  return (await mountAt(routes.home, queryClient)).wrapper;
+}
+
+async function mountAt(
+  path: string,
+  queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } }),
+) {
+  const router = createRouter({
+    history: createMemoryHistory(),
+    routes: [{ path: routes.home, component: HomePage }],
+  });
+  await router.push(path);
   const wrapper = mount(HomePage, {
     global: { plugins: [router, [VueQueryPlugin, { queryClient }], createAppI18n()] },
   });
   await vi.waitFor(() => expect(wrapper.find('[role="status"]').exists()).toBe(false));
-  return wrapper;
+  return { wrapper, router };
+}
+
+// Answers with one event per page, numbered by the page asked, of `count` in all; keeps the pages.
+function pagedList(count: number) {
+  const asked: (string | null)[] = [];
+  server.use(
+    http.get("*/api/events/", ({ request }) => {
+      const pageAsked = new URL(request.url).searchParams.get("page");
+      asked.push(pageAsked);
+      const n = Number(pageAsked ?? 1);
+      return HttpResponse.json({ count, results: n <= 3 ? [item(n * 100, 1)] : [] });
+    }),
+  );
+  return asked;
 }
 
 const item = (id: number, free_seats: number) => ({
@@ -102,5 +127,44 @@ describe("HomePage", () => {
     );
 
     expect(wrapper.text()).toContain("Meetup 1");
+  });
+
+  it("shows no page bar when the events fit on one page", async () => {
+    server.use(http.get("*/api/events/", () => HttpResponse.json(page([item(1, 3)]))));
+    const wrapper = await mountPage();
+
+    expect(wrapper.find("nav").exists()).toBe(false);
+  });
+
+  it("reads the page from the address and goes to the next one", async () => {
+    const asked = pagedList(45);
+    const { wrapper, router } = await mountAt(`${routes.home}?page=2`);
+    expect(wrapper.text()).toContain("Meetup 200");
+    expect(wrapper.get("nav").attributes("aria-label")).toBe("Страницы событий");
+
+    await wrapper.get('button[aria-label="Следующая страница"]').trigger("click");
+
+    await vi.waitFor(() => expect(wrapper.text()).toContain("Meetup 300"));
+    expect(router.currentRoute.value.query).toEqual({ page: "3" });
+    expect(asked).toEqual(["2", "3"]);
+  });
+
+  it("goes back to page 1 by the address without `page`", async () => {
+    pagedList(45);
+    const { wrapper, router } = await mountAt(`${routes.home}?page=2`);
+
+    await wrapper.get('button[aria-label="Первая страница"]').trigger("click");
+
+    await vi.waitFor(() => expect(wrapper.text()).toContain("Meetup 100"));
+    expect(router.currentRoute.value.fullPath).toBe(routes.home);
+  });
+
+  it("past the end, says so and links to the last page", async () => {
+    pagedList(45);
+    const { wrapper } = await mountAt(`${routes.home}?page=5`);
+
+    expect(wrapper.text()).toContain("Здесь событий нет.");
+    expect(wrapper.get(`a[href="${routes.home}?page=3"]`).text()).toBe("К последней странице");
+    expect(wrapper.find("nav").exists()).toBe(false);
   });
 });

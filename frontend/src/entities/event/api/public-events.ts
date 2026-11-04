@@ -7,10 +7,16 @@ import { sseSource, type LiveSource } from "@/shared/lib/live-source";
 export type PublicEventListItem = components["schemas"]["PublicEventList"];
 export type PublicEvent = components["schemas"]["PublicEvent"];
 
-export const publicEventsQuery = queryOptions({
-  queryKey: ["events"],
-  queryFn: () => unwrap(api.GET("/api/events/")),
-});
+// Every page of the list: what to invalidate when the events change. Not a prefix of the
+// event's own key, `["events", id]`.
+export const publicEventListsKey = ["events", "list"] as const;
+
+export function publicEventsQuery(page: number) {
+  return queryOptions({
+    queryKey: [...publicEventListsKey, page],
+    queryFn: () => unwrap(api.GET("/api/events/", { params: { query: { page } } })),
+  });
+}
 
 function readPublicEvent(id: number) {
   return unwrap(api.GET("/api/events/{id}/", { params: { path: { id } } }));

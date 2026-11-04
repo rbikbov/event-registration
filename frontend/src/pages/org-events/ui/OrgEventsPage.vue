@@ -1,16 +1,28 @@
 <script setup lang="ts">
 import { useQuery } from "@tanstack/vue-query";
+import { computed } from "vue";
 import { useI18n } from "vue-i18n";
+import { useRoute } from "vue-router";
 
-import { orgEventsQuery } from "@/entities/event";
+import { eventPageCount, orgEventsQuery } from "@/entities/event";
 import { checkinPath, orgEventPath, routes } from "@/shared/config";
+import { pageFromQuery } from "@/shared/lib/page-query";
+import { PageNav } from "@/shared/ui/page-nav";
 import { QueryState } from "@/shared/ui/query-state";
 import { Button } from "@/shared/ui/shadcn/button";
 import { CardHeading } from "@/shared/ui/card-heading";
 import { Card, CardContent, CardHeader } from "@/shared/ui/shadcn/card";
 
 const { t, d } = useI18n({ useScope: "local" });
-const events = useQuery(orgEventsQuery);
+const route = useRoute();
+
+const page = computed(() => pageFromQuery(route.query.page));
+const events = useQuery(computed(() => orgEventsQuery(page.value)));
+
+// Page 1 is the address without `page`.
+function link(toPage: number) {
+  return { path: routes.orgEvents, query: toPage > 1 ? { page: toPage } : {} };
+}
 </script>
 
 <template>
@@ -29,7 +41,13 @@ const events = useQuery(orgEventsQuery);
       :error-text="t('error')"
       :refresh-error-text="t('refreshError')"
     >
-      <p v-if="loaded.results.length === 0" class="text-muted-foreground">{{ t("empty") }}</p>
+      <p v-if="loaded.results.length === 0 && page > 1" class="text-muted-foreground">
+        {{ t("pastEnd") }}
+        <RouterLink class="underline" :to="link(eventPageCount(loaded.count))">
+          {{ t("lastPage") }}
+        </RouterLink>
+      </p>
+      <p v-else-if="loaded.results.length === 0" class="text-muted-foreground">{{ t("empty") }}</p>
       <ul v-else class="grid gap-3">
         <li v-for="event in loaded.results" :key="event.id">
           <Card>
@@ -53,6 +71,13 @@ const events = useQuery(orgEventsQuery);
           </Card>
         </li>
       </ul>
+      <PageNav
+        class="mt-6"
+        :page="page"
+        :pages="eventPageCount(loaded.count)"
+        :link="link"
+        :label="t('pages')"
+      />
     </QueryState>
   </div>
 </template>
@@ -63,6 +88,9 @@ const events = useQuery(orgEventsQuery);
   "create": "Создать событие",
   "error": "Не удалось загрузить события",
   "refreshError": "Не удалось обновить события, показан прежний список",
+  "pastEnd": "Здесь событий нет.",
+  "lastPage": "К последней странице",
+  "pages": "Страницы событий",
   "empty": "Событий пока нет",
   "seats": "Занято {confirmed} из {capacity}",
   "waitlist": "в листе ожидания {count}",

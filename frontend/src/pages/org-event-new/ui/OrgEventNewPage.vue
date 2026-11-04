@@ -6,9 +6,9 @@ import { useRouter } from "vue-router";
 
 import {
   EVENT_TEXT_MAX,
-  orgEventsQuery,
+  orgEventListsKey,
   parseEventForm,
-  publicEventsQuery,
+  publicEventListsKey,
   serverFormErrors,
   type EventFormErrors,
   type EventFormInput,
@@ -48,8 +48,8 @@ const clientErrors = ref<EventFormErrors>({});
 const { mutate, isPending, error, reset } = useMutation({
   mutationFn: createEvent,
   onSuccess: async () => {
-    await queryClient.invalidateQueries({ queryKey: orgEventsQuery.queryKey });
-    await queryClient.invalidateQueries({ queryKey: publicEventsQuery.queryKey });
+    await queryClient.invalidateQueries({ queryKey: orgEventListsKey });
+    await queryClient.invalidateQueries({ queryKey: publicEventListsKey });
     await router.push(routes.orgEvents);
   },
 });

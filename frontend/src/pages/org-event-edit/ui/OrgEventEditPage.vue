@@ -7,9 +7,9 @@ import {
   changedFields,
   EVENT_TEXT_MAX,
   eventFormInput,
-  orgEventsQuery,
+  orgEventListsKey,
   parseEventChanges,
-  publicEventsQuery,
+  publicEventListsKey,
   serverFormErrors,
   type EventFormErrors,
   type EventFormInput,
@@ -61,9 +61,9 @@ const { mutate, isPending, isSuccess, error, reset } = useMutation({
     // stream, whose snapshot brings the new fields to the header.
     // The form keeps what was typed: it is what was saved, so nothing reads as changed now.
     initial.value = eventFormInput(updated);
-    // Exact: the list key prefixes the panel's, which the stream keeps (see above).
-    await queryClient.invalidateQueries({ queryKey: orgEventsQuery.queryKey, exact: true });
-    await queryClient.invalidateQueries({ queryKey: publicEventsQuery.queryKey });
+    // Every page of both lists; the panel's key is not under them (see above).
+    await queryClient.invalidateQueries({ queryKey: orgEventListsKey });
+    await queryClient.invalidateQueries({ queryKey: publicEventListsKey });
   },
 });
 

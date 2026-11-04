@@ -1,11 +1,13 @@
 export {
   orgEventLive,
   orgEventProbe,
+  orgEventListsKey,
   orgEventQuery,
   orgEventsQuery,
   type OrgEvent,
 } from "./api/org-events";
 export {
+  publicEventListsKey,
   publicEventLive,
   publicEventProbe,
   publicEventQuery,
@@ -24,3 +26,4 @@ export {
   type EventFormErrors,
   type EventFormInput,
 } from "./model/event-form";
+export { eventPageCount } from "./model/event-pages";

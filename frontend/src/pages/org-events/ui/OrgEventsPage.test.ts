@@ -1,7 +1,7 @@
 import { QueryClient, VueQueryPlugin } from "@tanstack/vue-query";
 import { flushPromises, mount } from "@vue/test-utils";
 import { http, HttpResponse } from "msw";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { createMemoryHistory, createRouter } from "vue-router";
 
 import { checkinPath, orgEventPath, routes } from "@/shared/config";
@@ -18,14 +18,45 @@ function page<T>(results: T[]) {
 async function mountPage(
   queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } }),
 ) {
+  return (await mountAt(routes.orgEvents, queryClient)).wrapper;
+}
+
+async function mountAt(
+  path: string,
+  queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } }),
+) {
   const router = createRouter({
     history: createMemoryHistory(),
     routes: [{ path: routes.orgEvents, component: OrgEventsPage }],
   });
-  await router.push(routes.orgEvents);
-  return mount(OrgEventsPage, {
+  await router.push(path);
+  const wrapper = mount(OrgEventsPage, {
     global: { plugins: [router, [VueQueryPlugin, { queryClient }], createAppI18n()] },
   });
+  return { wrapper, router };
+}
+
+// Answers with one event per page, numbered by the page asked, of `count` in all; keeps the pages.
+function pagedList(count: number) {
+  const asked: (string | null)[] = [];
+  server.use(
+    http.get("*/api/org/events/", ({ request }) => {
+      const pageAsked = new URL(request.url).searchParams.get("page");
+      asked.push(pageAsked);
+      const n = Number(pageAsked ?? 1);
+      const event = {
+        id: n,
+        title: `Meetup ${n * 100}`,
+        description: "",
+        starts_at: "2030-05-01T18:00:00Z",
+        capacity: 5,
+        confirmed: 0,
+        waitlisted: 0,
+      };
+      return HttpResponse.json({ count, results: n <= 3 ? [event] : [] });
+    }),
+  );
+  return asked;
 }
 
 describe("OrgEventsPage", () => {
@@ -154,5 +185,26 @@ describe("OrgEventsPage", () => {
 
     expect(wrapper.get('[role="alert"]').text()).toContain("Не удалось обновить события");
     expect(wrapper.findAll("li")).toHaveLength(1);
+  });
+
+  it("reads the page from the address and goes to the previous one", async () => {
+    const asked = pagedList(45);
+    const { wrapper, router } = await mountAt(`${routes.orgEvents}?page=3`);
+    await vi.waitFor(() => expect(wrapper.text()).toContain("Meetup 300"));
+
+    await wrapper.get('button[aria-label="Предыдущая страница"]').trigger("click");
+
+    await vi.waitFor(() => expect(wrapper.text()).toContain("Meetup 200"));
+    expect(router.currentRoute.value.query).toEqual({ page: "2" });
+    expect(asked).toEqual(["3", "2"]);
+  });
+
+  it("past the end, says so and links to the last page", async () => {
+    pagedList(45);
+    const { wrapper } = await mountAt(`${routes.orgEvents}?page=4`);
+
+    await vi.waitFor(() => expect(wrapper.text()).toContain("Здесь событий нет."));
+    expect(wrapper.get(`a[href="${routes.orgEvents}?page=3"]`).text()).toBe("К последней странице");
+    expect(wrapper.find("nav").exists()).toBe(false);
   });
 });
