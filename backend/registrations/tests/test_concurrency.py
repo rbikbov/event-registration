@@ -180,7 +180,7 @@ def test_check_in_in_parallel_with_a_cancel_lets_exactly_one_pass(event: Event) 
         assert (t.checked_in_at is not None) == checked_in
 
 
-def lower_capacity(event_id: int, capacity: int) -> bool:
+def change_capacity(event_id: int, capacity: int) -> bool:
     try:
         update_event(event_id, {"capacity": capacity})
     except CapacityBelowConfirmed:
@@ -195,7 +195,7 @@ def test_lower_capacity_with_parallel_registrations_never_leaves_seats_over(even
         register(event.id, f"seat{i}@x.io", "Seat")
 
     calls: list[Callable[[], object]] = [
-        partial(lower_capacity, event.id, 3),
+        partial(change_capacity, event.id, 3),
         *(partial(register, event.id, f"new{i}@x.io", "New") for i in range(2)),
     ]
 
@@ -204,6 +204,26 @@ def test_lower_capacity_with_parallel_registrations_never_leaves_seats_over(even
     event.refresh_from_db()
     confirmed = Registration.objects.filter(event=event, status="confirmed").count()
     assert confirmed <= event.capacity
+
+
+def test_parallel_capacity_raises_promote_no_more_than_the_final_capacity(event: Event) -> None:
+    register(event.id, "seat@x.io", "Seat")
+    waiting = [f"wait{i}@x.io" for i in range(6)]
+    for email in waiting:
+        register(event.id, email, "Wait")
+
+    applied = run_together([partial(change_capacity, event.id, c) for c in (3, 4)])
+
+    # Either order ends at 4: after the raise to 4, the one to 3 is below the confirmed.
+    event.refresh_from_db()
+    assert event.capacity == 4
+    assert applied in ([True, True], [False, True])
+    # The seats go to the queue head, one promotion email each.
+    promoted = waiting[:3]
+    confirmed = Registration.objects.filter(event=event, status="confirmed")
+    assert sorted(confirmed.values_list("email", flat=True)) == sorted(["seat@x.io", *promoted])
+    emails = OutboxEmail.objects.filter(kind="promoted").values_list("to", flat=True)
+    assert sorted(emails) == sorted(promoted)
 
 
 def test_parallel_reschedules_each_get_a_version_and_emails(event: Event) -> None:
