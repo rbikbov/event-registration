@@ -64,7 +64,7 @@ async function mountLayout(path = orgEventPath(7), queryClient = newQueryClient(
   await router.push(path);
   // Through the root RouterView, as in the app: the layout's own one renders the tab.
   const wrapper = mount(RouterView, {
-    global: { plugins: [router, [VueQueryPlugin, { queryClient }], createAppI18n()] },
+    global: { plugins: [router, [VueQueryPlugin, { queryClient }], createAppI18n("ru")] },
   });
   return { wrapper, router, queryClient };
 }

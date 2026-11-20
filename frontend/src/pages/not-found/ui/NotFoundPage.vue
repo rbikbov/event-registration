@@ -15,3 +15,9 @@ const { t } = useI18n({ useScope: "local" });
   "title": "Страница не найдена"
 }
 </i18n>
+
+<i18n lang="json" locale="en">
+{
+  "title": "Page not found"
+}
+</i18n>

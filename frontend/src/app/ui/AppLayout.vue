@@ -91,3 +91,14 @@ watch(
   "offline": "Нет подключения к интернету"
 }
 </i18n>
+
+<i18n lang="json" locale="en">
+{
+  "events": "Events",
+  "myEvents": "My events",
+  "signIn": "Organizer login",
+  "signOut": "Log out",
+  "signOutError": "Could not log out, try again",
+  "offline": "No internet connection"
+}
+</i18n>

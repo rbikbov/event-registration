@@ -18,7 +18,7 @@ export async function organizerPage(browser: Browser): Promise<Page> {
   await page.getByLabel("Email").fill(ORGANIZER.email);
   await page.getByLabel("Пароль").fill(ORGANIZER.password);
   await page.getByRole("button", { name: "Войти" }).click();
-  await expect(page.getByRole("heading", { name: "Мои события" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "My events" })).toBeVisible();
   return page;
 }
 
@@ -46,7 +46,7 @@ export async function createEvent(
   { title, capacity }: { title: string; capacity: number },
 ): Promise<void> {
   const page = await organizerPage(browser);
-  await page.getByRole("link", { name: "Создать событие" }).click();
+  await page.getByRole("link", { name: "Create an event" }).click();
   await page.getByLabel("Название", { exact: true }).fill(title);
   await page
     .getByLabel("Начало", { exact: true })

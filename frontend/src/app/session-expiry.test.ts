@@ -99,7 +99,7 @@ describe("a guest on a public page", () => {
       global: { plugins: [router, [VueQueryPlugin, { queryClient }], createAppI18n()] },
     });
 
-    await vi.waitFor(() => expect(wrapper.get("header").text()).toContain("Вход для организатора"));
+    await vi.waitFor(() => expect(wrapper.get("header").text()).toContain("Organizer login"));
     await settle();
 
     expect(router.currentRoute.value.path).toBe(routes.home);

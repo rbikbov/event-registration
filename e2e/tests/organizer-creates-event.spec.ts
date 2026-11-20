@@ -12,8 +12,8 @@ test("organizer signs in, creates an event and sees it in the list", async ({ pa
   await page.getByLabel("Пароль").fill(ORGANIZER.password);
   await page.getByRole("button", { name: "Войти" }).click();
 
-  await expect(page.getByRole("heading", { name: "Мои события" })).toBeVisible();
-  await page.getByRole("link", { name: "Создать событие" }).click();
+  await expect(page.getByRole("heading", { name: "My events" })).toBeVisible();
+  await page.getByRole("link", { name: "Create an event" }).click();
 
   await page.getByLabel("Название", { exact: true }).fill(title);
   await page.getByLabel("Начало", { exact: true }).fill(startsAt);
@@ -22,7 +22,7 @@ test("organizer signs in, creates an event and sees it in the list", async ({ pa
 
   const card = page.getByRole("heading", { name: title });
   await expect(card).toBeVisible();
-  await expect(page.getByRole("listitem").filter({ has: card })).toContainText("Занято 0 из 30");
+  await expect(page.getByRole("listitem").filter({ has: card })).toContainText("0 of 30 taken");
 });
 
 test("organizer sees the field error from the form and stays on it", async ({ page }) => {
@@ -30,7 +30,7 @@ test("organizer sees the field error from the form and stays on it", async ({ pa
   await page.getByLabel("Email").fill(ORGANIZER.email);
   await page.getByLabel("Пароль").fill(ORGANIZER.password);
   await page.getByRole("button", { name: "Войти" }).click();
-  await page.getByRole("link", { name: "Создать событие" }).click();
+  await page.getByRole("link", { name: "Create an event" }).click();
 
   await page.getByRole("button", { name: "Создать", exact: true }).click();
 

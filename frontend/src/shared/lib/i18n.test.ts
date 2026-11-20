@@ -28,9 +28,42 @@ describe("date formats", () => {
   const startsAt = new Date(2027, 4, 1, 18, 0);
 
   it.each([
+    ["short", "1 May 2027, 18:00"],
+    ["long", "1 May 2027 at 18:00"],
+  ])("formats a date the %s way in English by default", (name, expected) => {
+    expect(createAppI18n().global.d(startsAt, name)).toBe(expected);
+  });
+
+  it.each([
     ["short", "1 мая 2027 г., 18:00"],
     ["long", "1 мая 2027 г. в 18:00"],
-  ])("formats a date the %s way", (name, expected) => {
-    expect(createAppI18n().global.d(startsAt, name)).toBe(expected);
+  ])("formats a date the %s way in Russian", (name, expected) => {
+    expect(createAppI18n("ru").global.d(startsAt, name)).toBe(expected);
+  });
+});
+
+describe("messages", () => {
+  const messages = {
+    en: { seats: "{count} seat | {count} seats", only: "English" },
+    ru: {
+      seats: "{count} место | {count} места | {count} мест",
+      only: "Русский",
+      ruOnly: "Только",
+    },
+  };
+
+  it("shows English with the English plural forms", () => {
+    const { global } = createAppI18n();
+    global.setLocaleMessage("en", messages.en);
+    global.setLocaleMessage("ru", messages.ru);
+    expect(global.t("only")).toBe("English");
+    expect([1, 2, 5].map((n) => global.t("seats", n))).toEqual(["1 seat", "2 seats", "5 seats"]);
+  });
+
+  it("falls back to Russian for a text without an English version", () => {
+    const { global } = createAppI18n();
+    global.setLocaleMessage("en", messages.en);
+    global.setLocaleMessage("ru", messages.ru);
+    expect(global.t("ruOnly")).toBe("Только");
   });
 });

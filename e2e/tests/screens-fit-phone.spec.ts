@@ -48,7 +48,7 @@ test("every screen fits a 360 px phone without scrolling sideways", async ({
   await expectFits(participant, "the ticket");
 
   await participant.goto("/no-such-page");
-  await expect(participant.getByRole("heading", { name: "Страница не найдена" })).toBeVisible();
+  await expect(participant.getByRole("heading", { name: "Page not found" })).toBeVisible();
   await expectFits(participant, "the 404 page");
 
   await participant.goto("/login");
@@ -60,7 +60,7 @@ test("every screen fits a 360 px phone without scrolling sideways", async ({
   await expect(organizer.getByRole("link", { name: title })).toBeVisible();
   await expectFits(organizer, "the organizer's events");
 
-  await organizer.getByRole("link", { name: "Создать событие" }).click();
+  await organizer.getByRole("link", { name: "Create an event" }).click();
   await expect(organizer.getByRole("heading", { name: "Новое событие" })).toBeVisible();
   await expectFits(organizer, "the new event form");
   await organizer.goBack();

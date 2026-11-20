@@ -41,8 +41,9 @@ src/widgets|features/            appear with their first slice, not created empt
    `QueryState`: the check-in form works without the event too (the title is only a caption), so the
    "Check-in" tab is outside `QueryState` and visible on an event loading error. Until the `GET`
    answers there are no tabs: the event may turn out to be someone else's.
-5. The interface texts are in Russian, in the `<i18n lang="json" locale="ru">` block of the same
-   component, obtained through `useI18n({ useScope: "local" })`; stores and pure functions have no
+5. The interface texts are in two `<i18n lang="json">` blocks of the same component —
+   `locale="en"` (shown) and `locale="ru"` (kept for a later language switch, the fallback) with the
+   same keys (`src/app/i18n-blocks.test.ts`), obtained through `useI18n({ useScope: "local" })`; stores and pure functions have no
    texts (they return codes, the component picks the text). There are no global messages. The `@`
    character in a message is written as `{'@'}`, otherwise the build fails.
 6. Names: components — `PascalCase.vue`, other files — `kebab-case.ts`, a composable —

@@ -10,8 +10,8 @@ import { server } from "@/shared/lib/test/msw";
 
 import OrgEventsPage from "./OrgEventsPage.vue";
 
-const PAGE_NAV = 'nav[aria-label="Страницы событий"]';
-const PERIOD_NAV = 'nav[aria-label="Какие события показать"]';
+const PAGE_NAV = 'nav[aria-label="Event pages"]';
+const PERIOD_NAV = 'nav[aria-label="Which events to show"]';
 
 // A list answer: one page with all the events.
 function page<T>(results: T[]) {
@@ -106,14 +106,14 @@ describe("OrgEventsPage", () => {
     const rows = wrapper.findAll("li");
     expect(rows).toHaveLength(2);
     expect(rows[0]?.text()).toContain("Meetup");
-    expect(rows[0]?.text()).toContain("Занято 1 из 1");
+    expect(rows[0]?.text()).toContain("1 of 1 taken");
     // The list format of the app (shared/lib/i18n).
     expect(rows[0]?.text()).toContain(
       createAppI18n().global.d(new Date("2030-05-01T18:00:00Z"), "short"),
     );
-    expect(rows[1]?.text()).toContain("Занято 12 из 30");
-    expect(rows[1]?.text()).toContain("в листе ожидания 3");
-    expect(rows[1]?.get(`a[href="${checkinPath(2)}"]`).text()).toBe("Чекин");
+    expect(rows[1]?.text()).toContain("12 of 30 taken");
+    expect(rows[1]?.text()).toContain("3 on the waitlist");
+    expect(rows[1]?.get(`a[href="${checkinPath(2)}"]`).text()).toBe("Check-in");
     expect(rows[1]?.get(`a[href="${orgEventPath(2)}"]`).text()).toBe("Workshop");
   });
 
@@ -123,15 +123,15 @@ describe("OrgEventsPage", () => {
     const wrapper = await mountPage();
     await flushPromises();
 
-    expect(wrapper.text()).toContain("Предстоящих событий нет");
-    expect(wrapper.get(`a[href="${routes.orgEventsNew}"]`).text()).toBe("Создать событие");
+    expect(wrapper.text()).toContain("No upcoming events");
+    expect(wrapper.get(`a[href="${routes.orgEventsNew}"]`).text()).toBe("Create an event");
   });
 
   it("shows an error and loads again on retry", async () => {
     server.use(http.get("*/api/org/events/", () => HttpResponse.json({}, { status: 500 })));
     const wrapper = await mountPage();
     await flushPromises();
-    expect(wrapper.get('[role="alert"]').text()).toContain("Не удалось загрузить события");
+    expect(wrapper.get('[role="alert"]').text()).toContain("Could not load the events");
 
     server.use(
       http.get("*/api/org/events/", () =>
@@ -186,7 +186,7 @@ describe("OrgEventsPage", () => {
     await queryClient.refetchQueries();
     await flushPromises();
 
-    expect(wrapper.get('[role="alert"]').text()).toContain("Не удалось обновить события");
+    expect(wrapper.get('[role="alert"]').text()).toContain("Could not refresh the events");
     expect(wrapper.findAll("li")).toHaveLength(1);
   });
 
@@ -206,8 +206,8 @@ describe("OrgEventsPage", () => {
     pagedList(45);
     const { wrapper } = await mountAt(`${routes.orgEvents}?page=4`);
 
-    await vi.waitFor(() => expect(wrapper.text()).toContain("Здесь событий нет."));
-    expect(wrapper.get(`a[href="${routes.orgEvents}?page=3"]`).text()).toBe("К последней странице");
+    await vi.waitFor(() => expect(wrapper.text()).toContain("No events here."));
+    expect(wrapper.get(`a[href="${routes.orgEvents}?page=3"]`).text()).toBe("To the last page");
     expect(wrapper.find(PAGE_NAV).exists()).toBe(false);
   });
 
@@ -244,7 +244,7 @@ describe("OrgEventsPage", () => {
     const { wrapper } = await mountAt(routes.orgEvents);
     await vi.waitFor(() => expect(asked).toHaveLength(1));
 
-    expect(tabs(wrapper)).toEqual(["[Предстоящие]", "Прошедшие"]);
+    expect(tabs(wrapper)).toEqual(["[Upcoming]", "Past"]);
     expect(asked).toEqual(["upcoming 1"]);
   });
 
@@ -252,8 +252,8 @@ describe("OrgEventsPage", () => {
     const asked = recordedList(0);
     const { wrapper } = await mountAt(`${routes.orgEvents}?period=past`);
 
-    await vi.waitFor(() => expect(wrapper.text()).toContain("Прошедших событий нет"));
-    expect(tabs(wrapper)).toEqual(["Предстоящие", "[Прошедшие]"]);
+    await vi.waitFor(() => expect(wrapper.text()).toContain("No past events"));
+    expect(tabs(wrapper)).toEqual(["Upcoming", "[Past]"]);
     expect(asked).toEqual(["past 1"]);
   });
 
@@ -262,7 +262,7 @@ describe("OrgEventsPage", () => {
     const { wrapper, router } = await mountAt(`${routes.orgEvents}?page=2`);
     await vi.waitFor(() => expect(asked).toEqual(["upcoming 2"]));
 
-    await tab(wrapper, "Прошедшие").trigger("click");
+    await tab(wrapper, "Past").trigger("click");
 
     await vi.waitFor(() => expect(asked).toEqual(["upcoming 2", "past 1"]));
     expect(router.currentRoute.value.fullPath).toBe(`${routes.orgEvents}?period=past`);

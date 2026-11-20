@@ -40,3 +40,22 @@ watchEffect(() => {
   }
 }
 </i18n>
+
+<i18n lang="json" locale="en">
+{
+  "app": "Event registration",
+  "titles": {
+    "home": "Events",
+    "event": "Event",
+    "health": "Service status",
+    "login": "Login",
+    "orgEvents": "My events",
+    "orgEventsNew": "New event",
+    "participants": "Participants",
+    "checkin": "Check-in",
+    "edit": "Edit",
+    "ticket": "Ticket",
+    "notFound": "Page not found"
+  }
+}
+</i18n>

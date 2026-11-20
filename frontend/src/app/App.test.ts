@@ -11,7 +11,7 @@ import { server } from "@/shared/lib/test/msw";
 import App from "./App.vue";
 import { createAppRouter } from "./router";
 
-const APP = "Регистрация на мероприятия";
+const APP = "Event registration";
 
 let mounted: VueWrapper | undefined;
 afterEach(() => {
@@ -50,12 +50,12 @@ describe("tab title", () => {
       http.get("*/api/org/events/7/", () => HttpResponse.json({}, { status: 404 })),
     );
     const { router, queryClient } = await mountApp(routes.home);
-    expect(document.title).toBe(`События — ${APP}`);
+    expect(document.title).toBe(`Events — ${APP}`);
 
     // A tab of the event layout: the layout's route has no title of its own.
     await router.push(checkinPath(7));
 
-    await vi.waitFor(() => expect(document.title).toBe(`Чекин — ${APP}`));
+    await vi.waitFor(() => expect(document.title).toBe(`Check-in — ${APP}`));
     await vi.waitFor(() => expect(queryClient.isFetching()).toBe(0));
   });
 
@@ -63,7 +63,7 @@ describe("tab title", () => {
     signedIn();
     const { queryClient } = await mountApp("/no-such-page");
 
-    expect(document.title).toBe(`Страница не найдена — ${APP}`);
+    expect(document.title).toBe(`Page not found — ${APP}`);
     await vi.waitFor(() => expect(queryClient.isFetching()).toBe(0));
   });
 

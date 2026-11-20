@@ -4,14 +4,14 @@ Spec — `spec.md`. One task — one commit; the `[x]` check goes into the same 
 
 ## Stage 1. English by default (the only stage)
 
-- [ ] 1.1. Tracer bullet: `createAppI18n` — `en-GB` by default, `ru` as the fallback, English
-      date formats; `en` blocks in `AppLayout`, `HomePage`, `NotFoundPage`; `index.html` in
-      English; the Vitest test of matching `en`/`ru` keys (it lists the files without `en` until
-      1.3). Done when: Vitest of these components checks English; the home page is English in the
-      browser.
+- [x] 1.1. Tracer bullet: `createAppI18n` — `en-GB` by default, `ru` as the fallback, English
+      date formats; `en` blocks in `App`, `AppLayout`, `HomePage`, `OrgEventsPage` (both lists share
+      the e2e helpers), `NotFoundPage`; `index.html` in English; the Vitest test of matching
+      `en`/`ru` keys (it lists the files without `en` until 1.3). Done when: Vitest of these
+      components checks English; the home page is English in the browser.
 - [ ] 1.2. The participant's screens: the event page and the registration form, the ticket, login,
       `/health`, the `shared/ui` components. Done when: their Vitest tests check English.
-- [ ] 1.3. The organizer's screens: the lists, creation and editing (`entities/event` form errors),
+- [ ] 1.3. The organizer's screens: creation and editing (`entities/event` form errors),
       the event layout, the participants, check-in; the key test has no exceptions left. Done when:
       Vitest is green, no component without `en`.
 - [ ] 1.4. Emails in English: `emails/templates/emails/en/` and `ru/`, the subjects by locale (`en`
@@ -23,5 +23,9 @@ Spec — `spec.md`. One task — one commit; the `[x]` check goes into the same 
 - [ ] 1.6. Closing the phase: `architecture.md`, `features.md`, the requirement tables, roadmap.
 
 ## Log
+
+- The base of stage 1 — `b669fab`.
+- 1.1: the tests of the components translated later that compare a date with Russian `Intl` mount
+  with `createAppI18n("ru")` until their component is translated; the dates follow the app locale.
 
 ## Later

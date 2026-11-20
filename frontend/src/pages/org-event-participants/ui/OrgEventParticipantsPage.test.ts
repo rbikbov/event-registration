@@ -66,7 +66,7 @@ async function mountPage(query: Record<string, string> = {}, shown: OrgEvent = e
   await router.push({ path: orgEventPath(7), query });
   const wrapper = mount(OrgEventParticipantsPage, {
     props: { event: shown },
-    global: { plugins: [router, [VueQueryPlugin, { queryClient }], createAppI18n()] },
+    global: { plugins: [router, [VueQueryPlugin, { queryClient }], createAppI18n("ru")] },
   });
   return { wrapper, router, queryClient };
 }

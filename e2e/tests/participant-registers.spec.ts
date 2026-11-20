@@ -16,7 +16,7 @@ test("participants get the only seat, then a place on the waitlist", async ({ br
   const card = participant
     .getByRole("listitem")
     .filter({ has: participant.getByRole("link", { name: title }) });
-  await expect(card).toContainText("свободно 1 место");
+  await expect(card).toContainText("1 seat free");
   await participant.getByRole("link", { name: title }).click();
 
   await expect(participant.getByRole("heading", { name: title, level: 1 })).toBeVisible();
@@ -29,9 +29,9 @@ test("participants get the only seat, then a place on the waitlist", async ({ br
   await expect(participant.getByRole("button", { name: "Зарегистрироваться" })).toBeHidden();
 
   // The only seat is taken.
-  await participant.getByRole("banner").getByRole("link", { name: "События", exact: true }).click();
-  await expect(card).toContainText("мест нет");
-  await expect(card).not.toContainText("свободно");
+  await participant.getByRole("banner").getByRole("link", { name: "Events", exact: true }).click();
+  await expect(card).toContainText("no seats");
+  await expect(card).not.toContainText("free");
 
   // A second person, a separate context: no seat left, so the waitlist.
   const waitingContext = await browser.newContext();

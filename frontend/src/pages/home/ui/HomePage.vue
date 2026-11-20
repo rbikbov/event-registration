@@ -119,3 +119,25 @@ function link(toPeriod: EventPeriod, toPage = 1) {
   "noSeats": "мест нет"
 }
 </i18n>
+
+<i18n lang="json" locale="en">
+{
+  "title": "Events",
+  "error": "Could not load the events",
+  "refreshError": "Could not refresh the events, showing the previous list",
+  "pastEnd": "No events here.",
+  "lastPage": "To the last page",
+  "pages": "Event pages",
+  "empty": {
+    "upcoming": "No upcoming events yet",
+    "past": "No past events"
+  },
+  "period": "Which events to show",
+  "periods": {
+    "upcoming": "Upcoming",
+    "past": "Past"
+  },
+  "freeSeats": "{count} seat free | {count} seats free",
+  "noSeats": "no seats"
+}
+</i18n>

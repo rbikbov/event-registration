@@ -48,7 +48,7 @@ async function mountPage() {
   await router.push(checkinPath(7));
   const wrapper = mount(OrgCheckinPage, {
     attachTo: document.body,
-    global: { plugins: [router, [VueQueryPlugin, { queryClient }], createAppI18n()] },
+    global: { plugins: [router, [VueQueryPlugin, { queryClient }], createAppI18n("ru")] },
   });
   mounted = wrapper;
   return wrapper;
