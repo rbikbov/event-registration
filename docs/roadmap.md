@@ -1,184 +1,192 @@
-# Дорожная карта
+# Roadmap
 
-Фазы работы до сдачи (2026-11-05). Статус фазы — в заголовке: `не начата`, `в работе`,
-`готова`. Фаза готова, когда выполнены критерии, `make check` и CI проходят, разделы фазы в
-`docs/architecture.md` приведены к коду, а строки таблицы «требование → тест» в README для
-её требований ссылаются на реальные тесты.
+The phases of work up to the delivery (2026-11-05). The phase status is in the heading:
+`not started`, `in progress`, `done`. A phase is done when the criteria are met, `make check` and
+CI pass, the phase's sections in `docs/architecture.md` are brought in line with the code, and the
+rows of the "requirement → test" table in the README for its requirements point to real tests.
 
-У каждой фазы с третьей — свои `docs/features/<slug>/spec.md` и `tasks.md`, здесь только
-ссылка (решение от 2026-10-31 06:19); задачи фазы 0 — списком прямо здесь. Задача отмечается `[x]` в
-том же коммите, который её выполняет (хэш в тот же коммит не вписать — он зависит от
-содержимого); какой коммит что закрыл — `git log -- docs/roadmap.md`.
+Each phase from the third on has its own `docs/features/<slug>/spec.md` and `tasks.md`, here there
+is only a link (decision of 2026-10-31 06:19); the tasks of phase 0 are listed right here. A task is
+checked `[x]` in the same commit that does it (the hash cannot be written into that same commit —
+it depends on the contents); which commit closed what — `git log -- docs/roadmap.md`.
 
-Как вести этот файл — skill `session-handoff` (`.claude/skills/session-handoff/`).
+How to maintain this file — the `session-handoff` skill (`.claude/skills/session-handoff/`).
 
-Фазы вертикальные: каждая включает backend, свои экраны и e2e своих сценариев, поэтому
-закрытая фаза проверяется в браузере, а строки таблицы «требование → тест» в README
-заполняются по ходу (решение от 2026-10-29 00:36).
+The phases are vertical: each includes the backend, its own screens and the e2e of its scenarios,
+so a closed phase is checked in the browser, and the rows of the "requirement → test" table in the
+README are filled in along the way (decision of 2026-10-29 00:36).
 
-## Фаза 0. Каркас — готова
+## Phase 0. Skeleton — done
 
-Критерии: `make check` и e2e smoke проходят локально и в CI; хуки работают; по
-`docs/development.md` проект поднимается с нуля.
+Criteria: `make check` and the e2e smoke pass locally and in CI; the hooks work; the project starts
+from scratch by `docs/development.md`.
 
-- [x] Инструменты в корне: Prettier, husky, lint-staged, commitlint
-- [x] Правила агента в `AGENTS.md`, карта репозитория
-- [x] Дорожная карта, skill `session-handoff`, хук `SessionStart`
-- [x] Хуки Claude Code: защита от обхода git-хуков, форматирование после правки
-- [x] Backend: Django, своя модель пользователя, ruff, mypy, pytest; Postgres в compose; Makefile
-- [x] Backend: health endpoint, OpenAPI-схема и проверка её актуальности
-- [x] Хук `pre-push`: проверки затронутой части
-- [x] Правила backend и миграций, хук защиты закоммиченных миграций
-- [x] Frontend: Vue, страница health, ESLint, vue-tsc, Vitest, FSD-каркас
-- [x] Весь стек в docker compose (postgres, backend, frontend), `make up`; README с запуском
-- [x] e2e smoke на Playwright
-- [x] CI в GitHub Actions; первый зелёный прогон на GitHub — 2026-10-28
-- [x] Правила агента для frontend и e2e; skills `anti-slop-review`, `feature-workflow`,
-      `fsd-frontend`, агент `reviewer` (`api-change` — с первым доменным эндпоинтом, фаза 1)
+- [x] Tools in the root: Prettier, husky, lint-staged, commitlint
+- [x] Agent rules in `AGENTS.md`, the repository map
+- [x] The roadmap, the `session-handoff` skill, the `SessionStart` hook
+- [x] Claude Code hooks: protection against bypassing git hooks, formatting after an edit
+- [x] Backend: Django, a custom user model, ruff, mypy, pytest; Postgres in compose; Makefile
+- [x] Backend: health endpoint, the OpenAPI schema and a check that it is up to date
+- [x] The `pre-push` hook: checks of the affected part
+- [x] Backend and migration rules, a hook protecting committed migrations
+- [x] Frontend: Vue, the health page, ESLint, vue-tsc, Vitest, the FSD skeleton
+- [x] The whole stack in docker compose (postgres, backend, frontend), `make up`; a README with
+      running instructions
+- [x] e2e smoke on Playwright
+- [x] CI in GitHub Actions; the first green run on GitHub — 2026-10-28
+- [x] Agent rules for the frontend and e2e; the `anti-slop-review`, `feature-workflow`,
+      `fsd-frontend` skills, the `reviewer` agent (`api-change` — with the first domain
+      endpoint, phase 1)
 
-## Фаза 1. Регистрация, лист ожидания, отказ — готова
+## Phase 1. Registration, waitlist, cancellation — done
 
-Spec и задачи — `docs/features/registration/`. Проект — разделы «Аутентификация», «Модель
-данных», «Инварианты и конкурентность», «API» в `docs/architecture.md`.
+Spec and tasks — `docs/features/registration/`. The design — the "Authentication", "Data model",
+"Invariants and concurrency", "API" sections in `docs/architecture.md`.
 
-Критерии: организатор входит и создаёт событие; повторная регистрация не создаёт второго
-места; при нехватке мест — лист ожидания; отказ повышает первого из листа; тест гонки за
-последнее место на Postgres.
+Criteria: the organizer logs in and creates an event; registering again does not create a second
+seat; when seats run out — the waitlist; a cancellation promotes the first one from the waitlist; a
+race test for the last seat on Postgres.
 
-Экраны: вход организатора, создание события, список событий, страница события с формой
-регистрации и результатом («место есть» / «вы в листе ожидания, №N»). Отказ в этой фазе — API
-и тесты; экран билета с кнопкой отказа — в фазе 2, когда ссылка на него приходит письмом.
-E2E: организатор создаёт событие, участник регистрируется.
+Screens: organizer login, event creation, the event list, the event page with a registration form
+and the result ("you have a seat" / "you are on the waitlist, #N"). Cancellation in this phase is
+the API and tests; the ticket screen with a cancel button comes in phase 2, when the link to it
+arrives by email. E2E: the organizer creates an event, a participant registers.
 
-Вместе с фазой появляются (решения в `docs/decisions.md`):
+Along with the phase come (decisions in `docs/decisions.md`):
 
-- skill `api-change` — процедура изменения API, на примере первого доменного эндпоинта;
-- `docs/rules/concurrency.md` — как писать код с блокировками и тесты гонок;
-- в README — таблица «требование → тест» со строками требований фазы;
-- демо-учётки — management-команда при старте `backend` в compose: организатор
-  `demo@example.com` / `demo` (им входят проверяющий и e2e) и отдельный администратор
-  `admin@example.com` / `admin` для админки (`architecture.md`, «Окружение»);
-- Event и Registration в админке; Registration — только для чтения (`backend/AGENTS.md`,
-  правило 9);
-- CSRF на фронтенде: `shared/api` передаёт `X-CSRFToken` из cookie `csrftoken` в изменяющих
-  запросах — иначе первый `POST` после входа получит 403.
+- the `api-change` skill — the API change procedure, on the example of the first domain endpoint;
+- `docs/rules/concurrency.md` — how to write code with locks and race tests;
+- in the README — the "requirement → test" table with the rows of the phase's requirements;
+- demo accounts — a management command at `backend` start in compose: the organizer
+  `demo@example.com` / `demo` (the reviewer and e2e log in with it) and a separate administrator
+  `admin@example.com` / `admin` for the admin (`architecture.md`, "Environment");
+- Event and Registration in the admin; Registration is read-only (`backend/AGENTS.md`, rule 9);
+- CSRF on the frontend: `shared/api` passes `X-CSRFToken` from the `csrftoken` cookie in modifying
+  requests — otherwise the first `POST` after login gets a 403.
 
-Email участника нормализуется только по регистру: точки и `+tag` значимы, канонизации под
-провайдеров (Gmail) нет — решение от 2026-10-28 22:38 в `docs/decisions.md`. Тест: адреса,
-отличающиеся только регистром, — одна регистрация; с точкой — разные. В README — оговорка
-«один email — одно место; разные адреса одного ящика (точки и `+tag` в Gmail) считаются
-разными».
+A participant's email is normalized only by case: dots and `+tag` are significant, there is no
+provider-specific canonicalization (Gmail) — decision of 2026-10-28 22:38 in `docs/decisions.md`.
+Test: addresses that differ only in case — one registration; with a dot — different ones. The
+README has the caveat "one email — one seat; different addresses of one mailbox (dots and `+tag` in
+Gmail) count as different".
 
-## Фаза 2. Outbox, воркер, письма — готова
+## Phase 2. Outbox, worker, emails — done
 
-Spec и задачи — `docs/features/emails/`. Критерии: письма `ticket`, `waitlisted`,
-`promoted` создаются в транзакции изменения и доставляются воркером в Mailpit; повторы при
-ошибке SMTP. Mailpit и сервис `worker` добавляются в compose в этой фазе.
+Spec and tasks — `docs/features/emails/`. Criteria: the `ticket`, `waitlisted`, `promoted` emails
+are created in the transaction of the change and delivered by the worker to Mailpit; retries on an
+SMTP error. Mailpit and the `worker` service are added to compose in this phase.
 
-Письма создают `register` и `cancel` в `backend/registrations/services.py` — в той же транзакции
-и под той же блокировкой Event; сама отправка — только воркером, правило — `docs/rules/concurrency.md`,
-п. 5 раздела «Код».
+The emails are created by `register` and `cancel` in `backend/registrations/services.py` — in the
+same transaction and under the same Event lock; the sending itself is done only by the worker, the
+rule is `docs/rules/concurrency.md`, item 5 of the "Code" section.
 
-Экраны: страница билета по ссылке из письма — код, статус, номер в листе ожидания, отказ.
-E2E: регистрация → письмо в Mailpit → билет по ссылке → отказ → первый из листа получает
-место и письмо.
+Screens: the ticket page from the email link — the code, the status, the place on the waitlist,
+cancellation. E2E: registration → an email in Mailpit → the ticket via the link → cancellation →
+the first one on the waitlist gets the seat and an email.
 
-## Фаза 3. Чекин и статистика организатора — готова
+## Phase 3. Check-in and organizer statistics — done
 
-Критерии: билет проходит чекин один раз, в том числе при одновременных запросах; счётчики
-зарегистрированных, листа ожидания и пришедших.
+Criteria: a ticket passes check-in once, including under simultaneous requests; counters of the
+registered, the waitlisted and the arrived.
 
-Экраны: панель события организатора (счётчики, участники), экран чекина (ввод кода, крупный
-ответ «пропущен / уже отмечен в ЧЧ:ММ / не найден»). E2E: повторный чекин того же билета
-отклоняется.
+Screens: the organizer's event panel (counters, participants), the check-in screen (code input, a
+large answer "admitted / already checked in at HH:MM / not found"). E2E: a repeated check-in of the
+same ticket is rejected.
 
-Spec и задачи — `docs/features/checkin/`.
+Spec and tasks — `docs/features/checkin/`.
 
-## Фаза 4. Realtime (SSE) — готова
+## Phase 4. Realtime (SSE) — done
 
-Spec и задачи — `docs/features/realtime/`. Критерии: счётчики во второй вкладке обновляются
-без перезагрузки; переподключение со снимком; индикатор обрыва.
+Spec and tasks — `docs/features/realtime/`. Criteria: the counters in a second tab update without
+a reload; reconnection with a snapshot; a disconnection indicator.
 
-Экраны: живые счётчики на панели организатора и свободные места на странице события;
-индикатор «переподключаюсь». E2E с двумя контекстами: чекин в одном — счётчик пришедших
-меняется в другом без перезагрузки.
+Screens: live counters on the organizer's panel and free seats on the event page; a
+"reconnecting" indicator. E2E with two contexts: a check-in in one — the arrived counter changes in
+the other without a reload.
 
-Окружение: nginx-шлюз в compose (`architecture.md`, «Процессы») — e2e ходят через него,
-поэтому SSE проверяется за прокси с буферизацией, как в продакшене; `make up` остаётся на
-Vite (решение человека, spec фазы, «Допущения», п. 4).
+Environment: an nginx gateway in compose (`architecture.md`, "Processes") — e2e goes through it, so
+SSE is checked behind a buffering proxy, as in production; `make up` stays on Vite (the human's
+decision, the phase spec, "Assumptions", item 4).
 
-## Фаза 5. Напоминания и перенос события — готова
+## Phase 5. Reminders and event reschedule — done
 
-Spec и задачи — `docs/features/reschedule/`. Критерии: ровно одно напоминание на каждую дату события; письмо о переносе `confirmed` и
-`waitlisted`; правило «место получено внутри 24 часов — без напоминания».
+Spec and tasks — `docs/features/reschedule/`. Criteria: exactly one reminder per event date; a
+reschedule email to `confirmed` and `waitlisted`; the rule "a seat obtained within 24 hours — no
+reminder".
 
-Экраны: редактирование события организатором (перенос даты, изменение лимита). `make seed`
-с демо-событиями и участниками (демо-организатор появился в фазе 1). E2E: перенос события → письма участникам в Mailpit.
+Screens: event editing by the organizer (date reschedule, limit change). `make seed` with demo
+events and participants (the demo organizer appeared in phase 1). E2E: an event reschedule →
+emails to participants in Mailpit.
 
-## Фаза 6. Доводка фронтенда — готова
+## Phase 6. Frontend polish — done
 
-Spec и задачи — `docs/features/frontend-polish/`.
-Экраны появляются в фазах 1–5; здесь — то, что видно только на собранном приложении.
-Критерии: общая навигация и layout; у всех экранов состояния загрузки, ошибки и пустого
-списка; работа на ширине телефона; единый вид.
+Spec and tasks — `docs/features/frontend-polish/`.
+Screens appear in phases 1–5; here is what is visible only in the assembled application.
+Criteria: shared navigation and layout; all screens have loading, error and empty-list states;
+work at phone width; a uniform look.
 
-Регистрация пользователей (решение от 2026-10-30 00:48) и дробление страниц на `features`
-(решение от 2026-10-31 14:46) не сделаны — в README «Что дальше» (решение от 2026-11-04 18:47).
+User registration (decision of 2026-10-30 00:48) and splitting pages into `features` (decision of
+2026-10-31 14:46) are not done — they are in "What's next" of the README (decision of 2026-11-04
+18:47).
 
-Этап 5 — отложенное в «на потом» по ходу фазы, постраничные списки событий с общим
-порядком и вкладка «Прошедшие» в обоих списках (backend и фронтенд; решения от 2026-11-03
-23:55 и 2026-11-04 00:00).
+Stage 5 — what was postponed to "later" during the phase, paged event lists with a shared order
+and the "Past" tab in both lists (backend and frontend; decisions of 2026-11-03 23:55 and
+2026-11-04 00:00).
 
-## Фаза 7. Сдача — готова
+## Phase 7. Delivery — done
 
-Spec и задачи — `docs/features/delivery/`. Критерии: каждое требование задания покрыто тестом, e2e с двумя контекстами — для
-требований о двух клиентах; README: таблица «требование → тест» сверена с тестами,
-состояние, модель и инструмент, «что дальше», «что взято чужое»; проверка на мусор
-(`anti-slop-review`); экспорт сессий в `docs/session/`.
+Spec and tasks — `docs/features/delivery/`. Criteria: each requirement of the assignment is covered
+by a test, e2e with two contexts — for the requirements about two clients; README: the "requirement
+→ test" table checked against the tests, the state, the model and the tool, "what's next", "what
+was borrowed"; a check for junk (`anti-slop-review`); the session export to `docs/session/`.
 
-В «что дальше» README — push-сервер (Centrifugo) вместо потоков в процессе Django: когда
-соединений тысячи или процессов backend больше одного (решение от 2026-10-31 21:04).
+In "what's next" of the README — a push server (Centrifugo) instead of streams in the Django
+process: when there are thousands of connections or more than one backend process (decision of
+2026-10-31 21:04).
 
-## Что дальше
+## What's next
 
-Требования задания выполнены; ниже — что отложено по ходу (Non-Goals spec и «На потом» в
-`docs/features/*/`) и что нужно, чтобы тестовое задание стало продуктом.
+The requirements of the assignment are met; below is what was postponed along the way (the
+Non-Goals of the specs and "Later" in `docs/features/*/`) and what is needed for the test
+assignment to become a product.
 
-### Следующим заходом
+### Next round
 
-- Время окончания события и запрет регистрации на начавшееся: сейчас на начавшееся событие
-  можно зарегистрироваться, и оно видно на вкладке «Прошедшие».
-- Регистрация организаторов (экран и эндпоинт): сейчас учётки — командой и в админке.
-- Скользящий срок сессии организатора: сейчас две недели от входа, и сессия может кончиться
-  посреди чекина.
-- Нестабильный Vitest (`window is not defined` из `vue-i18n` после закрытия jsdom) — найти,
-  какой промис или таймер теста переживает тест.
-- Английская версия интерфейса и писем: сейчас всё по-русски. Тексты экранов уже вынесены в
-  блоки `<i18n locale="ru">` у компонентов (vue-i18n) — нужен второй язык и выбор языка;
-  письма — шаблоны `backend/emails/templates/emails/` и темы в `emails/services.py`.
-- Дробление страниц на `features` (FSD): сейчас код экрана — на странице, пока у него один
-  потребитель.
+- An event end time and a ban on registering for an event that has started: now one can register
+  for an event that has started, and it is visible on the "Past" tab.
+- Organizer sign-up (a screen and an endpoint): now the accounts are created by a command and in
+  the admin.
+- A sliding organizer session lifetime: now it is two weeks from login, and the session may end in
+  the middle of a check-in.
+- A flaky Vitest (`window is not defined` from `vue-i18n` after jsdom is closed) — find which
+  promise or timer of a test outlives the test.
+- An English version of the interface and the emails: now everything is in Russian. The screen
+  texts are already in `<i18n locale="ru">` blocks of the components (vue-i18n) — a second language
+  and a language switch are needed; emails — the templates in `backend/emails/templates/emails/`
+  and the subjects in `emails/services.py`.
+- Splitting pages into `features` (FSD): now the screen code is on the page while it has one
+  consumer.
 
-### Чтобы стать продуктом
+### To become a product
 
-- **Развёртывание.** Сборка за шлюзом уже есть (`gateway`, ей пользуются e2e); нужны
-  `DJANGO_DEBUG=false` с настоящим ключом и `ALLOWED_HOSTS`, TLS, кэш-заголовки статики,
-  миграции при выкатке, резервные копии Postgres, мониторинг и сбор ошибок.
-- **Масштаб живых обновлений.** Push-сервер (например, Centrifugo) вместо потоков SSE в
-  процессе Django — когда соединений тысячи или процессов backend больше одного: backend
-  публикует снимок счётчиков, соединения браузеров держит push-сервер.
-- **Почта.** Настоящий SMTP-провайдер вместо Mailpit, HTML-письма, QR-код в билете, отписка и
-  жалобы; повторная отправка писем `failed` из админки; чистка отправленных писем из outbox;
-  пробуждение воркера через `LISTEN/NOTIFY` вместо опроса раз в секунду.
-- **Злоупотребления.** Ограничение частоты входа и регистрации, капча. Адрес участника не
-  подтверждается: зарегистрировать можно чужой email, и письма уйдут ему.
-- **Организаторы.** Роли и команды организаторов (сейчас событие принадлежит одной учётке).
-- **События.** Отмена и удаление события с письмами участникам; часовой пояс события (сейчас
-  даты в письмах — UTC); свой срок и несколько напоминаний, напоминание стоящим в листе
-  ожидания; письмо об изменении названия или описания.
-- **Чекин и участники.** Сканер QR вместо ввода кода, снятие ошибочной отметки, чекин по
-  имени, окно чекина по времени события; места неявившихся — листу ожидания; поиск по
-  участникам и экспорт списка.
-- **Интерфейс.** Живая страница билета: сейчас она перечитывается при возврате на вкладку, и
-  номер в листе ожидания или полученное место не меняются на глазах. Тёмная тема, скелетоны
-  вместо «Загружаем…».
+- **Deployment.** The build behind the gateway already exists (`gateway`, e2e uses it); what is
+  needed is `DJANGO_DEBUG=false` with a real key and `ALLOWED_HOSTS`, TLS, cache headers for static
+  files, migrations on rollout, Postgres backups, monitoring and error collection.
+- **Scaling live updates.** A push server (for example, Centrifugo) instead of SSE streams in the
+  Django process — when there are thousands of connections or more than one backend process: the
+  backend publishes a snapshot of the counters, the push server holds the browser connections.
+- **Email.** A real SMTP provider instead of Mailpit, HTML emails, a QR code in the ticket,
+  unsubscribe and complaints; resending `failed` emails from the admin; cleaning sent emails out of
+  the outbox; waking the worker through `LISTEN/NOTIFY` instead of polling once a second.
+- **Abuse.** Rate limiting of login and registration, a captcha. A participant's address is not
+  verified: one can register someone else's email, and the emails will go to them.
+- **Organizers.** Roles and organizer teams (now an event belongs to one account).
+- **Events.** Cancelling and deleting an event with emails to the participants; an event time zone
+  (now the dates in emails are UTC); a custom lead time and several reminders, a reminder to the
+  waitlisted; an email about a change of the title or description.
+- **Check-in and participants.** A QR scanner instead of typing the code, undoing a mistaken
+  check-in, check-in by name, a check-in window by the event time; the seats of no-shows go to the
+  waitlist; search over participants and a list export.
+- **Interface.** A live ticket page: now it is re-read when the tab is returned to, and the place
+  on the waitlist or an obtained seat does not change before your eyes. A dark theme, skeletons
+  instead of "Loading…".

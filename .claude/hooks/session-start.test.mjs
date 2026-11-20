@@ -5,22 +5,22 @@ import { summarize } from "./session-start.mjs";
 
 const roadmap = `# Roadmap
 
-## Фаза 0. Каркас — готова
+## Phase 0. Skeleton — done
 
 - [x] done
 
-## Фаза 1. Регистрация — в работе
+## Phase 1. Registration — in progress
 
-Spec и задачи — \`docs/features/registration/\`.
+Spec and tasks — \`docs/features/registration/\`.
 
-## Фаза 3. Чекин — не начата
+## Phase 3. Check-in — not started
 `;
 
 test("shows only the phase in progress", () => {
   const out = summarize(roadmap, () => null);
 
-  assert.match(out, /Фаза 1/);
-  assert.doesNotMatch(out, /Фаза 0|Фаза 3/);
+  assert.match(out, /Phase 1/);
+  assert.doesNotMatch(out, /Phase 0|Phase 3/);
 });
 
 test("points to feature-workflow when the phase has no spec yet", () => {
@@ -48,7 +48,7 @@ test("says to close the phase when all its tasks are done", () => {
 
 test("reports when no phase is in progress", () => {
   assert.match(
-    summarize("## Фаза 0. Каркас — готова\n", () => null),
+    summarize("## Phase 0. Skeleton — done\n", () => null),
     /No phase/,
   );
 });

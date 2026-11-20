@@ -9,7 +9,7 @@ import { pathToFileURL } from "node:url";
 // readFile(relativePath) returns the file text or null if there is no such file.
 export function summarize(roadmap, readFile) {
   const phases = roadmap.split(/^(?=## )/m).filter((s) => s.startsWith("## "));
-  const active = phases.filter((s) => s.split("\n")[0].includes("в работе"));
+  const active = phases.filter((s) => s.split("\n")[0].includes("in progress"));
   if (active.length === 0) return "No phase is in progress (docs/roadmap.md).";
 
   const parts = [];
