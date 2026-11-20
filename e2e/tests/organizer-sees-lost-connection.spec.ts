@@ -18,7 +18,7 @@ test("a lost stream shows the indicator, and the counters are right once it is b
   await participant.getByRole("button", { name: "Register" }).click();
   await expect(participant.getByRole("status")).toHaveText("Seat confirmed");
   await participant.context().close();
-  const code = extract(await emailTo(request, email, "Билет"), /Код билета: (\S+)/);
+  const code = extract(await emailTo(request, email, "Ticket"), /Ticket code: (\S+)/);
 
   const panel = await organizerPage(browser);
   // The first stream ends right away, as one the gateway dropped; while the route is there, the

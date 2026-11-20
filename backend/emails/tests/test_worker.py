@@ -147,7 +147,7 @@ def test_event_title_with_line_breaks_is_sent_with_a_one_line_subject(event: Eve
     process_batch(now=due())
 
     [message] = mail.outbox
-    assert message.subject == "Билет: Meetup after work"
+    assert message.subject == "Ticket: Meetup after work"
 
 
 def test_failed_send_is_retried_later(event: Event, refuse: Refuse) -> None:

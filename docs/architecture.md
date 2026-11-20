@@ -288,8 +288,10 @@ A separate process `manage.py run_worker`, a loop:
 | `rescheduled` | `confirmed` and `waitlisted`                                                   | once per reschedule                |
 
 The `ticket`, `waitlisted`, `promoted` emails are implemented (phase 2), `rescheduled` and
-`reminder` — phase 5: plain text in Russian, the templates are `emails/templates/emails/<kind>.txt`,
-all have the event title and date (UTC) and the link `{FRONTEND_URL}/tickets/{manage_token}`.
+`reminder` — phase 5: plain text in English (phase 8), the templates are
+`emails/templates/emails/en/<kind>.txt`, the subjects — `SUBJECTS` in `emails/services.py`; the
+Russian ones (`ru/`) are kept for a later language switch and are rendered only by a test.
+All have the event title and date (UTC, "31 Oct 2026 09:15 UTC") and the link `{FRONTEND_URL}/tickets/{manage_token}`.
 `rescheduled` — was / now; to a confirmed one — the code, to one on the waitlist — "you are on the
 waitlist" without the position (the position gets outdated, the link shows the current one).
 `reminder` — the date and the code, without "in a day": a reminder may go out later in the window
@@ -359,6 +361,6 @@ worker (reminders), so `FRONTEND_URL` is set for both.
 - **Implemented (phase 5):** `make seed` (`seed_demo`, only with `DEBUG`; creates the demo accounts
   itself) — on each run adds to the demo organizer an event in a week with 2 seats (2 confirmed,
   1 on the waitlist) and an event in ~23 h with 10 seats and 3 participants whose `confirmed_at` is
-  2 days earlier (the titles contain "Демо"). Registrations go through `register`; ~30 s later
+  2 days earlier (the titles start with "Demo"). Registrations go through `register`; ~30 s later
   there are three reminders in Mailpit. Not idempotent: the "tomorrow" event gets outdated within a
   day, a new run gives a fresh one.

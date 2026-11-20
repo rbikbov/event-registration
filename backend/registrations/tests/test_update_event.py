@@ -47,10 +47,10 @@ def test_reschedule_emails_confirmed_and_waitlisted_and_bumps_the_version(event:
     # The waitlist email has no code and no position: the position goes stale, the link does not.
     assert waiting.ticket_code not in to_waiting.body
     assert "№" not in to_waiting.body
-    old = old_start.astimezone(UTC).strftime("%d.%m.%Y %H:%M UTC")
-    new = new_start.astimezone(UTC).strftime("%d.%m.%Y %H:%M UTC")
+    old = old_start.astimezone(UTC).strftime("%d %b %Y %H:%M UTC")
+    new = new_start.astimezone(UTC).strftime("%d %b %Y %H:%M UTC")
     for email in (to_seat, to_waiting):
-        assert email.subject == "Событие перенесено: Meetup"
+        assert email.subject == "Event rescheduled: Meetup"
         assert old in email.body
         assert new in email.body
     assert f"/tickets/{seat.manage_token}" in to_seat.body

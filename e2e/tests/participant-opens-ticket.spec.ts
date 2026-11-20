@@ -21,8 +21,8 @@ test("the ticket email leads to the ticket page, where the participant cancels",
   await participant.getByRole("button", { name: "Register" }).click();
   await expect(participant.getByRole("status")).toHaveText("Seat confirmed");
 
-  const text = await emailTo(request, email, "Билет");
-  const code = extract(text, /Код билета: (\S+)/);
+  const text = await emailTo(request, email, "Ticket");
+  const code = extract(text, /Ticket code: (\S+)/);
   const link = extract(text, /(http\S+\/tickets\/\S+)/);
 
   await participant.goto(link);

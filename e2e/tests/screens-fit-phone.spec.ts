@@ -40,9 +40,9 @@ test("every screen fits a 360 px phone without scrolling sideways", async ({
   await expect(participant.getByRole("status")).toHaveText("Seat confirmed");
   await expectFits(participant, "the event page after registering");
 
-  const ticketEmail = await emailTo(request, email, "Билет");
+  const ticketEmail = await emailTo(request, email, "Ticket");
   const link = extract(ticketEmail, /(http\S+\/tickets\/\S+)/);
-  const code = extract(ticketEmail, /Код билета: (\S+)/);
+  const code = extract(ticketEmail, /Ticket code: (\S+)/);
   await participant.goto(link);
   await expect(participant.getByRole("heading", { name: title, level: 1 })).toBeVisible();
   await expectFits(participant, "the ticket");

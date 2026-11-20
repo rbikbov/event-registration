@@ -18,7 +18,7 @@ test("a check-in at the entrance updates the arrivals on a panel open elsewhere"
   await participant.getByRole("button", { name: "Register" }).click();
   await expect(participant.getByRole("status")).toHaveText("Seat confirmed");
   await participant.context().close();
-  const code = extract(await emailTo(request, email, "Билет"), /Код билета: (\S+)/);
+  const code = extract(await emailTo(request, email, "Ticket"), /Ticket code: (\S+)/);
 
   const panel = await organizerPage(browser);
   await panel.getByRole("link", { name: title }).click();
@@ -57,7 +57,7 @@ test("a check-in at one entrance updates the arrivals on another check-in screen
   await participant.getByRole("button", { name: "Register" }).click();
   await expect(participant.getByRole("status")).toHaveText("Seat confirmed");
   await participant.context().close();
-  const code = extract(await emailTo(request, email, "Билет"), /Код билета: (\S+)/);
+  const code = extract(await emailTo(request, email, "Ticket"), /Ticket code: (\S+)/);
 
   const second = await organizerPage(browser);
   await second.getByRole("link", { name: title }).click();

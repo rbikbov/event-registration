@@ -25,9 +25,9 @@ test("a larger capacity gives the waitlist head a seat and an email with the tic
   await expect(panelStat(organizer, "Waitlisted")).toHaveText("0");
   await organizer.context().close();
 
-  const promoted = await emailTo(request, waitingEmail, "Освободилось место");
+  const promoted = await emailTo(request, waitingEmail, "A seat became free");
   const link = extract(promoted, /(http\S+\/tickets\/\S+)/);
-  const code = extract(promoted, /Код билета: (\S+)/);
+  const code = extract(promoted, /Ticket code: (\S+)/);
   const ticket = await (await browser.newContext()).newPage();
   await ticket.goto(link);
   await expect(ticket.getByText(code, { exact: true })).toBeVisible();

@@ -1,0 +1,12 @@
+{% autoescape off %}Hello, {{ name }}!
+
+The event "{{ title }}" is rescheduled.
+Was: {{ old_starts_at }}
+Now: {{ starts_at }}
+{% if confirmed %}
+The seat is yours, the ticket code is the same: {{ ticket_code }}
+Say it at the entrance.
+{% else %}
+You are on the waitlist. If a seat becomes free, an email with the ticket code will come.
+{% endif %}
+My ticket and cancelling: {{ manage_url }}{% endautoescape %}

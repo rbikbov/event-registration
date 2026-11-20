@@ -1,0 +1,8 @@
+{% autoescape off %}Hello, {{ name }}!
+
+A reminder: "{{ title }}" takes place on {{ starts_at }}.
+
+Ticket code: {{ ticket_code }}
+Say it at the entrance.
+
+My ticket and cancelling: {{ manage_url }}{% endautoescape %}

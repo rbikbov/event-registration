@@ -58,8 +58,8 @@ def test_register_on_the_waitlist_queues_waitlisted_with_the_position(event: Eve
     [bob] = emails_of("b@x.io")
     [cid] = emails_of("c@x.io")
     assert bob.kind == cid.kind == OutboxEmail.Kind.WAITLISTED
-    assert "№1" in bob.body
-    assert "№2" in cid.body
+    assert "#1" in bob.body
+    assert "#2" in cid.body
     # The code is good only with a seat: the waitlist email does not carry it.
     assert Registration.objects.get(email="b@x.io").ticket_code not in bob.body
 
@@ -132,4 +132,4 @@ def test_revival_onto_the_waitlist_queues_a_new_waitlisted(event: Event) -> None
     first, second = emails_of("b@x.io")
     assert first.kind == second.kind == OutboxEmail.Kind.WAITLISTED
     # Revived at the end of the queue, behind Cid.
-    assert "№2" in second.body
+    assert "#2" in second.body

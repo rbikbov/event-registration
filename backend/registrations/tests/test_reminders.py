@@ -41,11 +41,11 @@ def test_open_window_reminds_each_seat_once(event: Event) -> None:
     to_ann, to_bob = reminders()
     assert (to_ann.to, to_bob.to) == ("a@x.io", "b@x.io")
     assert to_ann.dedup_key == f"reminder:{ann.id}:1"
-    assert to_ann.subject == "Напоминание: Meetup"
-    assert "17.05.2030 18:00 UTC" in to_ann.body
+    assert to_ann.subject == "Reminder: Meetup"
+    assert "17 May 2030 18:00 UTC" in to_ann.body
     # Not "in a day": the pass also runs late in the window (a reschedule into it, a worker
     # catching up), so the email states the date only.
-    assert "сутки" not in to_ann.body
+    assert "in a day" not in to_ann.body
     assert ann.ticket_code in to_ann.body
     assert f"https://events.example/tickets/{ann.manage_token}" in to_ann.body
     assert bob.ticket_code in to_bob.body
@@ -99,7 +99,7 @@ def test_reschedule_brings_a_reminder_about_the_new_date(event: Event) -> None:
     assert enqueue_reminders(now=NOW) == 1
     old, new = sorted(reminders(), key=lambda email: email.dedup_key)
     assert (old.dedup_key[-2:], new.dedup_key[-2:]) == (":1", ":2")
-    assert "18.05.2030 00:00 UTC" in new.body
+    assert "18 May 2030 00:00 UTC" in new.body
 
 
 def test_reschedule_out_of_the_window_waits_for_the_new_one(event: Event) -> None:

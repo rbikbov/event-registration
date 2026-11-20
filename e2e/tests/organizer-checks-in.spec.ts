@@ -24,7 +24,7 @@ async function ticketCode(
   await participant.getByRole("button", { name: "Register" }).click();
   await expect(participant.getByRole("status")).toHaveText("Seat confirmed");
   await participant.context().close();
-  return extract(await emailTo(request, email, "Билет"), /Код билета: (\S+)/);
+  return extract(await emailTo(request, email, "Ticket"), /Ticket code: (\S+)/);
 }
 
 async function checkInScreen(browser: Browser, title: string): Promise<Page> {

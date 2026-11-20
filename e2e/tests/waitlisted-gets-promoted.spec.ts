@@ -27,20 +27,20 @@ test("a cancelled seat goes to the waitlist head, who gets an email with the tic
   await registerOn(waiting, title, waitingEmail, "Boris");
   await expect(waiting.getByRole("status")).toHaveText("You are on the waitlist, #1");
 
-  const waitlisted = await emailTo(request, waitingEmail, "Лист ожидания");
-  expect(waitlisted).toContain("№1");
+  const waitlisted = await emailTo(request, waitingEmail, "Waitlist");
+  expect(waitlisted).toContain("#1");
   const waitingLink = extract(waitlisted, /(http\S+\/tickets\/\S+)/);
   await waiting.goto(waitingLink);
   await expect(waiting.getByText("You are on the waitlist, #1")).toBeVisible();
 
-  const ticket = await emailTo(request, firstEmail, "Билет");
+  const ticket = await emailTo(request, firstEmail, "Ticket");
   await first.goto(extract(ticket, /(http\S+\/tickets\/\S+)/));
   await first.getByRole("button", { name: "Cancel" }).click();
   await first.getByRole("button", { name: "Yes, cancel" }).click();
   await expect(first.getByText("Registration cancelled")).toBeVisible();
 
-  const promoted = await emailTo(request, waitingEmail, "Освободилось место");
-  const code = extract(promoted, /Код билета: (\S+)/);
+  const promoted = await emailTo(request, waitingEmail, "A seat became free");
+  const code = extract(promoted, /Ticket code: (\S+)/);
   // The same link as in the waitlist email: the manage token does not change on promotion.
   expect(extract(promoted, /(http\S+\/tickets\/\S+)/)).toBe(waitingLink);
   await waiting.goto(waitingLink);

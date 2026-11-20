@@ -1,0 +1,8 @@
+{% autoescape off %}Hello, {{ name }}!
+
+There are no seats at "{{ title }}", you are on the waitlist: #{{ position }}.
+Date: {{ starts_at }}
+
+If a seat becomes free, an email with the ticket code will come.
+
+My ticket and cancelling: {{ manage_url }}{% endautoescape %}

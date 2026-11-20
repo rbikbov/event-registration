@@ -14,7 +14,7 @@ Spec — `spec.md`. One task — one commit; the `[x]` check goes into the same 
 - [x] 1.3. The organizer's screens: creation and editing (`entities/event` form errors),
       the event layout, the participants, check-in; the key test has no exceptions left. Done when:
       Vitest is green, no component without `en`.
-- [ ] 1.4. Emails in English: `emails/templates/emails/en/` and `ru/`, the subjects by locale (`en`
+- [x] 1.4. Emails in English: `emails/templates/emails/en/` and `ru/`, the subjects by locale (`en`
       for all), the English date format; `seed_demo` in English. Done when: pytest of
       the emails and the seed checks English.
 - [ ] 1.5. e2e in English; README and docs: the interface and the emails are English by default.
