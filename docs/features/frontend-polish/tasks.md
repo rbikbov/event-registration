@@ -1,251 +1,270 @@
-# Доводка фронтенда: задачи
+# Frontend polish: tasks
 
-Spec — `spec.md`. Одна задача — один коммит; отметка `[x]` — в том же коммите.
+Spec — `spec.md`. One task — one commit; the `[x]` check goes into the same commit.
 
-## Этап 1. Layout, шапка и сессия
+## Stage 1. Layout, header and session
 
-- [x] 1.1. Tracer bullet: выход из шапки насквозь — `AppLayout` в `App.vue` (шапка и общий
-      `<main>`, у страниц свой `<main>` убран), шапка по `meQuery` на любом экране (в полёте —
-      пусто, гость — «Вход для организатора», организатор — «Мои события», «Выйти», email),
-      `logout` в `entities/session`, успех — `me` `null`, кэш организатора очищен, `/`.
-      Готово, когда: Vitest — три состояния шапки, гость без перехода на `/login`, выход;
-      в браузере вход → «Выйти» → `/` с «Вход для организатора».
-- [x] 1.2. Выход: ошибка — «Не удалось выйти, повторите», сессия на месте; 401 — как успех;
-      кнопка неактивна в полёте. Готово, когда: Vitest — ошибка, 401, двойной клик — один `POST`.
-- [x] 1.3. Решает только guard: `session-expiry` ставит `me` `null` и повторяет навигацию
-      (`force: true`); guard уводит на `/login?next=<fullPath>`; вход и вошедший на `/login` —
-      на `safeNext(next)`, иначе `/org/events`. Готово, когда: Vitest — `safeNext` по таблице
-      spec, 401 на панели → `/login?next=…` → после входа обратно, `next=/login` без цикла.
-- [x] 1.4. E2E `organizer-logs-out.spec.ts`: вход → «Выйти» → `/`, «Вход для организатора»,
-      `/org/events` ведёт на `/login?next=/org/events`, вход возвращает туда. Готово, когда:
-      проходит в `make stack-e2e` и падает без кнопки выхода.
+- [x] 1.1. Tracer bullet: logout from the header end to end — `AppLayout` in `App.vue` (the header
+      and a shared `<main>`, the pages' own `<main>` removed), the header by `meQuery` on any screen
+      (in flight — empty, a guest — "Organizer login", an organizer — "My events", "Log out", the
+      email), `logout` in `entities/session`, success — `me` `null`, the organizer cache cleared,
+      `/`. Done when: Vitest — three header states, a guest without a transition to `/login`,
+      logout; in the browser login → "Log out" → `/` with "Organizer login".
+- [x] 1.2. Logout: an error — "Could not log out, try again", the session stays; 401 — like
+      success; the button is disabled in flight. Done when: Vitest — an error, 401, a double click
+      — one `POST`.
+- [x] 1.3. Only the guard decides: `session-expiry` sets `me` to `null` and repeats the navigation
+      (`force: true`); the guard sends to `/login?next=<fullPath>`; login and a logged-in user on
+      `/login` — to `safeNext(next)`, otherwise `/org/events`. Done when: Vitest — `safeNext` by
+      the spec table, a 401 on the panel → `/login?next=…` → back after login, `next=/login`
+      without a loop.
+- [x] 1.4. E2E `organizer-logs-out.spec.ts`: login → "Log out" → `/`, "Organizer login",
+      `/org/events` leads to `/login?next=/org/events`, login returns there. Done when: passes in
+      `make stack-e2e` and fails without the logout button.
 
-## Этап 2. Ошибки, «не найдено» и состояния
+## Stage 2. Errors, "not found" and states
 
-- [x] 2.1. `shared/ui/error-state` (`ErrorState`, `NotFound`), `pages/not-found` и маршрут
-      `/:path(.*)*`; `NotFound` на событии, билете и в макете, `ErrorState` для 403 макета и
-      первой ошибки загрузки в `QueryState`. Готово, когда: Vitest — неизвестный путь,
-      `/events/abc`, `/events/999`, 403 макета, первая ошибка с «Повторить».
-- [x] 2.2. Аудит таблицы «Состояния»: недостающее сделать, у каждого «есть» — ссылка на тест в
-      логе; `/health` — оформление и `QueryState`; заголовок вкладки из `meta.title` в
-      `afterEach`. Готово, когда: Vitest — `/health` «Повторить», заголовок вкладки; ссылки в
-      логе по всем строкам таблицы.
+- [x] 2.1. `shared/ui/error-state` (`ErrorState`, `NotFound`), `pages/not-found` and the
+      `/:path(.*)*` route; `NotFound` on the event, the ticket and in the layout, `ErrorState` for
+      the layout's 403 and the first loading error in `QueryState`. Done when: Vitest — an unknown
+      path, `/events/abc`, `/events/999`, the layout's 403, the first error with "Retry".
+- [x] 2.2. An audit of the "States" table: do what is missing, each "yes" gets a link to a test in
+      the log; `/health` — styling and `QueryState`; the tab title from `meta.title` in
+      `afterEach`. Done when: Vitest — `/health` "Retry", the tab title; links in the log for all
+      rows of the table.
 
-## Этап 3. Описание события и чекин
+## Stage 3. Event description and check-in
 
-- [x] 3.1. `shared/ui/shadcn/textarea`; поле описания в создании и редактировании — `textarea`.
-      Готово, когда: Vitest — описание с переводами строк уходит в запросе с ними (обе формы).
-- [x] 3.2. `shared/ui/expandable-text` на странице события и в макете организатора: 4 строки,
-      «Развернуть» / «Свернуть» только у обрезанного текста, пусто — ничего. Готово, когда:
-      Vitest — короткий текст без кнопки, длинный — с кнопкой, раскрытие; браузер — 360 px и
-      десктоп.
-- [x] 3.3. `formatMoment(iso, now)` в `shared/lib` (тест вперёд) на чекине, билете и в таблице
-      участников. Готово, когда: Vitest — сегодня, вчера в 23:50 через 10 минут, другой день
-      года, другой год; страницы показывают дату у вчерашней отметки.
-- [x] 3.4. Чекин: «Следующий» неактивна 1 с после ответа; проверка кэша события после чекина
-      (вкладка «Участники» до снимка) — устарело или `invalidateQueries`, итог в логе.
-      Готово, когда: Vitest на паузу (фейковые таймеры); строка в логе о кэше.
+- [x] 3.1. `shared/ui/shadcn/textarea`; the description field in creation and editing is a
+      `textarea`. Done when: Vitest — a description with line breaks goes into the request with
+      them (both forms).
+- [x] 3.2. `shared/ui/expandable-text` on the event page and in the organizer's layout: 4 lines,
+      "Expand" / "Collapse" only for a cut text, empty — nothing. Done when: Vitest — a short text
+      without a button, a long one with a button, expanding; browser — 360 px and desktop.
+- [x] 3.3. `formatMoment(iso, now)` in `shared/lib` (test first) at check-in, on the ticket and in
+      the participant table. Done when: Vitest — today, yesterday at 23:50 seen 10 minutes later,
+      another day of the year, another year; the pages show the date for yesterday's check-in.
+- [x] 3.4. Check-in: "Next" is disabled for 1 s after an answer; checking the event cache after a
+      check-in (the "Participants" tab before the snapshot) — outdated or `invalidateQueries`, the
+      outcome in the log. Done when: Vitest for the pause (fake timers); a line in the log about the
+      cache.
 
-## Этап 4. Телефон и единый вид
+## Stage 4. Phone and a uniform look
 
-- [x] 4.1. Именованные форматы даты `short` / `long` вместо пяти `startsAt`; единый вид:
-      `h1`, карточки списков. Готово, когда: в `pages/` нет `startsAt`, Vitest
-      страниц проходят с форматами из `shared/lib`; вид — в проверке в браузере этапа.
-- [x] 4.2. E2E `screens-fit-phone.spec.ts`, 360 × 740: публичные экраны, вход, список и макет
-      организатора с вкладками, билет, 404 — `scrollWidth` ≤ ширины окна; найденное — исправить.
-      Готово, когда: проходит в `make stack-e2e` и падает на экране с широкой строкой
-      (проверено временной правкой).
+- [x] 4.1. Named date formats `short` / `long` instead of five `startsAt`; a uniform look: `h1`,
+      list cards. Done when: `pages/` has no `startsAt`, the page Vitest tests pass with the formats
+      from `shared/lib`; the look — in the stage's browser check.
+- [x] 4.2. E2E `screens-fit-phone.spec.ts`, 360 × 740: public screens, login, the organizer's list
+      and layout with tabs, the ticket, 404 — `scrollWidth` ≤ the window width; fix what is found.
+      Done when: passes in `make stack-e2e` and fails on a screen with a wide line (checked with a
+      temporary edit).
 
-## Этап 5. Отложенное: навигация, формы, списки событий
+## Stage 5. Postponed: navigation, forms, event lists
 
-Из «на потом» этой фазы и фазы 4 (решение от 2026-11-03 23:55). Spec — «Этап 5».
+From "later" of this phase and phase 4 (decision of 2026-11-03 23:55). Spec — "Stage 5".
 
-- [x] 5.1. Ссылки навигации — компонент в `shared/ui` над `RouterLink`: текущий раздел
-      подсвечен и с `aria-current="page"`; в шапке и во вкладках макета вместо своих стилей.
-      Готово, когда: Vitest — подсветка и `aria-current` у текущей ссылки, у прочих нет.
-- [x] 5.2. Курсор кнопок: `pointer` при наведении, `not-allowed` у неактивной (`disabled` и
-      `aria-disabled`) — в стилях приложения, не правкой `shared/ui/shadcn` (правило 9).
-      Готово, когда: браузер — кнопки форм, «Следующий» во время паузы, «Выйти» в полёте.
-- [x] 5.3. `/health` из интерфейса: в блоке первой ошибки `QueryState` — кнопка-ссылка «Состояние
-      сервиса» рядом с «Повторить»; без сети — плашка «Нет подключения к интернету» под шапкой
-      по `navigator.onLine` и событиям `online` / `offline`. Готово, когда: Vitest — ссылка в
-      блоке ошибки, плашка появляется по `offline` и уходит по `online`.
-- [x] 5.4. Формы: исследование — счётчик символов под полями с пределом («5/100», пределы —
-      `entities/event/model/event-form.ts`) или библиотека форм вместо ручного разбора и ошибок
-      полей; выбор — с человеком, в логе решений. Готово, когда: выбранное сделано на формах
-      создания и редактирования, Vitest форм проходят, у счётчика — тест на предел.
+- [x] 5.1. Navigation links — a component in `shared/ui` on top of `RouterLink`: the current
+      section is highlighted and has `aria-current="page"`; in the header and in the layout tabs
+      instead of their own styles. Done when: Vitest — the highlight and `aria-current` on the
+      current link, not on the others.
+- [x] 5.2. The button cursor: `pointer` on hover, `not-allowed` on a disabled one (`disabled` and
+      `aria-disabled`) — in the application styles, not by editing `shared/ui/shadcn` (rule 9).
+      Done when: browser — the form buttons, "Next" during the pause, "Log out" in flight.
+- [x] 5.3. `/health` from the interface: in the first-error block of `QueryState` — a link button
+      "Service status" next to "Retry"; without network — a "No internet connection" bar under the
+      header by `navigator.onLine` and the `online` / `offline` events. Done when: Vitest — the link
+      in the error block, the bar appears on `offline` and goes away on `online`.
+- [x] 5.4. Forms: research — a character counter under the fields with a limit ("5/100", the limits
+      — `entities/event/model/event-form.ts`) or a form library instead of the hand-written parsing
+      and field errors; the choice — with the human, in the decision log. Done when: the chosen
+      option is done on the creation and edit forms, the form Vitest tests pass, the counter has a
+      test for the limit.
 
-      Исследование сделано (2026-11-04), выбор человека — вариант 1, счётчик символов
+      The research is done (2026-11-04), the human's choice — option 1, a character counter
       (`shared/ui/char-counter`).
-      Как устроено сейчас: правила полей — схемы `zod` (`entities/event/model/event-form.ts`:
-      название ≤ 200, описание ≤ 2000; `pages/event/model/registration-form.ts`: email ≤ 254,
-      имя ≤ 200); значения — `reactive`; ошибки полей — клиентские и серверные коды, общие
-      (`serverFormErrors`), одинаковый текст. Редактирование: отправляются только изменённые поля
-      (`changedFields`, текст сравнивается без пробелов по краям), подтверждение переноса даты,
-      `NumberField` применяет значение на blur (`capacityTyped`). Разметка полей создания и
-      редактирования — почти одна и та же (две копии шаблона).
-      Варианты:
-      1. **Счётчик символов** (рекомендация агента): под названием и описанием «12/200»,
-         «0/2000»; пределы — константы из `event-form.ts`, общие со схемой; длина — без пробелов
-         по краям, как проверяют схема и сервер; сверх предела счётчик красный, ошибка — как
-         сейчас, при отправке; `maxlength` не ставить — молча обрезал бы вставку. Малый объём,
-         тесты форм не переписываются.
-      2. **Счётчик + общие поля события**: то же, плюс одна разметка полей (название, описание,
-         дата, места, ошибки, счётчики) для создания и редактирования; отправка — на страницах.
-      3. **Библиотека форм** — `vee-validate` + `@vee-validate/zod` (на ней shadcn-vue `Form`):
-         touched / dirty, проверка на blur; цена — переписать четыре формы (вход, регистрация,
-         создание, редактирование) и их тесты; trim в dirty, `NumberField` и подтверждение
-         переноса — всё равно руками. Риск в конце фазы при малой выгоде: `zod` и общие коды
-         ошибок уже есть.
+      How it works now: the field rules are `zod` schemas (`entities/event/model/event-form.ts`:
+      title ≤ 200, description ≤ 2000; `pages/event/model/registration-form.ts`: email ≤ 254,
+      name ≤ 200); the values are `reactive`; the field errors — client and server codes, shared
+      (`serverFormErrors`), the same text. Editing: only the changed fields are sent
+      (`changedFields`, the text is compared without the surrounding spaces), a date reschedule
+      confirmation, `NumberField` applies the value on blur (`capacityTyped`). The field markup of
+      creation and editing is almost the same (two copies of the template).
+      Options:
+      1. **A character counter** (the agent's recommendation): under the title and the description
+         "12/200", "0/2000"; the limits are constants from `event-form.ts`, shared with the schema;
+         the length — without the surrounding spaces, as the schema and the server check it; over
+         the limit the counter is red, the error — as now, on submit; do not set `maxlength` — it
+         would silently cut a paste. A small amount of work, the form tests are not rewritten.
+      2. **A counter + shared event fields**: the same, plus one markup of the fields (title,
+         description, date, seats, errors, counters) for creation and editing; submitting — on the
+         pages.
+      3. **A form library** — `vee-validate` + `@vee-validate/zod` (shadcn-vue `Form` is built on
+         it): touched / dirty, validation on blur; the cost — rewriting four forms (login,
+         registration, creation, editing) and their tests; trim in dirty, `NumberField` and the
+         reschedule confirmation — still by hand. A risk at the end of the phase for a small gain:
+         `zod` and shared error codes already exist.
 
-- [x] 5.5. Порядок списков: предстоящие — ближайшие по `starts_at` первыми, прошедшие — недавние
-      первыми; при равном `starts_at` — больший `id` выше (`upcoming`, `for_organizer` в
-      `events/models.py`); тест вперёд. Готово, когда: pytest — два события с одним `starts_at`
-      в обоих списках, больший `id` первым.
-- [x] 5.6. API списков (skill `api-change`): постраничная выдача по номеру страницы с общим
-      числом (`count`) у `/` и `/org/events`; у обоих — фильтр
-      `period=upcoming|past` (прошедшее — `starts_at` в прошлом), без него — предстоящие;
-      схема, типы фронтенда. Готово, когда: pytest — страницы, последняя страница, страница за
-      концом, оба значения `period` и неверное в обоих списках; `make schema` без расхождений.
-- [x] 5.7. Компонент пагинации в `shared/ui` (на основе shadcn `pagination`): «первая»,
-      «предыдущая», номера рядом с текущей с многоточием, «следующая», «последняя»; страница
-      в адресе (`?page=`); на `/` и `/org/events`. Готово, когда: Vitest — компонент (первая,
-      последняя, середина, одна страница — без пагинации), переход по страницам меняет адрес
-      и запрос; e2e — список длиннее страницы в `make stack-e2e`.
-- [x] 5.8. Вкладки «Предстоящие» / «Прошедшие» на `/` и `/org/events`: фильтр в адресе
-      (`?period=past`), смена вкладки — на первую страницу, пустая вкладка — свой текст.
-      Готово, когда: Vitest — обе вкладки, адрес, сброс страницы, пустое; e2e — прошедшее
-      событие только на вкладке «Прошедшие» обоих списков.
+- [x] 5.5. List order: upcoming — the nearest by `starts_at` first, past — the recent first; with
+      equal `starts_at` — the larger `id` higher (`upcoming`, `for_organizer` in
+      `events/models.py`); test first. Done when: pytest — two events with one `starts_at` in both
+      lists, the larger `id` first.
+- [x] 5.6. The list API (the `api-change` skill): paged output by page number with the total count
+      (`count`) for `/` and `/org/events`; both have the `period=upcoming|past` filter (past —
+      `starts_at` in the past), without it — upcoming; the schema, the frontend types. Done when:
+      pytest — pages, the last page, a page past the end, both `period` values and an invalid one
+      in both lists; `make schema` without differences.
+- [x] 5.7. A paging component in `shared/ui` (based on shadcn `pagination`): "first", "previous",
+      the numbers next to the current one with an ellipsis, "next", "last"; the page in the address
+      (`?page=`); on `/` and `/org/events`. Done when: Vitest — the component (the first, the last,
+      the middle, one page — no paging), going through pages changes the address and the request;
+      e2e — a list longer than a page in `make stack-e2e`.
+- [x] 5.8. The "Upcoming" / "Past" tabs on `/` and `/org/events`: the filter in the address
+      (`?period=past`), changing the tab — to the first page, an empty tab — its own text. Done
+      when: Vitest — both tabs, the address, the page reset, empty; e2e — a past event only on the
+      "Past" tab of both lists.
 
-## Этап 6. Тесты и закрытие фазы
+## Stage 6. Tests and closing the phase
 
-- [x] 6.1. Нестабильные тесты Vitest (список — spec, «Тесты Vitest»): ожидание по результату
-      вместо `flushPromises()`, без роста таймаутов; ограничение 2 ч. Готово, когда: 10
-      прогонов `make test-frontend` подряд зелёные параллельно с `make stack-check-backend`,
-      или гипотеза и попытки — в «на потом».
-- [x] 6.2. Закрытие фазы: критерии по фактам, `architecture.md` (экраны, сессия, API списков),
-      README («Состояние», «что дальше» — регистрация пользователей, дробление на `features`,
-      время окончания события и запрет регистрации на начавшееся),
-      roadmap.
+- [x] 6.1. Flaky Vitest tests (the list — the spec, "Vitest tests"): waiting for the result instead
+      of `flushPromises()`, without raising timeouts; a limit of 2 h. Done when: 10 runs of
+      `make test-frontend` in a row are green in parallel with `make stack-check-backend`, or the
+      hypothesis and the attempts are in "later".
+- [x] 6.2. Closing the phase: the criteria by facts, `architecture.md` (screens, session, the list
+      API), README ("State", "what's next" — user sign-up, splitting into `features`, an event end
+      time and a ban on registering for an event that has started), roadmap.
 
-## Лог
+## Log
 
-- база этапа 1 — `194d59b` (коммит со spec и задачами).
-- исследование 1.1: `<main>` со своими отступами — у 8 страниц, `App.vue` — голый `RouterView`;
-  ссылка «Вход для организатора» — в шапке `HomePage` (уйдёт в общую). `logout` (204) — первый
-  ответ без тела: `unwrap` на `data: undefined` бросает `unknown` — нужен `unwrapEmpty` в
-  `shared/api`. Ключи запросов организатора начинаются с `["org"]`; тесты страниц монтируют
-  страницу с memory-роутером, `VueQueryPlugin` и `createAppI18n` — образец `LoginPage.test.ts`.
-- 1.1: шапка не перезапрашивает `me` при монтировании (`refetchOnMount: false`) — на странице
-  организатора его только что спросил guard. Четыре e2e требовали пустую консоль на публичных
-  страницах и упали на 401 `me` гостя — общий `collectConsoleErrors` в `e2e/tests/helpers.ts`
-  пропускает только его. Браузер (слот 1, 1280 и 360 px): вход → «Выйти» → `/`, `/org/events`
-  после выхода → `/login`; в консоли — только 401 `me` гостя.
+- the base of stage 1 — `194d59b` (the commit with the spec and the tasks).
+- research 1.1: a `<main>` with its own padding — on 8 pages, `App.vue` is a bare `RouterView`; the
+  "Organizer login" link is in the `HomePage` header (it will move into the shared one). `logout`
+  (204) is the first response without a body: `unwrap` on `data: undefined` throws `unknown` — an
+  `unwrapEmpty` is needed in `shared/api`. The organizer query keys start with `["org"]`; the page
+  tests mount the page with a memory router, `VueQueryPlugin` and `createAppI18n` — the example is
+  `LoginPage.test.ts`.
+- 1.1: the header does not refetch `me` on mount (`refetchOnMount: false`) — on an organizer page
+  the guard has just asked for it. Four e2e tests required an empty console on public pages and
+  failed on the guest's 401 `me` — the shared `collectConsoleErrors` in `e2e/tests/helpers.ts` lets
+  only it through. Browser (slot 1, 1280 and 360 px): login → "Log out" → `/`, `/org/events` after
+  logout → `/login`; the console has only the guest's 401 `me`.
 
-- ревью этапа 1 — `194d59b..850369e`, четыре находки исправлены (`f43e0cf`, `bd340f6`, `8e66e85`).
-- браузер этапа 1 (слот 1, Chromium): гость — один `GET me` и после возврата фокуса; `/org/events`
-  гостем → `/login?next=/org/events` → вход → обратно; оборванный `logout` — «Не удалось выйти»,
-  панель на месте; двойной клик «Выйти» — один `POST`; выход во второй вкладке → чекин в первой
-  получает 401 → `/login?next=…/checkin` → вход → снова чекин. Консоль — 401 `me` гостя, 401
-  чекина после выхода (сам сценарий) и обрыв `logout`, вызванный проверкой.
+- the review of stage 1 — `194d59b..850369e`, four findings fixed (`f43e0cf`, `bd340f6`,
+  `8e66e85`).
+- the browser pass of stage 1 (slot 1, Chromium): a guest — one `GET me`, also after the focus
+  returns; `/org/events` as a guest → `/login?next=/org/events` → login → back; a broken `logout` —
+  "Could not log out", the panel stays; a double click on "Log out" — one `POST`; logout in the
+  second tab → check-in in the first gets a 401 → `/login?next=…/checkin` → login → check-in again.
+  The console — the guest's 401 `me`, the check-in's 401 after logout (the scenario itself) and the
+  `logout` break caused by the check.
 
-- база этапа 2 — `356ecba`.
-- 2.1: заголовок `ErrorState` — `h1`, где он заменяет всю страницу (`NotFound`, 403 макета), и
-  по `level` у `QueryState`: `1` у события, билета и макета (их `h1` — в данных), `2` по
-  умолчанию (у списков `h1` над `QueryState`). `role="alert"` оставлен — тесты и прежние алерты.
-- аудит 2.2 (таблица «Состояния» spec), тесты Vitest в `frontend/src/pages/`:
-  - `/`: загрузка — `home/ui/HomePage.test.ts:65`, ошибка с повтором — `:54`, пусто — `:46`.
-  - `/org/events`: загрузка — `org-events/ui/OrgEventsPage.test.ts:27`, ошибка — `:85`, пусто — `:75`.
-  - `/events/:id`: загрузка — `event/ui/EventPage.test.ts:122` (добавлен), ошибка — `:131`,
-    не найдено — `:112`; `/events/abc` — `app/router.test.ts`, «an address no route matches».
-  - билет: загрузка — `ticket/ui/TicketPage.test.ts:127` (добавлен), ошибка — `:136`,
-    не найдено — `:119`.
-  - макет: загрузка — `org-event/ui/OrgEventLayout.test.ts:119`, ошибка — `:175`, 404 и 403 —
-    `:164`; участники: загрузка — `org-event-participants/ui/OrgEventParticipantsPage.test.ts:67`,
-    ошибка — `:140`, пусто — `:130`.
-  - `/health`: загрузка — `health/ui/HealthPage.test.ts` («shows backend and database status»),
-    ошибка с повтором — `:50` (добавлено с `QueryState`).
+- the base of stage 2 — `356ecba`.
+- 2.1: the `ErrorState` heading is an `h1` where it replaces the whole page (`NotFound`, the
+  layout's 403), and by `level` in `QueryState`: `1` for the event, the ticket and the layout (their
+  `h1` is in the data), `2` by default (the lists have an `h1` above `QueryState`). `role="alert"`
+  is kept — the tests and the previous alerts.
+- the 2.2 audit (the spec's "States" table), Vitest tests in `frontend/src/pages/`:
+  - `/`: loading — `home/ui/HomePage.test.ts:65`, an error with a retry — `:54`, empty — `:46`.
+  - `/org/events`: loading — `org-events/ui/OrgEventsPage.test.ts:27`, error — `:85`, empty —
+    `:75`.
+  - `/events/:id`: loading — `event/ui/EventPage.test.ts:122` (added), error — `:131`, not found —
+    `:112`; `/events/abc` — `app/router.test.ts`, "an address no route matches".
+  - the ticket: loading — `ticket/ui/TicketPage.test.ts:127` (added), error — `:136`, not found —
+    `:119`.
+  - the layout: loading — `org-event/ui/OrgEventLayout.test.ts:119`, error — `:175`, 404 and 403 —
+    `:164`; participants: loading —
+    `org-event-participants/ui/OrgEventParticipantsPage.test.ts:67`, error — `:140`, empty —
+    `:130`.
+  - `/health`: loading — `health/ui/HealthPage.test.ts` ("shows backend and database status"), an
+    error with a retry — `:50` (added with `QueryState`).
 
-- ревью этапа 2 — `356ecba..21fcffa`, четыре находки и замечание к spec (ссылки «назад») —
-  исправлены по решениям человека.
-- повторное ревью этапа 2 — `21fcffa..3546b48`, одна находка (`/health` при 503) — `c2379b7`.
-- браузер этапа 2 (слот 1, Chromium, 1280 и 360 px): `/no-such-page`, `/events/abc`, `/org/no-such`
-  гостем — «Страница не найдена», адрес тот же; `/events/999999` — «Такого события нет»,
-  `/tickets/nope` — «Билет не найден»; макет: чужое событие — «Нет доступа» со ссылкой «Мои
-  события», `999999` — «Событие не найдено»; backend остановлен — `/` и `/health` с
-  «Повторить», после запуска повтор загружает данные; заголовки вкладок по страницам, у вкладок
-  макета — «Участники», «Чекин». Консоль — 401 `me` гостя и 404/403/502, вызванные сценарием.
-  Для этапа 4: колонка главной и `/health` (`max-w-xl`) уже шапки (`max-w-4xl`).
+- the review of stage 2 — `356ecba..21fcffa`, four findings and a remark on the spec ("back" links)
+  — fixed by the human's decisions.
+- the repeated review of stage 2 — `21fcffa..3546b48`, one finding (`/health` on a 503) —
+  `c2379b7`.
+- the browser pass of stage 2 (slot 1, Chromium, 1280 and 360 px): `/no-such-page`, `/events/abc`,
+  `/org/no-such` as a guest — "Page not found", the same address; `/events/999999` — "No such
+  event", `/tickets/nope` — "Ticket not found"; the layout: someone else's event — "No access" with
+  a "My events" link, `999999` — "Event not found"; the backend stopped — `/` and `/health` with
+  "Retry", after a start the retry loads the data; the tab titles by page, the layout tabs have
+  "Participants", "Check-in". The console — the guest's 401 `me` and the 404/403/502 caused by the
+  scenario. For stage 4: the home column and `/health` (`max-w-xl`) are narrower than the header
+  (`max-w-4xl`).
 
-- база этапа 3 — `e2e0c28`.
-- браузер 3.2 (слот 1, Chromium, 1280 и 360 px): событие с описанием из 8 строк — на странице
-  события и в макете обрезано до 4 строк с «Развернуть», раскрытие и «Свернуть»; две строки —
-  без кнопки; абзац, помещающийся в 4 строки на 1280 px, при сужении окна до 360 px получает
-  кнопку и теряет её при расширении (без перезагрузки). `scrollWidth` равен ширине окна везде.
-  Консоль — 401 `me` гостя до входа.
-- 3.4, кэш после чекина (слот 1, Chromium): «Участники» открыты до отметки (строка с «—»), чекин
-  на своей вкладке — «Пришло» 1 там же; возврат на «Участники» — «Пришло» 1 сразу, строка — «—»
-  с «Есть обновления» до ответа перечитывания при монтировании, через 0,8 с — время отметки, без
-  плашки. Не устарело, `invalidateQueries` не нужен (решение в логе решений). Пауза: Enter сразу
-  после ответа — ответ на месте, кнопка в фокусе с `aria-disabled`; через 1 с Enter возвращает
-  поле с фокусом.
+- the base of stage 3 — `e2e0c28`.
+- browser 3.2 (slot 1, Chromium, 1280 and 360 px): an event with an 8-line description — on the
+  event page and in the layout cut to 4 lines with "Expand", expanding and "Collapse"; two lines —
+  without a button; a paragraph that fits into 4 lines at 1280 px gets the button when the window
+  is narrowed to 360 px and loses it when widened (without a reload). `scrollWidth` equals the
+  window width everywhere. The console — the guest's 401 `me` before login.
+- 3.4, the cache after a check-in (slot 1, Chromium): "Participants" opened before the check-in (a
+  row with "—"), a check-in on its tab — "Arrived" 1 right there; going back to "Participants" —
+  "Arrived" 1 right away, the row — "—" with "There are updates" until the answer of the re-read on
+  mount, after 0.8 s — the check-in time, without the bar. Not outdated, `invalidateQueries` is not
+  needed (the decision in the decision log). The pause: Enter right after the answer — the answer
+  stays, the button is focused with `aria-disabled`; after 1 s Enter brings the field back with
+  focus.
 
-- ревью этапа 3 — `e2e0c28..e28d6d0`, одна находка (копия `checkedInWhen`) — исправлена по решению человека.
-- повторное ревью этапа 3 — `e28d6d0..28c553b`, находок нет.
+- the review of stage 3 — `e2e0c28..e28d6d0`, one finding (a copy of `checkedInWhen`) — fixed by
+  the human's decision.
+- the repeated review of stage 3 — `e28d6d0..28c553b`, no findings.
 
-- база этапа 4 — `1a13e57`.
+- the base of stage 4 — `1a13e57`.
 
-- 4.2: на всех экранах `scrollWidth` и до теста был равен ширине окна (скриншоты 360 и 1280 px
-  перед 4.1) — исправлять нечего. Тест проверен временной правкой: без `wrap-anywhere` у `h1`
-  страницы события — «the event page is wider than the window», 887 > 360.
+- 4.2: on all screens `scrollWidth` was equal to the window width even before the test
+  (screenshots at 360 and 1280 px before 4.1) — nothing to fix. The test was checked with a
+  temporary edit: without `wrap-anywhere` on the event page's `h1` — "the event page is wider than
+  the window", 887 > 360.
 
-- ревью этапа 4 — `1a13e57..0581c5d`, четыре находки — исправлены (`9ce8e37`, `7938452` и
-  проверка дат в Vitest); от человека — вкладки макета прокручиваются (`b2e2e6e`), колонки имени и
-  email таблицы участников с пределом ширины (`9ce8e37`). Таблица в браузере (слот 1, 1280 и
-  360 px, имя одним словом и адрес в 85 символов): на 1280 — переносы внутри 240 px, таблица в
-  ширину блока; на 360 — обычный адрес рвётся только у «@», таблица прокручивается в своём блоке,
-  страница — 360. Тесты дат проверены подменой формата на несуществующий — 4 падения.
+- the review of stage 4 — `1a13e57..0581c5d`, four findings — fixed (`9ce8e37`, `7938452` and a
+  date check in Vitest); from the human — the layout tabs scroll (`b2e2e6e`), the name and email
+  columns of the participant table have a width limit (`9ce8e37`). The table in the browser (slot
+  1, 1280 and 360 px, a one-word name and an 85-character address): at 1280 — wraps inside 240 px,
+  the table is as wide as the block; at 360 — an ordinary address breaks only at "@", the table
+  scrolls in its own block, the page is 360. The date tests were checked by replacing the format
+  with a nonexistent one — 4 failures.
 
-- повторное ревью этапа 4 — `0581c5d..464a92c`, одна находка (кольцо фокуса у прокручиваемых
-  вкладок) — вкладки переносятся; кольцо целиком, проверено в браузере на 360 px.
+- the repeated review of stage 4 — `0581c5d..464a92c`, one finding (the focus ring of the scrolling
+  tabs) — the tabs wrap; the whole ring is visible, checked in the browser at 360 px.
 
-- ревью этапа 5 — `c57187a..4c06933`, две находки — исправлены: `pointer-events` только у
-  `button:disabled` (`db0bcc5`), подписи «Предыдущая» / «Следующая» в имени кнопок (`14bd2bb`).
+- the review of stage 5 — `c57187a..4c06933`, two findings — fixed: `pointer-events` only on
+  `button:disabled` (`db0bcc5`), the "Previous" / "Next" labels in the button names (`14bd2bb`).
 
-- повторное ревью этапа 5 — `4c06933..14bd2bb`, одна находка (полоса страниц шире окна на
-  640–~704 px) — подписи и «…» с `md`, e2e `page-bar-fits` на пяти ширинах (`c6e12cc`).
+- the repeated review of stage 5 — `4c06933..14bd2bb`, one finding (the page bar is wider than the
+  window at 640–~704 px) — the labels and "…" from `md`, e2e `page-bar-fits` at five widths
+  (`c6e12cc`).
 
-- база этапа 6 — `011a296` (ветка от этапа 5, PR #29 не слит).
-- 6.1: тесты из spec уже ждут по результату — переведены по ходу этапов 2–5. 10 прогонов
-  `make test-frontend` параллельно с `make stack-check-backend` — 406 из 406 каждый, и до правки,
-  и после. Нагрузка сильнее критерия (три `pnpm test` сразу, 5 раз) вскрыла одну гонку:
-  `TicketPage` «cancels, rereads…» — текст «Регистрация отменена» появляется из ответа отказа,
-  а списки сбрасываются после перечитывания билета; тест ждёт `isMutating() === 0`. Без нагрузки
-  гонка не воспроизводится — падение без правки не проверено. Прочее под тройной нагрузкой —
-  таймауты (см. «на потом»); второй такой прогон уронил WSL — не повторять.
-- ревью этапа 6 — `011a296..fab1f7b`, две находки в roadmap (ссылка на spec фазы, открытые
-  абзацы у закрытой фазы) — исправлены.
+- the base of stage 6 — `011a296` (a branch from stage 5, PR #29 is not merged).
+- 6.1: the tests from the spec already wait for the result — they were converted along the way in
+  stages 2–5. 10 runs of `make test-frontend` in parallel with `make stack-check-backend` — 406 out
+  of 406 each, both before and after the edit. A load heavier than the criterion (three
+  `pnpm test` at once, 5 times) revealed one race: `TicketPage` "cancels, rereads…" — the
+  "Registration cancelled" text appears from the cancellation response, and the lists are
+  invalidated after the ticket is re-read; the test waits for `isMutating() === 0`. Without load
+  the race is not reproduced — a failure without the edit was not checked. The rest under the
+  triple load — timeouts (see "later"); the second such run brought down WSL — do not repeat.
+- the review of stage 6 — `011a296..fab1f7b`, two findings in the roadmap (a link to the phase
+  spec, open paragraphs in a closed phase) — fixed.
 
-## На потом
+## Later
 
-<!-- Найденное вне задач: что, где, почему не сейчас. -->
+<!-- Found outside the tasks: what, where, why not now. -->
 
-- ~~ссылки на `/health` в интерфейсе нет: в блоке ошибки загрузки (`ErrorState` в `QueryState`)
-  — ссылка «Проверить состояние сервиса»; на `/health` — строка «Интернет» по
-  `navigator.onLine` и событиям `online` / `offline`. Предложение человека, вне spec фазы.~~
-  — задача 5.3.
-- ~~курсор у кнопок: `pointer` при наведении, `not-allowed` у неактивной, возможно — у кнопки в
-  состоянии загрузки. Через токены или обёртку, не правкой `shared/ui/shadcn` (правило 9).~~
-  — задача 5.2.
-- ~~ссылки навигации — компонент с подсветкой текущего раздела (шапка, вкладки макета).~~ —
-  задача 5.1.
-- ~~счётчик символов под полями ввода («5/100» — сколько ещё можно написать; пределы — в
-  `entities/event/model/event-form.ts`), или вместо этого — готовая библиотека форм, чтобы
-  убрать ручной код форм (разбор, ошибки полей, серверные ошибки). Предложение человека.~~ —
-  задача 5.4.
-- под нагрузкой втрое выше критерия 6.1 (три `pnpm test` сразу) остаются только таймауты: 5 с у
-  первого теста файла (холодный импорт) и 1 с `vi.waitFor` в `AppLayout.test.ts:92` («shows
-  nothing on the right…», ответ через таймер 50 мс) и `OrgEventLayout.test.ts:126` (ожидание
-  первого `GET`). Не гонки порядка — машине не хватает CPU; таймауты по spec не растим. Если
-  станут падать при обычной нагрузке — `pool: "vmThreads"` (совет Vitest: jsdom один на воркер)
-  или меньше воркеров.
+- ~~there is no link to `/health` in the interface: in the loading error block (`ErrorState` in
+  `QueryState`) — a "Check the service status" link; on `/health` — an "Internet" line by
+  `navigator.onLine` and the `online` / `offline` events. The human's suggestion, outside the phase
+  spec.~~ — task 5.3.
+- ~~the button cursor: `pointer` on hover, `not-allowed` on a disabled one, possibly on a button in
+  the loading state. Through tokens or a wrapper, not by editing `shared/ui/shadcn` (rule 9).~~ —
+  task 5.2.
+- ~~navigation links — a component with a highlight of the current section (the header, the layout
+  tabs).~~ — task 5.1.
+- ~~a character counter under the input fields ("5/100" — how much more can be written; the limits
+  — in `entities/event/model/event-form.ts`), or instead a ready form library to remove the
+  hand-written form code (parsing, field errors, server errors). The human's suggestion.~~ — task
+  5.4.
+- under a load three times the 6.1 criterion (three `pnpm test` at once) only timeouts remain: 5 s
+  for the first test of a file (a cold import) and 1 s of `vi.waitFor` in `AppLayout.test.ts:92`
+  ("shows nothing on the right…", the response through a 50 ms timer) and
+  `OrgEventLayout.test.ts:126` (waiting for the first `GET`). Not order races — the machine lacks
+  CPU; per the spec we do not raise timeouts. If they start failing under normal load —
+  `pool: "vmThreads"` (Vitest's advice: one jsdom per worker) or fewer workers.
