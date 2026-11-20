@@ -1,123 +1,133 @@
-# Регистрация на мероприятия — правила для агента
+# Event registration — rules for the agent
 
-Сервис регистрации на мероприятия (задание — [docs/task.md](docs/task.md)). Монорепозиторий:
-`backend/` — Django + DRF, `frontend/` — Vue 3, `e2e/` — Playwright. Этот файл читается в
-начале каждой сессии, поэтому в нём только то, что нужно всегда. Подробности — в `AGENTS.md`
-папок (подгружаются при работе в папке) и в `docs/rules/`.
+An event registration service (the assignment — [docs/task.md](docs/task.md)). A monorepo:
+`backend/` — Django + DRF, `frontend/` — Vue 3, `e2e/` — Playwright. This file is read at the
+start of every session, so it holds only what is always needed. The details are in the folders'
+`AGENTS.md` (loaded when working in the folder) and in `docs/rules/`.
 
-Команды (`make help`), инструменты и что проверяют хуки — [docs/development.md](docs/development.md).
-Перед тем как сказать, что задача готова, — `make stack-check` (это `make check` на Postgres
-слота 1 в Docker; нужна сеть: `check-ci` сверяет теги actions с GitHub).
+Commands (`make help`), tools and what the hooks check — [docs/development.md](docs/development.md).
+Before saying a task is done — `make stack-check` (that is `make check` on slot 1's Postgres in
+Docker; it needs network: `check-ci` checks the action tags against GitHub).
 
-Человек, агент и ревьюер работают одновременно, каждый в своём слоте (таблица —
-[docs/development.md](docs/development.md), «E2E»): слот 0 — человек (`make up`,
-`make dev-deps`, `make check`, `make e2e`), слот 1 — агент (`make stack-*`), слот 2 — агент
-`reviewer`. Цели слота 0 и чужие слоты агенту не запускать: это стеки и базы других.
-Отдельные проверки с БД (`make check-backend`, `make test-backend`, `uv run pytest`) — с
-`POSTGRES_PORT=5433` или `make stack-check-backend`; Postgres слота 1 поднимают `make stack-check`,
-`make stack-check-backend` и `make stack-up`. Push — `SLOT=1 git push`: хук `pre-push` проверит
-backend на Postgres слота 1, а не на Postgres человека.
-Как устроена система и что запланировано — [docs/architecture.md](docs/architecture.md). Где остановилась работа —
-[docs/roadmap.md](docs/roadmap.md); как вести его — skill `session-handoff`.
+The human, the agent and the reviewer work at the same time, each in their own slot (the table —
+[docs/development.md](docs/development.md), "E2E"): slot 0 — the human (`make up`,
+`make dev-deps`, `make check`, `make e2e`), slot 1 — the agent (`make stack-*`), slot 2 — the
+`reviewer` agent. The agent does not run slot 0 targets or other slots: those are other people's
+stacks and databases. Separate checks with the database (`make check-backend`,
+`make test-backend`, `uv run pytest`) — with `POSTGRES_PORT=5433` or `make stack-check-backend`;
+slot 1's Postgres is started by `make stack-check`, `make stack-check-backend` and `make stack-up`.
+Push — `SLOT=1 git push`: the `pre-push` hook checks the backend on slot 1's Postgres, not on the
+human's Postgres.
+How the system works and what is planned — [docs/architecture.md](docs/architecture.md). Where the
+work stopped — [docs/roadmap.md](docs/roadmap.md); how to maintain it — the `session-handoff`
+skill.
 
-## Карта
+## Map
 
 ```text
-backend/              Django + DRF: config/ — настройки и URL, accounts/ — пользователь и вход,
-                      events/ — события и потоки SSE, registrations/ — регистрации, лист
-                      ожидания, чекин, напоминания, emails/ — outbox и воркер.
-                      Правила: backend/AGENTS.md
-frontend/             Vue 3 + Vite, слои FSD в src/: app, pages, entities, shared
-e2e/                  Playwright; правила — e2e/AGENTS.md
-Makefile              все команды (make help); docker-compose.yml — сервисы
-scripts/              скрипты репозитория с тестами: pre-push.mjs, worktime.mjs,
+backend/              Django + DRF: config/ — settings and URLs, accounts/ — the user and login,
+                      events/ — events and SSE streams, registrations/ — registrations, the
+                      waitlist, check-in, reminders, emails/ — the outbox and the worker.
+                      Rules: backend/AGENTS.md
+frontend/             Vue 3 + Vite, FSD layers in src/: app, pages, entities, shared
+e2e/                  Playwright; rules — e2e/AGENTS.md
+Makefile              all commands (make help); docker-compose.yml — the services
+scripts/              repository scripts with tests: pre-push.mjs, worktime.mjs,
                       check-action-refs.mjs, check-readme-tests.mjs, export-sessions.mjs
-docs/task.md          текст задания — не редактируется
-docs/decisions.md     лог решений с временем
-docs/development.md   руководство разработчика: установка, команды, проверки, нюансы
-docs/features.md      что работает (для проверяющего); docs/requirements.md — общие требования
-                      и подробная таблица «требование → тест»; docs/ai-workflow.md — как делалось с ИИ
-docs/architecture.md  устройство системы: модель, API, realtime, письма; статус разделов
-docs/roadmap.md       фазы, статусы, критерии; spec и задачи фаз — docs/features/<slug>/
-docs/rules/           правила по темам: db-migrations.md, concurrency.md
-.claude/settings.json хуки Claude Code; скрипты — .claude/hooks/
-.claude/skills/       процедуры агента (skills)
+docs/task.md          the text of the assignment (in Russian) — not edited
+docs/decisions.md     the decision log with the time
+docs/development.md   the developer guide: setup, commands, checks, gotchas
+docs/features.md      what works (for the reviewer); docs/requirements.md — the general
+                      requirements and the detailed "requirement → test" table;
+                      docs/ai-workflow.md — how it was built with AI
+docs/architecture.md  how the system works: model, API, realtime, emails; section status
+docs/roadmap.md       phases, statuses, criteria; the phases' specs and tasks — docs/features/<slug>/
+docs/rules/           rules by topic: db-migrations.md, concurrency.md
+docs/session/         raw exports of the agent sessions (in Russian) — not edited
+.claude/settings.json Claude Code hooks; the scripts — .claude/hooks/
+.claude/skills/       the agent's procedures (skills)
 ```
 
-## Правила, которые действуют всегда
+## Rules that always apply
 
-1. Не утверждать, что проверки проходят, не запустив их. В выводе тестов и линтеров читать
-   ошибки, а не весь лог.
-2. Хуки и проверки не обходить: без `--no-verify`, без отключения правил линтера и ослабления
-   типов. Отклонение от правила — с причиной в коде или в логе решений.
-3. Ничего «на будущее»: ни слоёв, ни настроек, ни абстракций без потребителя.
-4. Три неудачные попытки исправить одно и то же — остановиться и описать человеку, что
-   пробовал и какая гипотеза.
-5. Новая команда, инструмент, проверка или нюанс окружения — в
-   [docs/development.md](docs/development.md) в том же коммите.
-6. Этап фазы не готов, пока по нему не прошёл агент `reviewer` и человек не разобрал его
-   находки. Как передавать — skill `feature-workflow`, «Ревью».
+1. Do not claim that checks pass without running them. In the output of tests and linters read the
+   errors, not the whole log.
+2. Do not bypass hooks and checks: no `--no-verify`, no disabling linter rules or weakening types.
+   A deviation from a rule — with a reason in the code or in the decision log.
+3. Nothing "for the future": no layers, settings or abstractions without a consumer.
+4. Three failed attempts to fix the same thing — stop and describe to the human what was tried and
+   what the hypothesis is.
+5. A new command, tool, check or environment gotcha — into
+   [docs/development.md](docs/development.md) in the same commit.
+6. A phase stage is not done until the `reviewer` agent has gone through it and the human has gone
+   through its findings. How to hand it over — the `feature-workflow` skill, "Review".
 
-## Лог решений — `docs/decisions.md`
+## Decision log — `docs/decisions.md`
 
-- Каждое решение, принятое в обсуждении с ИИ-агентом, сразу записывается в
-  [docs/decisions.md](docs/decisions.md) — в том же шаге, где решение принято, а не потом.
-- Решение — это любой выбор, который влияет на код, структуру, стек, объём работ или сроки:
-  что выбрали, что отклонили. Мелкие правки без выбора (опечатка, переименование) — не решения.
-- Время — Europe (EET/EEST), берётся из `date`, а не угадывается. Формат записи:
-  `- **ЧЧ:ММ** — решение. Почему: …` под заголовком дня `## ГГГГ-ММ-ДД`.
-- Указывать отклонённые варианты и причину, если они обсуждались.
-- Прошлые записи не переписываются; если решение изменилось — новая запись со ссылкой на
-  старую («отменяет решение от ЧЧ:ММ»).
+- Each decision made in a discussion with an AI agent is written to
+  [docs/decisions.md](docs/decisions.md) right away — in the same step where the decision is made,
+  not later.
+- A decision is any choice that affects the code, the structure, the stack, the scope or the
+  deadlines: what was chosen, what was rejected. Small edits without a choice (a typo, a rename)
+  are not decisions.
+- The time is Europe (EET/EEST), taken from `date`, not guessed. The entry format:
+  `- **HH:MM** — decision. Why: …` under the day heading `## YYYY-MM-DD`.
+- State the rejected options and the reason, if they were discussed.
+- Past entries are not rewritten; if a decision changed — a new entry with a reference to the old
+  one ("cancels the decision of HH:MM").
 
-## Учёт времени работы
+## Working time accounting
 
-- В начале сессии (в том числе после `/clear`) — запись `- **ЧЧ:ММ** — ▶ начало сессии` в
-  [docs/decisions.md](docs/decisions.md), в последнем коммите сессии —
-  `- **ЧЧ:ММ** — ■ конец сессии`. Время — из `date`. Сумма — `make worktime`.
-- Если предыдущая сессия осталась без `■`, закрыть её временем последнего коммита и сказать
-  человеку.
+- At the start of a session (including after `/clear`) — the entry `- **HH:MM** — ▶ session start`
+  in [docs/decisions.md](docs/decisions.md), in the last commit of the session —
+  `- **HH:MM** — ■ session end`. The time is from `date`. The sum — `make worktime`.
+- If the previous session was left without `■`, close it with the time of the last commit and tell
+  the human.
 
-## Коммиты маленькими шагами
+## Small commits
 
-- Один коммит — одно логическое изменение, после которого проект в рабочем состоянии
-  (собирается, тесты проходят).
-- Коммитить сразу по завершении шага, не копить несколько изменений в одном коммите.
-- Запись в `docs/decisions.md` идёт в том же коммите, что и изменение, которое она объясняет.
-- Сообщение коммита — по-английски, в повелительном наклонении, кратко о том, что и зачем.
-- Формат — [Conventional Commits](https://www.conventionalcommits.org/):
-  `<type>(<scope>): <subject>`. Типы: `feat`, `fix`, `refactor`, `perf`, `test`, `docs`,
-  `build`, `ci`, `chore`, `style`, `revert`. Scope — затронутая часть: `backend`, `frontend`,
-  `e2e`, `infra` или модуль; для изменений на весь репозиторий scope опускается. Ломающее
-  изменение — `!` после типа и `BREAKING CHANGE:` в теле. Формат проверяет commitlint.
-- Этап фазы — своя ветка от `main` и один PR. Название PR — по-английски:
-  `Phase <N>, stage <M>: <что сделано>` (несколько этапов — `stages 1–2`, фаза без этапов —
-  `Phase <N>: …`); PR вне фаз — без префикса и без типа Conventional Commits.
+- One commit — one logical change, after which the project works (builds, the tests pass).
+- Commit right after finishing a step, do not accumulate several changes in one commit.
+- An entry in `docs/decisions.md` goes in the same commit as the change it explains.
+- A commit message — in English, in the imperative mood, briefly about what and why.
+- The format — [Conventional Commits](https://www.conventionalcommits.org/):
+  `<type>(<scope>): <subject>`. Types: `feat`, `fix`, `refactor`, `perf`, `test`, `docs`,
+  `build`, `ci`, `chore`, `style`, `revert`. Scope — the affected part: `backend`, `frontend`,
+  `e2e`, `infra` or a module; for changes across the whole repository the scope is omitted. A
+  breaking change — `!` after the type and `BREAKING CHANGE:` in the body. commitlint checks the
+  format.
+- A phase stage — its own branch from `main` and one PR. The PR title — in English:
+  `Phase <N>, stage <M>: <what was done>` (several stages — `stages 1–2`, a phase without stages —
+  `Phase <N>: …`); a PR outside the phases — without a prefix and without a Conventional Commits
+  type.
 
-## Язык
+## Language
 
-- Документация (`README.md`, `docs/`, `AGENTS.md`) — по-русски.
-- Код (идентификаторы, комментарии, строки логов) и сообщения коммитов — по-английски.
+- Documentation (`README.md`, `docs/`, `AGENTS.md`) — in English. Except `docs/task.md` (the text
+  of the assignment as is) and `docs/session/` (raw session exports): they stay in Russian.
+- Code (identifiers, comments, log strings) and commit messages — in English.
+- The interface texts and the emails — in Russian (see `frontend/AGENTS.md`).
 
-## Skills и агенты
+## Skills and agents
 
-| Skill / агент      | Когда                                                                                    |
-| ------------------ | ---------------------------------------------------------------------------------------- |
-| `session-handoff`  | начало и конец сессии, после задачи из roadmap, закрытие фазы                            |
-| `feature-workflow` | начало фазы roadmap: spec → задачи → tracer bullet → тест вперёд → ревью → браузер       |
-| `fsd-frontend`     | код фронтенда: слои, связь срезов, состояние, ошибки, тесты                              |
-| `anti-slop-review` | перед коммитом крупного изменения и перед сдачей: мусор и утверждения без подтверждения  |
-| `api-change`       | изменение API: serializer, view или URL → тест → `openapi.yaml` → типы фронтенда → вызов |
-| агент `reviewer`   | независимое ревью этапа или фазы с чистым контекстом; без субагентов — новая сессия      |
+| Skill / agent      | When                                                                                                |
+| ------------------ | --------------------------------------------------------------------------------------------------- |
+| `session-handoff`  | the start and end of a session, after a roadmap task, closing a phase                               |
+| `feature-workflow` | the start of a roadmap phase: spec → tasks → tracer bullet → test first → review → browser          |
+| `fsd-frontend`     | frontend code: layers, connecting slices, state, errors, tests                                      |
+| `anti-slop-review` | before committing a large change and before the delivery: junk and unbacked claims                  |
+| `api-change`       | an API change: serializer, view or URL → test → `openapi.yaml` → frontend types → call              |
+| `reviewer` agent   | an independent review of a stage or a phase with a clean context; without subagents — a new session |
 
-Skills проекта лежат в `.claude/skills/<имя>/SKILL.md`, агент — в `.claude/agents/reviewer.md`.
-Агенту без поддержки skills (Codex, Antigravity) — читать `SKILL.md` оттуда по таблице выше.
-Без субагентов ревью — новая сессия: промпт — текст `reviewer.md` после frontmatter, первым
-шагом прочитать `.claude/skills/anti-slop-review/SKILL.md`, дальше — те же входные данные,
-что и агенту (skill `feature-workflow`, «Ревью»).
+The project's skills are in `.claude/skills/<name>/SKILL.md`, the agent — in
+`.claude/agents/reviewer.md`. An agent without skills support (Codex, Antigravity) reads the
+`SKILL.md` from there by the table above. Without subagents a review is a new session: the prompt is
+the text of `reviewer.md` after the frontmatter, the first step is reading
+`.claude/skills/anti-slop-review/SKILL.md`, then the same inputs as for the agent (the
+`feature-workflow` skill, "Review").
 
-## Файлы правил
+## Rule files
 
-Текст правил — в `AGENTS.md` (их читают и другие агенты). Рядом лежит `CLAUDE.md` из одной
-строки `@AGENTS.md`: Claude Code подгружает только `CLAUDE.md`. Новые правила для папки
-создаются парой `AGENTS.md` + `CLAUDE.md`, правила по теме — в `docs/rules/<тема>.md`.
+The text of the rules is in `AGENTS.md` (other agents read them too). Next to it lies a one-line
+`CLAUDE.md` with `@AGENTS.md`: Claude Code loads only `CLAUDE.md`. New rules for a folder are
+created as an `AGENTS.md` + `CLAUDE.md` pair, rules on a topic — in `docs/rules/<topic>.md`.

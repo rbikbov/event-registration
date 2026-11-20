@@ -1,58 +1,59 @@
 # backend/ — Django + DRF
 
-Команды и инструменты — `docs/development.md`, раздел «Backend». Здесь — правила для кода.
+Commands and tools — `docs/development.md`, the "Backend" section. Here — the rules for the code.
 
-## Структура
+## Structure
 
-- `config/` — настройки, корневые URL, ASGI и view уровня проекта (`health.py`).
-- Приложение Django — папка рядом с `config/` (`accounts/`). Новое приложение — только для
-  новой предметной области, не для одного view.
-- Тесты — в `<app>/tests/test_*.py`, рядом с кодом приложения.
+- `config/` — settings, root URLs, ASGI and project-level views (`health.py`).
+- A Django app is a folder next to `config/` (`accounts/`). A new app — only for a new domain, not
+  for one view.
+- Tests — in `<app>/tests/test_*.py`, next to the app's code.
 
-## Правила
+## Rules
 
-1. View тонкие: разбор запроса, вызов логики, ответ. Бизнес-логика — функции в
-   `<app>/services.py`; тесты логики вызывают их напрямую, без HTTP.
-2. Переменные окружения читаются только в `config/settings.py`.
-3. Изменение API — serializer, view или URL — вместе с `make schema` и закоммиченной
-   `openapi.yaml` в том же коммите. Ответ, который drf-spectacular не выводит сам (не из
-   serializer, несколько статусов, поток), описывается через `@extend_schema`; генерация с
-   `--fail-on-warn` не пропустит пробел.
-4. Схема БД меняется только миграцией; правила — `docs/rules/db-migrations.md`. Закоммиченные
-   миграции агенту править запрещено хуком.
-5. Тесты на настоящем Postgres: `pytest.mark.django_db`; поведение транзакций и блокировок —
-   `django_db(transaction=True)`. SQLite и моки ORM для проверки запросов не используются.
-6. Время — `django.utils.timezone.now()` или параметр `now` у функции, которую нужно
-   тестировать на конкретный момент. `datetime.now()` без часового пояса — ошибка. Тест,
-   который проверяет «срок наступил», передаёт `now` явно (например, самое позднее время в
-   данных), а не полагается на то, что часы между созданием записи и проверкой не идут
-   назад: в WSL2 они отскакивают на доли секунды (`docs/development.md`, «Нюансы»). По той
-   же причине тест, который проверяет порядок по меткам времени, задаёт метки сам.
-7. `# type: ignore[код]` — только с кодом ошибки и причиной в том же комментарии. `Any` — на
-   границе с нетипизированным кодом, не в своей логике.
-8. В логах нет персональных данных: email, имён, кодов билетов, токенов.
-9. Каждая модель приложения регистрируется в админке в том же коммите, что и модель:
-   `config/tests/test_admin.py` падает на незарегистрированной. Модели, которые меняются
-   только через сервисы с блокировками и инвариантами (регистрации, письма), в админке —
-   только для чтения: `has_add_permission`, `has_change_permission`, `has_delete_permission`
-   возвращают `False`, и это проверено тестом.
-   Сохранение из админки — простой `save()`: без замка, сервиса и его побочных эффектов.
-   Поэтому изменение, которому нужен замок или побочные эффекты, админка делает через
-   сервис: если сервис есть — вызывает его из `save_model` / `delete_model`; пока сервиса
-   нет или его решено не вызывать — такие поля у существующего объекта в
-   `get_readonly_fields`. Event: лимит и дата в админке только для чтения и после фазы 5 — их
-   меняет `PATCH` организатора через `update_event` (spec `reschedule`, Non-Goals);
-   организатор не меняется вовсе, `schedule_version` — только для чтения всегда. Проверки,
-   которых нет в модели (дата в будущем — в сериализаторе), повторяются в форме админки. Удаление родителя с каскадом админка
-   сверяет с правами на связанные модели: запрет удаления Registration не даёт удалить и
-   событие с регистрациями — это тоже проверяется тестом (`events/tests/test_admin.py`).
-10. Список и счётчики — без запроса на каждую строку: связанные объекты через
-    `select_related` / `prefetch_related`, счётчики через
-    `annotate(Count(..., filter=Q(...)))`, а не циклом по объектам. Эндпоинт со списком
-    покрыт тестом с `django_assert_num_queries`: число запросов не зависит от числа строк.
-11. Побочные эффекты бизнес-операций (письма, повышение из листа ожидания, уведомления) —
-    явным вызовом внутри сервиса, а не сигналами `pre_save` / `post_save` / `post_delete`.
-    Сигнал срабатывает вне замка сервиса (сохранение из админки, `create` в тесте), не
-    срабатывает на `QuerySet.update()` и `bulk_create` и прячет порядок действий в
-    транзакции. Путь мимо сервиса (админка) закрывается вызовом сервиса из `save_model` или
-    полями только для чтения (п. 9), а не сигналом.
+1. Views are thin: parsing the request, calling the logic, the response. Business logic — functions
+   in `<app>/services.py`; logic tests call them directly, without HTTP.
+2. Environment variables are read only in `config/settings.py`.
+3. An API change — a serializer, a view or a URL — together with `make schema` and a committed
+   `openapi.yaml` in the same commit. A response that drf-spectacular does not infer itself (not
+   from a serializer, several statuses, a stream) is described with `@extend_schema`; generation
+   with `--fail-on-warn` will not let a gap through.
+4. The database schema changes only through a migration; the rules — `docs/rules/db-migrations.md`.
+   A hook forbids the agent to edit committed migrations.
+5. Tests on a real Postgres: `pytest.mark.django_db`; the behavior of transactions and locks —
+   `django_db(transaction=True)`. SQLite and ORM mocks are not used to check queries.
+6. Time — `django.utils.timezone.now()` or a `now` parameter of a function that needs to be tested
+   at a specific moment. `datetime.now()` without a time zone is a bug. A test that checks "the time
+   has come" passes `now` explicitly (for example, the latest time in the data) rather than relying
+   on the clock not going back between creating a record and the check: in WSL2 it jumps back by
+   fractions of a second (`docs/development.md`, "Gotchas"). For the same reason a test that checks
+   an order by timestamps sets the timestamps itself.
+7. `# type: ignore[code]` — only with an error code and a reason in the same comment. `Any` — at the
+   boundary with untyped code, not in our own logic.
+8. Logs have no personal data: emails, names, ticket codes, tokens.
+9. Each model of an app is registered in the admin in the same commit as the model:
+   `config/tests/test_admin.py` fails on an unregistered one. Models that change only through
+   services with locks and invariants (registrations, emails) are read-only in the admin:
+   `has_add_permission`, `has_change_permission`, `has_delete_permission` return `False`, and a test
+   checks it.
+   Saving from the admin is a plain `save()`: without a lock, a service and its side effects. So a
+   change that needs a lock or side effects is done by the admin through a service: if there is a
+   service — it is called from `save_model` / `delete_model`; while there is no service or it is
+   decided not to call it — such fields of an existing object are in `get_readonly_fields`. Event:
+   the limit and the date are read-only in the admin after phase 5 too — they are changed by the
+   organizer's `PATCH` through `update_event` (the `reschedule` spec, Non-Goals); the organizer does
+   not change at all, `schedule_version` is always read-only. Checks that are not in the model (a
+   date in the future — in the serializer) are repeated in the admin form. Deleting a parent with a
+   cascade is checked by the admin against the permissions on the related models: the ban on
+   deleting Registration does not let it delete an event with registrations either — this is also
+   checked by a test (`events/tests/test_admin.py`).
+10. A list and counters — without a query per row: related objects through `select_related` /
+    `prefetch_related`, counters through `annotate(Count(..., filter=Q(...)))`, not by a loop over
+    the objects. An endpoint with a list is covered by a test with `django_assert_num_queries`: the
+    number of queries does not depend on the number of rows.
+11. Side effects of business operations (emails, promotion from the waitlist, notifications) — by
+    an explicit call inside the service, not by `pre_save` / `post_save` / `post_delete` signals. A
+    signal fires outside the service's lock (a save from the admin, a `create` in a test), does not
+    fire on `QuerySet.update()` and `bulk_create`, and hides the order of actions in the
+    transaction. The path past the service (the admin) is closed by calling the service from
+    `save_model` or by read-only fields (item 9), not by a signal.

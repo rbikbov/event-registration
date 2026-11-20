@@ -868,3 +868,7 @@ Russian original is in the private `rbikbov/event-registration-original`.
 - **23:00** — ■ session end
 - **23:41** — ▶ session start
 - **23:48** — the repository documentation is translated into English (the human's decision: the project is shown to foreign companies too): `README.md`, `docs/`, the `AGENTS.md` files, `.claude/skills/` and `.claude/agents/`, Russian comments in code. Facts are not changed, only the language; this log is translated too, the timestamps stay. Left in Russian: `docs/task.md` (the assignment text as is, `AGENTS.md` forbids editing it), `docs/session/` (raw session exports), the interface locale and email texts (an English UI is a separate task in "What's next"). The section that `scripts/check-readme-tests.mjs` looks for is now `## Requirements and tests`; the roadmap statuses are `not started` / `in progress` / `done`, and the `SessionStart` hook looks for `in progress`. The Russian version stays in the private `rbikbov/event-registration-original`. Rejected: a parallel `README.ru.md` — two versions would drift apart.
+
+## 2026-11-21
+
+- **00:08** — the language rule in `AGENTS.md`: documentation in English, except `docs/task.md` (the text of the assignment as is) and `docs/session/` (raw session exports), which stay in Russian; the interface and the emails stay in Russian. Cancels "documentation in Russian" from the 2026-10-28 19:10 entry; follows the 2026-11-20 23:48 decision.

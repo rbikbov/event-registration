@@ -1,20 +1,21 @@
 # e2e/ — Playwright
 
-Команды — `docs/development.md`, раздел «E2E». Тесты идут против поднятого стека: человек — `make up` / `make e2e`, агент — `make stack-e2e` (слот 1).
+Commands — `docs/development.md`, the "E2E" section. The tests run against a started stack: the human — `make up` / `make e2e`, the agent — `make stack-e2e` (slot 1).
 
-## Правила
+## Rules
 
-1. Каждый вызов Playwright — с `await`. Забытый `await` делает тест зелёным без проверки;
-   ESLint (`no-floating-promises`) это ловит — не отключать.
-2. Никаких `waitForTimeout` и `sleep`: только ожидания по состоянию — `expect(...).toBeVisible()`,
+1. Each Playwright call — with `await`. A forgotten `await` makes a test green without checking;
+   ESLint (`no-floating-promises`) catches it — do not disable it.
+2. No `waitForTimeout` and no `sleep`: only waits on state — `expect(...).toBeVisible()`,
    `toHaveText()`, `expect.poll()`.
-3. Локаторы — по роли и видимому тексту (`getByRole`, `getByLabel`, `getByText`), как их видит
-   пользователь. `data-testid` — только если доступного способа нет.
-4. Тест не зависит от других тестов и от данных, оставшихся от прошлых прогонов: создаёт свои
-   данные с уникальными значениями (например, email с `Date.now()`). Префикс адреса — свой у
-   каждого файла: ящик Mailpit общий, а `Date.now()` двух тестов, начавших в одну миллисекунду,
-   совпадает — с общим `seat-` тест переноса взял код билета из письма теста лимита.
-5. Два клиента — два `browser.newContext()`, а не две вкладки одного контекста: у контекстов
-   раздельные cookie и хранилище, как у двух людей.
-6. Новый тест должен падать, если проверяемое поведение сломано, — проверить это хотя бы раз
-   (например, остановив сервис или изменив ожидаемое значение).
+3. Locators — by role and visible text (`getByRole`, `getByLabel`, `getByText`), as the user sees
+   them. `data-testid` — only if there is no accessible way.
+4. A test does not depend on other tests or on data left from previous runs: it creates its own
+   data with unique values (for example, an email with `Date.now()`). The address prefix is its own
+   in each file: the Mailpit mailbox is shared, and the `Date.now()` of two tests that started in
+   the same millisecond is the same — with a shared `seat-` the reschedule test took the ticket code
+   from the email of the limit test.
+5. Two clients — two `browser.newContext()`, not two tabs of one context: contexts have separate
+   cookies and storage, like two people.
+6. A new test must fail if the checked behavior is broken — check this at least once (for example,
+   by stopping a service or changing the expected value).
