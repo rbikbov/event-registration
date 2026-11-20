@@ -144,6 +144,12 @@ In "what's next" of the README — a push server (Centrifugo) instead of streams
 process: when there are thousands of connections or more than one backend process (decision of
 2026-10-31 21:04).
 
+## Phase 8. English interface and emails — in progress
+
+Spec and tasks — `docs/features/english-ui/`. Criteria: every screen, the emails and the demo data
+are English by default; every component keeps its Russian texts with the same keys (a test);
+`make check` and `make e2e` pass.
+
 ## What's next
 
 The requirements of the assignment are met; below is what was postponed along the way (the
@@ -160,11 +166,12 @@ assignment to become a product.
   the middle of a check-in.
 - A flaky Vitest (`window is not defined` from `vue-i18n` after jsdom is closed) — find which
   promise or timer of a test outlives the test.
-- An English version of the interface and the emails, English by default, Russian kept (decision
-  of 2026-11-21 00:53): now everything is in Russian. The screen texts are already in
-  `<i18n locale="ru">` blocks of the components (vue-i18n) — an `en` block next to each and a
-  language switch are needed; emails — the templates in `backend/emails/templates/emails/` and the
-  subjects in `emails/services.py`, in the language chosen at registration.
+- A language switch and Russian emails: the English interface is the default since phase 8, the
+  Russian texts are kept but nothing shows them. Done properly: the language in the address
+  (`/en/…`, `/ru/…`, links in emails lead to the email's language), the first choice by
+  `Accept-Language`, a switch in the header with the language names, `Registration.locale` so that
+  each participant gets the emails in the language they registered in (decision of 2026-11-21
+  01:19).
 - Splitting pages into `features` (FSD): now the screen code is on the page while it has one
   consumer.
 
