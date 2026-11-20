@@ -1,125 +1,134 @@
-# Чекин и статистика организатора: задачи
+# Check-in and organizer statistics: tasks
 
-Spec — `spec.md`. Одна задача — один коммит; отметка `[x]` — в том же коммите.
+Spec — `spec.md`. One task — one commit; the `[x]` check goes into the same commit.
 
-Этапы вертикальные: каждый заканчивается тем, что можно показать в браузере. Внутри этапа —
-backend → frontend → e2e/доки. Логика — тест вперёд; в каждой задаче `make stack-check`.
+The stages are vertical: each ends with something that can be shown in the browser. Inside a stage
+— backend → frontend → e2e/docs. Logic — test first; `make stack-check` in each task.
 
-## Этап 1. Чекин кода насквозь (tracer bullet)
+## Stage 1. Checking in a code end to end (tracer bullet)
 
-- [x] 1.1 backend: `checked_in_at` и `CHECK` (миграция), сервис `check_in` — атомарный
-      `UPDATE`, `POST /api/org/events/{id}/checkin/` → 200 `checked_in` / 404 по пути
-      api-change, нормализация кода. Готово, когда: тесты «отмечен», «неизвестный код»,
-      «код чужого события», «чужое событие», «нормализация» зелёные, схема актуальна.
-- [x] 1.2 frontend: экран `/org/events/:id/checkin` — поле, Enter, крупный «Пропущен — Имя» и
-      «Билет не найден»; ссылка «Чекин» из списка событий организатора. Готово, когда: Vitest
-      (MSW) по двум ответам зелёный; в браузере код из письма проходит.
+- [x] 1.1 backend: `checked_in_at` and the `CHECK` (a migration), the `check_in` service — an
+      atomic `UPDATE`, `POST /api/org/events/{id}/checkin/` → 200 `checked_in` / 404 along the
+      api-change path, code normalization. Done when: the tests "checked in", "unknown code",
+      "a code of another event", "someone else's event", "normalization" are green, the schema is
+      up to date.
+- [x] 1.2 frontend: the `/org/events/:id/checkin` screen — a field, Enter, a large "Admitted —
+      Name" and "Ticket not found"; a "Check-in" link from the organizer's event list. Done when:
+      Vitest (MSW) for the two answers is green; in the browser the code from the email passes.
 
-## Этап 2. Один раз: повтор, неподтверждённый билет, отказ после чекина
+## Stage 2. Once: a repeat, an unconfirmed ticket, a cancellation after check-in
 
-- [x] 2.1 backend: `already_checked_in` с временем первой отметки, 409 для `waitlisted` /
-      `cancelled`; тест гонки N потоков. Готово, когда: тесты зелёные, тест гонки без
-      условия `checked_in_at IS NULL` падает.
-- [x] 2.2 backend: `cancel` отмеченного → 409 (строка регистрации `FOR UPDATE` под замком
-      Event); `checked_in_at` в ответе билета; тест гонки чекина против отказа. Готово,
-      когда: тесты зелёные, тест гонки без `FOR UPDATE` строки падает.
-- [x] 2.3 frontend: на экране чекина — «Уже отмечен в ЧЧ:ММ», «Не подтверждён», «Нет связи»,
-      блокировка двойной отправки; на странице билета — «Вы отмечены на входе в ЧЧ:ММ» без
-      кнопки отказа, 409 при отказе → перечитывание. Готово, когда: Vitest по состояниям
-      зелёный.
+- [x] 2.1 backend: `already_checked_in` with the time of the first check-in, 409 for `waitlisted` /
+      `cancelled`; a race test with N threads. Done when: the tests are green, the race test fails
+      without the `checked_in_at IS NULL` condition.
+- [x] 2.2 backend: `cancel` of a checked-in one → 409 (the registration row `FOR UPDATE` under the
+      Event lock); `checked_in_at` in the ticket response; a check-in against cancellation race
+      test. Done when: the tests are green, the race test fails without the row's `FOR UPDATE`.
+- [x] 2.3 frontend: on the check-in screen — "Already checked in at HH:MM", "Not confirmed", "No
+      connection", blocking a double submit; on the ticket page — "You were checked in at HH:MM"
+      without a cancel button, a 409 on cancellation → a re-read. Done when: Vitest for the states
+      is green.
 
-## Этап 3. Панель события
+## Stage 3. The event panel
 
-- [x] 3.1 backend: `GET /api/org/events/{id}/` со счётчиками (`checked_in` в
-      `with_registration_counts`), `GET /api/org/events/{id}/registrations/?status=`. Готово,
-      когда: тесты счётчиков, фильтра, 400 на неизвестный статус, 404 на чужое зелёные.
-- [x] 3.2 frontend: панель `/org/events/:id` — счётчики, таблица с фильтром, ссылка на чекин;
-      переход из списка событий. Экран чекина загружает событие: название в заголовке, несуществующее —
-      «Событие не найдено» вместо ответа по билету (ревью этапа 1, находка 2). Готово, когда: Vitest по загрузке, ошибке, пустому списку и
-      фильтру зелёный.
+- [x] 3.1 backend: `GET /api/org/events/{id}/` with the counters (`checked_in` in
+      `with_registration_counts`), `GET /api/org/events/{id}/registrations/?status=`. Done when:
+      the tests of the counters, the filter, a 400 on an unknown status, a 404 on someone else's
+      are green.
+- [x] 3.2 frontend: the `/org/events/:id` panel — counters, a table with a filter, a link to
+      check-in; the transition from the event list. The check-in screen loads the event: the title
+      in the heading, a nonexistent one — "Event not found" instead of an answer about the ticket
+      (the stage 1 review, finding 2). Done when: Vitest for loading, an error, an empty list and
+      the filter is green.
 
-## Этап 4. E2E и закрытие
+## Stage 4. E2E and closing
 
-- [x] 4.1 e2e: регистрация → код из письма в Mailpit → чекин «пропущен» → повтор «уже
-      отмечен» → на панели «пришло: 1». Готово, когда: проходит в `make stack-e2e`.
-- [x] 4.2 закрытие фазы: `architecture.md` (чекин, API, экраны — «реализовано»), README
-      («Состояние», «требование → тест»), roadmap. Готово, когда: критерии фазы проверены
-      по фактам.
+- [x] 4.1 e2e: registration → the code from the email in Mailpit → check-in "admitted" → a repeat
+      "already checked in" → "arrived: 1" on the panel. Done when: passes in `make stack-e2e`.
+- [x] 4.2 closing the phase: `architecture.md` (check-in, API, screens — "implemented"), README
+      ("State", "requirement → test"), the roadmap. Done when: the phase criteria are verified with
+      facts.
 
-## Лог
+## Log
 
-- База этапа 1 — `d4a390c` (`main` после слияния PR #11).
-- База этапа 2 — `c96405a` (`main` после слияния PR #12), ветка `feat/checkin-once`.
-- Этап 2: ревью — одна находка (решение по ней — `decisions.md`, исправление `b49ca49`), повторное
-  ревью — без находок. Проход в Chromium на слоте 1 (скрипт Playwright): код A строчными с дефисом
-  и двойным Enter — один запрос, «Пропущен — Анна, a-\*\*\*@example.com»; повтор — жёлтое «Уже
-  отмечен в ЧЧ:ММ»; код отказавшегося — красное «Билет не подтверждён»; неизвестный — «Билет не
-  найден»; без сети — «Нет связи, повторите», код в поле, после сети повтор проходит; фокус на
-  «Следующий», Enter — в пустое поле. Страница билета A, открытая с подтверждением отказа до
-  чекина: «Да, отказаться» → 409 → «Вы отмечены на входе в ЧЧ:ММ», кнопки и алерта нет, после
-  перезагрузки так же. В консоли только сетевые сообщения об ожидаемых 401 (до входа), 404, 409
-  и обрыве сети; ошибок JS нет.
-- Исследование: чужое событие → 403, несуществующее → 404 — решение уже было (2026-10-29 01:17),
-  `get_org_event` отложен в фазе 1 до первого эндпоинта по id — он появляется здесь. Счётчики —
-  `EventQuerySet.with_registration_counts`; потоки гонки — `config/tests/concurrency.py`
-  (`run_together`); `PermissionDenied` и `Http404` Django DRF сам отдаёт как 403 и 404.
+- The base of stage 1 — `d4a390c` (`main` after merging PR #11).
+- The base of stage 2 — `c96405a` (`main` after merging PR #12), the `feat/checkin-once` branch.
+- Stage 2: the review — one finding (the decision on it — `decisions.md`, the fix `b49ca49`), the
+  repeated review — no findings. A pass in Chromium on slot 1 (a Playwright script): code A in
+  lower case with a hyphen and a double Enter — one request, "Admitted — Anna,
+  a-\*\*\*@example.com"; a repeat — the yellow "Already checked in at HH:MM"; the code of one who
+  cancelled — the red "Ticket not confirmed"; an unknown one — "Ticket not found"; without network
+  — "No connection, try again", the code stays in the field, after the network is back a retry
+  passes; focus on "Next", Enter — into the empty field. Ticket A's page, opened with the
+  cancellation confirmation before the check-in: "Yes, cancel" → 409 → "You were checked in at
+  HH:MM", no button and no alert, the same after a reload. The console has only network messages
+  about the expected 401 (before login), 404, 409 and the network break; no JS errors.
+- Research: someone else's event → 403, a nonexistent one → 404 — the decision already existed
+  (2026-10-29 01:17), `get_org_event` was postponed in phase 1 until the first endpoint by id — it
+  appears here. The counters — `EventQuerySet.with_registration_counts`; the race threads —
+  `config/tests/concurrency.py` (`run_together`); DRF itself returns Django's `PermissionDenied`
+  and `Http404` as 403 and 404.
 
-- База этапа 3 — `f953669` (`main` после слияния исправления нестабильных тестов), ветка
-  `feat/checkin-dashboard`.
-- Этап 3: ревью — одна находка (ошибка фонового обновления прятала данные; решение —
-  `decisions.md` 11:51, исправление `fd48609`, то же на остальных страницах — `7b3c818`), повторное
-  ревью — три мелкие (решения — 12:51 и следующая запись; `0df70a0`, `e7f4ac9`). Проход в
-  Chromium на слоте 1 (скрипт Playwright): название в списке ведёт на панель; пустая панель —
-  счётчики 2/0/0/0/2 и «Регистраций пока нет»; после трёх регистраций на 2 места и чекина
-  первого кода строчными — «Пропущен — Ann, an\*\*\*@example.com», заголовок «Чекин: <название>»,
-  ссылка «Панель события»; панель — 2/2/1/1/0, таблица в порядке очереди, «В листе ожидания,
-  №1», время отметки; фильтр «Лист ожидания» меняет URL и строки, «Отказались» — «С таким
-  статусом никого нет», «назад» возвращает прежний фильтр, `?status=gone` — все и «Все»
-  отмечено; оборванное обновление события — алерт над прежними данными, таблица на месте, повтор
-  с задержкой — «Загружаем…» на заблокированной кнопке, после ответа алерт уходит; `/org/events/999999`
-  и его чекин — «Событие не найдено», формы нет; 500 на событие у чекина — «Не удалось загрузить
-  название события, чекин работает», заголовок «Чекин», форма есть. В консоли только сетевые
-  сообщения о запланированных 401, 404, 500 и обрыве; ошибок JS нет.
+- The base of stage 3 — `f953669` (`main` after merging the flaky test fix), the
+  `feat/checkin-dashboard` branch.
+- Stage 3: the review — one finding (a background refresh error hid the data; the decision —
+  `decisions.md` 11:51, the fix `fd48609`, the same on the other pages — `7b3c818`), the repeated
+  review — three minor ones (decisions — 12:51 and the next entry; `0df70a0`, `e7f4ac9`). A pass in
+  Chromium on slot 1 (a Playwright script): the title in the list leads to the panel; an empty
+  panel — counters 2/0/0/0/2 and "No registrations yet"; after three registrations for 2 seats and
+  a check-in of the first code in lower case — "Admitted — Ann, an\*\*\*@example.com", the heading
+  "Check-in: <title>", an "Event panel" link; the panel — 2/2/1/1/0, the table in queue order, "On
+  the waitlist, #1", the check-in time; the "Waitlist" filter changes the URL and the rows,
+  "Cancelled" — "No one with this status", "back" returns the previous filter, `?status=gone` —
+  everyone and "All" selected; a broken event refresh — an alert above the previous data, the
+  table in place, a delayed retry — "Loading…" on the disabled button, after the answer the alert
+  goes away; `/org/events/999999` and its check-in — "Event not found", no form; a 500 on the event
+  at check-in — "Could not load the event title, check-in works", the heading "Check-in", the form
+  is there. The console has only network messages about the planned 401, 404, 500 and the break;
+  no JS errors.
 
-- Этап 4: база `05986df` (`main` после слияния PR #15), ветка `feat/checkin-close`; ревью — на
-  диапазоне `6ede94e..c7d03e6` до ребейза (то же дерево базы).
-  Ревью — без находок; замечание вне диапазона о кэше события после чекина уже в «на потом».
+- Stage 4: base `05986df` (`main` after merging PR #15), the `feat/checkin-close` branch; the
+  review — on the range `6ede94e..c7d03e6` before the rebase (the same base tree). The review — no
+  findings; a remark outside the range about the event cache after check-in is already in "later".
 
-## На потом
+## Later
 
-- После 401 `redirectOnExpiredSession` (`app/session-expiry.ts`) уводит на `/login` без
-  обратного адреса, а вход всегда открывает `/org/events`: организатор у входа после
-  повторного входа заново ищет экран чекина. Передавать `?next=<текущий путь>` и
-  возвращаться туда после входа; принимать только внутренний путь (`/…`, не `//…`), иначе
-  открытый редирект. Из повторного ревью этапа 1, находка 1.
-- Срок сессии: настроек сессии нет, действуют умолчания Django — `SESSION_COOKIE_AGE` 2
-  недели от входа, `SESSION_SAVE_EVERY_REQUEST = False`, то есть срок не продлевается
-  активностью. Организатор, вошедший почти две недели назад, потеряет сессию посреди чекина.
-  Обновлять «токен» не нужно — это сессия Django, а не JWT; вариант — скользящий срок
-  (`SESSION_SAVE_EVERY_REQUEST = True`, запись сессии на каждый запрос) или срок короче с
-  продлением. Решения пока нет.
-  Отдельная ручка, которую фронтенд дёргает раз в час, не нужна: со скользящим сроком сессию
-  продлевает любой запрос организатора, а пинг из открытой вкладки держал бы сессию вечно —
-  и на брошенном ноутбуке тоже.
-- «Следующий» на экране чекина: заблокировать на 1–2 с после ответа, чтобы случайный Enter
-  или клик не убрал ответ непрочитанным (предложение человека). Сейчас двойной Enter ответ не
-  пропускает — второй приходит, пока идёт запрос, и отсекается `isPending` (проверено в
-  Chromium), — но Enter уже после ответа, например автоповтор клавиши, его уберёт.
+- After a 401 `redirectOnExpiredSession` (`app/session-expiry.ts`) sends to `/login` without a
+  return address, and login always opens `/org/events`: the organizer at the entrance looks for the
+  check-in screen again after logging in again. Pass `?next=<current path>` and return there after
+  login; accept only an internal path (`/…`, not `//…`), otherwise it is an open redirect. From the
+  repeated review of stage 1, finding 1.
+- Session lifetime: there are no session settings, the Django defaults apply —
+  `SESSION_COOKIE_AGE` 2 weeks from login, `SESSION_SAVE_EVERY_REQUEST = False`, that is, the
+  lifetime is not extended by activity. An organizer who logged in almost two weeks ago will lose
+  the session in the middle of a check-in. There is no "token" to refresh — it is a Django session,
+  not a JWT; an option is a sliding lifetime (`SESSION_SAVE_EVERY_REQUEST = True`, writing the
+  session on each request) or a shorter lifetime with extension. No decision yet. A separate
+  endpoint that the frontend calls once an hour is not needed: with a sliding lifetime any
+  organizer request extends the session, and a ping from an open tab would keep the session alive
+  forever — on an abandoned laptop too.
+- "Next" on the check-in screen: disable it for 1–2 s after an answer, so that an accidental Enter
+  or click does not remove the answer unread (the human's suggestion). Now a double Enter does not
+  skip the answer — the second one arrives while the request is running and is cut off by
+  `isPending` (checked in Chromium) — but an Enter after the answer, for example a key auto-repeat,
+  will remove it.
 
-- Время отметки «Уже отмечен в ЧЧ:ММ» (экран чекина) и «Вы отмечены на входе в ЧЧ:ММ»
-  (страница билета) — только часы и минуты. Если отметка была не сегодня (по часовому поясу
-  браузера), то «в 09:15» читается как время сегодняшнего дня: повтор кода с прошлого дня
-  многодневного события, страница билета, открытая после события. Условие — календарный день
-  отметки не совпадает с сегодняшним, а не «прошло больше 24 часов»: отметка вчера в 23:50
-  через 10 минут — уже другой день. Формат: сегодня — «09:15»; другой день этого года —
-  «31 окт. в 09:15»; другой год — с годом. Одна чистая функция с тестами на границе суток;
-  нужна на трёх страницах (с этапа 3 — и колонка «Отметка на входе» в таблице участников панели) — `shared/lib`, если правило без предметной области (это
-  форматирование даты). Предложение человека, после этапа 2.
+- The check-in time "Already checked in at HH:MM" (the check-in screen) and "You were checked in at
+  HH:MM" (the ticket page) — only hours and minutes. If the check-in was not today (in the
+  browser's time zone), "at 09:15" reads as a time of today: a repeat of a code from a previous day
+  of a multi-day event, a ticket page opened after the event. The condition is that the calendar
+  day of the check-in differs from today, not "more than 24 hours have passed": a check-in
+  yesterday at 23:50 seen 10 minutes later is already another day. Format: today — "09:15"; another
+  day of this year — "31 Oct at 09:15"; another year — with the year. One pure function with tests
+  at the day boundary; needed on three pages (since stage 3 also the "Checked in" column in the
+  panel's participant table) — `shared/lib`, if the rule has no domain (it is date formatting).
+  The human's suggestion, after stage 2.
 
-- Регистрация на начавшееся событие не запрещена (Non-Goal фазы 1): можно зарегистрироваться
-  во время события и сразу пройти чекин. Закрыть регистрацию с `starts_at` — изменение API
-  фазы 1, решения пока нет.
+- Registering for an event that has started is not forbidden (a Non-Goal of phase 1): one can
+  register during the event and pass check-in right away. Closing registration at `starts_at` is a
+  change of the phase 1 API, no decision yet.
 
-- Чекин не сбрасывает кэш события (`orgEventQuery`): панель, открытая с экрана чекина, сначала
-  показывает счётчики до отметок («Пришло» меньше) и через запрос обновляет их. Вариант —
-  `invalidateQueries` по ключу события в `onSuccess` чекина. Найдено в e2e задачи 4.1.
+- A check-in does not invalidate the event cache (`orgEventQuery`): the panel opened from the
+  check-in screen first shows the counters from before the check-ins ("Arrived" is lower) and
+  updates them after a request. An option — `invalidateQueries` by the event key in the check-in's
+  `onSuccess`. Found in the e2e of task 4.1.
