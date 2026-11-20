@@ -5,7 +5,8 @@ from django.core.management.base import BaseCommand
 
 from accounts.models import User
 
-# Documented demo credentials for reviewers and e2e (docs/architecture.md, "Окружение").
+# Documented demo credentials for reviewers and e2e
+# (docs/architecture.md, "Environment and demo data").
 # The organizer has no admin rights; the admin signs in to /admin/ only.
 DEMO_ORGANIZER = ("demo@example.com", "demo")
 DEMO_ADMIN = ("admin@example.com", "admin")

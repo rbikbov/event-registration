@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 
 import { createEvent, emailTo, extract, organizerPage } from "./helpers";
 
-// The narrowest phone the app is made for (frontend-polish spec, "Ширина телефона").
+// The narrowest phone the app is made for (frontend-polish spec, "Phone width").
 test.use({ viewport: { width: 360, height: 740 } });
 
 // No screen scrolls sideways: a wide line would push the whole page past the window. The table
