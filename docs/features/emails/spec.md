@@ -1,134 +1,142 @@
-# Outbox, воркер, письма: spec
+# Outbox, worker, emails: spec
 
-Фаза — `docs/roadmap.md`, фаза 2. Статус: утверждён 2026-10-30.
+Phase — `docs/roadmap.md`, phase 2. Status: approved 2026-10-30.
 
-## Что и зачем
+## What and why
 
-Закрывает из задания: «зарегистрировавшийся получает письмо с билетом» и «кто-то отказался —
-первый из листа получает место и письмо»; плюс письмо о попадании в лист ожидания со ссылкой
-управления. Письмо создаётся в той же транзакции и под той же блокировкой Event, что и
-изменение регистрации, а отправляет его отдельный процесс-воркер: SMTP не держит замок и не
-роняет регистрацию. Участник открывает ссылку из письма — страницу билета с кодом, статусом и
-отказом. Проект — «OutboxEmail» и «Фоновые задачи и письма» в `docs/architecture.md`; spec
-уточняет его в трёх местах (сказано ниже: снимок текста, ключ дедупликации, без чистки).
+Covers from the assignment: "a registered participant gets an email with the ticket" and "someone
+cancelled — the first one on the waitlist gets the seat and an email"; plus an email about getting
+onto the waitlist with a manage link. The email is created in the same transaction and under the
+same Event lock as the registration change, and a separate worker process sends it: SMTP does not
+hold the lock and does not bring down a registration. The participant opens the link from the
+email — the ticket page with the code, the status and cancellation. The design is "OutboxEmail" and
+"Background jobs and emails" in `docs/architecture.md`; the spec refines it in three places (stated
+below: a text snapshot, the dedup key, no cleanup).
 
 ## Non-Goals
 
-- Письма `reminder` и `rescheduled`, `schedule_version` — фаза 5.
-- Чистка отправленных писем (шаг 3 цикла воркера в `architecture.md`) — потребителя нет,
-  объём outbox в демо мал. В «на потом».
-- HTML-письма, вложения, QR-код билета: письмо — простой текст.
-- Пробуждение воркера через `LISTEN/NOTIFY`: воркер опрашивает outbox раз в секунду.
-- Повторная отправка `failed` писем из админки или API, отписка, жалобы на спам.
-- Список участников и чекин по коду — фаза 3. Живые места на странице — фаза 4.
-- Rate limit на `GET /api/tickets/{token}/` (токен — 256 бит, перебор бессмыслен).
+- The `reminder` and `rescheduled` emails, `schedule_version` — phase 5.
+- Cleaning up sent emails (step 3 of the worker loop in `architecture.md`) — it has no consumer,
+  the outbox volume in the demo is small. In "later".
+- HTML emails, attachments, a QR code for the ticket: an email is plain text.
+- Waking the worker through `LISTEN/NOTIFY`: the worker polls the outbox once a second.
+- Resending `failed` emails from the admin or the API, unsubscribe, spam complaints.
+- The participant list and check-in by code — phase 3. Live seats on the page — phase 4.
+- A rate limit on `GET /api/tickets/{token}/` (the token is 256 bits, brute force is pointless).
 
-## Модель данных
+## Data model
 
-Приложение `emails`. Миграции — по `docs/rules/db-migrations.md`.
+The `emails` app. Migrations follow `docs/rules/db-migrations.md`.
 
-- **OutboxEmail**: `kind` (`ticket` / `waitlisted` / `promoted`; `CHECK`), `registration`
-  FK (`CASCADE`), `dedup_key` (unique), `to`, `subject`, `body`, `status` (`pending` / `sent`
-  / `failed`; `CHECK`), `attempts` (int, 0), `next_attempt_at`, `created_at`, `sent_at`
-  (null), `last_error` (text, пусто). Индекс `(status, next_attempt_at)` — выборка воркера.
-- **Текст — снимок на момент изменения** (уточнение `architecture.md`): `subject` и `body`
-  рендерятся шаблоном внутри транзакции. Номер в листе и код — те, что были при изменении;
-  отправка позже не перечитывает регистрацию, которая к тому времени могла смениться.
-- **`dedup_key = "{kind}:{registration_id}:{ticket_code}"`** (уточнение): `ticket_code`
-  меняется при оживлении после отказа, поэтому повторная регистрация после отказа даёт новое
-  письмо, а повтор того же запроса — нет.
-- Админка: OutboxEmail только для чтения (`backend/AGENTS.md`, п. 9) — там видно `attempts`
-  и `last_error`.
+- **OutboxEmail**: `kind` (`ticket` / `waitlisted` / `promoted`; `CHECK`), `registration` FK
+  (`CASCADE`), `dedup_key` (unique), `to`, `subject`, `body`, `status` (`pending` / `sent` /
+  `failed`; `CHECK`), `attempts` (int, 0), `next_attempt_at`, `created_at`, `sent_at` (null),
+  `last_error` (text, empty). An index on `(status, next_attempt_at)` — the worker's selection.
+- **The text is a snapshot at the moment of the change** (a refinement of `architecture.md`):
+  `subject` and `body` are rendered from a template inside the transaction. The place on the
+  waitlist and the code are those at the time of the change; sending later does not re-read the
+  registration, which may have changed by then.
+- **`dedup_key = "{kind}:{registration_id}:{ticket_code}"`** (a refinement): `ticket_code` changes
+  on a revival after a cancellation, so registering again after a cancellation gives a new email,
+  and a repeat of the same request does not.
+- Admin: OutboxEmail is read-only (`backend/AGENTS.md`, item 9) — `attempts` and `last_error` are
+  visible there.
 
-## Инварианты
+## Invariants
 
-| Инвариант                                          | Чем защищён                                                   | Тест                           |
-| -------------------------------------------------- | ------------------------------------------------------------- | ------------------------------ |
-| Письмо есть ⇔ изменение закоммичено                | постановка письма в outbox в транзакции `register` / `cancel` | pytest, сервис (положительные) |
-| Одно изменение — одно письмо                       | `UNIQUE(dedup_key)`, вставка `ON CONFLICT DO NOTHING`         | pytest, сервис                 |
-| Повтор регистрации писем не шлёт                   | ранний выход `register` до `enqueue_email`                    | pytest, сервис                 |
-| Внутри замка Event нет SMTP                        | отправка только в воркере (`concurrency.md`, «Код», п. 5)     | ревью                          |
-| Два воркера не отправляют одно письмо одновременно | `SELECT … FOR UPDATE SKIP LOCKED` на строках outbox           | pytest (Postgres)              |
-| Ошибка SMTP не теряет письмо                       | `attempts`, `next_attempt_at` с нарастающей паузой, `failed`  | pytest, воркер                 |
+| Invariant                                          | What protects it                                                           | Test                             |
+| -------------------------------------------------- | -------------------------------------------------------------------------- | -------------------------------- |
+| An email exists ⇔ the change is committed          | queuing the email into the outbox in the `register` / `cancel` transaction | pytest, service (positive cases) |
+| One change — one email                             | `UNIQUE(dedup_key)`, the insert is `ON CONFLICT DO NOTHING`                | pytest, service                  |
+| A repeated registration sends no emails            | an early return of `register` before `enqueue_email`                       | pytest, service                  |
+| No SMTP inside the Event lock                      | sending only in the worker (`concurrency.md`, "Code", item 5)              | review                           |
+| Two workers do not send one email at the same time | `SELECT … FOR UPDATE SKIP LOCKED` on the outbox rows                       | pytest (Postgres)                |
+| An SMTP error does not lose the email              | `attempts`, `next_attempt_at` with a growing pause, `failed`               | pytest, worker                   |
 
-Доставка — «хотя бы один раз»: падение воркера между SMTP и записью `sent` даёт повтор
-(`architecture.md`). Строки outbox заблокированы, пока воркер шлёт их пачку; замок Event при
-этом не держится.
+Delivery is "at least once": a worker crash between SMTP and writing `sent` gives a repeat
+(`architecture.md`). The outbox rows are locked while the worker sends their batch; the Event lock
+is not held meanwhile.
 
-## Воркер
+## Worker
 
-`manage.py run_worker`: цикл — пачка до 20 писем `pending` с `next_attempt_at ≤ now`
-(`FOR UPDATE SKIP LOCKED`, по `next_attempt_at, id`) → SMTP по одному → `sent` + `sent_at`,
-либо `attempts += 1`, `last_error`, `next_attempt_at = now + 30 с · 2^(attempts−1)`; после 5
-попыток — `failed`. Пачка пуста — пауза 1 с. Одна итерация — функция `process_batch()`,
-её и тестируют; цикл и `sleep` — только в команде.
+`manage.py run_worker`: a loop — a batch of up to 20 `pending` emails with `next_attempt_at ≤ now`
+(`FOR UPDATE SKIP LOCKED`, by `next_attempt_at, id`) → SMTP one by one → `sent` + `sent_at`, or
+`attempts += 1`, `last_error`, `next_attempt_at = now + 30 s · 2^(attempts−1)`; after 5 attempts —
+`failed`. An empty batch — a 1 s pause. One iteration is the `process_batch()` function, and that
+is what is tested; the loop and `sleep` are only in the command.
 
 ## API
 
-| Метод и путь                               | Вход | Ответ                                                                        | Ошибки (статус → `kind`) |
-| ------------------------------------------ | ---- | ---------------------------------------------------------------------------- | ------------------------ |
-| `GET /api/tickets/{manage_token}/`         | —    | 200 `{status, ticket_code?, position?, name, event: {id, title, starts_at}}` | 404 → `not_found`        |
-| `POST /api/tickets/{manage_token}/cancel/` | —    | без изменений (фаза 1), теперь ещё создаёт `promoted` для повышенного        | 404 → `not_found`        |
+| Method and path                            | Input | Response                                                                     | Errors (status → `kind`) |
+| ------------------------------------------ | ----- | ---------------------------------------------------------------------------- | ------------------------ |
+| `GET /api/tickets/{manage_token}/`         | —     | 200 `{status, ticket_code?, position?, name, event: {id, title, starts_at}}` | 404 → `not_found`        |
+| `POST /api/tickets/{manage_token}/cancel/` | —     | unchanged (phase 1), now it also creates `promoted` for the promoted one     | 404 → `not_found`        |
 
-`ticket_code` — только у `confirmed`, `position` — только у `waitlisted`. Ответ регистрации
-не меняется: кода в нём нет, он приходит письмом. Без сессии и CSRF, как остальные публичные.
+`ticket_code` — only for `confirmed`, `position` — only for `waitlisted`. The registration response
+does not change: there is no code in it, it comes by email. Without a session and CSRF, like the
+other public ones.
 
-## Письма
+## Emails
 
-Простой текст, по-русски, шаблоны `emails/templates/emails/<kind>.txt`. Во всех — название и
-дата события и ссылка `{FRONTEND_URL}/tickets/{manage_token}` («мой билет / отказаться»).
+Plain text, in Russian, the templates are `emails/templates/emails/<kind>.txt`. All have the event
+title and date and the link `{FRONTEND_URL}/tickets/{manage_token}` ("my ticket / cancel").
 
-- `ticket` — код билета. `promoted` — «освободилось место» + код билета.
-- `waitlisted` — номер в листе на момент письма; «если место освободится, придёт письмо».
+- `ticket` — the ticket code. `promoted` — "a seat became free" + the ticket code.
+- `waitlisted` — the place on the waitlist at the time of the email; "if a seat becomes free, an
+  email will come".
 
 ## UI
 
-Страница `/tickets/:token` (`pages/ticket`, сущность `ticket`): загрузка; 404 → «билет не
-найден»; `confirmed` — крупный код, событие, кнопка «Отказаться»; `waitlisted` — «вы в листе
-ожидания, №N», кнопка «Отказаться»; `cancelled` — «регистрация отменена» и ссылка на событие
-(зарегистрироваться снова). Отказ — с подтверждением, кнопка блокируется на время запроса,
-после успеха страница перечитывает билет; ошибка сети — сообщение, состояние не меняется.
+The `/tickets/:token` page (`pages/ticket`, the `ticket` entity): loading; 404 → "ticket not
+found"; `confirmed` — a large code, the event, a "Cancel" button; `waitlisted` — "you are on the
+waitlist, #N", a "Cancel" button; `cancelled` — "registration cancelled" and a link to the event
+(to register again). Cancellation asks for confirmation, the button is disabled during the request,
+after success the page re-reads the ticket; a network error — a message, the state does not change.
 
-## Окружение
+## Environment
 
-- compose: `mailpit` (SMTP :1025, веб и API :8025, порт — `MAILPIT_PORT`), `worker` — образ
-  `backend`, `command: python manage.py run_worker`, ждёт healthy `backend` (миграции).
-- Настройки из env: `EMAIL_HOST` / `EMAIL_PORT`, `DEFAULT_FROM_EMAIL`, `FRONTEND_URL`
-  (по умолчанию `http://localhost:5173`; compose передаёт адрес с `FRONTEND_PORT`).
-  Тесты — `locmem`.
-- e2e читает письма через API Mailpit (`E2E_MAILPIT_URL`, по умолчанию
-  `http://localhost:8025`); у каждого теста свой email, общий ящик не чистится.
+- compose: `mailpit` (SMTP :1025, web and API :8025, the port is `MAILPIT_PORT`), `worker` — the
+  `backend` image, `command: python manage.py run_worker`, waits for a healthy `backend`
+  (migrations).
+- Settings from env: `EMAIL_HOST` / `EMAIL_PORT`, `DEFAULT_FROM_EMAIL`, `FRONTEND_URL` (default
+  `http://localhost:5173`; compose passes the address with `FRONTEND_PORT`). Tests — `locmem`.
+- e2e reads emails through the Mailpit API (`E2E_MAILPIT_URL`, default `http://localhost:8025`);
+  each test has its own email, the shared mailbox is not cleaned.
 
-## Крайние случаи
+## Edge cases
 
-- Отказ из `confirmed` при пустом листе — писем нет; из `waitlisted` — писем нет.
-- Повторный отказ — ни повышения, ни письма.
-- Отказ → регистрация снова → новое письмо с новым кодом; ссылка (`manage_token`) прежняя.
-- Повышен, затем отказался до отправки `promoted` — письмо всё равно уйдёт (снимок); ссылка
-  покажет «отменена».
-- Mailpit недоступен — регистрация проходит, письмо ждёт и уходит после его запуска.
-- Неизвестный токен на странице билета → «билет не найден», без деталей.
+- A cancellation from `confirmed` with an empty waitlist — no emails; from `waitlisted` — no emails.
+- A repeated cancellation — neither a promotion nor an email.
+- Cancellation → registering again → a new email with a new code; the link (`manage_token`) stays
+  the same.
+- Promoted, then cancelled before `promoted` was sent — the email goes out anyway (a snapshot); the
+  link shows "cancelled".
+- Mailpit is unavailable — the registration passes, the email waits and goes out after Mailpit
+  starts.
+- An unknown token on the ticket page → "ticket not found", without details.
 
-## Допущения и открытые вопросы
+## Assumptions and open questions
 
-- Дата в письме — в UTC с пометкой «UTC»: у события нет часового пояса, а страница по ссылке
-  покажет локальное время браузера. Отклонено: зашить пояс в настройку — выбор за организатора.
-- 5 попыток, паузы между ними 30 с · 2ⁿ (30 с, 1, 2, 4 мин) — Mailpit поднимается за секунды; значения —
-  константы модуля, не env.
-- Пачка 20, опрос раз в 1 с — задержка письма в демо до ~1 с.
-- `SIGTERM` воркера без особой обработки: прерванная пачка — откат или повтор («хотя бы один раз»).
-- Ссылка с токеном — секрет: `Referrer-Policy: same-origin` (по умолчанию Django), токен не
-  пишется в логи воркера (в логе — `id` письма).
+- The date in the email is in UTC marked "UTC": an event has no time zone, and the page from the
+  link shows the browser's local time. Rejected: hardcoding a zone in a setting — the choice belongs
+  to the organizer.
+- 5 attempts, pauses between them 30 s · 2ⁿ (30 s, 1, 2, 4 min) — Mailpit starts in seconds; the
+  values are module constants, not env.
+- A batch of 20, polling once every 1 s — an email's delay in the demo is up to ~1 s.
+- `SIGTERM` of the worker without special handling: an interrupted batch is a rollback or a repeat
+  ("at least once").
+- A link with a token is a secret: `Referrer-Policy: same-origin` (the Django default), the token is
+  not written to the worker logs (the log has the email `id`).
 
-## Сценарии приёмки
+## Acceptance scenarios
 
-| Сценарий                                                                                            | Уровень           |
-| --------------------------------------------------------------------------------------------------- | ----------------- |
-| Регистрация на место → одно письмо `ticket` с кодом и ссылкой; повтор — писем не прибавилось        | pytest            |
-| Лист ожидания → `waitlisted` с номером; отказ `confirmed` → `promoted` первому из листа             | pytest            |
-| Откат транзакции регистрации → письма нет (отдельного теста нет — `decisions.md`, 2026-10-31 04:23) | —                 |
-| Воркер: `pending` → `sent`; ошибка SMTP → `attempts`, пауза растёт; 5 ошибок → `failed`             | pytest            |
-| Два воркера параллельно → каждое письмо отправлено один раз                                         | pytest (Postgres) |
-| `GET /api/tickets/{token}/` по статусам; неизвестный → 404                                          | pytest            |
-| Страница билета: код / №N / отменена / не найден; отказ с подтверждением                            | Vitest            |
-| Регистрация → письмо в Mailpit → билет по ссылке → отказ → первый из листа получает письмо          | e2e               |
+| Scenario                                                                                                                  | Level             |
+| ------------------------------------------------------------------------------------------------------------------------- | ----------------- |
+| Registration for a seat → one `ticket` email with the code and a link; a repeat — no more emails                          | pytest            |
+| Waitlist → `waitlisted` with the position; a `confirmed` cancels → `promoted` to the first one on the waitlist            | pytest            |
+| A rolled-back registration transaction → no email (no separate test — `decisions.md`, 2026-10-31 04:23)                   | —                 |
+| Worker: `pending` → `sent`; an SMTP error → `attempts`, the pause grows; 5 errors → `failed`                              | pytest            |
+| Two workers in parallel → each email is sent once                                                                         | pytest (Postgres) |
+| `GET /api/tickets/{token}/` by status; an unknown one → 404                                                               | pytest            |
+| The ticket page: code / #N / cancelled / not found; cancellation with a confirmation                                      | Vitest            |
+| Registration → an email in Mailpit → the ticket via the link → cancellation → the first one on the waitlist gets an email | e2e               |
