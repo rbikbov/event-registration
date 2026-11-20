@@ -1,313 +1,364 @@
-# Архитектура
+# Architecture
 
-Как устроена система и почему. У каждого раздела — статус: **реализовано** (описание
-совпадает с кодом) или **план (фаза N)** — согласованный проект, который уточняется в spec
-фазы. При закрытии фазы её разделы приводятся к коду и получают статус «реализовано».
-Обоснования выборов и отклонённые варианты — в [decisions.md](decisions.md), фазы — в
-[roadmap.md](roadmap.md).
+How the system works and why. Each section has a status: **implemented** (the description matches
+the code) or **plan (phase N)** — an agreed design that is refined in the phase's spec. When a
+phase is closed, its sections are brought in line with the code and get the "implemented" status.
+The reasons for the choices and the rejected options are in [decisions.md](decisions.md), the
+phases are in [roadmap.md](roadmap.md).
 
-## Процессы
+## Processes
 
 ```text
-браузер ──► frontend (Vite; в e2e — nginx, :5173) ──/api──► backend (Django + DRF под uvicorn, :8000) ──► PostgreSQL
-                                                                                                         ▲
-                                                              worker (manage.py run_worker) ─────────────┘──► SMTP (Mailpit)
+browser ──► frontend (Vite; in e2e — nginx, :5173) ──/api──► backend (Django + DRF under uvicorn, :8000) ──► PostgreSQL
+                                                                                                           ▲
+                                                                worker (manage.py run_worker) ─────────────┘──► SMTP (Mailpit)
 ```
 
-- **Реализовано:** `frontend`, `backend`, `postgres` в docker compose; фронтенд и `/api` на
-  одном адресе (прокси Vite), поэтому cookie сессии и `EventSource` работают без CORS.
-- **Реализовано (фаза 2):** `worker` — тот же образ, что `backend`, другая `command`;
-  `mailpit` — SMTP-ловушка с веб-интерфейсом и API на :8025.
-- **Реализовано (фаза 4):** nginx-шлюз — стадия `gateway` в `frontend/Dockerfile`: `vite build`
-  и nginx на том же порту, что dev-сервер; отдаёт сборку (неизвестный путь — `index.html`),
-  проксирует `/api`, `/admin`, `/static` на backend с `Host` клиента (статику Django раздаёт
-  WhiteNoise). Стадию выбирает `FRONTEND_TARGET`: `make up` — `dev` (Vite), `make e2e`,
-  `stack-e2e` и CI — `gateway`, поэтому e2e идут за прокси, как в продакшене. Буферизация прокси
-  — по умолчанию, сжатия нет; поток её обходит заголовком `X-Accel-Buffering: no`; таймаут
-  чтения по умолчанию (60 с) больше heartbeat (15 с). Отличие от первоначального плана (шлюз —
-  вход `make up`, `proxy_buffering off`) — spec фазы, «Допущения», п. 3 и 4.
+- **Implemented:** `frontend`, `backend`, `postgres` in docker compose; the frontend and `/api`
+  are on one address (Vite proxy), so the session cookie and `EventSource` work without CORS.
+- **Implemented (phase 2):** `worker` — the same image as `backend`, a different `command`;
+  `mailpit` — an SMTP trap with a web UI and an API on :8025.
+- **Implemented (phase 4):** the nginx gateway — the `gateway` stage in `frontend/Dockerfile`:
+  `vite build` and nginx on the same port as the dev server; serves the build (an unknown path
+  gets `index.html`), proxies `/api`, `/admin`, `/static` to the backend with the client's `Host`
+  (Django static files are served by WhiteNoise). The stage is chosen by `FRONTEND_TARGET`:
+  `make up` — `dev` (Vite), `make e2e`, `stack-e2e` and CI — `gateway`, so e2e goes through the
+  proxy, as in production. Proxy buffering is the default, there is no compression; the stream
+  bypasses buffering with the `X-Accel-Buffering: no` header; the default read timeout (60 s) is
+  longer than the heartbeat (15 s). The difference from the original plan (the gateway as the
+  entry of `make up`, `proxy_buffering off`) — the phase spec, "Assumptions", items 3 and 4.
 
-## Аутентификация
+## Authentication
 
-- **Реализовано:** своя модель `accounts.User` — вход по email, email хранится в нижнем
-  регистре, точки и `+tag` значимы. Участники аккаунтов не имеют.
-- **Реализовано:** админка Django (`/admin/`) — вход по email для `is_staff`; статику
-  раздаёт WhiteNoise во всех окружениях. Каждая модель наших приложений зарегистрирована в
-  админке (проверяет тест); модели, которые меняются только через сервисы, — только для
-  чтения. Event в админке создаётся (дата — в будущем, как в API), но у существующего
-  события `organizer`, `starts_at` и `capacity` только для чтения: дату и лимит меняет
-  `PATCH` организатора через `update_event` — с замком, письмами и повышением из листа
-  (фаза 5); `schedule_version` в админке только для чтения всегда. Событие с
-  регистрациями админка не удаляет: каскад задел бы регистрации, а они только для чтения.
-- **Реализовано:** вход организатора (`/api/auth/login|logout|me/`) — сессия Django + CSRF
-  (`SessionAuthentication`). Фронтенд читает cookie `csrftoken` и передаёт её значение в
-  заголовке `X-CSRFToken` у изменяющих запросов — в `shared/api/csrf.ts`, одним местом для
-  всех вызовов. Кто вошёл, знает `entities/session` (`GET me`, гость — `null`); guard роутера
-  (`app/router.ts`) отправляет гостя с маршрутов `requiresAuth` на `/login`, а вошедшего с
-  `/login` — на `/org/events`. Гость уходит на `/login?next=<путь>` и после входа возвращается на путь; `safeNext` (`shared/lib/safe-next.ts`) принимает только путь этого приложения (фаза 6). 401 посреди сессии — `me` становится `null`, текущая навигация повторяется, решает guard (`app/session-expiry.ts`). Вход и выход сбрасывают данные прежнего пользователя (`forgetUserData`). Участник управляет
-  регистрацией по секретной ссылке с `manage_token` из письма.
+- **Implemented:** a custom `accounts.User` model — login by email, the email is stored in lower
+  case, dots and `+tag` are significant. Participants have no accounts.
+- **Implemented:** the Django admin (`/admin/`) — login by email for `is_staff`; static files are
+  served by WhiteNoise in all environments. Every model of our apps is registered in the admin (a
+  test checks it); models that change only through services are read-only. An Event can be
+  created in the admin (the date is in the future, as in the API), but for an existing event
+  `organizer`, `starts_at` and `capacity` are read-only: the date and the limit are changed by the
+  organizer's `PATCH` through `update_event` — with a lock, emails and promotion from the waitlist
+  (phase 5); `schedule_version` is always read-only in the admin. The admin does not delete an
+  event with registrations: the cascade would touch the registrations, and they are read-only.
+- **Implemented:** organizer login (`/api/auth/login|logout|me/`) — a Django session + CSRF
+  (`SessionAuthentication`). The frontend reads the `csrftoken` cookie and passes its value in the
+  `X-CSRFToken` header of modifying requests — in `shared/api/csrf.ts`, one place for all calls.
+  Who is logged in is known by `entities/session` (`GET me`, a guest is `null`); the router guard
+  (`app/router.ts`) sends a guest from `requiresAuth` routes to `/login`, and a logged-in user from
+  `/login` to `/org/events`. A guest goes to `/login?next=<path>` and returns to the path after
+  login; `safeNext` (`shared/lib/safe-next.ts`) accepts only a path of this application (phase 6).
+  A 401 in the middle of a session makes `me` `null`, the current navigation is repeated, and the
+  guard decides (`app/session-expiry.ts`). Login and logout drop the previous user's data
+  (`forgetUserData`). A participant manages the registration through a secret link with the
+  `manage_token` from the email.
 
-## Модель данных
+## Data model
 
-**User** — реализовано (см. выше).
+**User** — implemented (see above).
 
-**Event** — реализовано (фаза 1; `schedule_version` — фаза 5):
+**Event** — implemented (phase 1; `schedule_version` — phase 5):
 
 - `organizer` (FK → User), `title`, `description`, `starts_at` (timestamptz, UTC), `capacity`
-- `schedule_version` (int, `default=1`) — увеличивается при каждом переносе в `update_event`
-  и больше ничем; входит в ключи дедупликации писем о переносе и напоминаний.
+- `schedule_version` (int, `default=1`) — incremented on each reschedule in `update_event` and by
+  nothing else; part of the dedup keys of reschedule emails and reminders.
 
-**Registration** — реализовано (фаза 1, этап 3; приложение `registrations`; `checked_in_at` — с фазы 3):
+**Registration** — implemented (phase 1, stage 3; the `registrations` app; `checked_in_at` —
+since phase 3):
 
-- `event` (FK), `email` (в нижнем регистре), `name`
+- `event` (FK), `email` (in lower case), `name`
 - `status`: `confirmed` / `waitlisted` / `cancelled`
-- `queued_at` — порядок в листе ожидания
-- `confirmed_at` — момент получения места (нужен для правила напоминаний)
-- `ticket_code` — короткий, уникальный, без похожих символов (`0/O`, `1/I`); показывается
-  на входе
-- `manage_token` — длинный секрет для ссылки «мой билет / отказаться»
-- `checked_in_at`, `cancelled_at`; `CHECK (checked_in_at IS NULL OR status = 'confirmed')` —
-  отмеченный билет не бывает отменён или в листе ожидания
-- `UNIQUE(event, email)`; повторная регистрация после отказа «оживляет» строку: место или лист
-  ожидания определяются заново (`queued_at` обновляется — хвост очереди), `ticket_code`
-  выдаётся новый, `manage_token` остаётся прежним: ссылка из старого письма управляет и
-  новой регистрацией.
+- `queued_at` — the order on the waitlist
+- `confirmed_at` — the moment the seat was obtained (needed for the reminder rule)
+- `ticket_code` — short, unique, without look-alike characters (`0/O`, `1/I`); shown at the
+  entrance
+- `manage_token` — a long secret for the "my ticket / cancel" link
+- `checked_in_at`, `cancelled_at`; `CHECK (checked_in_at IS NULL OR status = 'confirmed')` — a
+  checked-in ticket is never cancelled or on the waitlist
+- `UNIQUE(event, email)`; registering again after a cancellation "revives" the row: the seat or
+  the waitlist is decided anew (`queued_at` is updated — the tail of the queue), a new
+  `ticket_code` is issued, `manage_token` stays the same: the link from the old email manages the
+  new registration too.
 
-**OutboxEmail** — очередь писем в Postgres, реализовано (фаза 2; приложение `emails`):
+**OutboxEmail** — an email queue in Postgres, implemented (phase 2; the `emails` app):
 
-- `kind`: `ticket` / `waitlisted` / `promoted` / `rescheduled` / `reminder` (`CHECK`; два
-  последних — фаза 5)
+- `kind`: `ticket` / `waitlisted` / `promoted` / `rescheduled` / `reminder` (`CHECK`; the last
+  two — phase 5)
 - `registration` (FK, `CASCADE`), `dedup_key UNIQUE`, `to`, `subject`, `body`, `status`
   (`pending` / `sent` / `failed`; `CHECK`), `attempts`, `next_attempt_at`, `created_at`,
-  `sent_at`, `last_error`; индекс `(status, next_attempt_at)` — выборка воркера
-- Создаётся в той же транзакции, что и бизнес-изменение: `enqueue_email(kind, registration)`
-  для `ticket` и `promoted`, `enqueue_waitlisted(registration, position)` — номер обязателен
-  на уровне типов; `enqueue_rescheduled(registration, old_starts_at)` и
-  `enqueue_reminder(registration)` — фаза 5. Вставка `ON CONFLICT DO NOTHING`.
-- Тема и текст — снимок на момент изменения: отправка не перечитывает регистрацию.
-- `dedup_key = "{kind}:{registration_id}:{ticket_code}"` у `ticket`, `waitlisted`,
-  `promoted`: повтор того же изменения письма не даёт, оживление после отказа (новый
-  `ticket_code`) — даёт. У `rescheduled` и `reminder` —
-  `"{kind}:{registration_id}:{schedule_version}"`: одно письмо на каждый перенос и одно
-  напоминание на каждую дату события.
-- В админке — только чтение: видно `attempts` и `last_error`.
+  `sent_at`, `last_error`; an index on `(status, next_attempt_at)` — the worker's selection
+- Created in the same transaction as the business change: `enqueue_email(kind, registration)` for
+  `ticket` and `promoted`, `enqueue_waitlisted(registration, position)` — the position is required
+  at the type level; `enqueue_rescheduled(registration, old_starts_at)` and
+  `enqueue_reminder(registration)` — phase 5. The insert is `ON CONFLICT DO NOTHING`.
+- The subject and body are a snapshot at the moment of the change: sending does not re-read the
+  registration.
+- `dedup_key = "{kind}:{registration_id}:{ticket_code}"` for `ticket`, `waitlisted`, `promoted`:
+  repeating the same change gives no email, a revival after a cancellation (a new `ticket_code`)
+  does. For `rescheduled` and `reminder` — `"{kind}:{registration_id}:{schedule_version}"`: one
+  email per reschedule and one reminder per event date.
+- Read-only in the admin: `attempts` and `last_error` are visible.
 
-## Инварианты и конкурентность
+## Invariants and concurrency
 
-**Реализовано (фаза 1)** — `registrations/services.py`, правила — `docs/rules/concurrency.md`:
+**Implemented (phase 1)** — `registrations/services.py`, rules — `docs/rules/concurrency.md`:
 
-- **Регистрация:** транзакция, `SELECT … FOR UPDATE` на Event, подсчёт `confirmed` →
-  `confirmed` или `waitlisted`. Регистрации на одно событие выполняются строго по очереди —
-  двое не займут одно место и не вставят один email дважды. `queued_at` берётся после
-  блокировки и не раньше последнего `queued_at` события (+1 мкс), поэтому порядок листа —
-  порядок блокировок, даже если часы отскочили назад. `UNIQUE(event, email)` — страховка
-  на случай пути без блокировки; `IntegrityError` код не перехватывает.
-- **Отказ:** та же блокировка; отмена и повышение первого из листа
-  (`ORDER BY queued_at, id`) — в одной транзакции.
+- **Registration:** a transaction, `SELECT … FOR UPDATE` on the Event, a count of `confirmed` →
+  `confirmed` or `waitlisted`. Registrations for one event run strictly one at a time — two people
+  will not take one seat or insert one email twice. `queued_at` is taken after the lock and is no
+  earlier than the event's last `queued_at` (+1 µs), so the waitlist order is the lock order even
+  if the clock jumped back. `UNIQUE(event, email)` is a safety net for a path without the lock; the
+  code does not catch `IntegrityError`.
+- **Cancellation:** the same lock; the cancellation and the promotion of the first one on the
+  waitlist (`ORDER BY queued_at, id`) are in one transaction.
 
-**Реализовано (фаза 2):** письма ставятся в outbox в транзакции и под замком Event:
-`register` — `ticket` или `waitlisted` с номером, посчитанным под замком; `cancel` —
-`promoted` повышенному. SMTP внутри замка нет — отправляет только воркер
-(`concurrency.md`, «Код», п. 5). Два воркера не берут одно письмо: `SKIP LOCKED` (п. 6).
+**Implemented (phase 2):** emails are put into the outbox in the transaction and under the Event
+lock: `register` — `ticket` or `waitlisted` with the position counted under the lock; `cancel` —
+`promoted` to the promoted one. There is no SMTP inside the lock — only the worker sends
+(`concurrency.md`, "Code", item 5). Two workers do not take the same email: `SKIP LOCKED`
+(item 6).
 
-**Реализовано (фаза 3)** — `check_in` в `registrations/services.py`:
+**Implemented (phase 3)** — `check_in` in `registrations/services.py`:
 
-- **Чекин:** один условный
+- **Check-in:** one conditional
   `UPDATE … WHERE event = ? AND ticket_code = ? AND status = 'confirmed' AND checked_in_at IS NULL`
-  в транзакции, затем чтение строки. `UPDATE` блокирует строку, поэтому из одновременных
-  запросов с одним кодом проходит первый, остальные ждут его коммита и отвечают «уже отмечен»
-  со временем первой отметки. Причина при 0 строк — по `checked_in_at`, а не по статусу:
-  отмечен → повтор, не отмечен → «билет не подтверждён» (лист ожидания или отказ), строки нет
-  → «не найден». Код принимается в любом регистре, с пробелами и дефисами.
-- **Отказ от отмеченного билета запрещён:** `cancel` под замком Event берёт строку регистрации
-  `FOR UPDATE`, поэтому чекин и отказ одной строки идут по очереди, и отмеченный билет даёт
-  `TicketCheckedIn` (409). Страховка — `CHECK` в модели (см. «Registration»).
+  in a transaction, then a read of the row. `UPDATE` locks the row, so of simultaneous requests
+  with one code the first passes, the others wait for its commit and answer "already checked in"
+  with the time of the first check-in. The reason for 0 rows is taken from `checked_in_at`, not
+  from the status: checked in → a repeat, not checked in → "the ticket is not confirmed" (waitlist
+  or cancellation), no row → "not found". The code is accepted in any case, with spaces and
+  hyphens.
+- **Cancelling a checked-in ticket is forbidden:** `cancel` takes the registration row
+  `FOR UPDATE` under the Event lock, so a check-in and a cancellation of one row go one at a time,
+  and a checked-in ticket gives `TicketCheckedIn` (409). The safety net is the `CHECK` in the model
+  (see "Registration").
 
-**Тесты гонок — реализовано (фазы 1–3):** на настоящем Postgres, N потоков с
-`threading.Barrier` — `registrations/tests/test_concurrency.py` (в том числе чекин одного кода
-и чекин против отказа), `emails/tests/test_concurrency.py`.
+**Race tests — implemented (phases 1–3):** on a real Postgres, N threads with
+`threading.Barrier` — `registrations/tests/test_concurrency.py` (including a check-in of one code
+and a check-in against a cancellation), `emails/tests/test_concurrency.py`.
 
-**Реализовано (фаза 5)** — `update_event` и `enqueue_reminders` в `registrations/services.py`:
+**Implemented (phase 5)** — `update_event` and `enqueue_reminders` in `registrations/services.py`:
 
-- **Изменение события:** замок Event, затем применяются только присланные поля; поле с
-  текущим значением — не изменение. Новая дата — `schedule_version + 1` и письмо
-  `rescheduled` каждому `confirmed` и `waitlisted` в той же транзакции: письмо уходит тогда и
-  только тогда, когда перенос закоммичен. Лимит меньше числа `confirmed` →
-  `CapacityBelowConfirmed`, не меняется ничего (и остальные поля запроса); больше — повышение
-  первых из листа с `promoted`, как в `cancel`. Одновременные изменения идут по очереди,
-  каждый перенос — своя версия.
-- **Напоминания:** проход берёт события в окне `FOR UPDATE SKIP LOCKED`: событие, которое
-  держит перенос (новая дата сохранена, но не закоммичена), пропускается до следующего
-  прохода, а не читается со старой датой; два воркера делят события, а не ждут друг друга.
-- **Тесты гонок:** снижение лимита параллельно с регистрациями, одновременные повышения
-  лимита, параллельные переносы и
-  проход напоминаний во время переноса (окно гонки удерживается, тест детерминированный) —
-  `registrations/tests/test_concurrency.py`.
+- **Event change:** the Event lock, then only the sent fields are applied; a field with its
+  current value is not a change. A new date means `schedule_version + 1` and a `rescheduled` email
+  to each `confirmed` and `waitlisted` one in the same transaction: the email goes out if and only
+  if the reschedule is committed. A limit below the number of `confirmed` →
+  `CapacityBelowConfirmed`, nothing changes (including the other fields of the request); a higher
+  one promotes the first ones from the waitlist with `promoted`, as in `cancel`. Simultaneous
+  changes go one at a time, each reschedule gets its own version.
+- **Reminders:** the pass takes events in the window `FOR UPDATE SKIP LOCKED`: an event held by a
+  reschedule (the new date is saved but not committed) is skipped until the next pass instead of
+  being read with the old date; two workers split the events instead of waiting for each other.
+- **Race tests:** lowering the limit in parallel with registrations, simultaneous limit raises,
+  parallel reschedules and a reminder pass during a reschedule (the race window is held, the test
+  is deterministic) — `registrations/tests/test_concurrency.py`.
 
 ## API
 
-Типы фронтенда генерируются из OpenAPI-схемы `backend/openapi.yaml`; порядок изменения API —
-[development.md](development.md#типовые-задачи).
+The frontend types are generated from the OpenAPI schema `backend/openapi.yaml`; the order of an
+API change — [development.md](development.md#common-tasks).
 
-**Реализовано:**
+**Implemented:**
 
-- `GET /api/health/` — 200 `{"status": "ok", "database": "ok"}` или 503.
+- `GET /api/health/` — 200 `{"status": "ok", "database": "ok"}` or 503.
 
-**Реализовано — публичное (без сессии и CSRF):**
+**Implemented — public (no session or CSRF):**
 
-- `GET /api/events/?period=&page=` — страница событий с числом свободных мест (заполненные остаются в списке), ответ `{count, results}` — постраничная выдача списков ниже по тексту; `GET /api/events/{id}/` — одно событие (в том числе прошедшее: регистрация на начавшееся событие не запрещена)
-- `POST /api/events/{id}/registrations/` `{email, name}` → 201 (в том числе повторная регистрация после отказа) / 200 (повтор) `{status, position?}`; кода
-  билета в ответе нет — он приходит только письмом, иначе любой получил бы чужой билет, введя
-  чужой email. Мест нет → `waitlisted` и `position` (номер в листе; только для `waitlisted`)
+- `GET /api/events/?period=&page=` — a page of events with the number of free seats (full ones
+  stay in the list), the response is `{count, results}` — paged list output is described below;
+  `GET /api/events/{id}/` — one event (including a past one: registering for an event that has
+  started is not forbidden)
+- `POST /api/events/{id}/registrations/` `{email, name}` → 201 (including registering again after
+  a cancellation) / 200 (a repeat) `{status, position?}`; the ticket code is not in the response —
+  it comes only by email, otherwise anyone would get someone else's ticket by entering their email.
+  No seats → `waitlisted` and `position` (the place on the waitlist; only for `waitlisted`)
 
-- `POST /api/tickets/{manage_token}/cancel/` → 200 `{status: "cancelled"}` / 404 (неизвестный
-  токен) / 409 (билет уже отмечен на входе, фаза 3); повтор — тот же 200 без повышения; повышенному ставится письмо `promoted`. Токен приходит
-  участнику только письмом, в тестах берётся из БД
+- `POST /api/tickets/{manage_token}/cancel/` → 200 `{status: "cancelled"}` / 404 (unknown token) /
+  409 (the ticket is already checked in, phase 3); a repeat gives the same 200 without a
+  promotion; the promoted one gets a `promoted` email. The participant gets the token only by
+  email, tests take it from the database
 
 - `GET /api/tickets/{manage_token}/` → 200
-  `{status, ticket_code?, position?, name, checked_in_at, event: {id, title, starts_at}}` / 404 (неизвестный токен); `ticket_code` — только у `confirmed`,
-  `position` — только у `waitlisted`. Чтение без замка события: повышение между двумя запросами
-  даёт устаревший номер до следующего чтения
+  `{status, ticket_code?, position?, name, checked_in_at, event: {id, title, starts_at}}` / 404
+  (unknown token); `ticket_code` — only for `confirmed`, `position` — only for `waitlisted`. The
+  read is done without the event lock: a promotion between two requests gives an outdated position
+  until the next read
 
-**Реализовано — потоки SSE (фаза 4):** `text/event-stream`, первое сообщение — снимок с
-`retry: 3000`, затем снимок на каждое изменение счётчиков события и `: ping` после 15 с без
-снимка. Снимок — тело `GET` того же события; права и ошибки — как у него, при подключении.
+**Implemented — SSE streams (phase 4):** `text/event-stream`, the first message is a snapshot with
+`retry: 3000`, then a snapshot on each change of the event's counters and `: ping` after 15 s
+without a snapshot. A snapshot is the body of `GET` of the same event; permissions and errors are
+the same as for it, at connection time.
 
-- `GET /api/events/{id}/stream/` — публичное событие со свободными местами; 404
-- `GET /api/org/events/{id}/stream/` — событие организатора со счётчиками; 401 / 403 / 404
+- `GET /api/events/{id}/stream/` — a public event with free seats; 404
+- `GET /api/org/events/{id}/stream/` — an organizer's event with counters; 401 / 403 / 404
 
-**Постраничная выдача списков событий (фаза 6)** — `/api/events/` и `/api/org/events/`:
-`period=upcoming` (по умолчанию; `starts_at` в будущем, ближайшие первыми) или `past`
-(`starts_at` уже наступило, недавние первыми; времени окончания у события нет); при равном
-`starts_at` в предстоящих выше больший `id`, в прошедших — меньший: прошедшие — тот же порядок,
-развёрнутый назад во времени. По 20 на страницу, `page` от 1; `count` — число событий периода;
-за концом — `results: []` с тем же `count`; неверные `period` или `page` (< 1, > 1 000 000) — 400
-с кодом поля.
+**Paged event lists (phase 6)** — `/api/events/` and `/api/org/events/`: `period=upcoming`
+(default; `starts_at` in the future, nearest first) or `past` (`starts_at` has already come,
+recent first; an event has no end time); with equal `starts_at`, upcoming ones put the larger `id`
+higher, past ones the smaller: past is the same order turned back in time. 20 per page, `page`
+from 1; `count` is the number of events in the period; past the end — `results: []` with the same
+`count`; an invalid `period` or `page` (< 1, > 1,000,000) — 400 with the field code.
 
-**Реализовано — организатор, сессия + CSRF:**
+**Implemented — organizer, session + CSRF:**
 
 - `POST /api/auth/login/`, `POST /api/auth/logout/`, `GET /api/auth/me/`
-- `GET/POST /api/org/events/` (фаза 1; в списке `confirmed` / `waitlisted`); `GET` —
-  `?period=&page=`, ответ `{count, results}` (фаза 6)
-- Фаза 3; для всех `/api/org/events/{id}/…` событие другого организатора — 403,
-  несуществующее — 404:
-  - `GET /api/org/events/{id}/` — событие и счётчики `confirmed`, `waitlisted`, `checked_in`,
-    `free_seats`, `cancelled` (фаза 4); один запрос
-  - `GET /api/org/events/{id}/registrations/?status=&page=` — регистрации в порядке очереди
-    `{id, name, email, status, position?, checked_in_at}`, по 50 на страницу (фаза 4; за
-    концом — `[]`, `page` < 1 или > 1 000 000 — 400); `position` — номер в листе у
-    `waitlisted` (оконная функция в том же запросе); фильтр номера не сдвигает; неизвестный
-    статус — 400
+- `GET/POST /api/org/events/` (phase 1; the list has `confirmed` / `waitlisted`); `GET` —
+  `?period=&page=`, the response is `{count, results}` (phase 6)
+- Phase 3; for all `/api/org/events/{id}/…` an event of another organizer is 403, a nonexistent
+  one is 404:
+  - `GET /api/org/events/{id}/` — the event and the counters `confirmed`, `waitlisted`,
+    `checked_in`, `free_seats`, `cancelled` (phase 4); one query
+  - `GET /api/org/events/{id}/registrations/?status=&page=` — registrations in queue order
+    `{id, name, email, status, position?, checked_in_at}`, 50 per page (phase 4; past the end —
+    `[]`, `page` < 1 or > 1,000,000 — 400); `position` is the place on the waitlist for
+    `waitlisted` (a window function in the same query); the filter does not shift the positions;
+    an unknown status — 400
   - `POST /api/org/events/{id}/checkin/` `{code}` → 200
-    `{result: "checked_in" | "already_checked_in", name, masked_email, checked_in_at}` / 404
-    (нет такого кода у события) / 409 (билет не подтверждён: лист ожидания или отменён) / 400
-    (пустой код)
+    `{result: "checked_in" | "already_checked_in", name, masked_email, checked_in_at}` / 404 (the
+    event has no such code) / 409 (the ticket is not confirmed: waitlisted or cancelled) / 400
+    (an empty code)
 
-**Реализовано — организатор (фаза 5):**
+**Implemented — organizer (phase 5):**
 
-- `PATCH /api/org/events/{id}/` — любое подмножество `title, description, starts_at,
-capacity` → 200 с телом `GET` события. 400: поля проверяются как при создании;
-  `starts_at` в прошлом — `past`, только если дата меняется (начавшееся событие можно
-  переименовать, прислав и его дату); `capacity` ниже подтверждённых — `below_confirmed`;
-  401 / 403 / 404 — как у остальных `/api/org/events/{id}/…`. View — в `registrations`
-  (`OrgEventView`): письма и повышение там, `events` не импортирует `registrations`.
+- `PATCH /api/org/events/{id}/` — any subset of `title, description, starts_at, capacity` → 200
+  with the body of the event's `GET`. 400: the fields are validated as on creation; `starts_at` in
+  the past is `past` only if the date changes (an event that has started can be renamed by sending
+  its date too); `capacity` below the confirmed count — `below_confirmed`; 401 / 403 / 404 — as
+  for the other `/api/org/events/{id}/…`. The view is in `registrations` (`OrgEventView`): emails
+  and promotion are there, and `events` does not import `registrations`.
 
 ## Realtime
 
-**Реализовано (фаза 4)** — `events/realtime.py`, подробности и решения — spec
+**Implemented (phase 4)** — `events/realtime.py`, details and decisions — the spec in
 `docs/features/realtime/`:
 
-- SSE + Postgres `LISTEN/NOTIFY`: `register` (новая и оживлённая регистрация), `cancel` (с
-  повышением — одно уведомление), первая отметка `check_in` и любое изменение события в
-  `update_event` (фаза 5: снимок содержит событие целиком) делают
-  `pg_notify('event_stats', event_id)` в своей транзакции; уведомление доставляется только
-  после коммита, откат его отменяет, повторы без изменений не уведомляют.
-- Backend под ASGI (uvicorn); одно соединение `LISTEN` на процесс — с первым подписчиком, до
-  ухода последнего. Снимок читается один раз на событие и уведомление и раздаётся всем
-  подписчикам процесса (очередь из одного: новый снимок заменяет неотправленный); соединение
-  БД потоки между изменениями не держат. Обрыв соединения слушателя закрывает все потоки
-  процесса: клиенты переподключаются и получают снимок.
-- По сети уходит полный снимок, а не прирост; при (пере)подключении — сразу снимок, прочитанный
-  после подписки; heartbeat 15 с; `retry: 3000`.
-- Заголовки `X-Accel-Buffering: no` и `Cache-Control: no-cache`, поток без сжатия.
-- Запасного опроса нет. Фронтенд (`shared/lib`): `LiveSource` — данные от сервера без привязки
-  к транспорту, `sseSource` — на `EventSource`, `useLive` — подписка на время жизни компонента
-  (заново — при возврате страницы из bfcache). Обрыв переподключает сам `EventSource`; поток,
-  закрытый ответом не 200, открывается заново через 3 с, а страница перечитывает событие пробой
-  (без записи в его кэш): 401 — `/login`, 403/404 — ответ на странице, поток закрыт. На панели
-  организатора — индикатор «Соединение потеряно, переподключаюсь…» до следующего снимка.
+- SSE + Postgres `LISTEN/NOTIFY`: `register` (a new and a revived registration), `cancel` (with a
+  promotion — one notification), the first `check_in` and any event change in `update_event`
+  (phase 5: the snapshot contains the whole event) call `pg_notify('event_stats', event_id)` in
+  their transaction; the notification is delivered only after the commit, a rollback cancels it,
+  repeats without changes do not notify.
+- The backend runs under ASGI (uvicorn); one `LISTEN` connection per process — from the first
+  subscriber until the last one leaves. A snapshot is read once per event and notification and
+  handed to all subscribers of the process (a queue of one: a new snapshot replaces an unsent
+  one); streams do not hold a database connection between changes. A break of the listener's
+  connection closes all streams of the process: clients reconnect and get a snapshot.
+- The full snapshot goes over the network, not a delta; on (re)connection — a snapshot read right
+  after subscribing; heartbeat 15 s; `retry: 3000`.
+- The `X-Accel-Buffering: no` and `Cache-Control: no-cache` headers, the stream is not compressed.
+- There is no fallback polling. Frontend (`shared/lib`): `LiveSource` — data from the server not
+  tied to a transport, `sseSource` — on `EventSource`, `useLive` — a subscription for the
+  component's lifetime (again when the page returns from bfcache). A break is reconnected by
+  `EventSource` itself; a stream closed by a non-200 response is reopened after 3 s, and the page
+  re-reads the event as a probe (without writing to its cache): 401 — `/login`, 403/404 — the
+  answer on the page, the stream is closed. The organizer's panel shows the "Connection lost,
+  reconnecting…" indicator until the next snapshot.
 
-## Фоновые задачи и письма
+## Background jobs and emails
 
-Отдельный процесс `manage.py run_worker`, цикл:
+A separate process `manage.py run_worker`, a loop:
 
-1. **Рассылка — реализовано (фаза 2):** `emails.services.process_batch()` — в одной
-   транзакции `SELECT … FOR UPDATE SKIP LOCKED` до 20 писем `pending` с
-   `next_attempt_at ≤ now` (по `next_attempt_at, id`) → SMTP по одному, каждое письмо — своё
-   соединение, таймаут `EMAIL_TIMEOUT = 10` с → `sent` + `sent_at`. Любое исключение при
-   отправке — неудачная попытка: `attempts += 1`, `last_error`,
-   `next_attempt_at = now + 30 с · 2^(attempts−1)`, на 5-й — `failed`; остальные письма пачки
-   уходят. В лог — `id` письма и класс ошибки (ошибка не из `OSError` — `ERROR` со стеком),
-   без текста: в нём бывает адрес. `SKIP LOCKED` позволяет запустить несколько воркеров без
-   дублей. Команда (`Command.poll()`): пачка пуста — пауза 1 с; `DatabaseError` — запись в
-   лог, `close_old_connections()` и пауза 5 с, процесс не завершается.
-2. **Напоминания — реализовано (фаза 5):** `registrations.services.enqueue_reminders()` в
-   одной транзакции: события с `starts_at − 24h ≤ now < starts_at` (`FOR UPDATE SKIP LOCKED`)
-   → письмо `reminder` каждому `confirmed` с `confirmed_at < starts_at − 24h`, у которого ещё
-   нет письма с ключом `reminder:{reg_id}:{schedule_version}`; возвращает число поставленных.
-   Ничего не планируется заранее, поэтому перезапуск и перенос события ничего не ломают, а
-   воркер, лежавший во время окна, досылает, пока событие не началось. Воркер вызывает проход
-   в `Command.remind()` перед пачкой рассылки, не чаще раза в 30 с (`REMINDER_INTERVAL`,
-   `time.monotonic()`); упавший проход повторяется через тот же интервал и рассылку не
-   останавливает: ошибка БД — предупреждение и `close_old_connections()`, любая другая —
-   `ERROR` с классом и стеком, без текста.
-3. **Чистка** отправленных писем старше N дней — не запланирована: Non-Goal фазы 2, в
-   «на потом» `docs/features/emails/tasks.md`.
+1. **Sending — implemented (phase 2):** `emails.services.process_batch()` — in one transaction
+   `SELECT … FOR UPDATE SKIP LOCKED` of up to 20 `pending` emails with `next_attempt_at ≤ now`
+   (by `next_attempt_at, id`) → SMTP one by one, each email with its own connection, timeout
+   `EMAIL_TIMEOUT = 10` s → `sent` + `sent_at`. Any exception while sending is a failed attempt:
+   `attempts += 1`, `last_error`, `next_attempt_at = now + 30 s · 2^(attempts−1)`, on the 5th —
+   `failed`; the other emails of the batch go out. The log gets the email `id` and the error class
+   (an error not from `OSError` — `ERROR` with a stack trace), without the text: it may contain an
+   address. `SKIP LOCKED` lets several workers run without duplicates. The command
+   (`Command.poll()`): an empty batch — a 1 s pause; `DatabaseError` — a log entry,
+   `close_old_connections()` and a 5 s pause, the process does not exit.
+2. **Reminders — implemented (phase 5):** `registrations.services.enqueue_reminders()` in one
+   transaction: events with `starts_at − 24h ≤ now < starts_at` (`FOR UPDATE SKIP LOCKED`) → a
+   `reminder` email to each `confirmed` one with `confirmed_at < starts_at − 24h` who does not have
+   an email with the key `reminder:{reg_id}:{schedule_version}` yet; returns the number queued.
+   Nothing is scheduled in advance, so a restart and a reschedule break nothing, and a worker that
+   was down during the window catches up while the event has not started. The worker runs the pass
+   in `Command.remind()` before the sending batch, no more often than once every 30 s
+   (`REMINDER_INTERVAL`, `time.monotonic()`); a failed pass is retried after the same interval and
+   does not stop sending: a database error — a warning and `close_old_connections()`, any other —
+   `ERROR` with the class and stack trace, without the text.
+3. **Cleanup** of sent emails older than N days — not planned: a Non-Goal of phase 2, in "Later"
+   of `docs/features/emails/tasks.md`.
 
-| kind          | Кому                                                                | Когда                         |
-| ------------- | ------------------------------------------------------------------- | ----------------------------- |
-| `ticket`      | получил место при регистрации                                       | один раз                      |
-| `waitlisted`  | попал в лист ожидания; номер «на момент письма» + ссылка управления | один раз при попадании в лист |
-| `promoted`    | повышен из листа ожидания                                           | один раз                      |
-| `reminder`    | `confirmed`, место получено до начала 24-часового окна              | раз на каждую дату события    |
-| `rescheduled` | `confirmed` и `waitlisted`                                          | раз на каждый перенос         |
+| kind          | To whom                                                                        | When                               |
+| ------------- | ------------------------------------------------------------------------------ | ---------------------------------- |
+| `ticket`      | got a seat on registration                                                     | once                               |
+| `waitlisted`  | got onto the waitlist; the position "at the time of the email" + a manage link | once, on getting onto the waitlist |
+| `promoted`    | promoted from the waitlist                                                     | once                               |
+| `reminder`    | `confirmed`, the seat was obtained before the 24-hour window started           | once per event date                |
+| `rescheduled` | `confirmed` and `waitlisted`                                                   | once per reschedule                |
 
-Письма `ticket`, `waitlisted`, `promoted` — реализовано (фаза 2), `rescheduled` и `reminder` —
-фаза 5: простой текст по-русски, шаблоны `emails/templates/emails/<kind>.txt`, во всех —
-название и дата события (UTC) и ссылка `{FRONTEND_URL}/tickets/{manage_token}`. `rescheduled`
-— было / стало; подтверждённому — код, стоящему в листе — «вы в листе ожидания» без номера
-(номер устаревает, ссылка показывает текущий). `reminder` — дата и код, без «через сутки»:
-напоминание может уйти и позже в окне (перенос внутрь него, воркер после простоя). Письма
-рендерит и backend, и воркер (напоминания), поэтому `FRONTEND_URL` задан обоим.
+The `ticket`, `waitlisted`, `promoted` emails are implemented (phase 2), `rescheduled` and
+`reminder` — phase 5: plain text in Russian, the templates are `emails/templates/emails/<kind>.txt`,
+all have the event title and date (UTC) and the link `{FRONTEND_URL}/tickets/{manage_token}`.
+`rescheduled` — was / now; to a confirmed one — the code, to one on the waitlist — "you are on the
+waitlist" without the position (the position gets outdated, the link shows the current one).
+`reminder` — the date and the code, without "in a day": a reminder may go out later in the window
+(a reschedule into it, a worker after downtime). Emails are rendered both by the backend and by the
+worker (reminders), so `FRONTEND_URL` is set for both.
 
-- Повторная регистрация на тот же email писем не шлёт.
-- Почта: Mailpit в compose, `locmem` в unit-тестах; e2e читает письма через API Mailpit.
-- Создание письма — ровно один раз (`UNIQUE dedup_key`); доставка — «хотя бы один раз»:
-  падение воркера между SMTP и записью `sent` даёт повтор (сказано в README).
+- Registering again with the same email sends no emails.
+- Email: Mailpit in compose, `locmem` in unit tests; e2e reads emails through the Mailpit API.
+- An email is created exactly once (`UNIQUE dedup_key`); delivery is "at least once": a worker
+  crash between SMTP and writing `sent` gives a repeat (stated in the README).
 
-## Фронтенд: экраны
+## Frontend: screens
 
-- **Реализовано:** состояние сервиса (`/health`), вход организатора, создание события, список событий организатора; публичный список событий (`/`) и страница события с регистрацией (`/events/:id`: результат «место подтверждено» или «вы в листе ожидания, №N»). Страница билета по ссылке из письма (`/tickets/:token`): код, «вы в листе ожидания, №N» или «регистрация отменена» со ссылкой на событие; «билет не найден»; отказ с подтверждением; отмеченный на входе билет — «вы отмечены на входе в ЧЧ:ММ» без отказа (фаза 3). Панель события организатора (`/org/events/:id`, фаза 3): счётчики мест, подтверждённых, листа ожидания, пришедших и свободных мест, таблица участников в порядке очереди с фильтром по статусу в URL. Экран чекина (`/org/events/:id/checkin`, фаза 3): поле кода, крупный ответ на месте формы — «пропущен» с именем и маскированным email, «уже отмечен в ЧЧ:ММ», «билет не найден», «билет не подтверждён» — и «Следующий»; без названия события чекин работает. Фаза 4: событие организатора — макет `/org/events/:id` с одним `GET`, потоком, шапкой (название, дата, счётчики) и вкладками «Участники» и «Чекин»; счётчики живые, при обрыве — «Соединение потеряно, переподключаюсь…»; таблица участников — по 50 на страницу (`?page=`), снимок с другими счётчиками показывает «Есть обновления» с кнопкой «Обновить». Страница события — живое число свободных мест. Фаза 5: вкладка «Редактирование» макета события (`/org/events/:id/edit`) — форма создания (общая модель — `entities/event`) с текущими значениями; отправляются только изменённые поля, без изменений кнопка неактивна; перенос даты — подтверждение с числом получателей письма (без участников — без подтверждения); «Не меньше подтверждённых: N» при лимите ниже; шапку и счётчики после сохранения обновляет снимок потока.
-- **Реализовано (фаза 6):** общий макет `app/ui/AppLayout.vue` — шапка и один `<main>` вокруг `RouterView`. В шапке — «События», для гостя «Вход для организатора», для вошедшего «Мои события», email (с `sm`) и «Выйти» (`POST logout` → `/`); текущая страница выделена и с `aria-current="page"` (`shared/ui/nav-link`). Без сети — плашка «Нет подключения к интернету» под шапкой. Состояния запросов — `QueryState` (`shared/ui/query-state`): «Загружаем…», ошибка с «Повторить» и «Состояние сервиса» (`/health`) на месте данных, которых ещё нет, или алерт над прежними; «не найдено» и «нет доступа» — `ErrorState` / `NotFound` (`shared/ui/error-state`), неизвестный адрес — маршрут `notFound` последним. Списки `/` и `/org/events` — вкладки «Предстоящие» / «Прошедшие» (`?period=past`, `shared/ui/filter-link`) и страницы по 20 (`?page=`, `shared/ui/page-nav`; за концом — «Здесь событий нет» со ссылкой на последнюю); та же полоса страниц — у участников. Формы события — `textarea` описания и счётчик символов (`shared/ui/char-counter`); длинное описание свёрнуто до 4 строк (`shared/ui/expandable-text`). Чекин — «Следующий» неактивна 1 с после ответа; время отметки — с датой, если не сегодня. Каждый экран помещается в 360 px без прокрутки вбок (e2e `screens-fit-phone`).
+- **Implemented:** the service status (`/health`), organizer login, event creation, the
+  organizer's event list; the public event list (`/`) and the event page with registration
+  (`/events/:id`: the result is "seat confirmed" or "you are on the waitlist, #N"). The ticket page
+  from the email link (`/tickets/:token`): the code, "you are on the waitlist, #N" or
+  "registration cancelled" with a link to the event; "ticket not found"; cancellation with a
+  confirmation; a ticket checked in at the entrance — "you were checked in at HH:MM" without
+  cancellation (phase 3). The organizer's event panel (`/org/events/:id`, phase 3): counters of
+  seats, confirmed, waitlisted, arrived and free seats, a table of participants in queue order
+  with a status filter in the URL. The check-in screen (`/org/events/:id/checkin`, phase 3): a code
+  field, a large answer in place of the form — "admitted" with the name and a masked email,
+  "already checked in at HH:MM", "ticket not found", "ticket not confirmed" — and "Next"; check-in
+  works without the event title. Phase 4: the organizer's event is the `/org/events/:id` layout
+  with one `GET`, a stream, a header (title, date, counters) and the "Participants" and
+  "Check-in" tabs; the counters are live, on a break — "Connection lost, reconnecting…"; the
+  participant table has 50 per page (`?page=`), a snapshot with other counters shows "There are
+  updates" with a "Refresh" button. The event page has a live number of free seats. Phase 5: the
+  "Edit" tab of the event layout (`/org/events/:id/edit`) — the creation form (the shared model is
+  `entities/event`) with the current values; only the changed fields are sent, without changes the
+  button is disabled; a date change asks for confirmation with the number of email recipients
+  (without participants — no confirmation); "At least the confirmed count: N" when the limit is
+  lower; the header and counters are refreshed after saving by the stream snapshot.
+- **Implemented (phase 6):** the shared layout `app/ui/AppLayout.vue` — a header and one `<main>`
+  around `RouterView`. The header has "Events", "Organizer login" for a guest, and for a logged-in
+  user "My events", the email (from `sm`) and "Log out" (`POST logout` → `/`); the current page is
+  highlighted and has `aria-current="page"` (`shared/ui/nav-link`). Without network — a "No
+  internet connection" bar under the header. Request states — `QueryState`
+  (`shared/ui/query-state`): "Loading…", an error with "Retry" and "Service status" (`/health`) in
+  place of data that is not there yet, or an alert above the previous data; "not found" and "no
+  access" — `ErrorState` / `NotFound` (`shared/ui/error-state`), an unknown address — the
+  `notFound` route last. The `/` and `/org/events` lists have the "Upcoming" / "Past" tabs
+  (`?period=past`, `shared/ui/filter-link`) and pages of 20 (`?page=`, `shared/ui/page-nav`; past
+  the end — "No events here" with a link to the last page); the participants have the same page
+  bar. The event forms have a description `textarea` and a character counter
+  (`shared/ui/char-counter`); a long description is collapsed to 4 lines
+  (`shared/ui/expandable-text`). Check-in — "Next" is disabled for 1 s after an answer; the
+  check-in time has the date if it is not today. Every screen fits into 360 px without horizontal
+  scrolling (e2e `screens-fit-phone`).
 
-## Окружение и демо-данные
+## Environment and demo data
 
-- **Реализовано:** `make up` поднимает `postgres`, `backend`, `frontend` с healthcheck,
-  `mailpit` и `worker` (фаза 2; воркер ждёт healthy `backend` и `mailpit`).
-- **Реализовано:** демо-учётки — идемпотентная команда `create_demo_users`, `make demo-users`
-  после `make up` (`make e2e` вызывает её сам); при старте `backend` не запускается, пароль,
-  который подходит, не меняет — сессии демо-учёток переживают перезапуск. Две отдельные
-  учётки, роли не совмещаются:
-  - организатор `demo@example.com` / `demo` — экраны организатора; им входят проверяющий и
-    e2e; без `is_staff`;
-  - администратор `admin@example.com` / `admin` — только админка Django (`is_staff`,
+- **Implemented:** `make up` starts `postgres`, `backend`, `frontend` with healthchecks, `mailpit`
+  and `worker` (phase 2; the worker waits for a healthy `backend` and `mailpit`).
+- **Implemented:** demo accounts — the idempotent `create_demo_users` command, `make demo-users`
+  after `make up` (`make e2e` calls it itself); it does not run at `backend` start and does not
+  change a password that already matches — the sessions of the demo accounts survive a restart.
+  Two separate accounts, the roles are not combined:
+  - the organizer `demo@example.com` / `demo` — the organizer screens; the reviewer and e2e log in
+    with it; no `is_staff`;
+  - the administrator `admin@example.com` / `admin` — only the Django admin (`is_staff`,
     `is_superuser`).
 
-  Только для локального демо: пароли известны, в README так и сказано.
+  For a local demo only: the passwords are known, and the README says so.
 
-- **Реализовано (фаза 5):** `make seed` (`seed_demo`, только при `DEBUG`; сам создаёт
-  демо-учётки) — демо-организатору каждый запуск добавляет событие через неделю на 2 места
-  (2 подтверждено, 1 в листе) и событие через ~23 ч на 10 мест с 3 участниками, у которых
-  `confirmed_at` на 2 дня раньше (в названиях — «Демо»). Регистрации — через `register`;
-  через ~30 с в Mailpit — три напоминания. Не идемпотентна: событие «завтра» за сутки
-  устаревает, новый запуск даёт свежее.
+- **Implemented (phase 5):** `make seed` (`seed_demo`, only with `DEBUG`; creates the demo accounts
+  itself) — on each run adds to the demo organizer an event in a week with 2 seats (2 confirmed,
+  1 on the waitlist) and an event in ~23 h with 10 seats and 3 participants whose `confirmed_at` is
+  2 days earlier (the titles contain "Демо"). Registrations go through `register`; ~30 s later
+  there are three reminders in Mailpit. Not idempotent: the "tomorrow" event gets outdated within a
+  day, a new run gives a fresh one.

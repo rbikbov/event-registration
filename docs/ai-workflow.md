@@ -1,51 +1,51 @@
-# Как делалось с ИИ
+# How it was built with AI
 
-## Модель и инструмент
+## Model and tool
 
-Claude Code (CLI, WSL). Модели — Claude Opus 5.5 (основная: 261 коммит с её подписью
-`Co-Authored-By` на закрытии фазы 7) и Claude Sonnet 5.5 (54 коммита, почти все — 30 октября).
-Пересчитать: `git log --format='%(trailers:key=Co-Authored-By,valueonly)' | grep -ci opus`.
+Claude Code (CLI, WSL). Models — Claude Opus 5.5 (the main one: 261 commits with its
+`Co-Authored-By` signature at the close of phase 7) and Claude Sonnet 5.5 (54 commits, almost all
+on October 30). To recount: `git log --format='%(trailers:key=Co-Authored-By,valueonly)' | grep -ci opus`.
 
-Claude Code — агент в терминале: сам запускает тесты, git и Docker, а хуки, skills и
-субагенты встраивают проверки и независимое ревью прямо в процесс. Сначала план и ревью
-делались с Opus, а реализация — с Sonnet; но при моей скорости работы Opus был комфортнее и
-для реализации, а лимита подписки на него хватало целиком — поэтому дальше всё шло на Opus.
+Claude Code is an agent in the terminal: it runs tests, git and Docker itself, and hooks, skills
+and subagents build checks and an independent review right into the process. At first the plan
+and the review were done with Opus and the implementation with Sonnet; but at my pace of work Opus
+was more comfortable for the implementation too, and the subscription limit for it was enough for
+everything — so from then on everything ran on Opus.
 
-Как с агентом работали — [AGENTS.md](../AGENTS.md) (правила, которые агент читает в начале
-каждой сессии), `.claude/skills/` (процедуры: фаза от spec до ревью, передача сессии,
-проверка на мусор), `.claude/agents/reviewer.md` (независимое ревью каждого этапа с чистым
-контекстом), `.claude/hooks/` (форматирование после правки, запрет `--no-verify` и force push).
-Решения, принятые в обсуждении с агентом, — в [docs/decisions.md](decisions.md) с
-временем; spec и задачи каждой фазы — в `docs/features/<фаза>/`.
+How we worked with the agent — [AGENTS.md](../AGENTS.md) (the rules the agent reads at the start of
+each session), `.claude/skills/` (procedures: a phase from spec to review, session handoff, a check
+for junk), `.claude/agents/reviewer.md` (an independent review of each stage with a clean context),
+`.claude/hooks/` (formatting after an edit, a ban on `--no-verify` and force push). The decisions
+made in discussions with the agent are in [docs/decisions.md](decisions.md) with the time; the spec
+and tasks of each phase are in `docs/features/<phase>/`.
 
-Экспорт сессий агента — [docs/session/](session/): по файлу на сессию Claude Code, текстом
-в формате, близком к `/export` (запросы, ответы, вызовы инструментов и начало их вывода; без
-мыслей модели и переписки субагентов). Имя — начало сессии и примерное время работы: паузы
-между репликами считаются не больше 15 минут. Пересобрать или дополнить —
-`make export-sessions`.
+The agent session export is in [docs/session/](session/): a file per Claude Code session, as text
+in a format close to `/export` (requests, answers, tool calls and the start of their output; without
+the model's thinking and subagent conversations). The name is the session start and the approximate working time: pauses between messages count for at
+most 15 minutes. To rebuild or extend — `make export-sessions`.
 
-## Ход работы
+## Course of work
 
-Работа шла с 28 октября по 4 ноября 2026 года, сессиями. Каждая сессия отмечена в
-[docs/decisions.md](decisions.md) маркерами `▶ начало` и `■ конец`; `make worktime`
-суммирует их (на закрытии фазы 7 — 58 ч 35 мин). Маркеры заведены вечером 29 октября, более
-ранние сессии отмечены задним числом по времени коммитов (такие записи помечены). Этапы фаз —
-отдельные ветки и PR с этапа 3 фазы 1 (PR #1); с него же каждый этап проходит независимое
-ревью агентом `reviewer`, с PR #7 — в отдельной копии репозитория и своём стеке.
-Коммиты — маленькими шагами, по одному на задачу.
+The work went from October 28 to November 4, 2026, in sessions. Each session is marked in
+[docs/decisions.md](decisions.md) with the `▶ start` and `■ end` markers; `make worktime` sums them
+(58 h 35 min at the close of phase 7). The markers were introduced on the evening of October 29,
+earlier sessions are marked retroactively by commit times (such entries are labeled). Phase stages
+are separate branches and PRs since stage 3 of phase 1 (PR #1); since then each stage also gets an
+independent review by the `reviewer` agent, since PR #7 in a separate copy of the repository and its
+own stack. Commits are small steps, one per task.
 
-## Что взято чужое
+## What was borrowed
 
-- Устройство правил агента (`AGENTS.md` + `CLAUDE.md`, правила, которые действуют всегда),
-  skills `feature-workflow`, `fsd-frontend`, `anti-slop-review` и агент `reviewer` — из моего
-  шаблона [rbikbov/frontend-starter](https://github.com/rbikbov/frontend-starter), адаптированы
-  под Django + Vue (`docs/decisions.md`, 2026-10-28, 21:25, 21:41 и 23:00). Хуки и skills
-  `session-handoff`, `api-change` написаны в этом проекте.
-- Skills `vue-best-practices`, `vue-router-best-practices`, `vue-testing-best-practices`
-  ([vuejs-ai/skills](https://github.com/vuejs-ai/skills)) и `django-security`
-  ([affaan-m/ecc](https://github.com/affaan-m/ecc)) — целиком, через `npx skills add`; версии —
-  в `skills-lock.json`, лежат в `.agents/skills/`.
-- UI-компоненты — [shadcn-vue](https://www.shadcn-vue.com/), сгенерированы его CLI в
+- The structure of the agent rules (`AGENTS.md` + `CLAUDE.md`, rules that always apply), the
+  `feature-workflow`, `fsd-frontend`, `anti-slop-review` skills and the `reviewer` agent — from my
+  template [rbikbov/frontend-starter](https://github.com/rbikbov/frontend-starter), adapted to
+  Django + Vue (`docs/decisions.md`, 2026-10-28, 21:25, 21:41 and 23:00). The hooks and the
+  `session-handoff`, `api-change` skills were written in this project.
+- The `vue-best-practices`, `vue-router-best-practices`, `vue-testing-best-practices` skills
+  ([vuejs-ai/skills](https://github.com/vuejs-ai/skills)) and `django-security`
+  ([affaan-m/ecc](https://github.com/affaan-m/ecc)) — whole, through `npx skills add`; the versions
+  are in `skills-lock.json`, they live in `.agents/skills/`.
+- UI components — [shadcn-vue](https://www.shadcn-vue.com/), generated by its CLI into
   `frontend/src/shared/ui/shadcn/`.
-- Каркасы Django и Vue генераторами (`startproject`, `create-vue`) не создавались — написаны
-  агентом.
+- The Django and Vue skeletons were not created by generators (`startproject`, `create-vue`) — they
+  were written by the agent.
