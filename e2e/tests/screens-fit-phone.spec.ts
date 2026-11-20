@@ -35,9 +35,9 @@ test("every screen fits a 360 px phone without scrolling sideways", async ({
 
   const email = `phone-width-${Date.now()}-a-rather-long-address@example.com`;
   await participant.getByLabel("Email").fill(email);
-  await participant.getByLabel("Имя").fill(name);
-  await participant.getByRole("button", { name: "Зарегистрироваться" }).click();
-  await expect(participant.getByRole("status")).toHaveText("Место подтверждено");
+  await participant.getByLabel("Name").fill(name);
+  await participant.getByRole("button", { name: "Register" }).click();
+  await expect(participant.getByRole("status")).toHaveText("Seat confirmed");
   await expectFits(participant, "the event page after registering");
 
   const ticketEmail = await emailTo(request, email, "Билет");
@@ -52,7 +52,7 @@ test("every screen fits a 360 px phone without scrolling sideways", async ({
   await expectFits(participant, "the 404 page");
 
   await participant.goto("/login");
-  await expect(participant.getByRole("heading", { name: "Вход для организатора" })).toBeVisible();
+  await expect(participant.getByRole("heading", { name: "Organizer login" })).toBeVisible();
   await expectFits(participant, "the sign-in page");
   await participant.context().close();
 

@@ -14,9 +14,9 @@ test("a check-in at the entrance updates the arrivals on a panel open elsewhere"
   await participant.goto("/");
   await participant.getByRole("link", { name: title }).click();
   await participant.getByLabel("Email").fill(email);
-  await participant.getByLabel("Имя").fill("Борис");
-  await participant.getByRole("button", { name: "Зарегистрироваться" }).click();
-  await expect(participant.getByRole("status")).toHaveText("Место подтверждено");
+  await participant.getByLabel("Name").fill("Борис");
+  await participant.getByRole("button", { name: "Register" }).click();
+  await expect(participant.getByRole("status")).toHaveText("Seat confirmed");
   await participant.context().close();
   const code = extract(await emailTo(request, email, "Билет"), /Код билета: (\S+)/);
 
@@ -53,9 +53,9 @@ test("a check-in at one entrance updates the arrivals on another check-in screen
   await participant.goto("/");
   await participant.getByRole("link", { name: title }).click();
   await participant.getByLabel("Email").fill(email);
-  await participant.getByLabel("Имя").fill("Глеб");
-  await participant.getByRole("button", { name: "Зарегистрироваться" }).click();
-  await expect(participant.getByRole("status")).toHaveText("Место подтверждено");
+  await participant.getByLabel("Name").fill("Глеб");
+  await participant.getByRole("button", { name: "Register" }).click();
+  await expect(participant.getByRole("status")).toHaveText("Seat confirmed");
   await participant.context().close();
   const code = extract(await emailTo(request, email, "Билет"), /Код билета: (\S+)/);
 

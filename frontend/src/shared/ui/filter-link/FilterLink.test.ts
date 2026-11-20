@@ -14,7 +14,7 @@ async function mountLink(current: boolean) {
   await router.push(routes.home);
   return mount(FilterLink, {
     props: { to: { path: routes.home, query: { period: "past" } }, current },
-    slots: { default: "Прошедшие" },
+    slots: { default: "Past" },
     global: { plugins: [router] },
   }).get("a");
 }
@@ -38,6 +38,6 @@ describe("FilterLink", () => {
     const link = await mountLink(false);
 
     expect(link.attributes("href")).toBe(`${routes.home}?period=past`);
-    expect(link.text()).toBe("Прошедшие");
+    expect(link.text()).toBe("Past");
   });
 });

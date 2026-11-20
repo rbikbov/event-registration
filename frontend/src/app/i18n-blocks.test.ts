@@ -12,20 +12,11 @@ const sources = import.meta.glob<string>("/src/**/*.vue", {
 // Components not translated yet (tasks 1.2–1.3 of docs/features/english-ui/tasks.md): they still
 // show Russian through the fallback. Each one leaves the list in the commit that translates it.
 const PENDING = [
-  "/src/pages/event/ui/EventPage.vue",
-  "/src/pages/health/ui/HealthPage.vue",
-  "/src/pages/login/ui/LoginPage.vue",
   "/src/pages/org-checkin/ui/OrgCheckinPage.vue",
   "/src/pages/org-event-edit/ui/OrgEventEditPage.vue",
   "/src/pages/org-event-new/ui/OrgEventNewPage.vue",
   "/src/pages/org-event-participants/ui/OrgEventParticipantsPage.vue",
   "/src/pages/org-event/ui/OrgEventLayout.vue",
-  "/src/pages/ticket/ui/TicketPage.vue",
-  "/src/shared/ui/error-state/NotFound.vue",
-  "/src/shared/ui/expandable-text/ExpandableText.vue",
-  "/src/shared/ui/page-nav/PageNav.vue",
-  "/src/shared/ui/query-state/QueryState.vue",
-  "/src/shared/ui/query-state/RetryAlert.vue",
 ];
 
 const BLOCK = /<i18n lang="json" locale="(\w+)">([\s\S]*?)<\/i18n>/g;

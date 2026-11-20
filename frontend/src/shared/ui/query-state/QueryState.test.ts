@@ -44,7 +44,7 @@ describe("QueryState", () => {
   it("shows a loading state until the data arrives, then the data", async () => {
     const { wrapper } = mountWith(() => Promise.resolve("Meetup"));
 
-    expect(wrapper.get('[role="status"]').text()).toBe("Загружаем…");
+    expect(wrapper.get('[role="status"]').text()).toBe("Loading…");
     await flushPromises();
 
     expect(wrapper.find('[role="status"]').exists()).toBe(false);
@@ -73,7 +73,7 @@ describe("QueryState", () => {
     await flushPromises();
 
     const link = wrapper.get('[role="alert"] a');
-    expect(link.text()).toBe("Состояние сервиса");
+    expect(link.text()).toBe("Service status");
     expect(link.attributes("href")).toBe(routes.health);
   });
 
@@ -116,7 +116,7 @@ describe("QueryState", () => {
 
     await wrapper.get('[role="alert"] button').trigger("click");
 
-    expect(wrapper.get('[role="status"]').text()).toBe("Загружаем…");
+    expect(wrapper.get('[role="status"]').text()).toBe("Loading…");
     expect(wrapper.find('[role="alert"]').exists()).toBe(false);
   });
 
@@ -137,7 +137,7 @@ describe("QueryState", () => {
     await flushPromises();
 
     const button = wrapper.get('[role="alert"] button');
-    expect(button.text()).toBe("Загружаем…");
+    expect(button.text()).toBe("Loading…");
     expect(button.attributes("disabled")).toBeDefined();
     expect(wrapper.get("[data-shown]").text()).toBe("Meetup");
     await button.trigger("click");

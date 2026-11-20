@@ -20,24 +20,24 @@ test("a cancelled seat goes to the waitlist head, who gets an email with the tic
   const first = await participantPage(browser, consoleErrors);
   const firstEmail = `promoted-first-${Date.now()}@example.com`;
   await registerOn(first, title, firstEmail, "Анна");
-  await expect(first.getByRole("status")).toHaveText("Место подтверждено");
+  await expect(first.getByRole("status")).toHaveText("Seat confirmed");
 
   const waiting = await participantPage(browser, consoleErrors);
   const waitingEmail = `promoted-waiting-${Date.now()}@example.com`;
   await registerOn(waiting, title, waitingEmail, "Борис");
-  await expect(waiting.getByRole("status")).toHaveText("Вы в листе ожидания, №1");
+  await expect(waiting.getByRole("status")).toHaveText("You are on the waitlist, #1");
 
   const waitlisted = await emailTo(request, waitingEmail, "Лист ожидания");
   expect(waitlisted).toContain("№1");
   const waitingLink = extract(waitlisted, /(http\S+\/tickets\/\S+)/);
   await waiting.goto(waitingLink);
-  await expect(waiting.getByText("Вы в листе ожидания, №1")).toBeVisible();
+  await expect(waiting.getByText("You are on the waitlist, #1")).toBeVisible();
 
   const ticket = await emailTo(request, firstEmail, "Билет");
   await first.goto(extract(ticket, /(http\S+\/tickets\/\S+)/));
-  await first.getByRole("button", { name: "Отказаться" }).click();
-  await first.getByRole("button", { name: "Да, отказаться" }).click();
-  await expect(first.getByText("Регистрация отменена")).toBeVisible();
+  await first.getByRole("button", { name: "Cancel" }).click();
+  await first.getByRole("button", { name: "Yes, cancel" }).click();
+  await expect(first.getByText("Registration cancelled")).toBeVisible();
 
   const promoted = await emailTo(request, waitingEmail, "Освободилось место");
   const code = extract(promoted, /Код билета: (\S+)/);
@@ -45,7 +45,7 @@ test("a cancelled seat goes to the waitlist head, who gets an email with the tic
   expect(extract(promoted, /(http\S+\/tickets\/\S+)/)).toBe(waitingLink);
   await waiting.goto(waitingLink);
   await expect(waiting.getByText(code, { exact: true })).toBeVisible();
-  await expect(waiting.getByText("Вы в листе ожидания")).toBeHidden();
+  await expect(waiting.getByText("You are on the waitlist")).toBeHidden();
   expect(consoleErrors).toEqual([]);
   await first.context().close();
   await waiting.context().close();

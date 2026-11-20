@@ -215,3 +215,30 @@ const fields: { name: "email" | "name"; type: string; autocomplete: string }[] =
   }
 }
 </i18n>
+
+<i18n lang="json" locale="en">
+{
+  "error": "Could not load the event",
+  "refreshError": "Could not refresh the event, showing the previous data",
+  "notFound": "No such event",
+  "freeSeats": "{count} seat free | {count} seats free",
+  "noSeats": "No free seats, you can join the waitlist",
+  "register": "Registration",
+  "fields": {
+    "email": "Email",
+    "name": "Name"
+  },
+  "submit": "Register",
+  "submitting": "Sending…",
+  "confirmed": "Seat confirmed",
+  "waitlisted": "You are on the waitlist, #{position}",
+  "waitlistedNoPosition": "You are on the waitlist",
+  "tryLater": "Could not register, try again later",
+  "errors": {
+    "required": "Required field",
+    "blank": "Required field",
+    "max_length": "The value is too long",
+    "invalid": "Invalid value"
+  }
+}
+</i18n>

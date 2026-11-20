@@ -7,10 +7,10 @@ test("organizer signs in, creates an event and sees it in the list", async ({ pa
   const startsAt = `${new Date().getFullYear() + 1}-05-01T18:00`;
 
   await page.goto("/org/events");
-  await expect(page.getByRole("heading", { name: "Вход для организатора" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Organizer login" })).toBeVisible();
   await page.getByLabel("Email").fill(ORGANIZER.email);
-  await page.getByLabel("Пароль").fill(ORGANIZER.password);
-  await page.getByRole("button", { name: "Войти" }).click();
+  await page.getByLabel("Password").fill(ORGANIZER.password);
+  await page.getByRole("button", { name: "Log in" }).click();
 
   await expect(page.getByRole("heading", { name: "My events" })).toBeVisible();
   await page.getByRole("link", { name: "Create an event" }).click();
@@ -28,8 +28,8 @@ test("organizer signs in, creates an event and sees it in the list", async ({ pa
 test("organizer sees the field error from the form and stays on it", async ({ page }) => {
   await page.goto("/login");
   await page.getByLabel("Email").fill(ORGANIZER.email);
-  await page.getByLabel("Пароль").fill(ORGANIZER.password);
-  await page.getByRole("button", { name: "Войти" }).click();
+  await page.getByLabel("Password").fill(ORGANIZER.password);
+  await page.getByRole("button", { name: "Log in" }).click();
   await page.getByRole("link", { name: "Create an event" }).click();
 
   await page.getByRole("button", { name: "Создать", exact: true }).click();
@@ -48,10 +48,10 @@ test("organizer sees the field error from the form and stays on it", async ({ pa
 test("a wrong password shows the server error and keeps the login form", async ({ page }) => {
   await page.goto("/login");
   await page.getByLabel("Email").fill(ORGANIZER.email);
-  await page.getByLabel("Пароль").fill("not-the-password");
-  await page.getByRole("button", { name: "Войти" }).click();
+  await page.getByLabel("Password").fill("not-the-password");
+  await page.getByRole("button", { name: "Log in" }).click();
 
-  await expect(page.getByRole("alert")).toHaveText("Неверный email или пароль");
-  await expect(page.getByRole("heading", { name: "Вход для организатора" })).toBeVisible();
+  await expect(page.getByRole("alert")).toHaveText("Wrong email or password");
+  await expect(page.getByRole("heading", { name: "Organizer login" })).toBeVisible();
   await expect(page).toHaveURL(/\/login$/);
 });

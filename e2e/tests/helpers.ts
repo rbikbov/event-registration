@@ -16,8 +16,8 @@ export async function organizerPage(browser: Browser): Promise<Page> {
   const page = await (await browser.newContext()).newPage();
   await page.goto("/login");
   await page.getByLabel("Email").fill(ORGANIZER.email);
-  await page.getByLabel("Пароль").fill(ORGANIZER.password);
-  await page.getByRole("button", { name: "Войти" }).click();
+  await page.getByLabel("Password").fill(ORGANIZER.password);
+  await page.getByRole("button", { name: "Log in" }).click();
   await expect(page.getByRole("heading", { name: "My events" })).toBeVisible();
   return page;
 }
@@ -82,8 +82,8 @@ export async function registerOn(
   await page.goto("/");
   await page.getByRole("link", { name: title }).click();
   await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Имя").fill(name);
-  await page.getByRole("button", { name: "Зарегистрироваться" }).click();
+  await page.getByLabel("Name").fill(name);
+  await page.getByRole("button", { name: "Register" }).click();
 }
 
 // The organizer opens the edit tab of their event from the list of their events.

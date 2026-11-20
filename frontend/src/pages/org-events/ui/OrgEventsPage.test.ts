@@ -68,7 +68,7 @@ describe("OrgEventsPage", () => {
 
     const wrapper = await mountPage();
 
-    expect(wrapper.get('[role="status"]').text()).toBe("Загружаем…");
+    expect(wrapper.get('[role="status"]').text()).toBe("Loading…");
     await flushPromises();
   });
 
@@ -195,7 +195,7 @@ describe("OrgEventsPage", () => {
     const { wrapper, router } = await mountAt(`${routes.orgEvents}?page=3`);
     await vi.waitFor(() => expect(wrapper.text()).toContain("Meetup 300"));
 
-    await wrapper.get(PAGE_NAV).get('button[aria-label="Предыдущая страница"]').trigger("click");
+    await wrapper.get(PAGE_NAV).get('button[aria-label="Previous page"]').trigger("click");
 
     await vi.waitFor(() => expect(wrapper.text()).toContain("Meetup 200"));
     expect(router.currentRoute.value.query).toEqual({ page: "2" });
@@ -273,7 +273,7 @@ describe("OrgEventsPage", () => {
     const { wrapper, router } = await mountAt(`${routes.orgEvents}?period=past`);
     await vi.waitFor(() => expect(wrapper.find(PAGE_NAV).exists()).toBe(true));
 
-    await wrapper.get(PAGE_NAV).get('button[aria-label="Страница 2"]').trigger("click");
+    await wrapper.get(PAGE_NAV).get('button[aria-label="Page 2"]').trigger("click");
 
     await vi.waitFor(() => expect(asked).toEqual(["past 1", "past 2"]));
     expect(router.currentRoute.value.fullPath).toBe(`${routes.orgEvents}?period=past&page=2`);

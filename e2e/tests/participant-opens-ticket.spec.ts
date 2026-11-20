@@ -17,9 +17,9 @@ test("the ticket email leads to the ticket page, where the participant cancels",
   await participant.goto("/");
   await participant.getByRole("link", { name: title }).click();
   await participant.getByLabel("Email").fill(email);
-  await participant.getByLabel("Имя").fill("Анна");
-  await participant.getByRole("button", { name: "Зарегистрироваться" }).click();
-  await expect(participant.getByRole("status")).toHaveText("Место подтверждено");
+  await participant.getByLabel("Name").fill("Анна");
+  await participant.getByRole("button", { name: "Register" }).click();
+  await expect(participant.getByRole("status")).toHaveText("Seat confirmed");
 
   const text = await emailTo(request, email, "Билет");
   const code = extract(text, /Код билета: (\S+)/);
@@ -29,10 +29,10 @@ test("the ticket email leads to the ticket page, where the participant cancels",
   await expect(participant.getByRole("heading", { name: title, level: 1 })).toBeVisible();
   await expect(participant.getByText(code, { exact: true })).toBeVisible();
 
-  await participant.getByRole("button", { name: "Отказаться" }).click();
-  await participant.getByRole("button", { name: "Да, отказаться" }).click();
+  await participant.getByRole("button", { name: "Cancel" }).click();
+  await participant.getByRole("button", { name: "Yes, cancel" }).click();
 
-  await expect(participant.getByText("Регистрация отменена")).toBeVisible();
+  await expect(participant.getByText("Registration cancelled")).toBeVisible();
   await expect(participant.getByText(code, { exact: true })).toBeHidden();
   expect(consoleErrors).toEqual([]);
   await participantContext.close();

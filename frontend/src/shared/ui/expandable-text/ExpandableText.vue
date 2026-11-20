@@ -63,3 +63,10 @@ async function toggle(): Promise<void> {
   "collapse": "Свернуть"
 }
 </i18n>
+
+<i18n lang="json" locale="en">
+{
+  "expand": "Expand",
+  "collapse": "Collapse"
+}
+</i18n>

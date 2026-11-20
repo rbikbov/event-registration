@@ -145,6 +145,6 @@ describe("an address no route matches", () => {
 
     await vi.waitFor(() => expect(wrapper.get('[role="alert"] h1').text()).toBe("Page not found"));
     expect(router.currentRoute.value.fullPath).toBe(path);
-    expect(wrapper.get(`[role="alert"] a[href="${routes.home}"]`).text()).toBe("К событиям");
+    expect(wrapper.get(`[role="alert"] a[href="${routes.home}"]`).text()).toBe("To events");
   });
 });

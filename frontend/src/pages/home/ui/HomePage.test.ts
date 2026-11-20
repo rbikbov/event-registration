@@ -110,7 +110,7 @@ describe("HomePage", () => {
       },
     });
 
-    expect(wrapper.get('[role="status"]').text()).toBe("Загружаем…");
+    expect(wrapper.get('[role="status"]').text()).toBe("Loading…");
   });
 
   it("keeps the list when a refetch fails, with the error above it", async () => {
@@ -144,7 +144,7 @@ describe("HomePage", () => {
     const { wrapper, router } = await mountAt(`${routes.home}?page=2`);
     expect(wrapper.text()).toContain("Meetup 200");
 
-    await wrapper.get(PAGE_NAV).get('button[aria-label="Следующая страница"]').trigger("click");
+    await wrapper.get(PAGE_NAV).get('button[aria-label="Next page"]').trigger("click");
 
     await vi.waitFor(() => expect(wrapper.text()).toContain("Meetup 300"));
     expect(router.currentRoute.value.query).toEqual({ page: "3" });
@@ -155,7 +155,7 @@ describe("HomePage", () => {
     pagedList(45);
     const { wrapper, router } = await mountAt(`${routes.home}?page=2`);
 
-    await wrapper.get(PAGE_NAV).get('button[aria-label="Первая страница"]').trigger("click");
+    await wrapper.get(PAGE_NAV).get('button[aria-label="First page"]').trigger("click");
 
     await vi.waitFor(() => expect(wrapper.text()).toContain("Meetup 100"));
     expect(router.currentRoute.value.fullPath).toBe(routes.home);
@@ -231,7 +231,7 @@ describe("HomePage", () => {
     const { wrapper, router } = await mountAt(`${routes.home}?period=past`);
     await vi.waitFor(() => expect(wrapper.find(PAGE_NAV).exists()).toBe(true));
 
-    await wrapper.get(PAGE_NAV).get('button[aria-label="Страница 2"]').trigger("click");
+    await wrapper.get(PAGE_NAV).get('button[aria-label="Page 2"]').trigger("click");
 
     await vi.waitFor(() => expect(asked).toEqual(["past 1", "past 2"]));
     expect(router.currentRoute.value.fullPath).toBe(`${routes.home}?period=past&page=2`);

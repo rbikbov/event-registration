@@ -21,8 +21,8 @@ test("the organizer signs out, and signing in again leads back to the page asked
   await expect(page).toHaveURL("/login?next=/org/events");
 
   await page.getByLabel("Email").fill(ORGANIZER.email);
-  await page.getByLabel("Пароль").fill(ORGANIZER.password);
-  await page.getByRole("button", { name: "Войти" }).click();
+  await page.getByLabel("Password").fill(ORGANIZER.password);
+  await page.getByRole("button", { name: "Log in" }).click();
 
   await expect(page).toHaveURL("/org/events");
   await expect(page.getByRole("heading", { name: "My events" })).toBeVisible();

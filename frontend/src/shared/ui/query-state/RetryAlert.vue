@@ -29,3 +29,10 @@ const { t } = useI18n({ useScope: "local" });
   "retry": "Повторить"
 }
 </i18n>
+
+<i18n lang="json" locale="en">
+{
+  "loading": "Loading…",
+  "retry": "Retry"
+}
+</i18n>

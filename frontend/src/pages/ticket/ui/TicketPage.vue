@@ -174,3 +174,24 @@ function checkedInWhen(iso: string): string {
   "cancelFailed": "Не удалось отказаться, попробуйте позже"
 }
 </i18n>
+
+<i18n lang="json" locale="en">
+{
+  "error": "Could not load the ticket",
+  "refreshFailed": "Could not refresh the ticket",
+  "notFound": "Ticket not found",
+  "code": "Ticket code",
+  "checkedInTitle": "Ticket used",
+  "atTime": "at {time}",
+  "checkedIn": "You were checked in {when}. This code cannot be used again, and the registration cannot be cancelled.",
+  "waitlisted": "You are on the waitlist, #{position}",
+  "cancelled": "Registration cancelled",
+  "registerAgain": "Register again",
+  "cancel": "Cancel",
+  "confirmQuestion": "Cancel the registration?",
+  "confirmYes": "Yes, cancel",
+  "confirmNo": "No",
+  "cancelling": "Cancelling…",
+  "cancelFailed": "Could not cancel, try again later"
+}
+</i18n>

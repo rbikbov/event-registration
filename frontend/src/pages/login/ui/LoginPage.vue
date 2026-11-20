@@ -112,3 +112,19 @@ function submit(): void {
   }
 }
 </i18n>
+
+<i18n lang="json" locale="en">
+{
+  "title": "Organizer login",
+  "email": "Email",
+  "password": "Password",
+  "submit": "Log in",
+  "submitting": "Logging in…",
+  "wrongCredentials": "Wrong email or password",
+  "tryLater": "Could not log in, try again later",
+  "errors": {
+    "required": "Required field",
+    "invalid_email": "Enter an email like name{'@'}example.com"
+  }
+}
+</i18n>

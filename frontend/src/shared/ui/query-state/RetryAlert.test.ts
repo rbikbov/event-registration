@@ -26,7 +26,7 @@ describe("RetryAlert", () => {
     const wrapper = mountAlert(true);
 
     const button = wrapper.get("button");
-    expect(button.text()).toBe("Загружаем…");
+    expect(button.text()).toBe("Loading…");
     expect(button.attributes("disabled")).toBeDefined();
     await button.trigger("click");
 

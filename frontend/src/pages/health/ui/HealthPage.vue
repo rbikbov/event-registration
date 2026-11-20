@@ -36,3 +36,12 @@ const health = useQuery(healthQuery);
   "refreshError": "Backend или база данных перестали отвечать, показан прежний ответ"
 }
 </i18n>
+
+<i18n lang="json" locale="en">
+{
+  "title": "Service status",
+  "ok": "The backend and the database work",
+  "unavailable": "The backend or the database is not responding",
+  "refreshError": "The backend or the database stopped responding, showing the previous answer"
+}
+</i18n>

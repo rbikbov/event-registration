@@ -37,18 +37,18 @@ describe("ExpandableText", () => {
     const button = wrapper.get("button");
 
     expect(wrapper.get("p").classes()).toContain("line-clamp-4");
-    expect(button.text()).toBe("Развернуть");
+    expect(button.text()).toBe("Expand");
     expect(button.attributes("aria-expanded")).toBe("false");
     expect(button.attributes("aria-controls")).toBe(wrapper.get("p").attributes("id"));
 
     await button.trigger("click");
     expect(wrapper.get("p").classes()).not.toContain("line-clamp-4");
-    expect(button.text()).toBe("Свернуть");
+    expect(button.text()).toBe("Collapse");
     expect(button.attributes("aria-expanded")).toBe("true");
 
     await button.trigger("click");
     expect(wrapper.get("p").classes()).toContain("line-clamp-4");
-    expect(button.text()).toBe("Развернуть");
+    expect(button.text()).toBe("Expand");
   });
 
   it("measures again when the text changes", async () => {
@@ -59,7 +59,7 @@ describe("ExpandableText", () => {
     layout(200, 96);
     await wrapper.setProps({ text: "A description grown long" });
 
-    expect(wrapper.get("button").text()).toBe("Развернуть");
+    expect(wrapper.get("button").text()).toBe("Expand");
   });
 
   it("renders nothing for an empty text", async () => {

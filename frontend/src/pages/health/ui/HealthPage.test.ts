@@ -40,10 +40,10 @@ describe("HealthPage", () => {
     );
 
     const wrapper = mountPage();
-    expect(wrapper.get('[role="status"]').text()).toBe("Загружаем…");
+    expect(wrapper.get('[role="status"]').text()).toBe("Loading…");
 
     await vi.waitFor(() =>
-      expect(wrapper.get("[data-health]").text()).toBe("Backend и база данных работают"),
+      expect(wrapper.get("[data-health]").text()).toBe("The backend and the database work"),
     );
   });
 
@@ -58,7 +58,9 @@ describe("HealthPage", () => {
 
     // The answer of MSW may come later than a tick: wait for the result, not for the promises.
     await vi.waitFor(() =>
-      expect(wrapper.get('[role="alert"] h2').text()).toBe("Backend или база данных не отвечают"),
+      expect(wrapper.get('[role="alert"] h2').text()).toBe(
+        "The backend or the database is not responding",
+      ),
     );
   });
 
@@ -98,8 +100,8 @@ describe("HealthPage", () => {
     await flushPromises();
 
     expect(wrapper.get('[role="alert"]').text()).toContain(
-      "Backend или база данных перестали отвечать",
+      "The backend or the database stopped responding",
     );
-    expect(wrapper.get("[data-health]").text()).toBe("Backend и база данных работают");
+    expect(wrapper.get("[data-health]").text()).toBe("The backend and the database work");
   });
 });

@@ -83,3 +83,11 @@ function retry(): void {
   "health": "Состояние сервиса"
 }
 </i18n>
+
+<i18n lang="json" locale="en">
+{
+  "loading": "Loading…",
+  "retry": "Retry",
+  "health": "Service status"
+}
+</i18n>

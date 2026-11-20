@@ -27,3 +27,9 @@ const { t } = useI18n({ useScope: "local" });
   "toEvents": "К событиям"
 }
 </i18n>
+
+<i18n lang="json" locale="en">
+{
+  "toEvents": "To events"
+}
+</i18n>

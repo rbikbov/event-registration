@@ -9,7 +9,7 @@ Spec — `spec.md`. One task — one commit; the `[x]` check goes into the same 
       the e2e helpers), `NotFoundPage`; `index.html` in English; the Vitest test of matching
       `en`/`ru` keys (it lists the files without `en` until 1.3). Done when: Vitest of these
       components checks English; the home page is English in the browser.
-- [ ] 1.2. The participant's screens: the event page and the registration form, the ticket, login,
+- [x] 1.2. The participant's screens: the event page and the registration form, the ticket, login,
       `/health`, the `shared/ui` components. Done when: their Vitest tests check English.
 - [ ] 1.3. The organizer's screens: creation and editing (`entities/event` form errors),
       the event layout, the participants, check-in; the key test has no exceptions left. Done when:

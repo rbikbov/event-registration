@@ -112,3 +112,17 @@ function numbers(items: ({ type: "page"; value: number } | { type: "ellipsis" })
   "page": "Страница {n}"
 }
 </i18n>
+
+<i18n lang="json" locale="en">
+{
+  "first": "First page",
+  "firstShort": "First",
+  "previous": "Previous page",
+  "previousShort": "Previous",
+  "next": "Next page",
+  "nextShort": "Next",
+  "last": "Last page",
+  "lastShort": "Last",
+  "page": "Page {n}"
+}
+</i18n>
