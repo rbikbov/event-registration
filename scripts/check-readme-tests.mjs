@@ -1,12 +1,14 @@
-// Checks that every test the README «Требования и тесты» tables point to exists: the file, the
-// pytest function after `::`, a `test_x_*` glob and a test title in «…». Without it the table
-// drifts from the tests at the first rename.
+// Checks that every test the «Требования и тесты» tables point to exists — in README.md and in
+// docs/requirements.md: the file, the pytest function after `::`, a `test_x_*` glob and a test
+// title in «…». Without it the tables drift from the tests at the first rename.
 import { execFileSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { basename, join } from "node:path";
 import { pathToFileURL } from "node:url";
 
 const SECTION = "## Требования и тесты";
+// Files with the section; paths in their tables are from the repository root, as in README.
+export const DOCS = ["README.md", "docs/requirements.md"];
 // Relative paths in the table are from these roots (README says so above the table).
 const ROOTS = ["", "backend/", "frontend/src/", "e2e/tests/"];
 const FILE_REF = /^([\w./-]+\.(?:py|ts|mjs|md|vue))(?:::(\w+))?$/;
@@ -49,7 +51,7 @@ const hasTitle = (text, title) => text.includes(title.split("…")[0].trim());
 // fs: { files: repo-relative paths, read(path) → text }. Returns messages, empty when all exist.
 export function brokenTestRefs(readme, fs) {
   const rows = sectionRows(readme);
-  if (!rows) return [`README has no «${SECTION}» table`];
+  if (!rows) return [`no «${SECTION}» table`];
   const broken = [];
   for (const { label, refs } of rows) {
     let file = null; // the last file referenced in this row
@@ -92,14 +94,19 @@ export function repoFiles(cwd = ".") {
   return [...new Set(files)];
 }
 
+// Every file of `docs`, each message prefixed with its file.
+export function brokenDocRefs(docs, fs) {
+  return docs.flatMap((doc) => brokenTestRefs(fs.read(doc), fs).map((m) => `${doc}: ${m}`));
+}
+
 function main() {
   const fs = { files: repoFiles(), read: (path) => readFileSync(path, "utf8") };
-  const broken = brokenTestRefs(readFileSync("README.md", "utf8"), fs);
+  const broken = brokenDocRefs(DOCS, fs);
   if (broken.length > 0) {
-    console.error(`README test references not found:\n  ${broken.join("\n  ")}`);
+    console.error(`Test references not found:\n  ${broken.join("\n  ")}`);
     process.exit(1);
   }
-  console.log("All README test references exist");
+  console.log(`All test references exist: ${DOCS.join(", ")}`);
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1]).href) main();

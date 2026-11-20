@@ -11,6 +11,10 @@ test("README changes check its test references", () => {
   assert.deepEqual(commandsFor(["README.md"]), ["make check-readme"]);
 });
 
+test("the full requirements table checks its test references", () => {
+  assert.deepEqual(commandsFor(["docs/requirements.md"]), ["make check-readme"]);
+});
+
 test("backend changes run backend checks", () => {
   assert.deepEqual(commandsFor(["backend/config/health.py"]), [
     "make dev-deps check-backend",
