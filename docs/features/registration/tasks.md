@@ -1,91 +1,98 @@
-# Регистрация, лист ожидания, отказ: задачи
+# Registration, waitlist, cancellation: tasks
 
-Spec — `spec.md`. Одна задача — один коммит; отметка `[x]` — в том же коммите.
+Spec — `spec.md`. One task — one commit; the `[x]` check goes into the same commit.
 
-Фаза разбита на вертикальные этапы: каждый заканчивается тем, что можно показать в браузере
-(кроме этапа 5: экран отказа — страница билета по ссылке из письма — появляется в фазе 2, потому что до писем `manage_token` пользователю негде взять). Внутри этапа — подэтапы по слоям:
-backend → frontend → e2e/доки. Логика — тест вперёд; в каждом подэтапе `make check`.
+The phase is split into vertical stages: each ends with something that can be shown in the browser
+(except stage 5: the cancellation screen — the ticket page from the email link — appears in phase 2,
+because before emails the user has nowhere to get the `manage_token` from). Inside a stage —
+sub-stages by layer: backend → frontend → e2e/docs. Logic — test first; `make check` in each
+sub-stage.
 
-## Этап 1. Вход организатора (tracer bullet)
+## Stage 1. Organizer login (tracer bullet)
 
-Сквозной контракт: view → `openapi.yaml` → типы → страница. Проходит весь путь api-change.
+An end-to-end contract: view → `openapi.yaml` → types → page. Goes through the whole api-change
+path.
 
-- [x] 1.1 backend: `POST /api/auth/login/`, `logout/`, `GET me/` (сессия, CSRF),
-      management-команда демо-учёток, вызов при старте `backend` в compose. Готово, когда:
-      тесты входа/выхода/`me` зелёные, `openapi.yaml` обновлён, `docker compose up`
-      создаёт `demo@` и `admin@`.
-- [x] 1.2 решение: UI-библиотека и дизайн-токены (до любого кода фронтенда). Готово, когда:
-      выбор и отклонённые варианты записаны в `docs/decisions.md`, подключение описано в
-      `docs/development.md` и `frontend/AGENTS.md`, библиотека установлена.
-- [x] 1.3 frontend: `shared/api` передаёт `X-CSRFToken` в изменяющих запросах; генерация
-      типов; страница `/login`, guard маршрутов. Готово, когда: Vitest на CSRF и форму
-      зелёные; в браузере `demo@example.com` входит и попадает на заглушку `/org/events`.
-- [x] 1.4 skill `api-change` (в т.ч. пометка про 404/403 — решено: 403 на чужое): убрать «ЧЕРНОВИК», исправить места «ПРОВЕРИТЬ» по факту этапа.
-      Готово, когда: в skill нет пометок черновика.
+- [x] 1.1 backend: `POST /api/auth/login/`, `logout/`, `GET me/` (session, CSRF), a management
+      command for the demo accounts, called at `backend` start in compose. Done when: the
+      login/logout/`me` tests are green, `openapi.yaml` is updated, `docker compose up` creates
+      `demo@` and `admin@`.
+- [x] 1.2 decision: the UI library and design tokens (before any frontend code). Done when: the
+      choice and the rejected options are written to `docs/decisions.md`, the setup is described in
+      `docs/development.md` and `frontend/AGENTS.md`, the library is installed.
+- [x] 1.3 frontend: `shared/api` passes `X-CSRFToken` in modifying requests; type generation; the
+      `/login` page, the route guard. Done when: the Vitest tests for CSRF and the form are green;
+      in the browser `demo@example.com` logs in and lands on the `/org/events` stub.
+- [x] 1.4 the `api-change` skill (including the note about 404/403 — decided: 403 on someone
+      else's): remove "DRAFT", fix the "CHECK" spots based on the stage's facts. Done when: the
+      skill has no draft notes.
 
-## Этап 2. Организатор создаёт событие и видит список
+## Stage 2. The organizer creates an event and sees the list
 
-- [x] 2.1 backend (в т.ч. решить формат ошибок полей — черновик в skill `api-change`, раздел
-      «Ошибки»): приложение `events`, модель Event + миграция, админка, `for_organizer`;
-      `GET/POST /api/org/events/`. Счётчики `confirmed` / `waitlisted` через `annotate` —
-      в 3.1, вместе с моделью Registration (решение в `docs/decisions.md`). Готово, когда: тесты
-      создания, валидации, «чужое не видно», `django_assert_num_queries` зелёные.
-- [x] 2.2 frontend: сущность `event`, страницы `/org/events` и `/org/events/new`, состояния
-      пусто/ошибка/загрузка; в списке пока `capacity` без `confirmed` / `waitlisted` (счётчики
-      приходят в 3.1), коды полей → `AppError.fields` и тексты в `<i18n>` формы. Готово, когда: Vitest зелёный; в браузере создание → строка в списке.
-- [x] 2.3 e2e: организатор входит и создаёт событие. Готово, когда: сценарий проходит на
-      стеке `make up`.
+- [x] 2.1 backend (including deciding the field error format — a draft in the `api-change` skill,
+      the "Errors" section): the `events` app, the Event model + migration, admin,
+      `for_organizer`; `GET/POST /api/org/events/`. The `confirmed` / `waitlisted` counters
+      through `annotate` — in 3.1, together with the Registration model (decision in
+      `docs/decisions.md`). Done when: the tests for creation, validation, "someone else's is not
+      visible", `django_assert_num_queries` are green.
+- [x] 2.2 frontend: the `event` entity, the `/org/events` and `/org/events/new` pages, the
+      empty/error/loading states; the list shows `capacity` without `confirmed` / `waitlisted` for
+      now (the counters come in 3.1), field codes → `AppError.fields` and the texts in the form's
+      `<i18n>`. Done when: Vitest is green; in the browser creation → a row in the list.
+- [x] 2.3 e2e: the organizer logs in and creates an event. Done when: the scenario passes on the
+      `make up` stack.
 
-## Этап 3. Участник регистрируется на свободное место
+## Stage 3. A participant registers for a free seat
 
-- [x] 3.1 backend: модель Registration + миграция, админка (только чтение); счётчики
-      `confirmed` / `waitlisted` в `GET /api/org/events/` через `annotate` (+ тест числа запросов);
-      `registrations.services.register` (блокировка Event, `confirmed`, нормализация email,
-      идемпотентность); `GET /api/events/`, `GET /api/events/{id}/`, `POST …/registrations/`.
-      Готово, когда: тесты сервиса (в т.ч. регистр/точка/`+tag`, повтор) и API зелёные.
-- [x] 3.2 frontend: публичный список `/`, страница `/events/:id` с формой и результатом
-      «место подтверждено». Готово, когда: Vitest (MSW) зелёный; в браузере регистрация проходит.
-- [x] 3.3 e2e: участник регистрируется на событие, созданное организатором. Готово, когда:
-      сценарий проходит, в консоли нет ошибок.
+- [x] 3.1 backend: the Registration model + migration, admin (read-only); the `confirmed` /
+      `waitlisted` counters in `GET /api/org/events/` through `annotate` (+ a query count test);
+      `registrations.services.register` (Event lock, `confirmed`, email normalization,
+      idempotency); `GET /api/events/`, `GET /api/events/{id}/`, `POST …/registrations/`. Done
+      when: the service tests (including case/dot/`+tag`, a repeat) and the API tests are green.
+- [x] 3.2 frontend: the public list `/`, the `/events/:id` page with the form and the "seat
+      confirmed" result. Done when: Vitest (MSW) is green; registration works in the browser.
+- [x] 3.3 e2e: a participant registers for an event created by the organizer. Done when: the
+      scenario passes, there are no errors in the console.
 
-## Этап 4. Лист ожидания
+## Stage 4. Waitlist
 
-- [x] 4.1 backend: ветка `waitlisted` в `register`, `queued_at`, вычисление `position`;
-      повторная регистрация возвращает прежний номер. Готово, когда: тесты «мест нет → лист»,
-      порядок 1,2,3, повтор — тот же номер.
-- [x] 4.2 frontend: результат «вы в листе ожидания, №N», `free_seats = 0` на странице. Готово,
-      когда: Vitest зелёный; в браузере переполненное событие даёт №N.
-- [x] 4.3 e2e: расширить сценарий участника — вторая регистрация попадает в лист. Готово,
-      когда: сценарий проходит.
+- [x] 4.1 backend: the `waitlisted` branch in `register`, `queued_at`, computing `position`; a
+      repeated registration returns the previous position. Done when: the tests "no seats → the
+      waitlist", the order 1,2,3, a repeat — the same position.
+- [x] 4.2 frontend: the "you are on the waitlist, #N" result, `free_seats = 0` on the page. Done
+      when: Vitest is green; in the browser a full event gives #N.
+- [x] 4.3 e2e: extend the participant scenario — the second registration goes onto the waitlist.
+      Done when: the scenario passes.
 
-## Этап 5. Отказ и повышение из листа (только API)
+## Stage 5. Cancellation and promotion from the waitlist (API only)
 
-- [x] 5.1 backend: `services.cancel` (блокировка Event, отмена, повышение первого по
-      `queued_at, id`), `POST /api/tickets/{manage_token}/cancel/`; оживление строки при
-      повторной регистрации. Готово, когда: тесты отказа из `confirmed`/`waitlisted`,
-      повторного отказа, повторной регистрации после отказа зелёные.
+- [x] 5.1 backend: `services.cancel` (Event lock, cancellation, promotion of the first by
+      `queued_at, id`), `POST /api/tickets/{manage_token}/cancel/`; reviving the row on a repeated
+      registration. Done when: the tests of a cancellation from `confirmed`/`waitlisted`, a
+      repeated cancellation, a registration again after a cancellation are green.
 
-## Этап 6. Конкурентность и закрытие фазы
+## Stage 6. Concurrency and closing the phase
 
-- [x] 6.1 backend: тесты гонок на Postgres (`threading.Barrier`): последнее место; один email;
-      отказ параллельно с регистрацией; `docs/rules/concurrency.md`. Готово, когда: тесты
-      стабильно зелёные на 20 прогонах подряд, правило написано.
-- [x] 6.2 доки: таблица «требование → тест» и оговорка про email в README; разделы фазы в
-      `architecture.md` → «реализовано»; `development.md`, если появились команды. Готово,
-      когда: каждая строка таблицы ссылается на существующий тест.
-- [x] 6.3 ревью агентом `reviewer`, проход в браузере (негативные сценарии: пустые поля,
-      сеть, двойной submit, две вкладки), закрытие фазы по `session-handoff`. Готово, когда:
-      подтверждённые замечания исправлены, статус фазы — `готова`.
+- [x] 6.1 backend: race tests on Postgres (`threading.Barrier`): the last seat; one email; a
+      cancellation in parallel with a registration; `docs/rules/concurrency.md`. Done when: the
+      tests are stably green over 20 runs in a row, the rule is written.
+- [x] 6.2 docs: the "requirement → test" table and the email caveat in the README; the phase's
+      sections in `architecture.md` → "implemented"; `development.md` if commands appeared. Done
+      when: each row of the table points to an existing test.
+- [x] 6.3 review by the `reviewer` agent, a pass in the browser (negative scenarios: empty fields,
+      network, a double submit, two tabs), closing the phase by `session-handoff`. Done when: the
+      confirmed remarks are fixed, the phase status is `done`.
 
-## Лог
+## Log
 
-<!-- 2–3 строки находок исследования; где остановились, если сессия прервалась. -->
+<!-- 2–3 lines of research findings; where the work stopped if the session was interrupted. -->
 
-## На потом
+## Later
 
-- ~~Блокировка Event в `register` (3.1) тестами не покрыта~~ — закрыто в 6.1:
-  `registrations/tests/test_concurrency.py`, без блокировки падают 4 теста.
-- Выход организатора: `POST /api/auth/logout/` есть, кнопки в интерфейсе нет (Non-Goal фазы 1).
-  Нужна кнопка в шапке страниц организатора с очисткой `meQuery`.
-- Навигация по сайту: со страницы входа нет ссылки на главную, у страниц организатора — общей
-  шапки со ссылками (события, создание, главная, выход). Делается вместе с кнопкой выхода.
+- ~~The Event lock in `register` (3.1) is not covered by tests~~ — closed in 6.1:
+  `registrations/tests/test_concurrency.py`, 4 tests fail without the lock.
+- Organizer logout: `POST /api/auth/logout/` exists, there is no button in the interface (a
+  Non-Goal of phase 1). A button is needed in the header of the organizer pages, clearing
+  `meQuery`.
+- Site navigation: the login page has no link to the home page, the organizer pages have no shared
+  header with links (events, creation, home, logout). To be done together with the logout button.
