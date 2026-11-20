@@ -14,7 +14,7 @@ const FILES = {
   "frontend/src/app/router.test.ts": 'it("an address no route matches", () => {});\n',
   "e2e/tests/organizer-creates-event.spec.ts":
     'test("a wrong password keeps the form open", async () => {});\n',
-  "docs/features/x/tasks.md": "# Tasks\n\n## Лог\n",
+  "docs/features/x/tasks.md": "# Tasks\n\n## Log\n",
 };
 
 const fs = {
@@ -26,13 +26,13 @@ function readme(cell) {
   return [
     "# Project",
     "",
-    "## Требования и тесты",
+    "## Requirements and tests",
     "",
-    "| Требование | Тест |",
+    "| Requirement | Test |",
     "| ---------- | ---- |",
     `| Something  | ${cell} |`,
     "",
-    "## Что дальше",
+    "## What's next",
     "",
     "| Not | `missing.py::test_nothing` |",
   ].join("\n");
@@ -44,7 +44,7 @@ test("accepts existing files, functions, globs and titles", () => {
     "`test_ticket.py` (`test_ticket_api_*`);",
     "`app/router.test.ts` («an address no route matches»);",
     "e2e `organizer-creates-event.spec.ts` («a wrong password …»);",
-    "`docs/features/x/tasks.md`, «Лог»",
+    "`docs/features/x/tasks.md`, «Log»",
   ].join(" ");
   assert.deepEqual(brokenTestRefs(readme(cell), fs), []);
 });
@@ -104,7 +104,7 @@ test("ignores code that is not a file reference", () => {
 });
 
 test("fails when the section is missing", () => {
-  assert.deepEqual(brokenTestRefs("# Project\n", fs), ["no «## Требования и тесты» table"]);
+  assert.deepEqual(brokenTestRefs("# Project\n", fs), ["no «## Requirements and tests» table"]);
 });
 
 test("checks every file and names the file in each message", () => {
