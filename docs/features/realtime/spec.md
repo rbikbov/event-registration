@@ -1,166 +1,175 @@
 # Realtime (SSE): spec
 
-Фаза — `docs/roadmap.md`, фаза 4. Статус: утверждён 2026-10-31.
+Phase — `docs/roadmap.md`, phase 4. Status: approved 2026-10-31.
 
-## Что и зачем
+## What and why
 
-Закрывает из `docs/task.md` «счётчик пришедших у организатора обновляется live» и общее
-требование «работает при двух одновременно открытых клиентах». Транзакция, которая меняет
-счётчики события, шлёт `pg_notify`; процесс backend слушает канал и отправляет подписчикам
-SSE снимок — событие со счётчиками, как в его `GET`. Локально фронтенд — dev-сервер Vite, а
-e2e идёт через сборку за nginx с буферизацией по умолчанию, как прокси в продакшене.
-Отправная точка — «Realtime» и «Процессы» в `docs/architecture.md`; отличия — «Допущения»,
-п. 3 и 4.
+Covers from `docs/task.md` "the organizer's arrived counter updates live" and the general
+requirement "works with two clients open at the same time". A transaction that changes the event's
+counters sends `pg_notify`; the backend process listens to the channel and sends the SSE
+subscribers a snapshot — the event with its counters, as in its `GET`. Locally the frontend is the
+Vite dev server, and e2e goes through the build behind nginx with default buffering, like a proxy
+in production. The starting point is "Realtime" and "Processes" in `docs/architecture.md`; the
+differences — "Assumptions", items 3 and 4.
 
 ## Non-Goals
 
-- Живой публичный список событий (`/`), живая страница билета (номер в листе): по
-  критериям — панель организатора и страница события (экран чекина — её часть с этапа 3).
-- Запасной опрос (решение от 2026-10-28 21:04), WebSocket, Redis и другой брокер.
-- Несколько процессов backend и балансировка: процесс один, слушатель — на процесс.
-- Сборка фронтенда для продакшена сверх шлюза в compose: TLS, кэш-заголовки, CDN.
-- Шлюз в `make up` и `stack-up`: локально по-прежнему dev-сервер Vite, шлюз — только для e2e.
-- e2e через dev-сервер Vite: его поток проверяется в браузере при проходе этапа.
-- Проверка прав в уже открытом потоке: права проверяются при подключении.
-- Виртуализация таблицы участников: постраничная выдача (решение от 2026-10-31 16:16).
-- Больше 6 вкладок организатора (лимит соединений HTTP/1.1 на адрес): хватает 2–3.
+- A live public event list (`/`), a live ticket page (the place on the waitlist): by the criteria
+  — the organizer's panel and the event page (the check-in screen is part of the panel since
+  stage 3).
+- Fallback polling (decision of 2026-10-28 21:04), WebSocket, Redis and another broker.
+- Several backend processes and load balancing: there is one process, a listener per process.
+- A production frontend build beyond the gateway in compose: TLS, cache headers, CDN.
+- The gateway in `make up` and `stack-up`: locally it is still the Vite dev server, the gateway is
+  for e2e only.
+- e2e through the Vite dev server: its stream is checked in the browser during the stage pass.
+- Checking permissions in an already open stream: permissions are checked on connection.
+- Virtualizing the participant table: paged output (decision of 2026-10-31 16:16).
+- More than 6 organizer tabs (the HTTP/1.1 connection limit per address): 2–3 are enough.
 
-## Модель данных
+## Data model
 
-Без изменений и миграций. Канал `event_stats`, payload — `event_id` строкой.
+No changes and no migrations. The channel is `event_stats`, the payload is `event_id` as a string.
 
-## Инварианты
+## Invariants
 
-| Инвариант                                              | Чем защищён                                                                                                                                              | Тест                                                                          |
-| ------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| подписчик не видит счётчики незакоммиченной транзакции | `pg_notify` в той же транзакции, что и изменение: Postgres доставляет уведомление только после коммита, откат его отменяет                               | pytest, `transaction=True`: после отката уведомления нет                      |
-| после (пере)подключения счётчики верны                 | первое сообщение потока — снимок из БД, прочитанный после подписки на уведомления: изменение между снимком и подпиской даст ещё один снимок, а не потерю | pytest: первое сообщение — снимок; изменение после подключения — новый снимок |
-| пропущенное уведомление не искажает счётчики           | по сети — полный снимок, не прирост; очередь подписчика — на одно ожидающее событие: снимок всё равно читается из БД                                     | pytest: два изменения подряд → последний снимок верен                         |
-| изменения без смены счётчиков не шлют уведомление      | `pg_notify` только там, где строка изменилась: новая и оживлённая регистрация, отказ, повышение, первая отметка                                          | pytest: повтор регистрации, повтор отказа, повторный чекин — без уведомления  |
+| Invariant                                                            | What protects it                                                                                                                                                                           | Test                                                                                            |
+| -------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
+| a subscriber does not see the counters of an uncommitted transaction | `pg_notify` in the same transaction as the change: Postgres delivers the notification only after the commit, a rollback cancels it                                                         | pytest, `transaction=True`: no notification after a rollback                                    |
+| after (re)connection the counters are correct                        | the stream's first message is a snapshot from the database read after subscribing to notifications: a change between the snapshot and the subscription gives one more snapshot, not a loss | pytest: the first message is a snapshot; a change after connection — a new snapshot             |
+| a missed notification does not distort the counters                  | the full snapshot goes over the network, not a delta; the subscriber's queue holds one pending event: the snapshot is read from the database anyway                                        | pytest: two changes in a row → the last snapshot is correct                                     |
+| changes that do not change the counters send no notification         | `pg_notify` only where the row changed: a new and a revived registration, a cancellation, a promotion, the first check-in                                                                  | pytest: a repeated registration, a repeated cancellation, a repeated check-in — no notification |
 
 ## API
 
-| Метод и путь                                            | Вход   | Ответ                                                                                 | Ошибки (статус → `kind`)                                  |
-| ------------------------------------------------------- | ------ | ------------------------------------------------------------------------------------- | --------------------------------------------------------- |
-| `GET /api/org/events/{id}/stream/`                      | сессия | 200 `text/event-stream`: `event: snapshot`, `data` — тело `GET /api/org/events/{id}/` | 401 (нет сессии); 403 (событие другого организатора); 404 |
-| `GET /api/events/{id}/stream/`                          | —      | 200 `text/event-stream`: `event: snapshot`, `data` — тело `GET /api/events/{id}/`     | 404                                                       |
-| `GET /api/org/events/{id}/registrations/?status=&page=` | сессия | 200 — до 50 регистраций страницы `page` (с 1) в порядке очереди; за концом — `[]`     | 400 (`page` < 1 или > 1 000 000); 401; 403; 404           |
+| Method and path                                         | Input   | Response                                                                                     | Errors (status → `kind`)                                   |
+| ------------------------------------------------------- | ------- | -------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| `GET /api/org/events/{id}/stream/`                      | session | 200 `text/event-stream`: `event: snapshot`, `data` — the body of `GET /api/org/events/{id}/` | 401 (no session); 403 (an event of another organizer); 404 |
+| `GET /api/events/{id}/stream/`                          | —       | 200 `text/event-stream`: `event: snapshot`, `data` — the body of `GET /api/events/{id}/`     | 404                                                        |
+| `GET /api/org/events/{id}/registrations/?status=&page=` | session | 200 — up to 50 registrations of page `page` (from 1) in queue order; past the end — `[]`     | 400 (`page` < 1 or > 1,000,000); 401; 403; 404             |
 
-- Поток: `retry: 3000`, сразу снимок, затем снимок на каждое уведомление события и
-  комментарий `: ping` каждые 15 с без изменений. Заголовки: `Cache-Control: no-cache`,
-  `X-Accel-Buffering: no`; без сжатия.
-- Снимок — `Event.objects.with_registration_counts()`, один запрос; форма — сериализаторы
-  `GET` тех же событий (`OrgEventSerializer`, `PublicEventSerializer`): страница берёт событие
-  из потока целиком. У события организатора — и `cancelled`: по счётчикам панель считает
-  страницы любого фильтра. Участников (имена, email) нет ни в одном снимке.
-- В `openapi.yaml`: `extend_schema(responses={(200, "text/event-stream"): <Serializer>})`; схема
-  описывает `data` одного сообщения, формат потока — в `description`. Тип снимка во
-  фронтенде генерируется в `schema.d.ts`. Изменение — по процедуре `api-change`.
+- The stream: `retry: 3000`, a snapshot right away, then a snapshot on each notification of the
+  event and a `: ping` comment every 15 s without changes. Headers: `Cache-Control: no-cache`,
+  `X-Accel-Buffering: no`; no compression.
+- The snapshot — `Event.objects.with_registration_counts()`, one query; its shape — the serializers
+  of the `GET` of the same events (`OrgEventSerializer`, `PublicEventSerializer`): the page takes
+  the whole event from the stream. The organizer's event also has `cancelled`: from the counters
+  the panel computes the pages of any filter. No snapshot has participants (names, emails).
+- In `openapi.yaml`: `extend_schema(responses={(200, "text/event-stream"): <Serializer>})`; the
+  schema describes the `data` of one message, the stream format is in `description`. The snapshot
+  type on the frontend is generated into `schema.d.ts`. The change follows the `api-change`
+  procedure.
 
 ## Backend
 
-- `pg_notify('event_stats', event_id)` — в `register` (новая и оживлённая), `cancel` (вместе
-  с повышением — одно уведомление: одинаковые в одной транзакции Postgres сливает),
-  `check_in` (только первая отметка).
-- Слушатель: одно асинхронное соединение psycopg на процесс (`LISTEN event_stats`),
-  запускается при первом подписчике и закрывается после ухода последнего. На уведомление
-  события читает снимок и кладёт его в `asyncio.Queue(maxsize=1)` подписчиков: новый снимок
-  заменяет неотправленный. Обрыв соединения слушателя закрывает все потоки процесса:
-  клиенты переподключаются и получают снимок, слушатель поднимается заново.
-- Снимок читается один раз на событие и уведомление и раздаётся всем подписчикам процесса
-  (этап 3): N зрителей — один запрос, а не N, и соединение БД потоки не держат. Общий снимок —
-  у подписчиков с одной функцией снимка (организатора или публичной). Первый снимок
-  подписчика тоже читает лента; чтения идут одно за другим и раздаются тем, кто подписался до
-  начала чтения, — снимки у подписчика не идут назад. Ошибка чтения закрывает потоки этого
-  снимка.
-- View: права (`get_org_event`), 401/403/404 и формат ошибок — как у остальных эндпоинтов.
-  Ответ — `StreamingHttpResponse` с асинхронным генератором. Открытый поток держит поток ОС
-  (замер: 20 потоков SSE — 20 потоков ОС) — осознанный предел, «Допущения», п. 1. Отключение клиента отменяет генератор, подписка
-  снимается в `finally`. Тесты потока — через `AsyncClient`: синхронный клиент асинхронный генератор не
-  дочитает.
-- `EventSource` шлёт `Accept: text/event-stream`, а рендерер у DRF — только JSON (406): у
-  view свой `content_negotiation_class`, который всегда выбирает JSON. Ошибки уходят JSON,
-  успешный ответ — поток мимо рендерера.
+- `pg_notify('event_stats', event_id)` — in `register` (a new and a revived one), `cancel` (together
+  with a promotion — one notification: Postgres merges identical ones in one transaction),
+  `check_in` (only the first check-in).
+- The listener: one async psycopg connection per process (`LISTEN event_stats`), started with the
+  first subscriber and closed after the last one leaves. On an event's notification it reads a
+  snapshot and puts it into the subscribers' `asyncio.Queue(maxsize=1)`: a new snapshot replaces an
+  unsent one. A break of the listener's connection closes all streams of the process: clients
+  reconnect and get a snapshot, the listener starts again.
+- A snapshot is read once per event and notification and handed to all subscribers of the process
+  (stage 3): N viewers — one query, not N, and the streams do not hold a database connection. The
+  shared snapshot is for subscribers with the same snapshot function (organizer or public). A
+  subscriber's first snapshot is also read by the feed; the reads go one after another and are
+  handed to those who subscribed before the read started — a subscriber's snapshots never go back.
+  A read error closes the streams of that snapshot.
+- View: permissions (`get_org_event`), 401/403/404 and the error format — as in the other
+  endpoints. The response is a `StreamingHttpResponse` with an async generator. An open stream
+  holds an OS thread (measured: 20 SSE streams — 20 OS threads) — a deliberate limit,
+  "Assumptions", item 1. A client disconnect cancels the generator, the subscription is removed in
+  `finally`. Stream tests use `AsyncClient`: the synchronous client will not read an async
+  generator to the end.
+- `EventSource` sends `Accept: text/event-stream`, and DRF's renderer is JSON only (406): the view
+  has its own `content_negotiation_class` that always picks JSON. Errors go out as JSON, a
+  successful response is a stream past the renderer.
 
-## Шлюз
+## Gateway
 
-Модель гипотетического продакшена — только для e2e. Один сервис `frontend` и один порт
-(5173 + слот), режим — стадия `frontend/Dockerfile`: `build.target: ${FRONTEND_TARGET:-dev}`.
+A model of a hypothetical production — for e2e only. One `frontend` service and one port
+(5173 + slot), the mode is the `frontend/Dockerfile` stage: `build.target: ${FRONTEND_TARGET:-dev}`.
 
-- `dev` — dev-сервер Vite, как сейчас: `make up`, `stack-up`.
-- `gateway` — `vite build` и nginx на том же порту внутри контейнера: отдаёт `dist/`
-  (неизвестный путь — `index.html`), проксирует `/api`, `/admin`, `/static` на backend с
-  `Host` клиента. Буферизация прокси — по умолчанию (включена); сжатия нет. `make e2e`,
-  `stack-e2e` и CI ставят
-  `FRONTEND_TARGET=gateway`; `up --build` пересоздаёт контейнер, обе стадии — из кэша.
-- Порт, healthcheck и `FRONTEND_URL` в письмах в обоих режимах одни: ссылки из писем в e2e
-  ведут туда же, куда и `baseURL`. На слоте человека `make e2e` подменяет запущенный
-  `make up` сборкой, следующий `make up` возвращает Vite.
+- `dev` — the Vite dev server, as now: `make up`, `stack-up`.
+- `gateway` — `vite build` and nginx on the same port inside the container: serves `dist/` (an
+  unknown path gets `index.html`), proxies `/api`, `/admin`, `/static` to the backend with the
+  client's `Host`. Proxy buffering is the default (on); no compression. `make e2e`, `stack-e2e` and
+  CI set `FRONTEND_TARGET=gateway`; `up --build` recreates the container, both stages come from the
+  cache.
+- The port, the healthcheck and `FRONTEND_URL` in emails are the same in both modes: links from
+  emails in e2e lead to the same place as `baseURL`. On the human's slot `make e2e` replaces the
+  running `make up` with the build, the next `make up` brings Vite back.
 
 ## UI
 
-- **Панель события**: событие читается одним `GET` (он даёт 403/404 — `EventSource` статус не
-  отдаёт), затем открывается поток, и снимок заменяет событие в кэше `orgEventQuery(id)`.
-  Фоновых перезапросов события у панели нет: `GET`, прочитавший событие до снимка, ответил бы
-  после него старыми счётчиками; кэш с прошлого визита обновляет первый снимок. До этапа 3
-  снимок отменял `GET` того же ключа с экрана чекина; в макете у события один читатель, и
-  отмена не нужна. С этапа 3 событие — макет `/org/events/:id`: запрос,
-  поток, шапка, 403/404; участники и чекин — дочерние маршруты, событие — пропсом участникам (форме чекина нужен только id). Таблица
-  участников — по 50, число страниц фильтра — из счётчиков снимка. Сама она не
-  перечитывается: снимок со счётчиками не теми, при которых загружена страница, показывает
-  «Есть обновления — обновить». Обрыв — над счётчиками «Соединение потеряно,
-  переподключаюсь…»; пропадает со следующим снимком.
-- **Страница события**: так же — один `GET`, затем снимки из потока; индикатора нет.
-- `shared/lib`: `LiveSource` — данные, которые шлёт сервер, без привязки к транспорту
-  (`subscribe(onData)` → отписка); `sseSource(url, event)` — реализация на `EventSource`;
-  `useLive(source, onData)` — подписка на время жизни компонента. Сущность отдаёт
-  `LiveSource` (`orgEventLive(id)`), страница не знает о SSE. Состояние
-  `open | reconnecting | refused` — этап 4.
+- **The event panel**: the event is read with one `GET` (it gives 403/404 — `EventSource` does not
+  return the status), then the stream is opened, and a snapshot replaces the event in the
+  `orgEventQuery(id)` cache. The panel has no background refetches of the event: a `GET` that read
+  the event before a snapshot would answer after it with old counters; a cache from a previous
+  visit is updated by the first snapshot. Before stage 3 a snapshot cancelled a `GET` of the same
+  key from the check-in screen; in the layout the event has one reader, and the cancellation is not
+  needed. Since stage 3 the event is the `/org/events/:id` layout: the request, the stream, the
+  header, 403/404; the participants and check-in are child routes, the event is a prop for the
+  participants (the check-in form needs only the id). The participant table — 50 per page, the
+  number of pages of the filter comes from the snapshot's counters. The table itself is not
+  re-read: a snapshot with counters other than those the page was loaded with shows "There are
+  updates — refresh". A break — "Connection lost, reconnecting…" above the counters; it disappears
+  with the next snapshot.
+- **The event page**: the same — one `GET`, then snapshots from the stream; no indicator.
+- `shared/lib`: `LiveSource` — data the server sends, not tied to a transport (`subscribe(onData)`
+  → unsubscribe); `sseSource(url, event)` — an implementation on `EventSource`;
+  `useLive(source, onData)` — a subscription for the component's lifetime. The entity provides the
+  `LiveSource` (`orgEventLive(id)`), the page does not know about SSE. The
+  `open | reconnecting | refused` state — stage 4.
 
-## Крайние случаи
+## Edge cases
 
-- Ответ не 200 — в том числе на первое подключение: `EventSource` закрывается, сам не
-  переподключается и статус не отдаёт. Composable сообщает об отказе и открывает поток заново
-  через 3 с; индикатор остаётся. На каждый отказ страница перечитывает событие пробой — `GET`
-  под своим ключом, ответ в кэш события не пишется и снимок не затирает: 401 — `/login`
-  (`app/session-expiry`, как при 401 любого запроса); 403/404 — поток закрывается, страница
-  показывает ответ, как при загрузке; 200, 502 или нет сети — повтор через 3 с.
-- Две вкладки одного организатора — два независимых потока, оба получают снимок.
-- Перезапуск backend при открытых потоках: uvicorn ждёт их не дольше нескольких секунд
-  (`--timeout-graceful-shutdown`), иначе `docker compose restart` висит до таймаута.
+- A non-200 response — including on the first connection: `EventSource` closes, does not reconnect
+  by itself and does not return the status. The composable reports the refusal and opens the stream
+  again after 3 s; the indicator stays. On each refusal the page re-reads the event as a probe — a
+  `GET` under its own key, the answer is not written into the event cache and does not overwrite
+  the snapshot: 401 — `/login` (`app/session-expiry`, as on a 401 of any request); 403/404 — the
+  stream is closed, the page shows the answer, as on loading; 200, 502 or no network — a retry
+  after 3 s.
+- Two tabs of one organizer — two independent streams, both get the snapshot.
+- A backend restart with open streams: uvicorn waits for them for no more than a few seconds
+  (`--timeout-graceful-shutdown`), otherwise `docker compose restart` hangs until the timeout.
 
-## Допущения и открытые вопросы
+## Assumptions and open questions
 
-1. Потоки — в `openapi.yaml` с правами и ошибками остального API (решение человека) и
-   остаются синхронными view: поток ОС на открытый поток — предел одного процесса (решение от
-   2026-10-31 21:04). Расчёт на 10 событий по 100 участников: до ~1050 потоков в худшем
-   случае, 200–300 реально. Асинхронный view поток не убирает: его заводит контекст запроса
-   Django под ASGI при первом `sync_to_async` (WhiteNoise, сессия, снимок). Узкое место —
-   соединения Postgres, его снимает общий снимок. Тысячи соединений или несколько процессов —
-   отдельный push-сервер (Centrifugo), в «что дальше» README.
-2. Индикатор — только у организатора, как в `architecture.md`: участнику достаточно, что
-   число мест обновится после переподключения.
-3. **Отличие от `architecture.md`** (подтверждено человеком): там `proxy_buffering off`, здесь
-   буферизация включена, а backend шлёт `X-Accel-Buffering: no` — его понимает любой nginx.
-   Замер (2026-10-31): буферизация nginx 1.30 сама поток не задерживает — снимки идут сразу
-   и без заголовка; задерживает буферизация вместе с gzip для `text/event-stream`, и заголовок
-   это исправляет. Заголовок нужен всегда, особенно если в прокси включают сжатие; e2e его
-   отсутствие не ловит (шлюз без gzip). Таймаут чтения 60 с > heartbeat 15 с.
-4. **Отличие от `architecture.md`:** там шлюз — вход `make up`; здесь (решение человека)
-   локально — Vite, e2e — сборка за nginx на том же порту.
-5. Поток открывается только после успешного `GET`, поэтому первый отказ — так же 502 или 401,
-   как и последующие, и обрабатывается так же (проба, п. «Крайние случаи»).
+1. The streams are in `openapi.yaml` with the permissions and errors of the rest of the API (the
+   human's decision) and stay synchronous views: an OS thread per open stream is the limit of one
+   process (decision of 2026-10-31 21:04). Estimated for 10 events of 100 participants: up to ~1050
+   threads in the worst case, 200–300 in reality. An async view does not remove the thread: it is
+   started by Django's request context under ASGI at the first `sync_to_async` (WhiteNoise, the
+   session, the snapshot). The bottleneck is Postgres connections, and the shared snapshot removes
+   it. Thousands of connections or several processes — a separate push server (Centrifugo), in
+   "what's next" of the README.
+2. The indicator is only for the organizer, as in `architecture.md`: for a participant it is enough
+   that the number of seats updates after reconnecting.
+3. **A difference from `architecture.md`** (confirmed by the human): there it is
+   `proxy_buffering off`, here buffering is on, and the backend sends `X-Accel-Buffering: no` —
+   any nginx understands it. Measured (2026-10-31): nginx 1.30 buffering alone does not delay the
+   stream — snapshots go right away even without the header; what delays them is buffering
+   together with gzip for `text/event-stream`, and the header fixes that. The header is always
+   needed, especially if compression is turned on in the proxy; e2e does not catch its absence (the
+   gateway has no gzip). The read timeout of 60 s > the heartbeat of 15 s.
+4. **A difference from `architecture.md`:** there the gateway is the entry of `make up`; here (the
+   human's decision) locally it is Vite, e2e — the build behind nginx on the same port.
+5. The stream is opened only after a successful `GET`, so the first refusal is a 502 or a 401 just
+   like the following ones, and is handled the same way (a probe, the "Edge cases" item).
 
-## Сценарии приёмки
+## Acceptance scenarios
 
-| Сценарий                                                                                        | Уровень теста    |
-| ----------------------------------------------------------------------------------------------- | ---------------- |
-| Given регистрация / отказ с повышением / первый чекин When коммит Then одно уведомление события | pytest, Postgres |
-| Given откат транзакции или повтор без изменений Then уведомления нет                            | pytest, Postgres |
-| Given подключение к потоку Then первое сообщение — снимок; после чекина — новый снимок          | pytest           |
-| Given поток чужого события Then 403; без сессии Then 401; неизвестное событие Then 404          | pytest           |
-| Given снимок с другими счётчиками When панель открыта Then счётчики новые, «Есть обновления»    | Vitest           |
-| Given обрыв / ответ 502 When повтор удался Then индикатор пропал, счётчики из снимка            | Vitest           |
-| Given две вкладки через шлюз When чекин в первой Then «Пришло» меняется во второй               | e2e              |
-| Given регистрация в одной вкладке Then «свободно мест» меняется на странице события в другой    | e2e              |
-| Given поток прерван (`page.route`) When восстановлен Then индикатор пропал, счётчик верен       | e2e              |
+| Scenario                                                                                                                      | Test level       |
+| ----------------------------------------------------------------------------------------------------------------------------- | ---------------- |
+| Given a registration / a cancellation with a promotion / the first check-in When committed Then one notification of the event | pytest, Postgres |
+| Given a rolled-back transaction or a repeat without changes Then no notification                                              | pytest, Postgres |
+| Given a connection to the stream Then the first message is a snapshot; after a check-in — a new snapshot                      | pytest           |
+| Given a stream of someone else's event Then 403; without a session Then 401; an unknown event Then 404                        | pytest           |
+| Given a snapshot with other counters When the panel is open Then the counters are new, "There are updates"                    | Vitest           |
+| Given a break / a 502 response When a retry succeeded Then the indicator is gone, the counters come from the snapshot         | Vitest           |
+| Given two tabs through the gateway When a check-in in the first Then "Arrived" changes in the second                          | e2e              |
+| Given a registration in one tab Then "free seats" changes on the event page in the other                                      | e2e              |
+| Given the stream is broken (`page.route`) When restored Then the indicator is gone, the counter is correct                    | e2e              |
