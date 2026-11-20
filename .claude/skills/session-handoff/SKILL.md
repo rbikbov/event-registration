@@ -1,58 +1,63 @@
 ---
 name: session-handoff
 description: >
-  Начало и завершение рабочей сессии: свериться с дорожной картой, отметить выполненные
-  задачи, проверить, что решения записаны в лог, обновить `docs/features.md` и таблицы требований при закрытии
-  фазы. Использовать в начале сессии, после /clear, после каждого коммита с задачей из
-  дорожной карты и перед завершением сессии.
+  The start and the end of a work session: check against the roadmap, check off the done tasks,
+  check that the decisions are written to the log, update `docs/features.md` and the requirement
+  tables when a phase is closed. Use at the start of a session, after /clear, after each commit with
+  a roadmap task and before ending a session.
 ---
 
-# Передача состояния между сессиями
+# Handing over the state between sessions
 
-Состояние работы живёт в репозитории, а не в чате. Новая сессия должна понять, где работа
-остановилась, только по файлам.
+The state of the work lives in the repository, not in the chat. A new session must understand where
+the work stopped from the files alone.
 
-| Файл                                                    | Что в нём                                                        |
-| ------------------------------------------------------- | ---------------------------------------------------------------- |
-| `docs/roadmap.md`                                       | фазы, их статус и критерии                                       |
-| `docs/architecture.md`                                  | устройство системы; у разделов статус «реализовано» / «план»     |
-| `docs/features/<slug>/tasks.md`                         | задачи фазы и лог «на потом»                                     |
-| `docs/decisions.md`                                     | почему так решили                                                |
-| история git                                             | что и когда сделано                                              |
-| `README.md`, `docs/requirements.md`, `docs/features.md` | итог для проверяющего: таблицы «требование → тест», что работает |
+| File                                                    | What it holds                                                             |
+| ------------------------------------------------------- | ------------------------------------------------------------------------- |
+| `docs/roadmap.md`                                       | phases, their status and criteria                                         |
+| `docs/architecture.md`                                  | how the system works; the sections have the status "implemented" / "plan" |
+| `docs/features/<slug>/tasks.md`                         | the phase's tasks and the "later" log                                     |
+| `docs/decisions.md`                                     | why it was decided so                                                     |
+| git history                                             | what was done and when                                                    |
+| `README.md`, `docs/requirements.md`, `docs/features.md` | the outcome for the reviewer: "requirement → test" tables, what works     |
 
-## Начало сессии
+## Session start
 
-0. Если последняя сессия в `docs/decisions.md` не закрыта (`make worktime` покажет
-   предупреждение), закрыть её маркером `■ конец сессии` со временем последнего коммита и
-   сказать человеку. Затем поставить `▶ начало сессии` с временем из `date`.
-1. Хук `SessionStart` уже вывел фазу «в работе» и последние коммиты. Если вывода нет —
-   прочитать `docs/roadmap.md` и `git log --oneline -10`.
-2. Прочитать `spec.md` и `tasks.md` фазы.
-3. `git status`: незакоммиченные изменения — от прерванной задачи. Разобраться, что это,
-   прежде чем начинать новую.
-4. Следующая задача — первая неотмеченная. Отступление от порядка — сказать человеку.
+0. If the last session in `docs/decisions.md` is not closed (`make worktime` shows a warning),
+   close it with the `■ session end` marker with the time of the last commit and tell the human.
+   Then put `▶ session start` with the time from `date`.
+1. The `SessionStart` hook has already printed the phase "in progress" and the latest commits. If
+   there is no output — read `docs/roadmap.md` and `git log --oneline -10`.
+2. Read the phase's `spec.md` and `tasks.md`.
+3. `git status`: uncommitted changes come from an interrupted task. Figure out what they are before
+   starting a new one.
+4. The next task is the first unchecked one. A deviation from the order — tell the human.
 
-## После задачи (в том же коммите)
+## After a task (in the same commit)
 
-1. Отметить задачу `[x]` в `tasks.md` фазы.
-2. Решения, принятые по ходу, — в `docs/decisions.md` (формат — `AGENTS.md`).
-3. Новая команда, инструмент, проверка или нюанс окружения — в `docs/development.md`.
-4. Найденное вне задачи — в лог «на потом» в `tasks.md` фазы, а не в этот коммит.
+1. Check the task `[x]` in the phase's `tasks.md`.
+2. The decisions made along the way — into `docs/decisions.md` (the format — `AGENTS.md`).
+3. A new command, tool, check or environment gotcha — into `docs/development.md`.
+4. What was found outside the task — into the "later" log in the phase's `tasks.md`, not into this
+   commit.
 
-## Закрытие фазы
+## Closing a phase
 
-1. Проверить критерии фазы из `docs/roadmap.md` по фактам: команда, тест, вывод.
-2. `make stack-check` проходит (`make check` — слот 0, человека).
-3. Разделы фазы в `docs/architecture.md` привести к коду и пометить «реализовано».
-4. Обновить `docs/features.md` и строки «требование → тест» для требований фазы (README —
-   пункты задания, `docs/requirements.md` — остальное) — со ссылками на существующие тесты.
-5. Сменить статус фазы на `готова`, следующей — на `в работе`.
-6. Записать закрытие фазы в `docs/decisions.md`, если по ходу менялся объём или критерии.
+1. Verify the phase criteria from `docs/roadmap.md` by facts: a command, a test, an output.
+2. `make stack-check` passes (`make check` — slot 0, the human's).
+3. Bring the phase's sections in `docs/architecture.md` in line with the code and mark them
+   "implemented".
+4. Update `docs/features.md` and the "requirement → test" rows for the phase's requirements (README
+   — the items of the assignment, `docs/requirements.md` — the rest) — with links to existing
+   tests.
+5. Change the phase status to `done`, the next one's to `in progress`.
+6. Write the phase closing to `docs/decisions.md` if the scope or the criteria changed along the
+   way.
 
-## Конец сессии
+## Session end
 
-- Маркер `- **ЧЧ:ММ** — ■ конец сессии` в `docs/decisions.md` — в последнем коммите сессии.
-- Всё сделанное закоммичено; незаконченная задача не отмечена, а в её `tasks.md` (или в
-  сообщении человеку) — 1–2 строки: на чём остановились и что дальше.
-- Человеку — итог: что сделано (коммиты), что проверено и как, что осталось.
+- The `- **HH:MM** — ■ session end` marker in `docs/decisions.md` — in the last commit of the
+  session.
+- Everything done is committed; an unfinished task is not checked, and its `tasks.md` (or a message
+  to the human) has 1–2 lines: where the work stopped and what is next.
+- To the human — the outcome: what was done (commits), what was checked and how, what remains.

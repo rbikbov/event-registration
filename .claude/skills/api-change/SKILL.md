@@ -1,79 +1,79 @@
 ---
 name: api-change
 description: >
-  Процедура изменения API: serializer, view или URL backend → тест → схема OpenAPI → типы
-  фронтенда → вызов с фронтенда. Использовать, когда добавляется или меняется эндпоинт, поле
-  запроса или ответа, статус ответа. Не использовать для правок логики без изменения
-  контракта.
+  The procedure of an API change: a backend serializer, view or URL → a test → the OpenAPI schema →
+  the frontend types → a call from the frontend. Use when an endpoint, a request or response field,
+  or a response status is added or changed. Do not use for logic edits without a contract change.
 ---
 
-# Изменение API
+# API change
 
-Контракт API живёт в трёх местах, которые меняются вместе, в одном коммите:
-код backend → `backend/openapi.yaml` → `frontend/src/shared/api/schema.d.ts`.
+The API contract lives in three places that change together, in one commit:
+the backend code → `backend/openapi.yaml` → `frontend/src/shared/api/schema.d.ts`.
 
-## Порядок
+## Order
 
-1. **Тест вперёд.** Логика — функция в `<app>/services.py`, тест вызывает её напрямую
-   (правило 1 `backend/AGENTS.md`). Поведение эндпоинта — тест через `APIClient`: статус,
-   тело, права. Гонки и блокировки — `django_db(transaction=True)` (правило 5).
-2. **Serializer и view.** View тонкий: разбор запроса, вызов сервиса, ответ. Ошибки
-   предметной области — исключения сервиса, которые view переводит в статус.
-3. **Описание для схемы.** Ответ не из serializer, несколько статусов или поток —
-   `@extend_schema` (образцы — `backend/config/health.py`, `backend/accounts/views.py`).
-   Перечислить все статусы, которые
-   эндпоинт реально возвращает, включая 4xx.
-4. **`make schema`.** Обновит `backend/openapi.yaml` и `schema.d.ts`. Не править их руками.
-5. **Фронтенд.** Тип ответа — `components["schemas"]["<Имя>"]`, вызов — через `api` и
-   `unwrap()` из `@/shared/api`. Если поле или путь изменились, `make check-frontend`
-   упадёт на vue-tsc — это и есть проверка контракта (`frontend/AGENTS.md`, правила 2–3).
-6. **Проверка.** `make stack-check` (в нём `schema-check` и vue-tsc; `make check-backend`
-   без `POSTGRES_PORT=5433` идёт в Postgres человека).
-   Схема и типы — в том же коммите, что и код.
+1. **Test first.** Logic — a function in `<app>/services.py`, the test calls it directly (rule 1 of
+   `backend/AGENTS.md`). The endpoint's behavior — a test through `APIClient`: the status, the body,
+   permissions. Races and locks — `django_db(transaction=True)` (rule 5).
+2. **Serializer and view.** The view is thin: parsing the request, calling the service, the
+   response. Domain errors — exceptions of the service that the view translates into a status.
+3. **The description for the schema.** A response not from a serializer, several statuses or a
+   stream — `@extend_schema` (examples — `backend/config/health.py`, `backend/accounts/views.py`).
+   List all the statuses the endpoint really returns, including 4xx.
+4. **`make schema`.** It updates `backend/openapi.yaml` and `schema.d.ts`. Do not edit them by hand.
+5. **Frontend.** The response type — `components["schemas"]["<Name>"]`, the call — through `api` and
+   `unwrap()` from `@/shared/api`. If a field or a path changed, `make check-frontend` fails on
+   vue-tsc — that is the contract check (`frontend/AGENTS.md`, rules 2–3).
+6. **Check.** `make stack-check` (it includes `schema-check` and vue-tsc; `make check-backend`
+   without `POSTGRES_PORT=5433` goes to the human's Postgres).
+   The schema and the types — in the same commit as the code.
 
-## Что проверить на каждом эндпоинте
+## What to check on each endpoint
 
-- **Права.** Организаторский эндпоинт (`/api/org/...`) требует входа (права по умолчанию —
-  `IsAuthenticated`; публичный view явно ставит `AllowAny`). Список событий — через
-  `Event.objects.for_organizer(user)`. Эндпоинта по id пока нет; когда появится, событие берётся
-  через `get_org_event(user, id)` (её ещё нет): несуществующее — 404, чужое — 403 (решение от
-  01:17 в `docs/decisions.md`). Тест: пользователь A по id события B получает 403, а не
-  данные; гость — 401.
-- **CSRF.** Изменяющий запрос организатора идёт с `X-CSRFToken` (`shared/api/csrf.ts`
-  добавляет сам). Тест CSRF — `APIClient(enforce_csrf_checks=True)`, образец —
+- **Permissions.** An organizer endpoint (`/api/org/...`) requires login (the default permission is
+  `IsAuthenticated`; a public view explicitly sets `AllowAny`). The event list — through
+  `Event.objects.for_organizer(user)`. There is no endpoint by id yet; when it appears, the event is
+  taken through `get_org_event(user, id)` (it does not exist yet): a nonexistent one — 404, someone
+  else's — 403 (the decision of 01:17 in `docs/decisions.md`). A test: user A by the id of event B
+  gets 403, not the data; a guest — 401.
+- **CSRF.** A modifying request of the organizer goes with `X-CSRFToken` (`shared/api/csrf.ts` adds
+  it itself). A CSRF test — `APIClient(enforce_csrf_checks=True)`, the example —
   `test_logout_requires_csrf_token`.
-  Публичные эндпоинты участника (регистрация, отказ по токену) от сессии не зависят.
-- **Список.** Счётчики и связанные объекты — без запроса на строку; тест с
-  `django_assert_num_queries` (правило 10 `backend/AGENTS.md`).
-- **Ответ без лишнего.** В ответ не попадают данные, дающие доступ к чужому: код билета в
-  ответе регистрации не возвращается, он приходит только письмом (`docs/architecture.md`,
-  раздел «API»).
-- **Логи.** Ни email, ни имён, ни кодов, ни токенов (правило 8).
+  The participant's public endpoints (registration, cancellation by token) do not depend on the
+  session.
+- **A list.** Counters and related objects — without a query per row; a test with
+  `django_assert_num_queries` (rule 10 of `backend/AGENTS.md`).
+- **Nothing extra in the response.** The response has no data that gives access to someone else's:
+  the ticket code is not returned in the registration response, it comes only by email
+  (`docs/architecture.md`, the "API" section).
+- **Logs.** No emails, names, codes or tokens (rule 8).
 
-## Ошибки
+## Errors
 
-Фронтенд приводит статус к `AppError.kind` (`shared/api/app-error.ts`: 400/422 — `validation`,
-401 — `unauthorized`, 403 — `forbidden`, 404 — `not_found`, 409 — `conflict`, 5xx — `server`).
-Новый статус — правка `kindForStatus` и тест. Анонимный запрос к закрытому эндпоинту — 401
-(`accounts.authentication.SessionAuthenticationWith401`: без заголовка `WWW-Authenticate`
-DRF подменяет 401 на 403); 403 — «вошёл, но нельзя» (чужое событие, CSRF). «Неверный логин» —
-400, чтобы не путать с протухшей сессией.
+The frontend maps the status to `AppError.kind` (`shared/api/app-error.ts`: 400/422 — `validation`,
+401 — `unauthorized`, 403 — `forbidden`, 404 — `not_found`, 409 — `conflict`, 5xx — `server`). A
+new status — a change of `kindForStatus` and a test. An anonymous request to a closed endpoint — 401
+(`accounts.authentication.SessionAuthenticationWith401`: without the `WWW-Authenticate` header DRF
+replaces 401 with 403); 403 — "logged in, but not allowed" (someone else's event, CSRF). "Wrong
+login" — 400, so as not to confuse it with an expired session.
 
-Ошибки полей (400 `ValidationError`) — коды, а не тексты: DRF отдаёт английские сообщения, а
-интерфейс русский. `config.exceptions.api_exception_handler` превращает тело в
-`{"errors": {"поле": ["код"]}}` (`exc.get_codes()`: `required`, `blank`, `max_length`,
-`min_value`, `invalid`…); ошибка вне поля (из `validate()`) — под `non_field_errors`. Свой код
-для правила предметной области — `ValidationError(msg, code="past")`. Форма сопоставляет код
-с текстом в своём `<i18n>`; коды полей фронтенд кладёт в `AppError.fields` (задача 2.2). В схему 400 попадает через
-`responses={400: ValidationErrorSerializer}` (`config.exceptions`) — указывать у каждого
-эндпоинта с телом запроса. Остальные 4xx сохраняют `{"detail": "..."}`.
+Field errors (400 `ValidationError`) — codes, not texts: DRF returns English messages, and the
+interface is Russian. `config.exceptions.api_exception_handler` turns the body into
+`{"errors": {"field": ["code"]}}` (`exc.get_codes()`: `required`, `blank`, `max_length`,
+`min_value`, `invalid`…); an error outside a field (from `validate()`) — under `non_field_errors`.
+Our own code for a domain rule — `ValidationError(msg, code="past")`. The form maps the code to a
+text in its `<i18n>`; the frontend puts the field codes into `AppError.fields` (task 2.2). It gets
+into the 400 schema through `responses={400: ValidationErrorSerializer}` (`config.exceptions`) — set
+it on each endpoint with a request body. The other 4xx keep `{"detail": "..."}`.
 
-Образец теста эндпоинта — `backend/accounts/tests/test_auth_api.py`: `APIClient`,
-`force_login`, параметризованные плохие входы, статус и тело.
+An example of an endpoint test — `backend/accounts/tests/test_auth_api.py`: `APIClient`,
+`force_login`, parametrized bad inputs, the status and the body.
 
-## Готово, когда
+## Done when
 
-- Тест эндпоинта и тест логики проходят; `make stack-check` зелёный.
-- `openapi.yaml` и `schema.d.ts` в коммите; `git diff` схемы содержит только ожидаемое.
-- Изменение документировано: эндпоинт в `docs/architecture.md` (раздел «API») приведён к
-  коду, статус раздела обновлён.
+- The endpoint test and the logic test pass; `make stack-check` is green.
+- `openapi.yaml` and `schema.d.ts` are in the commit; the schema `git diff` has only what is
+  expected.
+- The change is documented: the endpoint in `docs/architecture.md` (the "API" section) is brought in
+  line with the code, the section status is updated.

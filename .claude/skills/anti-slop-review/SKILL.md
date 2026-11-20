@@ -1,139 +1,139 @@
 ---
 name: anti-slop-review
 description: >
-  Проверка кода и документации на «AI slop» перед коммитом крупного изменения, ревью или
-  сдачей репозитория: остатки генераторов и шаблонов, мёртвые и недоделанные опции,
-  утверждения в README, docs и комментариях, не подкреплённые кодом, рекламный тон и эмодзи,
-  лишние абстракции, хрупкая обработка ошибок, персональные данные в логах. Использовать,
-  когда просят проверить код или репозиторий «на мусор», подготовить проект к сдаче или
-  демонстрации, отревьюить код, написанный с ИИ.
+  A check of code and documentation for "AI slop" before committing a large change, a review or the
+  delivery of the repository: generator and template leftovers, dead and unfinished options, claims
+  in the README, docs and comments not backed by the code, a promotional tone and emoji, extra
+  abstractions, fragile error handling, personal data in logs. Use when asked to check the code or
+  the repository "for junk", to prepare the project for delivery or a demo, to review code written
+  with AI.
 ---
 
-# Ревью на мусор
+# Junk review
 
-Адаптация skill `anti-slop-review` из шаблона `rbikbov/frontend-starter` под этот
-репозиторий (Django + Vue).
+An adaptation of the `anti-slop-review` skill from the `rbikbov/frontend-starter` template to this
+repository (Django + Vue).
 
-Мусор — это не стиль, а **утверждения без подтверждения и код без причины существовать**.
-Каждая находка подтверждается фактом: строкой кода, выводом команды, отсутствием потребителя.
-Вкусовщина и то, что ловит линтер, — вне рамок.
+Junk is not style but **claims without backing and code without a reason to exist**. Each finding is
+backed by a fact: a line of code, a command output, the absence of a consumer. Matters of taste and
+what the linter catches are out of scope.
 
-Принципы:
+Principles:
 
-1. **Удалить лучше, чем добавить.** Мёртвая опция удаляется, а не документируется; рекламная
-   фраза заменяется фактом или удаляется.
-2. **Утверждение проверяется по коду, а не по памяти.** Прежде чем назвать строку README
-   верной или ложной — открыть файл, о котором она говорит, или выполнить команду.
-3. **Находка без доказательства — не находка.**
-4. Правки — только по запросу. По умолчанию результат ревью — список.
+1. **Deleting is better than adding.** A dead option is deleted, not documented; a promotional
+   phrase is replaced with a fact or deleted.
+2. **A claim is checked against the code, not from memory.** Before calling a README line right or
+   wrong — open the file it talks about or run the command.
+3. **A finding without proof is not a finding.**
+4. Edits — only on request. By default the result of the review is a list.
 
-## Порядок
+## Order
 
-1. Определить объём: diff, файлы или весь репозиторий перед сдачей. Если диапазон коммитов
-   передан (так делает агент `reviewer`) — diff по нему; иначе `git diff <база>...HEAD`.
-2. Прогнать поиск из раздела «Кандидаты» — он даёт кандидатов, не находки.
-3. Проверить каждого кандидата чтением кода, отбросить ложные.
-4. Пройти чек-лист — то, что поиск не ловит: README и docs против кода, состояния UI,
-   абстракции.
-5. Если есть браузер — поднять стек своего слота (основная сессия — `make stack-up`, слот 1:
-   http://localhost:5174, Mailpit http://localhost:8026), посмотреть страницы, затем
-   `make stack-down`. `make up` не запускать: это стек человека. Без браузера (агент
-   `reviewer`) — отметить в «не проверялось».
-6. Отчёт в формате ниже.
+1. Determine the scope: a diff, files or the whole repository before the delivery. If a commit
+   range is given (the `reviewer` agent does that) — the diff by it; otherwise
+   `git diff <base>...HEAD`.
+2. Run the search from the "Candidates" section — it gives candidates, not findings.
+3. Check each candidate by reading the code, drop the false ones.
+4. Go through the checklist — what the search does not catch: the README and docs against the code,
+   UI states, abstractions.
+5. If there is a browser — start the stack of your slot (the main session — `make stack-up`, slot 1:
+   http://localhost:5174, Mailpit http://localhost:8026), look at the pages, then
+   `make stack-down`. Do not run `make up`: it is the human's stack. Without a browser (the
+   `reviewer` agent) — mark it under "not checked".
+6. A report in the format below.
 
-## Чек-лист
+## Checklist
 
-**Остатки генераторов и шаблонов.** Стартовые страницы и тексты генераторов, файлы-примеры,
-тесты, проверяющие только заголовок шаблона, пустые `index.ts`, папки слоёв без кода,
-`.gitkeep` рядом с файлами.
+**Generator and template leftovers.** Starter pages and texts of generators, example files, tests
+that check only the template's heading, empty `index.ts`, layer folders without code, `.gitkeep`
+next to files.
 
-**Мёртвое и недоделанное.** Ветки «not implemented», union из одного значения как «точка
-расширения», закомментированный код, `TODO` без причины, неиспользуемые экспорты и
-зависимости, make-цели и скрипты, ссылающиеся на несуществующее.
+**Dead and unfinished.** "not implemented" branches, a union of one value as an "extension point",
+commented-out code, a `TODO` without a reason, unused exports and dependencies, make targets and
+scripts that refer to something nonexistent.
 
-**Документация против кода** (`README.md`, `docs/`, `AGENTS.md`, комментарии, сообщения
-коммитов):
+**Documentation against the code** (`README.md`, `docs/`, `AGENTS.md`, comments, commit messages):
 
-- имена и пути: упомянутые файлы, команды, make-цели, переменные окружения существуют;
-- поведение: «проверяется в CI», «блокировка защищает от гонки», «письмо ровно одно» — найти
-  код и тест, который это делает;
-- будущее в настоящем времени: запланированное описано как сделанное;
-- таблицы «требование → тест» в README и `docs/requirements.md`: каждый тест существует и проверяет то, что заявлено;
-- ссылки и якоря в markdown ведут туда, куда нужно.
+- names and paths: the mentioned files, commands, make targets, environment variables exist;
+- behavior: "checked in CI", "the lock protects against the race", "exactly one email" — find the
+  code and the test that do it;
+- the future in the present tense: something planned described as done;
+- the "requirement → test" tables in the README and `docs/requirements.md`: each test exists and
+  checks what is claimed;
+- links and anchors in markdown lead where they should.
 
-**Тон.** Оценочные слова вместо фактов (современный, мощный, надёжный, production-ready,
-seamless, robust), эмодзи в документации, UI, логах и коммитах, комментарии, пересказывающие
-код, комментарии-история («исправлено», «обновлено до X»). Замена — факт: что делает, почему
-так, какое ограничение.
+**Tone.** Evaluative words instead of facts (modern, powerful, reliable, production-ready,
+seamless, robust), emoji in documentation, UI, logs and commits, comments that retell the code,
+history comments ("fixed", "updated to X"). The replacement is a fact: what it does, why it is so,
+what the limitation is.
 
-**Лишние абстракции.** Интерфейс или фабрика с одной реализацией и без фейка в тестах; слой,
-приложение Django, срез FSD без потребителя; обёртки, которые только переименовывают;
-параметры, которые никто не передаёт.
+**Extra abstractions.** An interface or a factory with one implementation and without a fake in the
+tests; a layer, a Django app, an FSD slice without a consumer; wrappers that only rename; parameters
+that nobody passes.
 
-**Ошибки и асинхронность.** Вид ошибки по тексту сообщения; пустой `catch` / `except: pass`;
-`except Exception` без повторного броска или осмысленной обработки; серверный текст ошибки
-показан пользователю как есть; нет состояний загрузки, ошибки, пусто; промис без `await`.
+**Errors and async.** The kind of an error by the message text; an empty `catch` / `except: pass`;
+`except Exception` without a re-raise or meaningful handling; a server error text shown to the user
+as is; no loading, error, empty states; a promise without `await`.
 
-**Backend.** Бизнес-логика во view вместо `services.py`; проверка инварианта только в Python
-там, где возможна гонка (нужно ограничение БД или блокировка); `datetime.now()` без часового
-пояса; изменение API без обновлённой `openapi.yaml`; правка закоммиченной миграции.
+**Backend.** Business logic in a view instead of `services.py`; an invariant check only in Python
+where a race is possible (a database constraint or a lock is needed); `datetime.now()` without a time
+zone; an API change without an updated `openapi.yaml`; an edit of a committed migration.
 
-**Безопасность и приватность.** Email, имена, коды билетов, токены в логах; секреты в
-репозитории или истории; `.env` в индексе; токен в URL, который остаётся в адресной строке
-или логах; ввод пользователя в HTML без экранирования (`v-html`, `mark_safe`).
+**Security and privacy.** Emails, names, ticket codes, tokens in logs; secrets in the repository or
+the history; `.env` in the index; a token in a URL that stays in the address bar or logs; user input
+in HTML without escaping (`v-html`, `mark_safe`).
 
-**Тесты.** Тесты проверяют моки, а не поведение; тест гонки без настоящей конкурентности
-(последовательные вызовы вместо потоков); e2e с `waitForTimeout`; тест, который не падает при
-сломанном поведении.
+**Tests.** Tests check mocks, not behavior; a race test without real concurrency (sequential calls
+instead of threads); e2e with `waitForTimeout`; a test that does not fail with broken behavior.
 
-**Git.** Несвязанные изменения в одном коммите; сообщение, не описывающее diff;
-сгенерированные файлы, кроме намеренно закоммиченных (`openapi.yaml`, `schema.d.ts`).
+**Git.** Unrelated changes in one commit; a message that does not describe the diff; generated
+files, except the deliberately committed ones (`openapi.yaml`, `schema.d.ts`).
 
-## Кандидаты
+## Candidates
 
-Команды дают кандидатов; каждое совпадение проверяется чтением кода. Нужен ripgrep (`rg`).
+The commands give candidates; each match is checked by reading the code. ripgrep (`rg`) is needed.
 
 ```bash
-# Рекламный тон и шаблоны
+# Promotional tone and templates
 rg -n -i "premium|state-of-the-art|cutting-edge|blazing|seamless|robust|production-ready|enterprise-grade|get started by editing|welcome to" \
   --glob '!**/node_modules/**' --glob '!*.lock' --glob '!pnpm-lock.yaml'
 rg -n -i "современн|мощн|надёжн|бесшовн" docs README.md AGENTS.md
 
-# Эмодзи в коде, UI и документации
+# Emoji in code, UI and documentation
 rg -n --pcre2 '[\x{1F300}-\x{1FAFF}\x{2600}-\x{27BF}]' --glob '!**/node_modules/**' --glob '!*.lock'
 
-# Недоделанное
+# Unfinished
 rg -n -i "not implemented|todo|fixme|hack|xxx" --glob '!**/node_modules/**' --glob '!docs/task.md'
 
-# Хрупкие ошибки
+# Fragile errors
 rg -n "except Exception|except:|pass$" backend --glob '!**/migrations/**'
 rg -n "catch \{\s*\}|catch \(\w*\) \{\s*\}|\.catch\(\(\) => \{\s*\}\)|message ===|message\.includes" frontend/src e2e
 
-# Персональные данные в логах
+# Personal data in logs
 rg -n "(logger|logging|print|console)\.?\w*\(.*(email|name|code|token|password)" backend frontend/src
 
-# Время без часового пояса
+# Time without a time zone
 rg -n "datetime\.now\(\)|datetime\.utcnow\(\)" backend
 
-# Небезопасный HTML
+# Unsafe HTML
 rg -n "v-html|mark_safe|\|safe" frontend/src backend
 
-# Секреты в истории и .env в индексе
+# Secrets in the history and .env in the index
 git log -p --all | rg -n -i "(api[_-]?key|secret|password|token)\s*[:=]\s*['\"][A-Za-z0-9_\-]{16,}"
 git ls-files | rg -n "(^|/)\.env($|\.)" | rg -v "\.env\.example$"
 ```
 
-## Формат отчёта
+## Report format
 
-Находки по убыванию важности: безопасность и приватность → ложные утверждения в документации
-→ ошибки обработки ошибок и гонки → мёртвое и недоделанное → шаблоны → тон.
+Findings in order of importance: security and privacy → false claims in the documentation → errors
+of error handling and races → dead and unfinished → templates → tone.
 
 ```text
-<файл>:<строка> — <категория>
-Что: <одно предложение с фактом>
-Почему важно: <последствие для пользователя, проверяющего или того, кто будет поддерживать>
-Исправление: <конкретно; чаще всего «удалить» или «заменить фактом: …»>
+<file>:<line> — <category>
+What: <one sentence with a fact>
+Why it matters: <the consequence for the user, the reviewer or whoever will maintain it>
+Fix: <specific; most often "delete" or "replace with a fact: …">
 ```
 
-В конце: что проверено без находок и что не проверялось (например, приложение не
-запускалось). Находок нет — так и написать, без натянутых замечаний.
+At the end: what was checked without findings and what was not checked (for example, the
+application was not started). No findings — say so, without far-fetched remarks.
