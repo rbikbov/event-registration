@@ -1,14 +1,14 @@
-# <Фича>: задачи
+# <Feature>: tasks
 
-Spec — `spec.md`. Одна задача — один коммит; отметка `[x]` — в том же коммите.
+Spec — `spec.md`. One task — one commit; the `[x]` check goes into the same commit.
 
-- [ ] 1. Tracer bullet: <сценарий насквозь>. Готово, когда: <проверка>.
-- [ ] 2. <Задача>. Готово, когда: <проверка>.
+- [ ] 1. Tracer bullet: <a scenario end to end>. Done when: <a check>.
+- [ ] 2. <Task>. Done when: <a check>.
 
-## Лог
+## Log
 
-<!-- 2–3 строки находок исследования; где остановились, если сессия прервалась. -->
+<!-- 2–3 lines of research findings; where the work stopped if the session was interrupted. -->
 
-## На потом
+## Later
 
-<!-- Найденное вне задач: что, где, почему не сейчас. -->
+<!-- Found outside the tasks: what, where, why not now. -->
