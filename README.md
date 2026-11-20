@@ -1,76 +1,43 @@
 # Регистрация на мероприятия
 
-Тестовое задание: сервис регистрации на мероприятия с лимитом мест, листом ожидания,
-билетами и чекином. Задание — [docs/task.md](docs/task.md), решения —
-[docs/decisions.md](docs/decisions.md), устройство системы —
-[docs/architecture.md](docs/architecture.md), ход работы — [docs/roadmap.md](docs/roadmap.md).
+Тестовое задание: сервис регистрации на мероприятия с лимитом мест, листом ожидания, билетами
+и чекином. Стек: Vue 3 + Vite, Django + DRF, PostgreSQL 17. Все требования задания сделаны и
+покрыты тестами; что именно работает — [docs/features.md](docs/features.md).
 
-Стек: Vue 3 + Vite, Django + DRF, PostgreSQL.
+## Запуск
 
-## Состояние
+Нужен только Docker с Compose и `make`.
 
-Все требования задания сделаны и покрыты тестами (таблицы — в [Требования и
-тесты](#требования-и-тесты)). Фазы плана — каркас, регистрация и лист ожидания, письма, чекин и
-панель организатора, живые счётчики, перенос и напоминания, доводка фронтенда, сдача — готовы;
-ход — [docs/roadmap.md](docs/roadmap.md).
+```sh
+make up          # весь стек в Docker
+make demo-users  # демо-учётка организатора: demo@example.com / demo
+make seed        # демо-события с участниками
+```
 
-Работают:
-вход организатора (демо: `demo@example.com` / `demo`), создание события, публичный список и
-страница события с регистрацией, лист ожидания с номером, защита от гонок за последнее место и
-за один email. Письма — с билетом, о попадании в лист ожидания и о полученном месте после
-чужого отказа — уходят через outbox и воркер в Mailpit (<http://localhost:8025>), с повторами
-при ошибке SMTP. Страница билета по ссылке из письма показывает код, номер в листе или отмену
-и позволяет отказаться. Организатор видит панель события — счётчики подтверждённых, листа
-ожидания и пришедших, список участников постранично с фильтром по статусу — и отмечает билеты
-на входе по коду: билет проходит один раз, в том числе при одновременных запросах, повтор
-показывает время первой отметки; от отмеченного билета отказаться нельзя. Счётчики панели и
-свободные места на странице события обновляются без перезагрузки во всех открытых вкладках
-(SSE и Postgres `LISTEN/NOTIFY`); при обрыве панель показывает «Соединение потеряно,
-переподключаюсь…» и после переподключения получает верные счётчики. Организатор
-редактирует событие: при переносе даты подтверждённые и стоящие в листе получают письмо, рост
-лимита отдаёт места первым из листа, лимит ниже числа подтверждённых не принимается. За сутки
-до события каждому, кто получил место раньше, приходит ровно одно напоминание — после
-переноса новое, о новой дате. `make seed` добавляет демо-события с участниками.
-Все экраны — в общем макете с шапкой: вход и выход организатора, возврат после входа на
-открытую страницу, одинаковые загрузка, ошибка с повтором и ссылкой на состояние сервиса,
-«не найдено» для неизвестного адреса; без сети — плашка под шапкой. Списки событий — по 20 на
-страницу, с вкладками «Предстоящие» и «Прошедшие». Каждый экран помещается в ширину телефона
-(360 px).
+Открыть <http://localhost:5173>, письма — в Mailpit <http://localhost:8025>. Остановить —
+`make down`. Сервисы, порты и разработка — [docs/development.md](docs/development.md).
 
-Линтеры, проверки типов и тесты проходят локально и в CI на каждый PR (`make check`,
-`make e2e`).
+## Что доказано тестами
 
-### Ограничения
+- **Последнее место:** два человека одновременно — место одному, второй в листе ожидания;
+  один email — одна регистрация. Замок строки события, гонки — `docs/rules/concurrency.md`.
+- **Чекин:** билет проходит один раз, в том числе при одновременных запросах (условный
+  `UPDATE`).
+- **Письма:** через transactional outbox и отдельный воркер, с повторами при ошибке SMTP;
+  доставка «хотя бы один раз».
+- **Напоминание:** ровно одно за сутки до события, после переноса — новое, о новой дате.
+- **Live:** счётчики организатора и свободные места обновляются во всех вкладках (SSE +
+  Postgres `LISTEN/NOTIFY`); e2e с двумя контекстами браузера.
 
-- **Только локальный запуск.** `make up` — режим разработки: `DJANGO_DEBUG` по умолчанию
-  `true`, ключ Django — тестовый, фронтенд — dev-сервер Vite, без HTTPS. Сборку за nginx
-  (`gateway` в `frontend/Dockerfile`) поднимают только e2e. Деплоя нет.
-- **Живые обновления — один процесс backend.** Каждый открытый поток SSE держит поток ОС в
-  процессе Django, а изменения приходят через `LISTEN/NOTIFY` одной базы. Для демо и
-  нескольких вкладок хватает; тысячи соединений или несколько процессов backend — см.
-  [Что дальше](#что-дальше).
-- **Письма — «хотя бы один раз».** Письмо создаётся ровно один раз, но если воркер упадёт
-  между отправкой и записью `sent`, оно уйдёт повторно. Отправленные письма из outbox не
-  удаляются: в демо их мало.
-- **Учётные записи организаторов** создаются только командой (`make demo-users`) и в админке
-  Django: экрана регистрации нет.
-- **На начавшееся событие можно зарегистрироваться**, и оно видно на вкладке «Прошедшие»:
-  времени окончания у события нет.
-- **Сессия организатора** — умолчания Django: две недели от входа, активность её не
-  продлевает.
-- **Нестабильный тест Vitest.** Изредка, чаще под нагрузкой, прогон падает с необработанной
-  `ReferenceError: window is not defined` из `vue-i18n`: компонент дорисовывается после того,
-  как тест закрыл jsdom. Сами тесты при этом проходят, повтор зелёный; причина не найдена
-  (`docs/features/reschedule/tasks.md`, «На потом»).
+Линтеры, типы, pytest, Vitest и Playwright — в CI на каждый PR (`make check`, `make e2e`).
 
 ## Требования и тесты
 
 Пути — от корня репозитория; `pytest` — `backend/`, `Vitest` — `frontend/src/`, e2e — `e2e/tests/`.
 Что каждый упомянутый тест существует, проверяет `make check-readme` (входит в `make check`).
 
-### Задание
-
-Пункты задания 9 его словами; основные тесты — здесь, все — в подробной таблице ниже.
+Пункты задания его словами; общие требования и подробная таблица по каждому поведению —
+[docs/requirements.md](docs/requirements.md).
 
 | Требование задания                                                                   | Тест                                                                                                                                                                                                                                                                |
 | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -89,217 +56,24 @@
 | Счётчик пришедших у организатора обновляется live                                    | e2e `organizer-sees-arrivals-live.spec.ts`; `events/tests/test_org_event_stream_api.py::test_check_in_sends_a_new_snapshot`                                                                                                                                         |
 | Организатор перенёс событие — все участники получают письмо                          | `registrations/tests/test_update_event.py::test_reschedule_emails_confirmed_and_waitlisted_and_bumps_the_version`; e2e `organizer-reschedules-event.spec.ts`                                                                                                        |
 
-### Общие требования
+## Ограничения
 
-| Требование                                         | Где выполнено                                                                                                                                                                                                                    |
-| -------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1. Отдельные backend и frontend, общаются по сети  | `backend/` и `frontend/` — отдельные сервисы `docker-compose.yml`; e2e ходят в API через шлюз, как браузер                                                                                                                       |
-| 2. Backend: Python, Go или Node.js; причины выбора | Python, Django + DRF; почему — `docs/decisions.md`, 2026-10-28, «стек»                                                                                                                                                           |
-| 3. Frontend: Vue или React                         | Vue 3 + Vite, `frontend/`                                                                                                                                                                                                        |
-| 4. Реляционная СУБД, предпочтительно PostgreSQL    | PostgreSQL 17; на нём держатся блокировки гонок и `LISTEN/NOTIFY` — `docs/rules/concurrency.md`                                                                                                                                  |
-| 5. Учётные записи и вход                           | организатор — email и пароль, сессия Django; участник — без учётной записи: email и ссылка на билет; `accounts/tests/test_auth_api.py::test_login_returns_user_and_starts_session`                                               |
-| 6. Промпты или лог решений                         | `docs/decisions.md` с временем; правила и процедуры агента — `AGENTS.md`, `.claude/skills/`; экспорт сессий — [Чем делали](#чем-делали)                                                                                          |
-| 7. Использование AI-агентов                        | [Чем делали](#чем-делали)                                                                                                                                                                                                        |
-| 8. Предварительные требования                      | [Запуск](#запуск): Docker с Compose и `make`                                                                                                                                                                                     |
-| 9. Быстрый локальный запуск                        | `make up` — весь стек в Docker; CI поднимает его так же (`.github/workflows/ci.yml`, job `e2e`)                                                                                                                                  |
-| 10. Внешние сервисы — заглушки                     | почта — Mailpit (SMTP-ловушка), письма наружу не уходят                                                                                                                                                                          |
-| 11. Работает при двух открытых клиентах            | e2e с двумя контекстами браузера: `registration-updates-open-pages.spec.ts`, `organizer-sees-arrivals-live.spec.ts`, `two-participants-last-seat.spec.ts`, `organizer-checks-in.spec.ts` («one code at two entrances at once …») |
-| 12. Честное описание состояния                     | [Состояние](#состояние) и [Что дальше](#что-дальше)                                                                                                                                                                              |
-| 13. Доказуемость                                   | таблицы этого раздела; `make check` (линтеры, типы, pytest, Vitest) и `make e2e` — в CI на каждый PR                                                                                                                             |
+- Только локальный запуск: режим разработки, без HTTPS, деплоя нет.
+- Живые обновления держит один процесс backend: для демо хватает, для тысяч соединений нужен
+  push-сервер.
+- Письма «хотя бы один раз»: если воркер упадёт между отправкой и отметкой, письмо уйдёт
+  повторно.
+- Организаторов создаёт команда или админка, экрана регистрации нет; на начавшееся событие
+  можно зарегистрироваться.
+- Изредка нестабилен один прогон Vitest (`vue-i18n` после закрытия jsdom), повтор зелёный.
 
-### Подробно
+Что отложено и что нужно, чтобы это стало продуктом, — [docs/roadmap.md](docs/roadmap.md#что-дальше).
 
-| Требование                                                                                               | Тест                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| -------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Организатор входит, неверный пароль — ошибка                                                             | `accounts/tests/test_auth_api.py::test_login_returns_user_and_starts_session`, `::test_login_rejects_bad_credentials_with_400`; e2e `organizer-creates-event.spec.ts` («a wrong password …»)                                                                                                                                                                                                                                                       |
-| Организатор создаёт событие и видит его в списке                                                         | `events/tests/test_org_events_api.py::test_create_makes_the_caller_the_organizer`; e2e `organizer-creates-event.spec.ts`                                                                                                                                                                                                                                                                                                                           |
-| Организатор видит только свои события                                                                    | `events/tests/test_org_events_api.py::test_list_has_only_own_events_ordered_by_start`, `::test_for_organizer_returns_only_that_users_events`                                                                                                                                                                                                                                                                                                       |
-| Место есть — регистрация подтверждена                                                                    | `registrations/tests/test_services.py::test_register_confirms_when_a_seat_is_free`; `EventPage.test.ts` («registers, shows the result …»)                                                                                                                                                                                                                                                                                                          |
-| Повторная регистрация не создаёт второго места                                                           | `registrations/tests/test_services.py::test_register_again_returns_the_same_registration`, `::test_repeat_by_a_registered_email_does_not_take_a_second_seat`; `test_registration_api.py::test_repeat_returns_200_and_no_second_registration`                                                                                                                                                                                                       |
-| Email: регистр не важен, точки и `+tag` — разные адреса                                                  | `registrations/tests/test_services.py::test_register_stores_the_email_in_lower_case`, `::test_email_differing_by_dot_or_tag_is_a_different_registration`; `registrations/tests/test_concurrency.py::test_parallel_registrations_differing_only_by_case_make_one_registration`                                                                                                                                                                      |
-| Мест нет — лист ожидания, номер растёт 1, 2, 3                                                           | `registrations/tests/test_services.py::test_register_waitlists_when_no_seats_are_left`, `::test_waitlist_positions_grow_in_registration_order`; e2e `participant-registers.spec.ts`                                                                                                                                                                                                                                                                |
-| Отказ подтверждённого повышает первого из листа                                                          | `registrations/tests/test_cancel.py::test_cancel_confirmed_promotes_the_first_waitlisted`, `::test_waitlist_shifts_after_a_promotion`                                                                                                                                                                                                                                                                                                              |
-| Отказ из листа и повторный отказ никого не повышают                                                      | `test_cancel.py::test_cancel_from_the_waitlist_promotes_nobody`, `::test_repeated_cancel_does_not_promote_a_second_person`                                                                                                                                                                                                                                                                                                                         |
-| Гонка за последнее место: ровно один подтверждён                                                         | `registrations/tests/test_concurrency.py::test_parallel_registrations_for_the_last_seat_confirm_exactly_one`, `::test_parallel_registrations_never_exceed_capacity`; e2e с двумя браузерами `two-participants-last-seat.spec.ts` — каждый видит свой итог (порядок запросов не управляется, гонку доказывает pytest)                                                                                                                               |
-| Гонка с одним email: одна регистрация                                                                    | `registrations/tests/test_concurrency.py::test_parallel_registrations_of_one_email_make_one_registration`, `::test_parallel_registrations_differing_only_by_case_make_one_registration`                                                                                                                                                                                                                                                            |
-| Параллельные отказы повышают ровно столько, сколько освободили                                           | `registrations/tests/test_concurrency.py::test_parallel_cancels_of_one_token_promote_exactly_one`, `::test_parallel_cancels_of_different_tokens_fill_seats_from_the_queue_in_order`                                                                                                                                                                                                                                                                |
-| Участник регистрируется и видит результат на странице                                                    | e2e `participant-registers.spec.ts`; `EventPage.test.ts`                                                                                                                                                                                                                                                                                                                                                                                           |
-| Получил место — письмо с кодом билета и ссылкой                                                          | `registrations/tests/test_emails.py::test_register_on_a_seat_queues_one_ticket_email`; `emails/tests/test_services.py::test_ticket_email_is_a_snapshot_with_code_date_and_link`; e2e `participant-opens-ticket.spec.ts`                                                                                                                                                                                                                            |
-| Повтор регистрации писем не шлёт; одно изменение — одно письмо                                           | `test_emails.py::test_repeated_register_queues_no_more_emails`; `emails/tests/test_services.py::test_same_dedup_key_is_queued_once`                                                                                                                                                                                                                                                                                                                |
-| Попал в лист ожидания — письмо с номером и ссылкой                                                       | `test_emails.py::test_register_on_the_waitlist_queues_waitlisted_with_the_position`; e2e `waitlisted-gets-promoted.spec.ts`                                                                                                                                                                                                                                                                                                                        |
-| Кто-то отказался — первый из листа получает место и письмо                                               | `test_emails.py::test_cancel_confirmed_queues_promoted_for_the_waitlist_head`; e2e `waitlisted-gets-promoted.spec.ts`                                                                                                                                                                                                                                                                                                                              |
-| Отказ из листа, повторный отказ, отказ при пустом листе — без писем                                      | `test_emails.py::test_cancel_from_the_waitlist_queues_no_email`, `::test_repeated_cancel_queues_no_email`, `::test_cancel_with_an_empty_waitlist_queues_no_email`                                                                                                                                                                                                                                                                                  |
-| Регистрация после отказа — новое письмо с новым кодом                                                    | `test_emails.py::test_revival_after_cancel_queues_a_new_email_with_the_new_code`, `::test_revival_onto_the_waitlist_queues_a_new_waitlisted`                                                                                                                                                                                                                                                                                                       |
-| Воркер отправляет письмо один раз                                                                        | `emails/tests/test_worker.py::test_pending_email_is_sent_and_marked_sent`, `::test_sent_email_is_not_sent_again`                                                                                                                                                                                                                                                                                                                                   |
-| Ошибка SMTP — повтор с растущей паузой, после 5 попыток — `failed`; пачка не останавливается             | `test_worker.py::test_failed_send_is_retried_later`, `::test_pause_between_attempts_doubles_and_the_last_attempt_fails_the_email`, `::test_failed_email_does_not_stop_the_batch`, `::test_silent_smtp_server_is_retried_like_a_refusal`                                                                                                                                                                                                            |
-| Воркер переживает потерю соединения с БД                                                                 | `emails/tests/test_run_worker.py::test_lost_database_connection_is_logged_and_the_next_poll_reconnects`                                                                                                                                                                                                                                                                                                                                            |
-| Два воркера: каждое письмо отправлено один раз                                                           | `emails/tests/test_concurrency.py::test_two_workers_send_each_email_once`                                                                                                                                                                                                                                                                                                                                                                          |
-| В логе воркера нет адресов и текста ошибки                                                               | `test_worker.py::test_failure_is_logged_with_the_email_id_and_error_class_only`, `::test_bug_is_logged_as_an_error_with_the_stack_but_not_the_message`                                                                                                                                                                                                                                                                                             |
-| Билет по ссылке из письма: код, №N, «отменена», «не найден»; отказ с подтверждением                      | `registrations/tests/test_ticket.py` (`test_ticket_api_*`); `TicketPage.test.ts`; e2e `participant-opens-ticket.spec.ts`                                                                                                                                                                                                                                                                                                                           |
-| Чекин по коду: подтверждённый билет проходит, код — в любом регистре, с пробелами и дефисами             | `registrations/tests/test_checkin.py::test_check_in_marks_a_confirmed_ticket`, `::test_check_in_accepts_the_code_as_typed_at_the_entrance`; `test_checkin_api.py::test_checkin_returns_the_name_and_a_masked_email`; e2e `organizer-checks-in.spec.ts`                                                                                                                                                                                             |
-| Повторный чекин отклоняется с временем первой отметки                                                    | `test_checkin.py::test_a_repeat_check_in_reports_the_first_time_and_changes_nothing`; `test_checkin_api.py::test_a_repeat_checkin_is_200_with_the_first_time`; `OrgCheckinPage.test.ts` («says a repeat ticket was already let in, and when»); e2e `organizer-checks-in.spec.ts`                                                                                                                                                                   |
-| Одновременный чекин одного кода: отмечен один раз                                                        | `registrations/tests/test_concurrency.py::test_parallel_check_ins_of_one_code_mark_it_once`; e2e с двумя входами `organizer-checks-in.spec.ts` («one code at two entrances at once …»)                                                                                                                                                                                                                                                             |
-| Неизвестный код, код другого события, лист ожидания или отказ — не проходят                              | `test_checkin.py::test_check_in_of_an_unknown_code_raises`, `::test_check_in_of_another_events_code_raises_and_marks_nothing`, `::test_check_in_of_a_ticket_that_is_not_confirmed_raises_and_marks_nothing`; `test_checkin_api.py` (404, 409)                                                                                                                                                                                                      |
-| Чекин только на своём событии и с сессией                                                                | `test_checkin_api.py::test_checkin_at_another_organizers_event_is_403`, `::test_checkin_needs_a_session`, `::test_checkin_requires_csrf_token`                                                                                                                                                                                                                                                                                                     |
-| От отмеченного билета отказаться нельзя, в том числе одновременно с чекином                              | `test_cancel.py::test_cancel_of_a_checked_in_ticket_raises_and_changes_nothing`, `::test_cancel_api_of_a_checked_in_ticket_is_409`; `registrations/tests/test_concurrency.py::test_check_in_in_parallel_with_a_cancel_lets_exactly_one_pass`; `TicketPage.test.ts` («says a checked-in ticket was let in, and offers no cancel»)                                                                                                                   |
-| Счётчики события: подтверждено, в листе ожидания, пришло                                                 | `events/tests/test_org_event_detail_api.py::test_detail_has_the_event_and_its_counts`, `::test_detail_counts_in_one_query`; `OrgEventLayout.test.ts` («shows the event, its counters …»); e2e `organizer-checks-in.spec.ts`                                                                                                                                                                                                                        |
-| Список участников в порядке очереди, фильтр по статусу, по 50 на страницу                                | `registrations/tests/test_org_registrations_api.py::test_list_has_every_registration_in_queue_order`, `::test_list_filters_by_status`, `::test_filtered_waitlist_keeps_the_queue_positions`, `::test_list_comes_in_pages_of_50`, `::test_positions_on_the_second_page_go_on_from_the_first`; `OrgEventParticipantsPage.test.ts`                                                                                                                    |
-| Панель и участники — только своего события                                                               | `test_org_event_detail_api.py::test_detail_of_another_organizers_event_is_403`; `test_org_registrations_api.py::test_list_of_another_organizers_event_is_403`                                                                                                                                                                                                                                                                                      |
-| Счётчик пришедших обновляется live в другой открытой вкладке                                             | e2e `organizer-sees-arrivals-live.spec.ts` (панель и второй экран чекина); `events/tests/test_org_event_stream_api.py::test_check_in_sends_a_new_snapshot`; `registrations/tests/test_stats_notifications.py::test_first_check_in_notifies_after_commit`, `::test_rolled_back_check_in_does_not_notify`, `::test_repeat_check_in_does_not_notify`                                                                                                  |
-| Регистрация в одной вкладке — свободные места на странице события и «Есть обновления» на панели в другой | e2e `registration-updates-open-pages.spec.ts`; `events/tests/test_public_event_stream_api.py::test_registration_sends_a_new_snapshot`; `test_stats_notifications.py::test_registration_notifies_after_commit`, `::test_cancel_with_a_promotion_notifies_once`; `OrgEventParticipantsPage.test.ts` («offers a refresh when a snapshot brings other counts …»)                                                                                       |
-| Поток: сразу снимок, после изменений — последний снимок; только своего события                           | `test_org_event_stream_api.py::test_stream_starts_with_a_snapshot`, `::test_changes_in_a_row_end_with_the_latest_snapshot`, `::test_stream_of_another_organizers_event_is_403`, `::test_stream_needs_a_session`; `events/tests/test_realtime.py::test_subscribers_of_an_event_share_one_snapshot_read_per_change`                                                                                                                                  |
-| Обрыв — индикатор «переподключаюсь», после переподключения — верные счётчики                             | e2e `organizer-sees-lost-connection.spec.ts`; `OrgEventLayout.test.ts` («says it is reconnecting after …»); `shared/lib/live-source.test.ts`; `test_realtime.py::test_a_stream_without_changes_sends_a_ping`, `::test_a_lost_listener_connection_ends_every_stream_and_the_next_one_listens_anew`                                                                                                                                                  |
-| Отказ потока: кончилась сессия — вход, событие удалено — «не найдено»                                    | `app/session-expiry.test.ts` («a refused live stream»); `OrgEventLayout.test.ts` («ends the stream when a probe after a refusal answers …»); `EventPage.test.ts` («ends the stream and says so …»)                                                                                                                                                                                                                                                 |
-| Перенос даты — письмо подтверждённым и стоящим в листе, у каждого переноса свои письма                   | `registrations/tests/test_update_event.py::test_reschedule_emails_confirmed_and_waitlisted_and_bumps_the_version`, `::test_each_reschedule_emails_again`; `registrations/tests/test_concurrency.py::test_parallel_reschedules_each_get_a_version_and_emails`; e2e `organizer-reschedules-event.spec.ts`                                                                                                                                            |
-| Та же дата, название или описание — без писем о переносе                                                 | `test_update_event.py::test_the_same_start_changes_neither_the_version_nor_emails`, `::test_title_and_description_change_without_emails`                                                                                                                                                                                                                                                                                                           |
-| Рост лимита повышает первых из листа с письмом; ниже подтверждённых — 400, ничего не меняется            | `test_update_event.py::test_larger_capacity_promotes_the_waitlist_head_in_order`, `::test_capacity_beyond_the_waitlist_promotes_everyone_waiting`, `::test_capacity_below_confirmed_changes_nothing`, `::test_capacity_down_to_confirmed_is_allowed_and_promotes_nobody`; `test_org_event_update_api.py::test_patch_with_a_larger_capacity_promotes`, `::test_patch_with_capacity_below_confirmed_is_400`; e2e `organizer-raises-capacity.spec.ts` |
-| Изменение лимита одновременно с регистрациями и с другим изменением: подтверждённых не больше лимита     | `registrations/tests/test_concurrency.py::test_lower_capacity_with_parallel_registrations_never_leaves_seats_over`, `::test_parallel_capacity_raises_promote_no_more_than_the_final_capacity`                                                                                                                                                                                                                                                      |
-| Изменение события: только своё, с сессией; дата в прошлом — 400                                          | `registrations/tests/test_org_event_update_api.py::test_patch_of_another_organizers_event_is_403`, `::test_patch_of_a_missing_event_is_404`, `::test_patch_needs_a_session`, `::test_patch_with_a_start_in_the_past_is_400`                                                                                                                                                                                                                        |
-| Форма редактирования: текущие значения, только изменённые поля, подтверждение переноса, ошибки           | `OrgEventEditPage.test.ts`; `entities/event/model/event-form.test.ts`                                                                                                                                                                                                                                                                                                                                                                              |
-| Напоминание за сутки — ровно одно на регистрацию и дату события                                          | `registrations/tests/test_reminders.py::test_open_window_reminds_each_seat_once`, `::test_window_not_open_yet_reminds_nobody`; `emails/tests/test_run_worker.py::test_worker_queues_reminders_once_an_interval`                                                                                                                                                                                                                                    |
-| Место получено внутри 24 часов, лист ожидания, отказ, прошедшее событие — без напоминания                | `test_reminders.py::test_seat_taken_inside_the_window_gets_no_reminder`, `::test_waitlisted_cancelled_and_promoted_inside_the_window_get_no_reminder`, `::test_started_event_gets_no_reminder`                                                                                                                                                                                                                                                     |
-| После переноса — новое напоминание о новой дате, не о старой                                             | `test_reminders.py::test_reschedule_brings_a_reminder_about_the_new_date`, `::test_reschedule_out_of_the_window_waits_for_the_new_one`; `registrations/tests/test_concurrency.py::test_reminders_during_a_reschedule_are_not_about_the_old_date`                                                                                                                                                                                                   |
-| Сбой прохода напоминаний не останавливает рассылку                                                       | `test_run_worker.py::test_failed_reminder_pass_does_not_stop_the_outbox`, `::test_lost_connection_in_the_reminder_pass_reconnects_for_the_outbox`                                                                                                                                                                                                                                                                                                  |
-| `make seed`: демо-события, через ~30 с — три напоминания                                                 | `registrations/tests/test_seed_demo.py::test_seeds_a_full_event_and_one_that_is_due_for_reminders`                                                                                                                                                                                                                                                                                                                                                 |
-| Общая шапка: гость — «Вход для организатора», организатор — «Мои события» и «Выйти»                      | `app/ui/AppLayout.test.ts` («offers a guest to sign in», «shows the organizer their events, email and sign-out»)                                                                                                                                                                                                                                                                                                                                   |
-| Выход ведёт на `/`, повторный вход — обратно на запрошенную страницу                                     | e2e `organizer-logs-out.spec.ts`; `AppLayout.test.ts` («signs out, forgets the organizer's data …», «sends one request when sign-out is clicked twice»); `app/router.test.ts` («sends a guest from an event panel to /login with the way back»); `shared/lib/safe-next.test.ts`                                                                                                                                                                    |
-| Загрузка, ошибка с повтором, ошибка при прежних данных — одинаково на всех экранах                       | `shared/ui/query-state/QueryState.test.ts`; аудит экранов — `docs/features/frontend-polish/tasks.md`, «Лог», 2.2                                                                                                                                                                                                                                                                                                                                   |
-| Неизвестный адрес — «Страница не найдена»                                                                | `app/router.test.ts` («an address no route matches»); `app/App.test.ts`                                                                                                                                                                                                                                                                                                                                                                            |
-| Каждый экран помещается в ширину телефона                                                                | e2e `screens-fit-phone.spec.ts`, `page-bar-fits.spec.ts`                                                                                                                                                                                                                                                                                                                                                                                           |
-| Списки событий постранично, с общим числом; при одном времени — полный порядок                           | `events/tests/test_event_lists_api.py::test_pages_go_on_in_order_with_the_total_count`, `::test_page_past_the_end_is_empty_with_the_count`, `::test_past_mirrors_the_upcoming_order_at_the_same_start`; `PageNav.test.ts`; e2e `lists-are-paged.spec.ts`                                                                                                                                                                                           |
-| Прошедшие события — только на вкладке «Прошедшие», недавние первыми                                      | `test_event_lists_api.py::test_past_has_only_started_events_most_recent_first`; `HomePage.test.ts`; e2e `past-events-tab.spec.ts`                                                                                                                                                                                                                                                                                                                  |
+## Документы
 
-Один email — одно место. Адреса, отличающиеся только регистром, — один участник; разные адреса
-одного ящика (точки и `+tag` в Gmail) считаются разными.
-
-Письмо создаётся ровно один раз — в той же транзакции, что и регистрация или отказ
-(`UNIQUE` на ключе письма). Доставка — «хотя бы один раз»: если воркер упадёт после
-отправки, но до записи `sent`, письмо уйдёт повторно. Неудачная попытка повторяется через
-30 с, 1, 2 и 4 мин; после 5-й письмо остаётся в outbox со статусом `failed` — его видно в
-админке (<http://localhost:8000/admin/>, `admin@example.com` / `admin`).
-
-## Что дальше
-
-Требования задания выполнены; ниже — что отложено по ходу (Non-Goals spec и «На потом» в
-`docs/features/*/`) и что нужно, чтобы тестовое задание стало продуктом.
-
-### Следующим заходом
-
-- Время окончания события и запрет регистрации на начавшееся: сейчас на начавшееся событие
-  можно зарегистрироваться, и оно видно на вкладке «Прошедшие».
-- Регистрация организаторов (экран и эндпоинт): сейчас учётки — командой и в админке.
-- Скользящий срок сессии организатора: сейчас две недели от входа, и сессия может кончиться
-  посреди чекина.
-- Нестабильный Vitest (`window is not defined` из `vue-i18n` после закрытия jsdom) — найти,
-  какой промис или таймер теста переживает тест.
-- Английская версия интерфейса и писем: сейчас всё по-русски. Тексты экранов уже вынесены в
-  блоки `<i18n locale="ru">` у компонентов (vue-i18n) — нужен второй язык и выбор языка;
-  письма — шаблоны `backend/emails/templates/emails/` и темы в `emails/services.py`.
-- Дробление страниц на `features` (FSD): сейчас код экрана — на странице, пока у него один
-  потребитель.
-
-### Чтобы стать продуктом
-
-- **Развёртывание.** Сборка за шлюзом уже есть (`gateway`, ей пользуются e2e); нужны
-  `DJANGO_DEBUG=false` с настоящим ключом и `ALLOWED_HOSTS`, TLS, кэш-заголовки статики,
-  миграции при выкатке, резервные копии Postgres, мониторинг и сбор ошибок.
-- **Масштаб живых обновлений.** Push-сервер (например, Centrifugo) вместо потоков SSE в
-  процессе Django — когда соединений тысячи или процессов backend больше одного: backend
-  публикует снимок счётчиков, соединения браузеров держит push-сервер.
-- **Почта.** Настоящий SMTP-провайдер вместо Mailpit, HTML-письма, QR-код в билете, отписка и
-  жалобы; повторная отправка писем `failed` из админки; чистка отправленных писем из outbox;
-  пробуждение воркера через `LISTEN/NOTIFY` вместо опроса раз в секунду.
-- **Злоупотребления.** Ограничение частоты входа и регистрации, капча. Адрес участника не
-  подтверждается: зарегистрировать можно чужой email, и письма уйдут ему.
-- **Организаторы.** Роли и команды организаторов (сейчас событие принадлежит одной учётке).
-- **События.** Отмена и удаление события с письмами участникам; часовой пояс события (сейчас
-  даты в письмах — UTC); свой срок и несколько напоминаний, напоминание стоящим в листе
-  ожидания; письмо об изменении названия или описания.
-- **Чекин и участники.** Сканер QR вместо ввода кода, снятие ошибочной отметки, чекин по
-  имени, окно чекина по времени события; места неявившихся — листу ожидания; поиск по
-  участникам и экспорт списка.
-- **Интерфейс.** Живая страница билета: сейчас она перечитывается при возврате на вкладку, и
-  номер в листе ожидания или полученное место не меняются на глазах. Тёмная тема, скелетоны
-  вместо «Загружаем…».
-
-## Чем делали
-
-Claude Code (CLI, WSL). Модели — Claude Opus 5.5 (основная: 261 коммит с её подписью
-`Co-Authored-By` на закрытии фазы 7) и Claude Sonnet 5.5 (54 коммита, почти все — 30 октября).
-Пересчитать: `git log --format='%(trailers:key=Co-Authored-By,valueonly)' | grep -ci opus`.
-
-Claude Code — агент в терминале: сам запускает тесты, git и Docker, а хуки, skills и
-субагенты встраивают проверки и независимое ревью прямо в процесс. Сначала план и ревью
-делались с Opus, а реализация — с Sonnet; но при моей скорости работы Opus был комфортнее и
-для реализации, а лимита подписки на него хватало целиком — поэтому дальше всё шло на Opus.
-
-Как с агентом работали — [AGENTS.md](AGENTS.md) (правила, которые агент читает в начале
-каждой сессии), `.claude/skills/` (процедуры: фаза от spec до ревью, передача сессии,
-проверка на мусор), `.claude/agents/reviewer.md` (независимое ревью каждого этапа с чистым
-контекстом), `.claude/hooks/` (форматирование после правки, запрет `--no-verify` и force push).
-Решения, принятые в обсуждении с агентом, — в [docs/decisions.md](docs/decisions.md) с
-временем; spec и задачи каждой фазы — в `docs/features/<фаза>/`.
-
-Экспорт сессий агента — [docs/session/](docs/session/): по файлу на сессию Claude Code, текстом
-в формате, близком к `/export` (запросы, ответы, вызовы инструментов и начало их вывода; без
-мыслей модели и переписки субагентов). Имя — начало сессии и примерное время работы: паузы
-между репликами считаются не больше 15 минут. Пересобрать или дополнить —
-`make export-sessions`.
-
-## Ход работы
-
-Работа шла с 28 октября по 4 ноября 2026 года, сессиями. Каждая сессия отмечена в
-[docs/decisions.md](docs/decisions.md) маркерами `▶ начало` и `■ конец`; `make worktime`
-суммирует их (на закрытии фазы 7 — 58 ч 35 мин). Маркеры заведены вечером 29 октября, более
-ранние сессии отмечены задним числом по времени коммитов (такие записи помечены). Этапы фаз —
-отдельные ветки и PR с этапа 3 фазы 1 (PR #1); с него же каждый этап проходит независимое
-ревью агентом `reviewer`, с PR #7 — в отдельной копии репозитория и своём стеке.
-Коммиты — маленькими шагами, по одному на задачу.
-
-## Что взято чужое
-
-- Устройство правил агента (`AGENTS.md` + `CLAUDE.md`, правила, которые действуют всегда),
-  skills `feature-workflow`, `fsd-frontend`, `anti-slop-review` и агент `reviewer` — из моего
-  шаблона [rbikbov/frontend-starter](https://github.com/rbikbov/frontend-starter), адаптированы
-  под Django + Vue (`docs/decisions.md`, 2026-10-28, 21:25, 21:41 и 23:00). Хуки и skills
-  `session-handoff`, `api-change` написаны в этом проекте.
-- Skills `vue-best-practices`, `vue-router-best-practices`, `vue-testing-best-practices`
-  ([vuejs-ai/skills](https://github.com/vuejs-ai/skills)) и `django-security`
-  ([affaan-m/ecc](https://github.com/affaan-m/ecc)) — целиком, через `npx skills add`; версии —
-  в `skills-lock.json`, лежат в `.agents/skills/`.
-- UI-компоненты — [shadcn-vue](https://www.shadcn-vue.com/), сгенерированы его CLI в
-  `frontend/src/shared/ui/shadcn/`.
-- Каркасы Django и Vue генераторами (`startproject`, `create-vue`) не создавались — написаны
-  агентом.
-
-## Запуск
-
-Нужен только Docker с Compose (и `make` — или те же команды через `docker compose`).
-
-```sh
-make up          # или: docker compose up -d --build --wait
-make demo-users  # демо-учётки; или: docker compose exec backend python manage.py create_demo_users
-make seed        # демо-события с участниками; или: docker compose exec backend python manage.py seed_demo
-```
-
-Открыть <http://localhost:5173>. Остановить — `make down`. `make demo-users` нужна один раз на
-новую базу. Повторный вызов вернёт демо-пароли, если их меняли (это завершит сессии той
-учётки); неизменённые пароли и открытые сессии он не трогает.
-
-`make seed` добавляет демо-организатору два события с участниками (`@example.com`): полное
-через неделю с листом ожидания и событие через ~23 ч — через ~30 с участникам последнего
-приходят напоминания (видно в Mailpit). Каждый запуск добавляет новые события.
-
-| Сервис   | Адрес                   | Что это                                                   |
-| -------- | ----------------------- | --------------------------------------------------------- |
-| frontend | <http://localhost:5173> | Vue (dev-сервер Vite); `/api` проксируется на backend     |
-| backend  | <http://localhost:8000> | Django + DRF под uvicorn; миграции применяются при старте |
-| postgres | `localhost:5432`        | PostgreSQL 17, пользователь и пароль `postgres`           |
-| mailpit  | <http://localhost:8025> | SMTP-ловушка: сюда приходят все письма (наружу не уходят) |
-| worker   | —                       | отправляет письма из outbox в Mailpit                     |
-
-Порты меняются переменными `FRONTEND_PORT`, `BACKEND_PORT`, `POSTGRES_PORT`, `MAILPIT_PORT`
-(веб Mailpit) и `MAILPIT_SMTP_PORT`.
-
-Разработка — установка инструментов, команды, проверки и правила — в
-[docs/development.md](docs/development.md).
+- [Задание](docs/task.md) и [лог решений с временем](docs/decisions.md)
+- [Устройство системы](docs/architecture.md) и [ход работы по фазам](docs/roadmap.md)
+- [Как делалось с ИИ](docs/ai-workflow.md): Claude Code, правила агента, ревью, экспорт сессий,
+  что взято чужое
+- `AGENTS.md` в папках — правила для агента; `CLAUDE.md` рядом — одна строка `@AGENTS.md`,
+  потому что Claude Code читает только его.

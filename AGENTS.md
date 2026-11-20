@@ -35,6 +35,8 @@ scripts/              скрипты репозитория с тестами: p
 docs/task.md          текст задания — не редактируется
 docs/decisions.md     лог решений с временем
 docs/development.md   руководство разработчика: установка, команды, проверки, нюансы
+docs/features.md      что работает (для проверяющего); docs/requirements.md — общие требования
+                      и подробная таблица «требование → тест»; docs/ai-workflow.md — как делалось с ИИ
 docs/architecture.md  устройство системы: модель, API, realtime, письма; статус разделов
 docs/roadmap.md       фазы, статусы, критерии; spec и задачи фаз — docs/features/<slug>/
 docs/rules/           правила по темам: db-migrations.md, concurrency.md

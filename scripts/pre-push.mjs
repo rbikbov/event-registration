@@ -35,7 +35,7 @@ const PARTS = [
   {
     // A renamed or deleted test breaks a README reference, so code changes check it too.
     name: "README test references",
-    match: /^(README\.md$|backend\/|frontend\/|e2e\/)/,
+    match: /^(README\.md$|docs\/requirements\.md$|backend\/|frontend\/|e2e\/)/,
     command: "make check-readme",
   },
 ];

@@ -5,7 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 
-import { brokenTestRefs, repoFiles } from "./check-readme-tests.mjs";
+import { brokenDocRefs, brokenTestRefs, repoFiles } from "./check-readme-tests.mjs";
 
 const FILES = {
   "backend/accounts/tests/test_auth_api.py":
@@ -104,8 +104,20 @@ test("ignores code that is not a file reference", () => {
 });
 
 test("fails when the section is missing", () => {
-  assert.deepEqual(brokenTestRefs("# Project\n", fs), [
-    "README has no «## Требования и тесты» table",
+  assert.deepEqual(brokenTestRefs("# Project\n", fs), ["no «## Требования и тесты» table"]);
+});
+
+test("checks every file and names the file in each message", () => {
+  const docs = {
+    files: fs.files,
+    read: (path) =>
+      ({
+        "README.md": readme("`accounts/tests/test_auth_api.py::test_login_ok`"),
+        "docs/requirements.md": readme("`test_gone.py::test_x`"),
+      })[path] ?? fs.read(path),
+  };
+  assert.deepEqual(brokenDocRefs(["README.md", "docs/requirements.md"], docs), [
+    "docs/requirements.md: Something: `test_gone.py` — no such file",
   ]);
 });
 
