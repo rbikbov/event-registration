@@ -17,7 +17,7 @@ Spec — `spec.md`. One task — one commit; the `[x]` check goes into the same 
 - [x] 1.4. Emails in English: `emails/templates/emails/en/` and `ru/`, the subjects by locale (`en`
       for all), the English date format; `seed_demo` in English. Done when: pytest of
       the emails and the seed checks English.
-- [ ] 1.5. e2e in English; README and docs: the interface and the emails are English by default.
+- [x] 1.5. e2e in English; README and docs: the interface and the emails are English by default.
       Done when: `make stack-e2e` is green.
 
 - [ ] 1.6. Closing the phase: `architecture.md`, `features.md`, the requirement tables, roadmap.

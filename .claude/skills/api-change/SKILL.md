@@ -59,7 +59,7 @@ replaces 401 with 403); 403 — "logged in, but not allowed" (someone else's eve
 login" — 400, so as not to confuse it with an expired session.
 
 Field errors (400 `ValidationError`) — codes, not texts: DRF returns English messages, and the
-interface is Russian. `config.exceptions.api_exception_handler` turns the body into
+interface has its own texts (English, with a Russian version). `config.exceptions.api_exception_handler` turns the body into
 `{"errors": {"field": ["code"]}}` (`exc.get_codes()`: `required`, `blank`, `max_length`,
 `min_value`, `invalid`…); an error outside a field (from `validate()`) — under `non_field_errors`.
 Our own code for a domain rule — `ValidationError(msg, code="past")`. The form maps the code to a

@@ -106,7 +106,8 @@ docs/session/         raw exports of the agent sessions (in Russian) — not edi
 - Documentation (`README.md`, `docs/`, `AGENTS.md`) — in English. Except `docs/task.md` (the text
   of the assignment as is) and `docs/session/` (raw session exports): they stay in Russian.
 - Code (identifiers, comments, log strings) and commit messages — in English.
-- The interface texts and the emails — in Russian (see `frontend/AGENTS.md`).
+- The interface texts and the emails — in English, with the Russian version kept next to them for
+  a later language switch (`frontend/AGENTS.md`, rule 5; `emails/templates/emails/en/` and `ru/`).
 
 ## Skills and agents
 
