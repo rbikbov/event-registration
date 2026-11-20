@@ -186,3 +186,38 @@ function statusText(row: OrgRegistration): string {
   }
 }
 </i18n>
+
+<i18n lang="json" locale="en">
+{
+  "participants": "Participants",
+  "filter": "Filter by status",
+  "filters": {
+    "all": "All",
+    "confirmed": "Confirmed",
+    "waitlisted": "Waitlist",
+    "cancelled": "Cancelled"
+  },
+  "updates": "There are updates",
+  "refresh": "Refresh",
+  "refreshing": "Refreshing…",
+  "pages": "Participant pages",
+  "pastEnd": "No one on this page.",
+  "lastPage": "To the last page",
+  "participantsError": "Could not load the participants",
+  "participantsRefreshError": "Could not refresh the participants, showing the previous list",
+  "empty": "No registrations yet",
+  "emptyFiltered": "No one with this status",
+  "columns": {
+    "name": "Name",
+    "email": "Email",
+    "status": "Status",
+    "checkedIn": "Checked in"
+  },
+  "status": {
+    "confirmed": "Confirmed",
+    "waitlisted": "On the waitlist",
+    "waitlistedAt": "On the waitlist, #{position}",
+    "cancelled": "Cancelled"
+  }
+}
+</i18n>

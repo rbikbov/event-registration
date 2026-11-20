@@ -15,10 +15,10 @@ test("organizer signs in, creates an event and sees it in the list", async ({ pa
   await expect(page.getByRole("heading", { name: "My events" })).toBeVisible();
   await page.getByRole("link", { name: "Create an event" }).click();
 
-  await page.getByLabel("Название", { exact: true }).fill(title);
-  await page.getByLabel("Начало", { exact: true }).fill(startsAt);
-  await page.getByLabel("Мест", { exact: true }).fill("30");
-  await page.getByRole("button", { name: "Создать", exact: true }).click();
+  await page.getByLabel("Title", { exact: true }).fill(title);
+  await page.getByLabel("Start", { exact: true }).fill(startsAt);
+  await page.getByLabel("Seats", { exact: true }).fill("30");
+  await page.getByRole("button", { name: "Create", exact: true }).click();
 
   const card = page.getByRole("heading", { name: title });
   await expect(card).toBeVisible();
@@ -32,17 +32,17 @@ test("organizer sees the field error from the form and stays on it", async ({ pa
   await page.getByRole("button", { name: "Log in" }).click();
   await page.getByRole("link", { name: "Create an event" }).click();
 
-  await page.getByRole("button", { name: "Создать", exact: true }).click();
+  await page.getByRole("button", { name: "Create", exact: true }).click();
 
   // Required fields are flagged, the optional description is not.
-  for (const label of ["Название", "Начало", "Мест"]) {
+  for (const label of ["Title", "Start", "Seats"]) {
     await expect(page.getByLabel(label, { exact: true })).toHaveAttribute("aria-invalid", "true");
   }
-  await expect(page.getByLabel("Описание", { exact: true })).toHaveAttribute(
+  await expect(page.getByLabel("Description", { exact: true })).toHaveAttribute(
     "aria-invalid",
     "false",
   );
-  await expect(page.getByRole("heading", { name: "Новое событие" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "New event" })).toBeVisible();
 });
 
 test("a wrong password shows the server error and keeps the login form", async ({ page }) => {

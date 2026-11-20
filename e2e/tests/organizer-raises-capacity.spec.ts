@@ -18,11 +18,11 @@ test("a larger capacity gives the waitlist head a seat and an email with the tic
   await participant.context().close();
 
   const organizer = await openEventEdit(browser, title);
-  await organizer.getByLabel("Мест", { exact: true }).fill("2");
-  await organizer.getByRole("button", { name: "Сохранить" }).click();
-  await expect(organizer.getByRole("status")).toHaveText("Сохранено");
-  await expect(panelStat(organizer, "Подтверждено")).toHaveText("2");
-  await expect(panelStat(organizer, "В листе ожидания")).toHaveText("0");
+  await organizer.getByLabel("Seats", { exact: true }).fill("2");
+  await organizer.getByRole("button", { name: "Save" }).click();
+  await expect(organizer.getByRole("status")).toHaveText("Saved");
+  await expect(panelStat(organizer, "Confirmed")).toHaveText("2");
+  await expect(panelStat(organizer, "Waitlisted")).toHaveText("0");
   await organizer.context().close();
 
   const promoted = await emailTo(request, waitingEmail, "Освободилось место");

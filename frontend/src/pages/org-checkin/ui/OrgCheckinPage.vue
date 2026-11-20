@@ -178,3 +178,20 @@ function submit(): void {
   "next": "Следующий"
 }
 </i18n>
+
+<i18n lang="json" locale="en">
+{
+  "code": "Ticket code",
+  "submit": "Check in",
+  "checking": "Checking…",
+  "failed": "Could not check in, try again",
+  "foreign": "This event belongs to another organizer",
+  "offline": "No connection, try again",
+  "checkedIn": "Admitted",
+  "alreadyCheckedIn": "Already checked in {when}",
+  "atTime": "at {time}",
+  "notFound": "Ticket not found",
+  "notConfirmed": "Ticket not confirmed: waitlist or cancellation",
+  "next": "Next"
+}
+</i18n>

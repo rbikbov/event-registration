@@ -66,7 +66,7 @@ async function mountPage(query: Record<string, string> = {}, shown: OrgEvent = e
   await router.push({ path: orgEventPath(7), query });
   const wrapper = mount(OrgEventParticipantsPage, {
     props: { event: shown },
-    global: { plugins: [router, [VueQueryPlugin, { queryClient }], createAppI18n("ru")] },
+    global: { plugins: [router, [VueQueryPlugin, { queryClient }], createAppI18n()] },
   });
   return { wrapper, router, queryClient };
 }
@@ -77,7 +77,7 @@ describe("OrgEventParticipantsPage", () => {
 
     const { wrapper } = await mountPage();
 
-    expect(wrapper.get('[role="status"]').text()).toBe("Загружаем…");
+    expect(wrapper.get('[role="status"]').text()).toBe("Loading…");
     await flushPromises();
   });
 
@@ -89,13 +89,13 @@ describe("OrgEventParticipantsPage", () => {
     await flushPromises();
 
     const rows = wrapper.findAll("tbody tr").map((row) => row.findAll("td").map((c) => c.text()));
-    const time = new Intl.DateTimeFormat("ru", { timeStyle: "short" }).format(
+    const time = new Intl.DateTimeFormat("en-GB", { timeStyle: "short" }).format(
       new Date(ann.checked_in_at),
     );
     expect(rows).toEqual([
-      ["Ann", "ann@example.com", "Подтверждён", time],
-      ["Bob", "bob@example.com", "Подтверждён", "—"],
-      ["Cid", "cid@example.com", "В листе ожидания, №1", "—"],
+      ["Ann", "ann@example.com", "Confirmed", time],
+      ["Bob", "bob@example.com", "Confirmed", "—"],
+      ["Cid", "cid@example.com", "On the waitlist, #1", "—"],
     ]);
   });
 
@@ -106,7 +106,7 @@ describe("OrgEventParticipantsPage", () => {
     const { wrapper } = await mountPage();
     await flushPromises();
 
-    const moment = new Intl.DateTimeFormat("ru", {
+    const moment = new Intl.DateTimeFormat("en-GB", {
       day: "numeric",
       month: "long",
       hour: "2-digit",
@@ -128,7 +128,7 @@ describe("OrgEventParticipantsPage", () => {
     await flushPromises();
 
     expect(asked).toEqual(["waitlisted"]);
-    expect(wrapper.get('nav a[aria-current="true"]').text()).toBe("Лист ожидания");
+    expect(wrapper.get('nav a[aria-current="true"]').text()).toBe("Waitlist");
     expect(wrapper.findAll("tbody tr")).toHaveLength(1);
   });
 
@@ -143,10 +143,10 @@ describe("OrgEventParticipantsPage", () => {
     const { wrapper, router } = await mountPage();
     await flushPromises();
 
-    const cancelled = wrapper.findAll("nav a").find((a) => a.text() === "Отказались");
+    const cancelled = wrapper.findAll("nav a").find((a) => a.text() === "Cancelled");
     await cancelled?.trigger("click");
     // The new query key starts its request after the navigation, later than one flush.
-    await vi.waitFor(() => expect(wrapper.text()).toContain("С таким статусом никого нет"));
+    await vi.waitFor(() => expect(wrapper.text()).toContain("No one with this status"));
 
     expect(router.currentRoute.value.query).toEqual({ status: "cancelled" });
     expect(asked).toEqual([null, "cancelled"]);
@@ -158,7 +158,7 @@ describe("OrgEventParticipantsPage", () => {
     const { wrapper } = await mountPage();
     await flushPromises();
 
-    expect(wrapper.text()).toContain("Регистраций пока нет");
+    expect(wrapper.text()).toContain("No registrations yet");
     expect(wrapper.find("table").exists()).toBe(false);
   });
 
@@ -171,7 +171,7 @@ describe("OrgEventParticipantsPage", () => {
     );
     const { wrapper } = await mountPage();
     await flushPromises();
-    expect(wrapper.get('[role="alert"]').text()).toContain("Не удалось загрузить участников");
+    expect(wrapper.get('[role="alert"]').text()).toContain("Could not load the participants");
 
     fail = false;
     await wrapper.get('[role="alert"] button').trigger("click");
@@ -194,7 +194,7 @@ describe("OrgEventParticipantsPage", () => {
     await queryClient.refetchQueries();
     await flushPromises();
 
-    expect(wrapper.get('[role="alert"]').text()).toContain("Не удалось обновить участников");
+    expect(wrapper.get('[role="alert"]').text()).toContain("Could not refresh the participants");
     expect(wrapper.findAll("tbody tr")).toHaveLength(2);
   });
 
@@ -208,7 +208,7 @@ describe("OrgEventParticipantsPage", () => {
   };
 
   function pageNav(wrapper: Awaited<ReturnType<typeof mountPage>>["wrapper"]) {
-    return wrapper.get('nav[aria-label="Страницы участников"]');
+    return wrapper.get('nav[aria-label="Participant pages"]');
   }
 
   // The page numbers of the bar, the current one in brackets.
@@ -231,7 +231,7 @@ describe("OrgEventParticipantsPage", () => {
     await vi.waitFor(() => expect(asked).toEqual(["2"]));
     expect(pageNumbers(wrapper)).toEqual(["1", "[2]", "3"]);
 
-    await pageNav(wrapper).get('button[aria-label="Следующая страница"]').trigger("click");
+    await pageNav(wrapper).get('button[aria-label="Next page"]').trigger("click");
 
     await vi.waitFor(() => expect(asked).toEqual(["2", "3"]));
     expect(router.currentRoute.value.fullPath).toBe(`${orgEventPath(7)}?page=3`);
@@ -243,7 +243,7 @@ describe("OrgEventParticipantsPage", () => {
     const { wrapper, router } = await mountPage({ status: "confirmed" }, crowded);
     await vi.waitFor(() => expect(pageNumbers(wrapper)).toEqual(["[1]", "2"]));
 
-    await pageNav(wrapper).get('button[aria-label="Страница 2"]').trigger("click");
+    await pageNav(wrapper).get('button[aria-label="Page 2"]').trigger("click");
 
     await vi.waitFor(() =>
       expect(router.currentRoute.value.fullPath).toBe(`${orgEventPath(7)}?status=confirmed&page=2`),
@@ -256,7 +256,7 @@ describe("OrgEventParticipantsPage", () => {
     const { wrapper } = await mountPage();
     await flushPromises();
 
-    expect(wrapper.find('nav[aria-label="Страницы участников"]').exists()).toBe(false);
+    expect(wrapper.find('nav[aria-label="Participant pages"]').exists()).toBe(false);
   });
 
   it("starts a filter from its first page", async () => {
@@ -265,7 +265,7 @@ describe("OrgEventParticipantsPage", () => {
     const { wrapper } = await mountPage({ page: "3" }, crowded);
     await flushPromises();
 
-    const filter = wrapper.findAll("nav a").find((a) => a.text() === "Лист ожидания");
+    const filter = wrapper.findAll("nav a").find((a) => a.text() === "Waitlist");
     expect(filter?.attributes("href")).toBe(`${orgEventPath(7)}?status=waitlisted`);
   });
 
@@ -275,8 +275,8 @@ describe("OrgEventParticipantsPage", () => {
     const { wrapper } = await mountPage({ page: "9" }, crowded);
     await flushPromises();
 
-    expect(wrapper.text()).toContain("На этой странице никого нет.");
-    const last = wrapper.findAll("a").find((a) => a.text() === "К последней странице");
+    expect(wrapper.text()).toContain("No one on this page.");
+    const last = wrapper.findAll("a").find((a) => a.text() === "To the last page");
     expect(last?.attributes("href")).toBe(`${orgEventPath(7)}?page=3`);
   });
 
@@ -290,7 +290,7 @@ describe("OrgEventParticipantsPage", () => {
     await wrapper.setProps({ event: { ...event, checked_in: 2 } });
     rows = [ann, { ...bob, checked_in_at: "2030-05-01T18:05:00Z" }];
 
-    expect(wrapper.get('[role="status"]').text()).toContain("Есть обновления");
+    expect(wrapper.get('[role="status"]').text()).toContain("There are updates");
     expect(wrapper.findAll("tbody tr")[1]?.text()).toContain("—");
     await wrapper.get('[role="status"] button').trigger("click");
     await flushPromises();
@@ -327,7 +327,7 @@ describe("OrgEventParticipantsPage", () => {
     await flushPromises();
 
     expect(wrapper.findAll("tbody tr")).toHaveLength(1);
-    expect(wrapper.get('[role="status"]').text()).toContain("Есть обновления");
+    expect(wrapper.get('[role="status"]').text()).toContain("There are updates");
   });
 
   it("blocks the refresh while the page is being read", async () => {
@@ -341,7 +341,7 @@ describe("OrgEventParticipantsPage", () => {
     await flushPromises();
 
     const button = wrapper.get('[role="status"] button');
-    expect(button.text()).toBe("Обновляем…");
+    expect(button.text()).toBe("Refreshing…");
     expect(button.attributes("disabled")).toBeDefined();
   });
 });

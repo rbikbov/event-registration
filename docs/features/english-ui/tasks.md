@@ -11,7 +11,7 @@ Spec — `spec.md`. One task — one commit; the `[x]` check goes into the same 
       components checks English; the home page is English in the browser.
 - [x] 1.2. The participant's screens: the event page and the registration form, the ticket, login,
       `/health`, the `shared/ui` components. Done when: their Vitest tests check English.
-- [ ] 1.3. The organizer's screens: creation and editing (`entities/event` form errors),
+- [x] 1.3. The organizer's screens: creation and editing (`entities/event` form errors),
       the event layout, the participants, check-in; the key test has no exceptions left. Done when:
       Vitest is green, no component without `en`.
 - [ ] 1.4. Emails in English: `emails/templates/emails/en/` and `ru/`, the subjects by locale (`en`

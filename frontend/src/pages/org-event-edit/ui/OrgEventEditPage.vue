@@ -224,3 +224,33 @@ const textFields: { name: "title" | "description" | "starts_at"; type: string; m
   }
 }
 </i18n>
+
+<i18n lang="json" locale="en">
+{
+  "fields": {
+    "title": "Title",
+    "description": "Description",
+    "starts_at": "Start",
+    "capacity": "Seats"
+  },
+  "submit": "Save",
+  "submitting": "Saving…",
+  "saved": "Saved",
+  "tryLater": "Could not save the event, try again later",
+  "confirm": {
+    "text": "The participants (confirmed {confirmed}, waitlisted {waitlisted}) will get a reschedule email.",
+    "yes": "Reschedule",
+    "no": "Cancel"
+  },
+  "errors": {
+    "required": "Required field",
+    "blank": "Required field",
+    "max_length": "The value is too long",
+    "min_value": "Must be at least 1",
+    "max_value": "Must be at most 10,000",
+    "invalid": "Invalid value",
+    "past": "The start must be in the future",
+    "below_confirmed": "At least the confirmed count: {n}"
+  }
+}
+</i18n>

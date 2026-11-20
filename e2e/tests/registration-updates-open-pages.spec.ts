@@ -27,7 +27,7 @@ test("a registration updates the free seats on an open event page and flags the 
 
   const panel = await organizerPage(browser);
   await panel.getByRole("link", { name: title }).click();
-  await expect(panel.getByText("Регистраций пока нет")).toBeVisible();
+  await expect(panel.getByText("No registrations yet")).toBeVisible();
   await markNotReloaded(panel);
 
   const participant = await (await browser.newContext()).newPage();
@@ -43,12 +43,12 @@ test("a registration updates the free seats on an open event page and flags the 
   expect(await notReloaded(visitor)).toBe(true);
 
   // The counters change at once; the table waits for the organizer.
-  await expect(panelStat(panel, "Подтверждено")).toHaveText("1");
-  await expect(panel.getByText("Есть обновления")).toBeVisible();
-  await expect(panel.getByText("Регистраций пока нет")).toBeVisible();
-  await panel.getByRole("button", { name: "Обновить" }).click();
+  await expect(panelStat(panel, "Confirmed")).toHaveText("1");
+  await expect(panel.getByText("There are updates")).toBeVisible();
+  await expect(panel.getByText("No registrations yet")).toBeVisible();
+  await panel.getByRole("button", { name: "Refresh" }).click();
   await expect(panel.getByRole("row", { name: /Вера/ })).toBeVisible();
-  await expect(panel.getByText("Есть обновления")).toBeHidden();
+  await expect(panel.getByText("There are updates")).toBeHidden();
   expect(await notReloaded(panel)).toBe(true);
 
   await visitor.context().close();

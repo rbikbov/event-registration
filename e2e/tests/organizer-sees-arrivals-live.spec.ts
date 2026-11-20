@@ -22,7 +22,7 @@ test("a check-in at the entrance updates the arrivals on a panel open elsewhere"
 
   const panel = await organizerPage(browser);
   await panel.getByRole("link", { name: title }).click();
-  await expect(panelStat(panel, "Пришло")).toHaveText("0");
+  await expect(panelStat(panel, "Arrived")).toHaveText("0");
   // Survives only while the document is not reloaded.
   await panel.evaluate(() => {
     Object.assign(window, { notReloaded: true });
@@ -30,13 +30,13 @@ test("a check-in at the entrance updates the arrivals on a panel open elsewhere"
 
   const entrance = await organizerPage(browser);
   await entrance.getByRole("link", { name: title }).click();
-  await entrance.getByRole("link", { name: "Чекин" }).click();
-  await entrance.getByLabel("Код билета").fill(code);
-  await entrance.getByRole("button", { name: "Отметить" }).click();
-  await expect(entrance.getByText("Пропущен", { exact: true })).toBeVisible();
+  await entrance.getByRole("link", { name: "Check-in" }).click();
+  await entrance.getByLabel("Ticket code").fill(code);
+  await entrance.getByRole("button", { name: "Check in" }).click();
+  await expect(entrance.getByText("Admitted", { exact: true })).toBeVisible();
   await entrance.context().close();
 
-  await expect(panelStat(panel, "Пришло")).toHaveText("1");
+  await expect(panelStat(panel, "Arrived")).toHaveText("1");
   expect(await panel.evaluate(() => "notReloaded" in window)).toBe(true);
   await panel.context().close();
 });
@@ -61,21 +61,21 @@ test("a check-in at one entrance updates the arrivals on another check-in screen
 
   const second = await organizerPage(browser);
   await second.getByRole("link", { name: title }).click();
-  await second.getByRole("link", { name: "Чекин" }).click();
-  await expect(panelStat(second, "Пришло")).toHaveText("0");
+  await second.getByRole("link", { name: "Check-in" }).click();
+  await expect(panelStat(second, "Arrived")).toHaveText("0");
   await second.evaluate(() => {
     Object.assign(window, { notReloaded: true });
   });
 
   const first = await organizerPage(browser);
   await first.getByRole("link", { name: title }).click();
-  await first.getByRole("link", { name: "Чекин" }).click();
-  await first.getByLabel("Код билета").fill(code);
-  await first.getByRole("button", { name: "Отметить" }).click();
-  await expect(first.getByText("Пропущен", { exact: true })).toBeVisible();
+  await first.getByRole("link", { name: "Check-in" }).click();
+  await first.getByLabel("Ticket code").fill(code);
+  await first.getByRole("button", { name: "Check in" }).click();
+  await expect(first.getByText("Admitted", { exact: true })).toBeVisible();
   await first.context().close();
 
-  await expect(panelStat(second, "Пришло")).toHaveText("1");
+  await expect(panelStat(second, "Arrived")).toHaveText("1");
   expect(await second.evaluate(() => "notReloaded" in window)).toBe(true);
   await second.context().close();
 });

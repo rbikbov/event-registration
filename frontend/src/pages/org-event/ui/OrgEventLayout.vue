@@ -178,3 +178,30 @@ function counters(loaded: OrgEvent) {
   }
 }
 </i18n>
+
+<i18n lang="json" locale="en">
+{
+  "myEvents": "My events",
+  "error": "Could not load the event",
+  "refreshError": "Could not refresh the event, showing the previous data",
+  "checkinError": "Could not load the event, check-in works",
+  "checkinRefreshError": "Could not refresh the event, check-in works",
+  "notFound": "Event not found",
+  "forbidden": "No access",
+  "foreign": "This event belongs to another organizer",
+  "reconnecting": "Connection lost, reconnecting…",
+  "tabs": "Event sections",
+  "tab": {
+    "participants": "Participants",
+    "checkin": "Check-in",
+    "edit": "Edit"
+  },
+  "counters": {
+    "capacity": "Seats",
+    "confirmed": "Confirmed",
+    "waitlisted": "Waitlisted",
+    "checkedIn": "Arrived",
+    "freeSeats": "Free"
+  }
+}
+</i18n>

@@ -26,8 +26,8 @@ function mountWith(load: () => Promise<string>, props: { healthLink?: boolean } 
           QueryState,
           {
             query,
-            errorText: "Не удалось загрузить",
-            refreshErrorText: "Не удалось обновить",
+            errorText: "Could not load",
+            refreshErrorText: "Could not refresh",
             ...props,
           },
           { default: ({ data }: { data: string }) => h("p", { "data-shown": "" }, data) },
@@ -57,7 +57,7 @@ describe("QueryState", () => {
       fail ? Promise.reject(new Error("down")) : Promise.resolve("Meetup"),
     );
     await flushPromises();
-    expect(wrapper.get('[role="alert"] h2').text()).toBe("Не удалось загрузить");
+    expect(wrapper.get('[role="alert"] h2').text()).toBe("Could not load");
     expect(wrapper.find("[data-shown]").exists()).toBe(false);
 
     fail = false;
@@ -81,7 +81,7 @@ describe("QueryState", () => {
     const { wrapper } = mountWith(() => Promise.reject(new Error("down")), { healthLink: false });
     await flushPromises();
 
-    expect(wrapper.get('[role="alert"]').text()).toContain("Не удалось загрузить");
+    expect(wrapper.get('[role="alert"]').text()).toContain("Could not load");
     expect(wrapper.find('[role="alert"] a').exists()).toBe(false);
   });
 
@@ -96,7 +96,7 @@ describe("QueryState", () => {
     await queryClient.refetchQueries();
     await flushPromises();
 
-    expect(wrapper.get('[role="alert"]').text()).toContain("Не удалось обновить");
+    expect(wrapper.get('[role="alert"]').text()).toContain("Could not refresh");
     expect(wrapper.get("[data-shown]").text()).toBe("Meetup");
 
     fail = false;

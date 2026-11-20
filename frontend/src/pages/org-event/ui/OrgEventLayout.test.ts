@@ -64,7 +64,7 @@ async function mountLayout(path = orgEventPath(7), queryClient = newQueryClient(
   await router.push(path);
   // Through the root RouterView, as in the app: the layout's own one renders the tab.
   const wrapper = mount(RouterView, {
-    global: { plugins: [router, [VueQueryPlugin, { queryClient }], createAppI18n("ru")] },
+    global: { plugins: [router, [VueQueryPlugin, { queryClient }], createAppI18n()] },
   });
   return { wrapper, router, queryClient };
 }
@@ -125,7 +125,7 @@ describe("OrgEventLayout", () => {
     const { wrapper } = await mountLayout(path);
     await vi.waitFor(() => expect(backend.gets()).toBe(1));
 
-    expect(wrapper.get('[role="status"]').text()).toBe("Загружаем…");
+    expect(wrapper.get('[role="status"]').text()).toBe("Loading…");
     expect(wrapper.find("nav").exists()).toBe(false);
     expect(wrapper.find("[data-tab]").exists()).toBe(false);
     backend.release();
@@ -144,8 +144,8 @@ describe("OrgEventLayout", () => {
         counter(wrapper, key),
       ),
     ).toEqual(["2", "2", "1", "1", "0"]);
-    expect(currentTab(wrapper)).toBe("Участники");
-    expect(wrapper.get(`nav a[href="${checkinPath(7)}"]`).text()).toBe("Чекин");
+    expect(currentTab(wrapper)).toBe("Participants");
+    expect(wrapper.get(`nav a[href="${checkinPath(7)}"]`).text()).toBe("Check-in");
     expect(wrapper.get('[data-tab="participants"]').text()).toBe("Meetup");
   });
 
@@ -169,13 +169,13 @@ describe("OrgEventLayout", () => {
     const { wrapper } = await mountLayout(orgEventEditPath(7));
     await flushPromises();
 
-    expect(currentTab(wrapper)).toBe("Редактирование");
+    expect(currentTab(wrapper)).toBe("Edit");
     expect(wrapper.get('[data-tab="edit"]').text()).toBe(event.starts_at);
   });
 
   it.each([
-    [404, "Событие не найдено", [], routes.home, "К событиям"],
-    [403, "Нет доступа", ["Это событие другого организатора"], routes.orgEvents, "Мои события"],
+    [404, "Event not found", [], routes.home, "To events"],
+    [403, "No access", ["This event belongs to another organizer"], routes.orgEvents, "My events"],
   ])("answers %i in place of the tabs", async (status, title, texts, to, link) => {
     server.use(http.get(EVENT, () => HttpResponse.json({}, { status })));
 
@@ -198,7 +198,7 @@ describe("OrgEventLayout", () => {
     );
     const { wrapper } = await mountLayout();
     await flushPromises();
-    expect(wrapper.get('[role="alert"]').text()).toContain("Не удалось загрузить событие");
+    expect(wrapper.get('[role="alert"]').text()).toContain("Could not load the event");
     expect(wrapper.find('[data-tab="participants"]').exists()).toBe(false);
 
     fail = false;
@@ -223,7 +223,7 @@ describe("OrgEventLayout", () => {
     await queryClient.refetchQueries();
     await flushPromises();
 
-    expect(wrapper.get('[role="alert"]').text()).toContain("Не удалось обновить событие");
+    expect(wrapper.get('[role="alert"]').text()).toContain("Could not refresh the event");
     expect(wrapper.get("h1").text()).toBe("Meetup");
     expect(counter(wrapper, "checkedIn")).toBe("1");
     expect(wrapper.find('[data-tab="participants"]').exists()).toBe(true);
@@ -281,9 +281,7 @@ describe("OrgEventLayout", () => {
 
     streams.opened[0]?.fail({ closed });
     await flushPromises();
-    expect(wrapper.get('[data-live="reconnecting"]').text()).toBe(
-      "Соединение потеряно, переподключаюсь…",
-    );
+    expect(wrapper.get('[data-live="reconnecting"]').text()).toBe("Connection lost, reconnecting…");
     // EventSource reconnects a dropped one by itself; a closed one is opened again after 3 s.
     vi.advanceTimersByTime(3000);
     const reconnected = streams.opened.at(-1);
@@ -299,8 +297,8 @@ describe("OrgEventLayout", () => {
   // EventSource does not tell why a stream was refused: the event is read again for its status,
   // without its answer replacing the counts. A 401 is the app's (app/session-expiry tests).
   it.each([
-    ["404", 404, "Событие не найдено"],
-    ["403", 403, "Нет доступа"],
+    ["404", 404, "Event not found"],
+    ["403", 403, "No access"],
   ])("ends the stream when a probe after a refusal answers %s", async (_case, status, text) => {
     server.use(http.get(EVENT, () => HttpResponse.json(event)));
     const { wrapper } = await mountLayout();
@@ -389,7 +387,7 @@ describe("OrgEventLayout", () => {
     await wrapper.get(`nav a[href="${orgEventPath(7)}"]`).trigger("click");
     await flushPromises();
 
-    expect(currentTab(wrapper)).toBe("Участники");
+    expect(currentTab(wrapper)).toBe("Participants");
     expect(backend.gets()).toBe(1);
     expect(streams.opened).toHaveLength(1);
     expect(streams.opened[0]?.closed).toBe(false);
@@ -458,7 +456,7 @@ describe("OrgEventLayout", () => {
 
       expect(wrapper.get("h1").text()).toBe("Meetup");
       expect(wrapper.text()).toContain(
-        new Intl.DateTimeFormat("ru", { dateStyle: "long", timeStyle: "short" }).format(
+        new Intl.DateTimeFormat("en-GB", { dateStyle: "long", timeStyle: "short" }).format(
           new Date(event.starts_at),
         ),
       );
@@ -467,7 +465,7 @@ describe("OrgEventLayout", () => {
           counter(wrapper, key),
         ),
       ).toEqual(["2", "2", "1", "1", "0"]);
-      expect(currentTab(wrapper)).toBe("Чекин");
+      expect(currentTab(wrapper)).toBe("Check-in");
     });
 
     // The router matches the address with a trailing slash too; the tab must not tell it apart.
@@ -477,8 +475,8 @@ describe("OrgEventLayout", () => {
       const { wrapper } = await mountLayout(`${checkinPath(7)}/`);
       await flushPromises();
 
-      expect(currentTab(wrapper)).toBe("Чекин");
-      expect(wrapper.get('[role="alert"]').text()).toContain("чекин работает");
+      expect(currentTab(wrapper)).toBe("Check-in");
+      expect(wrapper.get('[role="alert"]').text()).toContain("check-in works");
       expect(wrapper.find('[data-tab="checkin"]').exists()).toBe(true);
     });
 
@@ -500,7 +498,7 @@ describe("OrgEventLayout", () => {
       await flushPromises();
 
       expect(wrapper.get('[role="alert"]').text()).toContain(
-        "Не удалось загрузить событие, чекин работает",
+        "Could not load the event, check-in works",
       );
       expect(wrapper.find('[data-tab="checkin"]').exists()).toBe(true);
     });
@@ -520,7 +518,7 @@ describe("OrgEventLayout", () => {
       await flushPromises();
 
       expect(wrapper.get('[role="alert"]').text()).toContain(
-        "Не удалось обновить событие, чекин работает",
+        "Could not refresh the event, check-in works",
       );
       expect(wrapper.get("h1").text()).toBe("Meetup");
       expect(wrapper.find('[data-tab="checkin"]').exists()).toBe(true);

@@ -26,13 +26,15 @@ test("a rescheduled event emails the confirmed and the waitlisted", async ({
 
   const organizer = await openEventEdit(browser, title);
   const newStart = `${new Date().getFullYear() + 1}-05-02T19:30`;
-  await organizer.getByLabel("Начало", { exact: true }).fill(newStart);
-  await organizer.getByRole("button", { name: "Сохранить" }).click();
+  await organizer.getByLabel("Start", { exact: true }).fill(newStart);
+  await organizer.getByRole("button", { name: "Save" }).click();
   await expect(
-    organizer.getByText("Участникам (подтверждено 1, в листе 1) уйдёт письмо о переносе."),
+    organizer.getByText(
+      "The participants (confirmed 1, waitlisted 1) will get a reschedule email.",
+    ),
   ).toBeVisible();
-  await organizer.getByRole("button", { name: "Перенести" }).click();
-  await expect(organizer.getByRole("status")).toHaveText("Сохранено");
+  await organizer.getByRole("button", { name: "Reschedule" }).click();
+  await expect(organizer.getByRole("status")).toHaveText("Saved");
   await organizer.context().close();
 
   const code = extract(await emailTo(request, seatEmail, "Билет"), /Код билета: (\S+)/);

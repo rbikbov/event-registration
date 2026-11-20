@@ -33,7 +33,7 @@ export function collectConsoleErrors(page: Page, errors: string[]): void {
   });
 }
 
-// A counter on the event panel, such as "Пришло": the value next to its term.
+// A counter on the event panel, such as "Arrived": the value next to its term.
 export function panelStat(page: Page, term: string): Locator {
   return page
     .locator("dl > div")
@@ -47,12 +47,12 @@ export async function createEvent(
 ): Promise<void> {
   const page = await organizerPage(browser);
   await page.getByRole("link", { name: "Create an event" }).click();
-  await page.getByLabel("Название", { exact: true }).fill(title);
+  await page.getByLabel("Title", { exact: true }).fill(title);
   await page
-    .getByLabel("Начало", { exact: true })
+    .getByLabel("Start", { exact: true })
     .fill(`${new Date().getFullYear() + 1}-05-01T18:00`);
-  await page.getByLabel("Мест", { exact: true }).fill(String(capacity));
-  await page.getByRole("button", { name: "Создать", exact: true }).click();
+  await page.getByLabel("Seats", { exact: true }).fill(String(capacity));
+  await page.getByRole("button", { name: "Create", exact: true }).click();
   await expect(page.getByRole("heading", { name: title })).toBeVisible();
   await page.context().close();
 }
@@ -90,8 +90,8 @@ export async function registerOn(
 export async function openEventEdit(browser: Browser, title: string): Promise<Page> {
   const page = await organizerPage(browser);
   await page.getByRole("link", { name: title }).click();
-  await page.getByRole("link", { name: "Редактирование" }).click();
-  await expect(page.getByLabel("Название", { exact: true })).toHaveValue(title);
+  await page.getByRole("link", { name: "Edit" }).click();
+  await expect(page.getByLabel("Title", { exact: true })).toHaveValue(title);
   return page;
 }
 

@@ -9,16 +9,6 @@ const sources = import.meta.glob<string>("/src/**/*.vue", {
   eager: true,
 });
 
-// Components not translated yet (tasks 1.2–1.3 of docs/features/english-ui/tasks.md): they still
-// show Russian through the fallback. Each one leaves the list in the commit that translates it.
-const PENDING = [
-  "/src/pages/org-checkin/ui/OrgCheckinPage.vue",
-  "/src/pages/org-event-edit/ui/OrgEventEditPage.vue",
-  "/src/pages/org-event-new/ui/OrgEventNewPage.vue",
-  "/src/pages/org-event-participants/ui/OrgEventParticipantsPage.vue",
-  "/src/pages/org-event/ui/OrgEventLayout.vue",
-];
-
 const BLOCK = /<i18n lang="json" locale="(\w+)">([\s\S]*?)<\/i18n>/g;
 
 function blocks(source: string): Map<string, unknown> {
@@ -42,14 +32,12 @@ const translated = Object.entries(sources)
   .filter(({ locales }) => locales.size > 0);
 
 describe("i18n blocks", () => {
-  it("every component with texts has an English block, except the pending ones", () => {
-    const withoutEnglish = translated
-      .filter(({ locales }) => !locales.has("en"))
-      .map((c) => c.path);
-    expect(withoutEnglish.sort()).toEqual([...PENDING].sort());
+  it("every component with texts has an English and a Russian block", () => {
+    const incomplete = translated.filter(({ locales }) => !locales.has("en") || !locales.has("ru"));
+    expect(incomplete.map((c) => c.path)).toEqual([]);
   });
 
-  it.each(translated.filter(({ locales }) => locales.has("en")).map((c) => [c.path, c.locales]))(
+  it.each(translated.map((c) => [c.path, c.locales]))(
     "%s has the same keys in English and Russian",
     (_, locales) => {
       expect(keys(locales.get("en"))).toEqual(keys(locales.get("ru")));

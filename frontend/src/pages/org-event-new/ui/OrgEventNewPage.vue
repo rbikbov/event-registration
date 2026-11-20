@@ -183,3 +183,28 @@ const textFields: { name: "title" | "description" | "starts_at"; type: string; m
   }
 }
 </i18n>
+
+<i18n lang="json" locale="en">
+{
+  "title": "New event",
+  "fields": {
+    "title": "Title",
+    "description": "Description",
+    "starts_at": "Start",
+    "capacity": "Seats"
+  },
+  "submit": "Create",
+  "submitting": "Creating…",
+  "cancel": "Cancel",
+  "tryLater": "Could not create the event, try again later",
+  "errors": {
+    "required": "Required field",
+    "blank": "Required field",
+    "max_length": "The value is too long",
+    "min_value": "Must be at least 1",
+    "max_value": "Must be at most 10,000",
+    "invalid": "Invalid value",
+    "past": "The start must be in the future"
+  }
+}
+</i18n>

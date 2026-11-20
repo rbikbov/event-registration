@@ -48,7 +48,7 @@ async function mountPage() {
   await router.push(checkinPath(7));
   const wrapper = mount(OrgCheckinPage, {
     attachTo: document.body,
-    global: { plugins: [router, [VueQueryPlugin, { queryClient }], createAppI18n("ru")] },
+    global: { plugins: [router, [VueQueryPlugin, { queryClient }], createAppI18n()] },
   });
   mounted = wrapper;
   return wrapper;
@@ -75,8 +75,8 @@ async function moveOn(wrapper: Wrapper): Promise<void> {
 }
 
 function nextButton(wrapper: Wrapper) {
-  const found = wrapper.findAll("button").find((b) => b.text() === "Следующий");
-  if (found === undefined) throw new Error('No button "Следующий"');
+  const found = wrapper.findAll("button").find((b) => b.text() === "Next");
+  if (found === undefined) throw new Error('No button "Next"');
   return found;
 }
 
@@ -102,7 +102,7 @@ describe("OrgCheckinPage", () => {
 
     expect(sent).toEqual({ code: "abcd2345" });
     const answer = wrapper.get('[data-answer="checked_in"]');
-    expect(answer.text()).toContain("Пропущен");
+    expect(answer.text()).toContain("Admitted");
     expect(answer.text()).toContain("Ivan");
     expect(answer.text()).toContain("iv***@gmail.com");
     expect(wrapper.find("form").exists()).toBe(false);
@@ -150,7 +150,7 @@ describe("OrgCheckinPage", () => {
 
     await enter(wrapper, "ZZZZZZZZ");
 
-    expect(wrapper.get('[data-answer="not_found"]').text()).toContain("Билет не найден");
+    expect(wrapper.get('[data-answer="not_found"]').text()).toContain("Ticket not found");
     expect(wrapper.find("form").exists()).toBe(false);
     expect(wrapper.find('[role="alert"]').exists()).toBe(false);
   });
@@ -165,11 +165,11 @@ describe("OrgCheckinPage", () => {
     await enter(wrapper, "ABCD2345");
 
     // The time is shown in the browser's time zone, like the rest of the app.
-    const time = new Intl.DateTimeFormat("ru", { timeStyle: "short" }).format(
+    const time = new Intl.DateTimeFormat("en-GB", { timeStyle: "short" }).format(
       new Date(checkedIn.checked_in_at),
     );
     const answer = wrapper.get('[data-answer="already_checked_in"]');
-    expect(answer.text()).toContain(`Уже отмечен в ${time}`);
+    expect(answer.text()).toContain(`Already checked in at ${time}`);
     expect(answer.text()).toContain("Ivan");
     expect(wrapper.find("form").exists()).toBe(false);
     expect(document.activeElement).toBe(nextButton(wrapper).element);
@@ -184,14 +184,14 @@ describe("OrgCheckinPage", () => {
 
     await enter(wrapper, "ABCD2345");
 
-    const moment = new Intl.DateTimeFormat("ru", {
+    const moment = new Intl.DateTimeFormat("en-GB", {
       day: "numeric",
       month: "long",
       hour: "2-digit",
       minute: "2-digit",
     }).format(new Date(checkedIn.checked_in_at));
     const answer = wrapper.get('[data-answer="already_checked_in"]');
-    expect(answer.text()).toContain(`Уже отмечен ${moment}`);
+    expect(answer.text()).toContain(`Already checked in ${moment}`);
   });
 
   it("says a waitlisted or cancelled ticket is not confirmed", async () => {
@@ -201,7 +201,7 @@ describe("OrgCheckinPage", () => {
     await enter(wrapper, "ABCD2345");
 
     expect(wrapper.get('[data-answer="not_confirmed"]').text()).toContain(
-      "Билет не подтверждён: лист ожидания или отказ",
+      "Ticket not confirmed: waitlist or cancellation",
     );
     expect(wrapper.find('[role="alert"]').exists()).toBe(false);
   });
@@ -212,7 +212,7 @@ describe("OrgCheckinPage", () => {
 
     await enter(wrapper, "ABCD2345");
 
-    expect(wrapper.get('[role="alert"]').text()).toBe("Нет связи, повторите");
+    expect(wrapper.get('[role="alert"]').text()).toBe("No connection, try again");
     expect(wrapper.find("[data-answer]").exists()).toBe(false);
     expect(wrapper.get<HTMLInputElement>("#code").element.value).toBe("ABCD2345");
   });
@@ -251,7 +251,7 @@ describe("OrgCheckinPage", () => {
 
     await enter(wrapper, "EFGH6789");
 
-    expect(wrapper.get('[role="alert"]').text()).toContain("Не удалось отметить");
+    expect(wrapper.get('[role="alert"]').text()).toContain("Could not check in");
     expect(wrapper.find("[data-answer]").exists()).toBe(false);
     expect(wrapper.get<HTMLInputElement>("#code").element.value).toBe("EFGH6789");
   });
@@ -262,7 +262,7 @@ describe("OrgCheckinPage", () => {
 
     await enter(wrapper, "ABCD2345");
 
-    expect(wrapper.get('[role="alert"]').text()).toBe("Это событие другого организатора");
+    expect(wrapper.get('[role="alert"]').text()).toBe("This event belongs to another organizer");
   });
 
   it("keeps the field read-only while the code is being checked", async () => {

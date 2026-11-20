@@ -39,8 +39,8 @@ test("two people on the last seat: one gets it, the other the waitlist", async (
 
   const panel = await organizerPage(browser);
   await panel.getByRole("link", { name: title }).click();
-  await expect(panelStat(panel, "Подтверждено")).toHaveText("1");
-  await expect(panelStat(panel, "В листе ожидания")).toHaveText("1");
+  await expect(panelStat(panel, "Confirmed")).toHaveText("1");
+  await expect(panelStat(panel, "Waitlisted")).toHaveText("1");
 
   expect(consoleErrors).toEqual([]);
   for (const page of [...people, panel]) await page.context().close();

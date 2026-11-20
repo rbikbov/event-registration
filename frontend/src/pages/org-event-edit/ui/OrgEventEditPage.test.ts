@@ -125,7 +125,7 @@ describe("OrgEventEditPage", () => {
     await submit(wrapper);
 
     expect(bodies).toEqual([{ title: "Renamed", capacity: 5 }]);
-    expect(wrapper.get('[role="status"]').text()).toBe("Сохранено");
+    expect(wrapper.get('[role="status"]').text()).toBe("Saved");
     // Its counts were read after the commit: a snapshot of a later registration may be newer.
     expect(queryClient.getQueryData(orgEventQuery(7).queryKey)).toBe(event);
     expect(queryClient.getQueryState(orgEventQuery(7).queryKey)?.isInvalidated).toBe(false);
@@ -157,9 +157,9 @@ describe("OrgEventEditPage", () => {
 
     expect(bodies).toEqual([]);
     expect(wrapper.get('[data-confirm="reschedule"]').text()).toContain(
-      "Участникам (подтверждено 2, в листе 1) уйдёт письмо о переносе",
+      "The participants (confirmed 2, waitlisted 1) will get a reschedule email",
     );
-    await button(wrapper, "Перенести").trigger("click");
+    await button(wrapper, "Reschedule").trigger("click");
     await flushPromises();
 
     expect(bodies).toEqual([{ starts_at: new Date(nextYear("06")).toISOString() }]);
@@ -172,7 +172,7 @@ describe("OrgEventEditPage", () => {
     await type(wrapper, { starts_at: nextYear("06") });
     await submit(wrapper);
 
-    await button(wrapper, "Отмена").trigger("click");
+    await button(wrapper, "Cancel").trigger("click");
     await flushPromises();
 
     expect(bodies).toEqual([]);
@@ -198,8 +198,8 @@ describe("OrgEventEditPage", () => {
     await submit(wrapper);
 
     expect(bodies).toEqual([]);
-    expect(wrapper.text()).toContain("Обязательное поле");
-    expect(wrapper.text()).toContain("Начало должно быть в будущем");
+    expect(wrapper.text()).toContain("Required field");
+    expect(wrapper.text()).toContain("The start must be in the future");
   });
 
   it("explains a capacity below the confirmed seats", async () => {
@@ -211,7 +211,7 @@ describe("OrgEventEditPage", () => {
     await type(wrapper, { capacity: "1" });
     await submit(wrapper);
 
-    expect(wrapper.text()).toContain("Не меньше подтверждённых: 2");
+    expect(wrapper.text()).toContain("At least the confirmed count: 2");
     expect(wrapper.find('[role="alert"]').exists()).toBe(false);
   });
 
@@ -222,9 +222,7 @@ describe("OrgEventEditPage", () => {
     await type(wrapper, { title: "Renamed" });
     await submit(wrapper);
 
-    expect(wrapper.get('[role="alert"]').text()).toBe(
-      "Не удалось сохранить событие, попробуйте позже",
-    );
+    expect(wrapper.get('[role="alert"]').text()).toBe("Could not save the event, try again later");
     expect((wrapper.get("#title").element as HTMLInputElement).value).toBe("Renamed");
     expect(saveButton(wrapper).attributes("disabled")).toBeUndefined();
   });
