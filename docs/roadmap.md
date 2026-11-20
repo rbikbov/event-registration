@@ -126,8 +126,8 @@ Criteria: shared navigation and layout; all screens have loading, error and empt
 work at phone width; a uniform look.
 
 User registration (decision of 2026-10-30 00:48) and splitting pages into `features` (decision of
-2026-10-31 14:46) are not done — they are in "What's next" of the README (decision of 2026-11-04
-18:47).
+2026-10-31 14:46) are not done — they are in "What's next" (decision of 2026-11-04 18:47; moved from the README to the end of
+this file on 2026-11-20).
 
 Stage 5 — what was postponed to "later" during the phase, paged event lists with a shared order
 and the "Past" tab in both lists (backend and frontend; decisions of 2026-11-03 23:55 and
@@ -160,10 +160,11 @@ assignment to become a product.
   the middle of a check-in.
 - A flaky Vitest (`window is not defined` from `vue-i18n` after jsdom is closed) — find which
   promise or timer of a test outlives the test.
-- An English version of the interface and the emails: now everything is in Russian. The screen
-  texts are already in `<i18n locale="ru">` blocks of the components (vue-i18n) — a second language
-  and a language switch are needed; emails — the templates in `backend/emails/templates/emails/`
-  and the subjects in `emails/services.py`.
+- An English version of the interface and the emails, English by default, Russian kept (decision
+  of 2026-11-21 00:53): now everything is in Russian. The screen texts are already in
+  `<i18n locale="ru">` blocks of the components (vue-i18n) — an `en` block next to each and a
+  language switch are needed; emails — the templates in `backend/emails/templates/emails/` and the
+  subjects in `emails/services.py`, in the language chosen at registration.
 - Splitting pages into `features` (FSD): now the screen code is on the page while it has one
   consumer.
 

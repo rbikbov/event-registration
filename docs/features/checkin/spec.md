@@ -4,7 +4,7 @@ Phase — `docs/roadmap.md`, phase 3. Status: approved 2026-10-31.
 
 ## What and why
 
-Covers from `docs/task.md` "a ticket with a code and a check-in screen at the entrance" and "a
+Covers from `docs/task.md` (quotes translated from Russian) "a ticket with a code and a check-in screen at the entrance" and "a
 ticket passes check-in once", as well as the organizer's counters (live updates — phase 4). The
 organizer enters the code from the ticket and gets a large answer; on the event panel they see the
 counters and the participants. A check-in is one atomic change of a row, so simultaneous requests

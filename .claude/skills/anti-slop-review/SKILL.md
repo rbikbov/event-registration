@@ -95,9 +95,8 @@ The commands give candidates; each match is checked by reading the code. ripgrep
 
 ```bash
 # Promotional tone and templates
-rg -n -i "premium|state-of-the-art|cutting-edge|blazing|seamless|robust|production-ready|enterprise-grade|get started by editing|welcome to" \
+rg -n -i "modern|powerful|reliable|premium|state-of-the-art|cutting-edge|blazing|seamless|robust|production-ready|enterprise-grade|get started by editing|welcome to" \
   --glob '!**/node_modules/**' --glob '!*.lock' --glob '!pnpm-lock.yaml'
-rg -n -i "современн|мощн|надёжн|бесшовн" docs README.md AGENTS.md
 
 # Emoji in code, UI and documentation
 rg -n --pcre2 '[\x{1F300}-\x{1FAFF}\x{2600}-\x{27BF}]' --glob '!**/node_modules/**' --glob '!*.lock'

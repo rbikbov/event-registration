@@ -39,7 +39,7 @@ Linters, types, pytest, Vitest and Playwright run in CI on every PR (`make check
 Paths are from the repository root; `pytest` — `backend/`, `Vitest` — `frontend/src/`, e2e — `e2e/tests/`.
 That each test mentioned exists is checked by `make check-readme` (part of `make check`).
 
-The items of the assignment in its own words; the general requirements and a detailed table for
+The items of the assignment (translated from `docs/task.md`, which is in Russian); the general requirements and a detailed table for
 each behavior — [docs/requirements.md](docs/requirements.md).
 
 | Requirement of the assignment                                                              | Test                                                                                                                                                                                                                                                             |

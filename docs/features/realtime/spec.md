@@ -4,7 +4,7 @@ Phase — `docs/roadmap.md`, phase 4. Status: approved 2026-10-31.
 
 ## What and why
 
-Covers from `docs/task.md` "the organizer's arrived counter updates live" and the general
+Covers from `docs/task.md` (quotes translated from Russian) "the organizer's arrived counter updates live" and the general
 requirement "works with two clients open at the same time". A transaction that changes the event's
 counters sends `pg_notify`; the backend process listens to the channel and sends the SSE
 subscribers a snapshot — the event with its counters, as in its `GET`. Locally the frontend is the
