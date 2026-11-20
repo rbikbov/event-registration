@@ -18,9 +18,9 @@ test("a rescheduled event emails the confirmed and the waitlisted", async ({
   const participant = await (await browser.newContext()).newPage();
   const seatEmail = `reschedule-seat-${stamp}@example.com`;
   const waitingEmail = `reschedule-waiting-${stamp}@example.com`;
-  await registerOn(participant, title, seatEmail, "Анна");
+  await registerOn(participant, title, seatEmail, "Anna");
   await expect(participant.getByRole("status")).toHaveText("Seat confirmed");
-  await registerOn(participant, title, waitingEmail, "Борис");
+  await registerOn(participant, title, waitingEmail, "Boris");
   await expect(participant.getByRole("status")).toHaveText("You are on the waitlist, #1");
   await participant.context().close();
 

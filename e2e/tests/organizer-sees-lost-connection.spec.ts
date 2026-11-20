@@ -14,7 +14,7 @@ test("a lost stream shows the indicator, and the counters are right once it is b
   await participant.goto("/");
   await participant.getByRole("link", { name: title }).click();
   await participant.getByLabel("Email").fill(email);
-  await participant.getByLabel("Name").fill("Дина");
+  await participant.getByLabel("Name").fill("Dina");
   await participant.getByRole("button", { name: "Register" }).click();
   await expect(participant.getByRole("status")).toHaveText("Seat confirmed");
   await participant.context().close();

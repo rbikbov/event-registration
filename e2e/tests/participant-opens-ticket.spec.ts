@@ -17,7 +17,7 @@ test("the ticket email leads to the ticket page, where the participant cancels",
   await participant.goto("/");
   await participant.getByRole("link", { name: title }).click();
   await participant.getByLabel("Email").fill(email);
-  await participant.getByLabel("Name").fill("Анна");
+  await participant.getByLabel("Name").fill("Anna");
   await participant.getByRole("button", { name: "Register" }).click();
   await expect(participant.getByRole("status")).toHaveText("Seat confirmed");
 

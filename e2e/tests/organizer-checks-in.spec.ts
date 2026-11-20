@@ -20,7 +20,7 @@ async function ticketCode(
   await participant.goto("/");
   await participant.getByRole("link", { name: title }).click();
   await participant.getByLabel("Email").fill(email);
-  await participant.getByLabel("Name").fill("Анна");
+  await participant.getByLabel("Name").fill("Anna");
   await participant.getByRole("button", { name: "Register" }).click();
   await expect(participant.getByRole("status")).toHaveText("Seat confirmed");
   await participant.context().close();
@@ -59,7 +59,7 @@ test("the code from the email passes check-in once, and the panel counts the arr
   await organizer.getByLabel("Ticket code").fill(code);
   await organizer.getByRole("button", { name: "Check in" }).click();
   await expect(organizer.getByText("Admitted", { exact: true })).toBeVisible();
-  await expect(organizer.getByText("Анна")).toBeVisible();
+  await expect(organizer.getByText("Anna")).toBeVisible();
 
   // The organizer moves on and the same code comes again: it is turned away.
   await organizer.getByRole("button", { name: "Next" }).click();
@@ -72,12 +72,12 @@ test("the code from the email passes check-in once, and the panel counts the arr
   await expect(panelStat(organizer, "Arrived")).toHaveText("1");
   await organizer.getByRole("link", { name: "Participants" }).click();
   await expect(panelStat(organizer, "Arrived")).toHaveText("1");
-  await expect(organizer.getByRole("row", { name: /Анна/ })).toContainText(email);
+  await expect(organizer.getByRole("row", { name: /Anna/ })).toContainText(email);
   expect(consoleErrors).toEqual([]);
   await organizer.context().close();
 });
 
-// Both entrances press «Отметить» nearly at once; which request reaches the server first is not
+// Both entrances press "Check in" nearly at once; which request reaches the server first is not
 // controlled here — the race itself is proven by registrations/tests/test_concurrency.py.
 test("one code at two entrances at once: one lets the ticket in, the other turns it away", async ({
   browser,

@@ -20,7 +20,7 @@ test("two people on the last seat: one gets it, the other the waitlist", async (
 
   const consoleErrors: string[] = [];
   const people = await Promise.all(
-    ["Анна", "Борис"].map(async (name, index) => {
+    ["Anna", "Boris"].map(async (name, index) => {
       const page = await (await browser.newContext()).newPage();
       collectConsoleErrors(page, consoleErrors);
       await readyToRegister(page, title, `last-seat-${index}-${Date.now()}@example.com`, name);

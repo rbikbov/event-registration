@@ -34,7 +34,7 @@ test("a registration updates the free seats on an open event page and flags the 
   await participant.goto("/");
   await participant.getByRole("link", { name: title }).click();
   await participant.getByLabel("Email").fill(`seats-${Date.now()}@example.com`);
-  await participant.getByLabel("Name").fill("Вера");
+  await participant.getByLabel("Name").fill("Vera");
   await participant.getByRole("button", { name: "Register" }).click();
   await expect(participant.getByRole("status")).toHaveText("Seat confirmed");
   await participant.context().close();
@@ -47,7 +47,7 @@ test("a registration updates the free seats on an open event page and flags the 
   await expect(panel.getByText("There are updates")).toBeVisible();
   await expect(panel.getByText("No registrations yet")).toBeVisible();
   await panel.getByRole("button", { name: "Refresh" }).click();
-  await expect(panel.getByRole("row", { name: /Вера/ })).toBeVisible();
+  await expect(panel.getByRole("row", { name: /Vera/ })).toBeVisible();
   await expect(panel.getByText("There are updates")).toBeHidden();
   expect(await notReloaded(panel)).toBe(true);
 

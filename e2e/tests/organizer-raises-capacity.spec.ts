@@ -11,9 +11,9 @@ test("a larger capacity gives the waitlist head a seat and an email with the tic
   await createEvent(browser, { title, capacity: 1 });
   const participant = await (await browser.newContext()).newPage();
   const waitingEmail = `capacity-waiting-${stamp}@example.com`;
-  await registerOn(participant, title, `capacity-seat-${stamp}@example.com`, "Анна");
+  await registerOn(participant, title, `capacity-seat-${stamp}@example.com`, "Anna");
   await expect(participant.getByRole("status")).toHaveText("Seat confirmed");
-  await registerOn(participant, title, waitingEmail, "Борис");
+  await registerOn(participant, title, waitingEmail, "Boris");
   await expect(participant.getByRole("status")).toHaveText("You are on the waitlist, #1");
   await participant.context().close();
 

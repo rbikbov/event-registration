@@ -20,8 +20,8 @@ test("every screen fits a 360 px phone without scrolling sideways", async ({
   request,
 }) => {
   // Words with no place to break, and a long address: the lines most likely to stick out.
-  const title = `Конференцияразработчиковинтерфейсовипользователей${Date.now()}`;
-  const name = "АннаМарияАлександраКонстантиновнаПреображенская";
+  const title = `Conferenceofuserinterfacedevelopersandresearchers${Date.now()}`;
+  const name = "AnnaMariaAlexandraKonstantinovnaPreobrazhenskaya";
   await createEvent(browser, { title, capacity: 5 });
 
   const participant = await (await browser.newContext()).newPage();
