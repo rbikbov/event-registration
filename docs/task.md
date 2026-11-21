@@ -1,7 +1,6 @@
 # Test assignment: event registration
 
-The text of the assignment: the general requirements, the expected result and the task. Translated
-from Russian; the original is in the git history.
+The text of the assignment: the general requirements, the expected result and the task.
 
 # Requirements
 

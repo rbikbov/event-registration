@@ -34,3 +34,6 @@ backend/staticfiles/
 
 # worktrees for the reviewer agent (make review-worktree)
 .claude/worktrees/
+
+# agent session exports (`make export-sessions`): raw transcripts, not committed
+docs/session/

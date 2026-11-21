@@ -19,10 +19,13 @@ for junk), `.claude/agents/reviewer.md` (an independent review of each stage wit
 made in discussions with the agent are in [docs/decisions.md](decisions.md) with the time; the spec
 and tasks of each phase are in `docs/features/<phase>/`.
 
-The agent session export is in [docs/session/](session/): a file per Claude Code session, as text
-in a format close to `/export` (requests, answers, tool calls and the start of their output; without
-the model's thinking and subagent conversations). The name is the session start and the approximate working time: pauses between messages count for at
-most 15 minutes. To rebuild or extend — `make export-sessions`.
+The raw exports of all 51 sessions with the agent (in Russian, as the work went) were in
+`docs/session/` until the delivery cleanup; they stay in the history:
+[docs/session at eaea3b9](https://github.com/rbikbov/event-registration/tree/eaea3b9/docs/session).
+A file per Claude Code session, as text in a format close to `/export` (requests, answers, tool
+calls and the start of their output; without the model's thinking and subagent conversations), made
+by `make export-sessions`. The process itself reads better from the decision log, the phases'
+specs and tasks and the review reports.
 
 ## Course of work
 

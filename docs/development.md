@@ -173,7 +173,7 @@ must appear both in the Makefile and in this table.
 | `make fmt`                                                    | format everything: `eslint --fix`, Prettier, `ruff check --fix`, `ruff format`                                                                                                             |
 | **Other**                                                     |                                                                                                                                                                                            |
 | `make worktime`                                               | working time from the session markers in `decisions.md` (see "Commits, decisions, progress")                                                                                               |
-| `make export-sessions`                                        | the project's Claude Code sessions as text in `docs/session/` (see "Commits, decisions, progress")                                                                                         |
+| `make export-sessions`                                        | the project's Claude Code sessions as text in `docs/session/` (not committed) (see "Commits, decisions, progress")                                                                         |
 
 Django commands run from `backend/` through uv: `uv run python manage.py <command>`.
 
@@ -397,7 +397,8 @@ checkboxes. A task is checked in the same commit that does it.
 
 **Agent session export** — `make export-sessions` (`scripts/export-sessions.mjs`): each Claude
 Code session of this project (`~/.claude/projects/<project path, everything except letters and
-digits replaced with "-">/*.jsonl`) as text in a format close to `/export`, in `docs/session/`.
+digits replaced with "-">/*.jsonl`) as text in a format close to `/export`, in `docs/session/` (git-ignored: the exports are raw
+transcripts and are not committed).
 The built-in `/export` exports only the current session, and opening an old one with `--resume`
 for the sake of an export appends to it. The sources are only read. As with `/export`, the
 model's thinking and subagent conversations are left out, as well as what the environment adds to
@@ -411,8 +412,7 @@ files, adds new sessions and removes the previous export of the same session (sa
 different working time), and leaves other files alone — the export of a session whose `.jsonl`
 Claude Code has already deleted stays. A running session is exported up to its last written
 message. Another sessions or output folder — `node scripts/export-sessions.mjs <.jsonl folder>
-<destination>`. The text keeps whatever was in command output: look through the files before
-committing.
+<destination>`. The text keeps whatever was in command output, local paths included.
 
 ## Backend
 
@@ -606,7 +606,7 @@ dependencies). They apply only to the agent and do not affect manual work.
   better to have a clean `git status` before a push; CI checks the commits as they are.
 - The generated `backend/openapi.yaml` and `frontend/src/shared/api/schema.d.ts` are excluded
   from Prettier and ESLint: `make schema-check` compares them with the generation byte for byte.
-- `docs/task.md` is the text of the assignment translated from Russian; its meaning is not edited.
+- `docs/task.md` is the text of the assignment; its meaning is not edited.
 - In WSL2 the wall clock (`time.time()`, `timezone.now()`) jumps back by about 0.4 s every ~30 s,
   even without load: that is how the host adjusts the virtual machine's clock. A test that queues
   an email and immediately calls `process_batch()` with the current time may find it "from the

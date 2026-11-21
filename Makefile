@@ -55,7 +55,7 @@ check-readme: ## README: every test the requirement tables point to exists
 	node scripts/check-readme-tests.mjs
 
 .PHONY: export-sessions
-export-sessions: ## Claude Code sessions of this project as text in docs/session (reads ~/.claude)
+export-sessions: ## Claude Code sessions of this project as text in docs/session, not committed (reads ~/.claude)
 	node scripts/export-sessions.mjs
 
 .PHONY: worktime
