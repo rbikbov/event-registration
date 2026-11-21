@@ -24,12 +24,22 @@ Spec — `spec.md`. One task — one commit; the `[x]` check goes into the same 
       removed with the key test (decision of 2026-11-21 02:22). Done when: no Russian text in the code and the tests, except the session export test data
       (`export-sessions.test.mjs`); the docs keep it only in the history (`docs/task.md`,
       `docs/session/`, the log, quotes of the old interface in the specs of phases 2–6).
-- [ ] 1.7. Closing the phase: `architecture.md`, `features.md`, the requirement tables, roadmap.
+- [x] 1.7. Closing the phase: `architecture.md`, `features.md`, the requirement tables, roadmap.
 
 ## Log
 
 - The base of stage 1 — `b669fab`.
 - 1.1: the tests of the components translated later that compare a date with Russian `Intl` mount
   with `createAppI18n("ru")` until their component is translated; the dates follow the app locale.
+- The review of stage 1 — `b669fab..bbb453a`, ten findings and a minor one; 1–10 fixed in
+  `292e3dd`, the minor one went away with the Russian blocks (`11e650a`). The repeated review —
+  `bbb453a..11e650a`, one finding (the waitlist branch of the reschedule email was not checked) —
+  the reschedule test checks that branch's text; the Cyrillic checks are removed: with one language
+  they guard nothing (the human's decision).
+- The browser pass (slot 1, the gateway, Chromium at 360 px, after `make stack-seed`): the home
+  page, the event page, login, the organizer's list, the participants, check-in with an unknown
+  code, the edit tab — English, `scrollWidth` equals the window; the console has only the guest's
+  401 `me` and the 404 of the unknown code. A seeded reminder in Mailpit is English, "21 Nov 2026
+  23:34 UTC" for the "22 November 2026 at 01:34" shown in EET.
 
 ## Later

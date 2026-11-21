@@ -311,7 +311,7 @@ worker (reminders), so `FRONTEND_URL` is set for both.
   "registration cancelled" with a link to the event; "ticket not found"; cancellation with a
   confirmation; a ticket checked in at the entrance — "you were checked in at HH:MM" without
   cancellation (phase 3). The organizer's event panel (`/org/events/:id`, phase 3): counters of
-  seats, confirmed, waitlisted, arrived and free seats, a table of participants in queue order
+  seats, confirmed, waitlisted, checked in and free seats, a table of participants in queue order
   with a status filter in the URL. The check-in screen (`/org/events/:id/checkin`, phase 3): a code
   field, a large answer in place of the form — "checked in" with the name and a masked email,
   "already checked in at HH:MM", "ticket not found", "ticket not confirmed" — and "Next"; check-in
@@ -341,6 +341,10 @@ worker (reminders), so `FRONTEND_URL` is set for both.
   (`shared/ui/expandable-text`). Check-in — "Next" is disabled for 1 s after an answer; the
   check-in time has the date if it is not today. Every screen fits into 360 px without horizontal
   scrolling (e2e `screens-fit-phone`).
+- **Implemented (phase 8):** every text is English — one `<i18n locale="en">` block per component,
+  the app locale `en-GB` (24-hour time, "1 May 2027 at 18:00"); a check-in of another day reads
+  "on 2 November at 23:50". The organizer's counter and column and the check-in answer are all
+  "Checked in"; the ticket's cancel button is "Cancel registration".
 
 ## Environment and demo data
 

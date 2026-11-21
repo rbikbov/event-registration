@@ -144,7 +144,7 @@ In "what's next" of the README — a push server (Centrifugo) instead of streams
 process: when there are thousands of connections or more than one backend process (decision of
 2026-10-31 21:04).
 
-## Phase 8. English interface and emails — in progress
+## Phase 8. English interface and emails — done
 
 Spec and tasks — `docs/features/english-ui/`. Criteria: every screen, the emails and the demo data
 are English; the Russian texts are removed (decision of 2026-11-21 02:22); `make check` and
