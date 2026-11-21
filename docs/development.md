@@ -17,9 +17,8 @@ To just look at the project, without developing it, see the [README](../README.m
 7. [Automatic checks](#automatic-checks)
 8. [Commits, decisions, progress](#commits-decisions-progress)
 9. [Backend](#backend) · [Frontend](#frontend) · [E2E](#e2e)
-10. [Rules and skills](#rules-and-skills)
-11. [Claude Code hooks](#claude-code-hooks)
-12. [Gotchas](#gotchas)
+10. [Code rules](#code-rules)
+11. [Gotchas](#gotchas)
 
 ## What to install
 
@@ -145,7 +144,7 @@ must appear both in the Makefile and in this table.
 | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **Environment**                                               |                                                                                                                                                                                            |
 | `make install`                                                | Node and backend dependencies, Playwright browser (chromium), git hooks                                                                                                                    |
-| `make skills`                                                 | optional: the third-party agent skills from `skills-lock.json` (see "Rules and skills")                                                                                                    |
+| `make skills`                                                 | optional: the third-party agent skills from `skills-lock.json` (see [ai-workflow.md](ai-workflow.md))                                                                                      |
 | `make dev-deps`                                               | start Postgres and Mailpit in Docker and wait until they are ready                                                                                                                         |
 | `make dev-backend` / `make dev-frontend`                      | local dev servers (see "Running")                                                                                                                                                          |
 | `make dev-worker`                                             | local email worker: outbox → Mailpit (`manage.py run_worker`)                                                                                                                              |
@@ -181,84 +180,29 @@ Django commands run from `backend/` through uv: `uv run python manage.py <comman
 
 ## Working on a task
 
-The order for a developer working on a task together with Claude Code. The agent follows the same
-steps, but by its own instructions — the `feature-workflow` (a whole phase) and `session-handoff`
-(start and end of work) skills and `AGENTS.md` (including its own stack slot); the commands of
-this section do not apply to it.
+The order for a developer working with Claude Code; the agent has its own instructions —
+[AGENTS.md](../AGENTS.md) and the `feature-workflow` and `session-handoff` skills, which describe
+the same steps in detail.
 
-**1. Find the task.** In [roadmap.md](roadmap.md) — the phase with the "in progress" status, and
-in it the first unchecked task. The tasks of phases 1–7 are in `docs/features/<slug>/tasks.md`.
-Before starting — `git pull` and a clean `git status`.
-
-**2. A large phase has just started — spec and tasks first, code after.**
-
-1. Read the phase's section in [architecture.md](architecture.md) and the requirements in
-   [task.md](task.md).
-2. Copy `docs/features/_template/spec.md` and `tasks.md` to `docs/features/<slug>/`.
-3. Spec — up to 150 lines: model, invariants and what protects them, API, UI states, edge cases,
-   acceptance scenarios. **Non-Goals are required** — a list of what we do not do, even though
-   we will want to.
-4. Tasks — "one task = one commit", each with "done when"; the first is a tracer bullet: one
-   scenario end to end, from the model to the screen.
-5. The project owner approves the spec and tasks before the first line of code. Commit —
-   `docs: add <slug> spec and tasks`.
-
-**3. Before the code.** Read the `AGENTS.md` of the folders the task touches and the
-`docs/rules/` on the topic ([list](#rules-and-skills)). Find similar code and reuse it instead of
-writing a second version of the same thing.
-
-**4. Test first — for logic.** Backend services, pure functions, transformations: the test comes
-first, it must fail for the expected reason, then the code. Markup and styles are checked by the
-browser and e2e. API and model changes follow the recipes from "[Common tasks](#common-tasks)".
-
-**5. Check.**
-
-- `make check` — always;
-- `make e2e` — if the API, the UI or scenarios from `e2e/` are touched;
-- by hand in the browser (`make dev-backend` + `make dev-frontend`): the task's scenario and the
-  negative cases — empty data, an error, a repeated submit, two tabs.
-
-**6. Update in the same commit** — checklist:
-
-- [ ] the task is checked `[x]` in the roadmap or in the phase's `tasks.md`;
-- [ ] decisions made along the way are in [decisions.md](decisions.md) (time from `date`);
-- [ ] a new command, tool, check, gotcha is in this file;
-- [ ] the behavior diverged from the spec — `spec.md` is fixed;
-- [ ] whatever was found outside the task goes to "Later" in `tasks.md`, not into this commit.
-
-**7. Commit** — one task, one message in the Conventional Commits format. If `pre-commit` or
-`commit-msg` stopped the commit, fix the cause, do not bypass the hook.
-
-**8. Push.** `git push`: `pre-push` checks the affected parts, then CI — the result is in Actions
-on GitHub or in `gh run watch`. A red CI is the first task before taking the next one. A phase
-stage is a branch from `main` and a pull request; the PR title follows the rule in
-[AGENTS.md](../AGENTS.md) ("Small commits"). CI on a PR additionally checks the messages of all
-commits.
-
-**9. Close the phase** when all its tasks are checked:
-
-- the phase criteria from the roadmap are verified with facts — a test, a command, an output;
-- the phase's sections in [architecture.md](architecture.md) are brought in line with the code
-  and marked "implemented";
-- "What works" and the "requirement → test" rows in the [README](../README.md) and
-  [requirements.md](requirements.md) are updated;
-- in the roadmap the phase is "done", the next one is "in progress"; the closing is an entry in
-  [decisions.md](decisions.md);
-- an independent review of each stage: a human or the `reviewer` agent (what to give it — the
-  `feature-workflow` skill, "Review"); a human goes through the findings.
-
-What a phase's history looks like:
-
-```text
-docs: add registration spec and tasks
-feat(backend): register for an event with a seat limit        ← tracer bullet
-feat(backend): put registrations over the limit on the waitlist
-feat(backend): promote the first waitlisted on cancellation
-test(backend): race for the last seat on Postgres
-feat(frontend): event page with registration form
-test(e2e): organizer creates an event, participant registers
-docs: close phase 1 (registration)
-```
+1. **Find the task** — the phase "in progress" in [roadmap.md](roadmap.md), its first unchecked
+   task in `docs/features/<slug>/tasks.md`. `git pull` and a clean `git status` first.
+2. **A new phase — spec and tasks first** from `docs/features/_template/`: Non-Goals are required,
+   one task — one commit, the first is a tracer bullet; the owner approves them before the code.
+3. **Before the code** — the `AGENTS.md` of the folders the task touches and
+   [the rules](#code-rules) on the topic; reuse similar code.
+4. **Test first for logic**; markup and styles are checked in the browser and e2e. API and model
+   changes — "[Common tasks](#common-tasks)".
+5. **Check** — `make check` always, `make e2e` if the API, the UI or the scenarios are touched, and
+   by hand in the browser (`make dev-backend` + `make dev-frontend`), including the negative cases.
+6. **In the same commit** — the task checked `[x]`, the decisions in [decisions.md](decisions.md),
+   a new command or gotcha in this file, the spec fixed if the behavior diverged, findings outside
+   the task in "Later" of `tasks.md`.
+7. **Commit and push** — Conventional Commits; a stopped hook is fixed, not bypassed. A red CI is
+   the first task. A phase stage is a branch from `main` and a PR (titles —
+   [AGENTS.md](../AGENTS.md), "Small commits").
+8. **Close the phase** — the criteria verified by facts, `architecture.md` in line with the code,
+   "What works" and the "requirement → test" rows in the [README](../README.md) and
+   [requirements.md](requirements.md) updated, the review of each stage gone through.
 
 ## Common tasks
 
@@ -368,24 +312,9 @@ the rule.
 
 ## Commits, decisions, progress
 
-**Commits** — [Conventional Commits](https://www.conventionalcommits.org/):
-`<type>(<scope>): <subject>`, in English, in the imperative mood.
-
-```text
-feat(backend): add waitlist promotion on cancel
-fix(frontend): show error when check-in code is empty
-docs: describe pre-push hook
-```
-
-- Types: `feat`, `fix`, `refactor`, `perf`, `test`, `docs`, `build`, `ci`, `chore`, `style`,
-  `revert`.
-- Scope is the part of the repository: `backend`, `frontend`, `e2e`, `infra`; for changes across
-  the whole repository it is omitted.
-- One commit is one logical change after which the project builds and the tests pass.
-
-**Decisions** — any choice that affects the code, structure, stack or deadlines is written to
-[decisions.md](decisions.md) in the same commit as the change. The format is in
-[AGENTS.md](../AGENTS.md).
+**Commits and decisions** — the rules are in [AGENTS.md](../AGENTS.md) ("Small commits",
+"Decision log"): Conventional Commits in English (commitlint checks the format), a decision is
+written to [decisions.md](decisions.md) in the same commit as the change.
 
 **Working time** — session boundaries are marked in [decisions.md](decisions.md) with the lines
 `- **HH:MM** — ▶ session start` and `- **HH:MM** — ■ session end` (time from `date`);
@@ -546,7 +475,7 @@ test_…` and `django.test.AsyncClient`. There is one event loop per session, li
   The main linter rule here is `no-floating-promises`: a forgotten `await` in Playwright makes a
   test green without checking anything.
 
-## Rules and skills
+## Code rules
 
 The code conventions are written as rules for the agent, but they apply to people too — they are
 worth reading.
@@ -563,41 +492,8 @@ worth reading.
 A rule for a folder is an `AGENTS.md` in it (next to it, `CLAUDE.md` = `@AGENTS.md`, which
 Claude Code reads); a rule on a topic is `docs/rules/<topic>.md`.
 
-Procedures ("how to do X step by step") are skills in `.claude/skills/`: `session-handoff`,
-`feature-workflow`, `fsd-frontend`, `anti-slop-review`, `api-change`; the independent review
-agent is `.claude/agents/reviewer.md`. The source is the
-[rbikbov/frontend-starter](https://github.com/rbikbov/frontend-starter) template, adapted to
-Django + Vue. The templates of a phase's spec and tasks are in `docs/features/_template/`.
-
-Third-party skills (`django-security`, `vue-best-practices`, `vue-router-best-practices`,
-`vue-testing-best-practices`) are not in git and are optional: `make skills` installs them with
-`npx skills@1.9.0 experimental_install` (the CLI pinned too) from `skills-lock.json`, which pins
-each one to a commit of its source, into `.agents/skills/` with symlinks in `.claude/skills/` (both
-git-ignored; it needs network). A clone made while they were in git loses them on update — run
-`make skills` again. They are not edited: `npx skills update` moves them to newer versions and
-rewrites the lock file. Project-specific additions go into `AGENTS.md` or our own skills. Without
-them the agent still works by the project's rules (no rule refers to them); they add general Vue
-and Django advice. On Windows the symlinks need developer mode — work from WSL.
-
-## Claude Code hooks
-
-Configured in `.claude/settings.json`, the scripts are in `.claude/hooks/` (Node, no
-dependencies). They apply only to the agent and do not affect manual work.
-
-| Event                      | Script                 | What it does                                                                                                                        |
-| -------------------------- | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `SessionStart`             | `session-start.mjs`    | shows the agent the phase "in progress", its open tasks from `tasks.md` (or a hint to start with the spec) and the latest commits   |
-| `PreToolUse` (Bash)        | `guard-bash.mjs`       | blocks bypassing git hooks (`--no-verify`, `-n`, `HUSKY=0`, changing `core.hooksPath`), force push and `--amend` of a pushed commit |
-| `PreToolUse` (Edit/Write)  | `guard-migrations.mjs` | blocks edits of committed migrations `backend/*/migrations/NNNN_*.py`                                                               |
-| `PostToolUse` (Edit/Write) | `format-file.mjs`      | formats the changed file like `pre-commit` (Prettier, ruff, ESLint); shows the agent the remaining linter errors                    |
-
-- `guard-bash.mjs` first cuts heredocs and quoted strings out of the command (otherwise `-n` in
-  the text of a commit message would act as a flag), then checks each simple command (separators
-  — newline, `;`, `|`, `&`) separately. A new case is a row in `guard-bash.test.mjs`.
-- Hooks on Edit/Write do not see a file edited through the shell (`sed -i`, `>`). The rules still
-  apply, but following them in that case is up to the agent and the review.
-- Hooks are picked up when `.claude/settings.json` changes, without restarting the session. If a
-  hook blocks too much, fix the script and add the case to the test instead of bypassing the hook.
+The agent's skills, the third-party skills (`make skills`) and the Claude Code hooks —
+[ai-workflow.md](ai-workflow.md).
 
 ## Gotchas
 

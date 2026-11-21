@@ -37,7 +37,8 @@ the work stopped from the files alone.
 
 1. Check the task `[x]` in the phase's `tasks.md`.
 2. The decisions made along the way — into `docs/decisions.md` (the format — `AGENTS.md`).
-3. A new command, tool, check or environment gotcha — into `docs/development.md`.
+3. A new command, tool, check or environment gotcha — into `docs/development.md`; a skill or a
+   Claude Code hook — into `docs/ai-workflow.md`.
 4. What was found outside the task — into the "later" log in the phase's `tasks.md`, not into this
    commit.
 

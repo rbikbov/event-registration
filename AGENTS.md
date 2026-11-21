@@ -5,7 +5,8 @@ An event registration service (the original brief — [docs/task.md](docs/task.m
 start of every session, so it holds only what is always needed. The details are in the folders'
 `AGENTS.md` (loaded when working in the folder) and in `docs/rules/`.
 
-Commands (`make help`), tools and what the hooks check — [docs/development.md](docs/development.md).
+Commands (`make help`), tools and checks — [docs/development.md](docs/development.md); skills and
+Claude Code hooks — [docs/ai-workflow.md](docs/ai-workflow.md).
 Before saying a task is done — `make stack-check` (that is `make check` on slot 1's Postgres in
 Docker; it needs network: `check-ci` checks the action tags against GitHub).
 
@@ -56,7 +57,8 @@ docs/rules/           rules by topic: db-migrations.md, concurrency.md
 4. Three failed attempts to fix the same thing — stop and describe to the human what was tried and
    what the hypothesis is.
 5. A new command, tool, check or environment gotcha — into
-   [docs/development.md](docs/development.md) in the same commit.
+   [docs/development.md](docs/development.md) in the same commit; a skill or a Claude Code hook —
+   into [docs/ai-workflow.md](docs/ai-workflow.md).
 6. A phase stage is not done until the `reviewer` agent has gone through it and the human has gone
    through its findings. How to hand it over — the `feature-workflow` skill, "Review".
 
