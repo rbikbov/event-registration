@@ -1,6 +1,6 @@
 # Roadmap
 
-The phases of work up to the delivery (2026-11-05). The phase status is in the heading:
+The phases of work, from the skeleton to the English interface. The phase status is in the heading:
 `not started`, `in progress`, `done`. A phase is done when the criteria are met, `make check` and
 CI pass, the phase's sections in `docs/architecture.md` are brought in line with the code, and the
 rows of the "requirement → test" table in the README for its requirements point to real tests.
