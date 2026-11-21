@@ -37,9 +37,8 @@ scripts/              repository scripts with tests: pre-push.mjs, worktime.mjs,
 docs/task.md          the original brief — its meaning is not edited
 docs/decisions.md     the decision log with the time
 docs/development.md   the developer guide: setup, commands, checks, gotchas
-docs/features.md      what works (for the reader); docs/requirements.md — the general
-                      requirements and the detailed "requirement → test" table;
-                      docs/ai-workflow.md — how it was built with AI
+docs/requirements.md  the general requirements and the detailed "requirement → test" table
+docs/ai-workflow.md   how it was built with AI: tools, agent rules, skills, hooks
 docs/architecture.md  how the system works: model, API, realtime, emails; section status
 docs/roadmap.md       phases, statuses, criteria; the phases' specs and tasks — docs/features/<slug>/
 docs/rules/           rules by topic: db-migrations.md, concurrency.md

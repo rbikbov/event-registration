@@ -2,8 +2,24 @@
 
 An event registration service — a seat limit, a waitlist, tickets with codes, check-in at the
 entrance, live counters — built together with an AI agent (Claude Code) in small, reviewed steps.
-Stack: Vue 3 + Vite, Django + DRF, PostgreSQL 17. What exactly works —
-[docs/features.md](docs/features.md).
+Stack: Vue 3 + Vite, Django + DRF, PostgreSQL 17.
+
+## What works
+
+- **Participants** register for an event by email, without an account: one email — one seat; when
+  the seats run out — the waitlist with a position. The ticket page from the email link shows the
+  code and the status and lets them cancel; a cancellation gives the seat to the first one waiting.
+- **Emails** — the ticket, the waitlist, a seat after someone else cancelled, a reschedule, a
+  reminder a day before — go through the outbox and the worker to Mailpit.
+- **Organizers** (demo: `demo@example.com` / `demo`) create and edit events: a new date notifies the
+  participants, a higher limit gives seats to the waitlist, a limit below the confirmed count is not
+  accepted. The event panel has counters and a paged list of participants with a status filter;
+  tickets are checked in at the entrance by code, and a checked-in ticket cannot be cancelled.
+- **Live:** the panel counters and the free seats on the event page update in all open tabs; on a
+  break the panel shows "Connection lost, reconnecting…" and catches up after reconnecting.
+- **Screens:** a shared layout with a header, loading, error with a retry and "not found" states, a
+  bar when offline, event lists 20 per page with the "Upcoming" and "Past" tabs; every screen fits
+  a phone (360 px).
 
 ## How it was built
 
@@ -32,8 +48,6 @@ make seed        # demo events with participants
 
 Open <http://localhost:5173>, emails are in Mailpit at <http://localhost:8025>. To stop —
 `make down`. Services, ports and development — [docs/development.md](docs/development.md).
-
-The interface and the emails are in English.
 
 ## What the tests prove
 

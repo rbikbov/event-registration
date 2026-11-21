@@ -2,8 +2,8 @@
 name: session-handoff
 description: >
   The start and the end of a work session: check against the roadmap, check off the done tasks,
-  check that the decisions are written to the log, update `docs/features.md` and the requirement
-  tables when a phase is closed. Use at the start of a session, after /clear, after each commit with
+  check that the decisions are written to the log, update "What works" in the README and the
+  requirement tables when a phase is closed. Use at the start of a session, after /clear, after each commit with
   a roadmap task and before ending a session.
 ---
 
@@ -12,14 +12,14 @@ description: >
 The state of the work lives in the repository, not in the chat. A new session must understand where
 the work stopped from the files alone.
 
-| File                                                    | What it holds                                                             |
-| ------------------------------------------------------- | ------------------------------------------------------------------------- |
-| `docs/roadmap.md`                                       | phases, their status and criteria                                         |
-| `docs/architecture.md`                                  | how the system works; the sections have the status "implemented" / "plan" |
-| `docs/features/<slug>/tasks.md`                         | the phase's tasks and the "later" log                                     |
-| `docs/decisions.md`                                     | why it was decided so                                                     |
-| git history                                             | what was done and when                                                    |
-| `README.md`, `docs/requirements.md`, `docs/features.md` | the outcome for the reviewer: "requirement → test" tables, what works     |
+| File                                | What it holds                                                             |
+| ----------------------------------- | ------------------------------------------------------------------------- |
+| `docs/roadmap.md`                   | phases, their status and criteria                                         |
+| `docs/architecture.md`              | how the system works; the sections have the status "implemented" / "plan" |
+| `docs/features/<slug>/tasks.md`     | the phase's tasks and the "later" log                                     |
+| `docs/decisions.md`                 | why it was decided so                                                     |
+| git history                         | what was done and when                                                    |
+| `README.md`, `docs/requirements.md` | the outcome for the reader: what works, "requirement → test" tables       |
 
 ## Session start
 
@@ -47,7 +47,7 @@ the work stopped from the files alone.
 2. `make stack-check` passes (`make check` — slot 0, the human's).
 3. Bring the phase's sections in `docs/architecture.md` in line with the code and mark them
    "implemented".
-4. Update `docs/features.md` and the "requirement → test" rows for the phase's requirements (README
+4. Update "What works" in the README and the "requirement → test" rows for the phase's requirements (README
    — the items of the brief, `docs/requirements.md` — the rest) — with links to existing
    tests.
 5. Change the phase status to `done`, the next one's to `in progress`.

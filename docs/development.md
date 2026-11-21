@@ -240,7 +240,7 @@ commits.
 - the phase criteria from the roadmap are verified with facts — a test, a command, an output;
 - the phase's sections in [architecture.md](architecture.md) are brought in line with the code
   and marked "implemented";
-- [features.md](features.md) and the "requirement → test" rows in the [README](../README.md) and
+- "What works" and the "requirement → test" rows in the [README](../README.md) and
   [requirements.md](requirements.md) are updated;
 - in the roadmap the phase is "done", the next one is "in progress"; the closing is an entry in
   [decisions.md](decisions.md);
