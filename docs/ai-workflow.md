@@ -32,7 +32,9 @@ specs and tasks and the review reports.
 The work went from October 28 to November 4, 2026, in sessions. Each session is marked in
 [docs/decisions.md](decisions.md) with the `▶ start` and `■ end` markers; `make worktime` sums them
 (58 h 35 min at the close of phase 7). The markers were introduced on the evening of October 29,
-earlier sessions are marked retroactively by commit times (such entries are labeled). Phase stages
+earlier sessions are marked retroactively by commit times (such entries are labeled). The sum is
+approximate: the markers were put by hand, not by the agent's sessions, and an end on November 3
+has no start, so that session is not counted. Since November 21 the sessions are not marked. Phase stages
 are separate branches and PRs since stage 3 of phase 1 (PR #1); since then each stage also gets an
 independent review by the `reviewer` agent, since PR #7 in a separate copy of the repository and its
 own stack. Commits are small steps, one per task.

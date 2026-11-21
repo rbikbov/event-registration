@@ -316,9 +316,9 @@ the rule.
 "Decision log"): Conventional Commits in English (commitlint checks the format), a decision is
 written to [decisions.md](decisions.md) in the same commit as the change.
 
-**Working time** — session boundaries are marked in [decisions.md](decisions.md) with the lines
-`- **HH:MM** — ▶ session start` and `- **HH:MM** — ■ session end` (time from `date`);
-`make worktime` sums the intervals. A session may cross midnight — the date is taken from the day
+**Working time** — from October 28 to November 21, 2026 the session boundaries were marked in
+[decisions.md](decisions.md) with the lines `- **HH:MM** — ▶ session start` and
+`- **HH:MM** — ■ session end`; new sessions are not marked. `make worktime` sums the intervals. A session may cross midnight — the date is taken from the day
 heading above the marker. An unpaired marker gives a warning, not a silent zero; an unclosed
 session is not counted. A daylight saving change inside a session is not corrected. To cross-check
 — the time of the first and last commit of the day (`git log`).

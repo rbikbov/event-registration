@@ -63,7 +63,7 @@ export-sessions: ## Claude Code sessions of this project as text in docs/session
 	node scripts/export-sessions.mjs
 
 .PHONY: worktime
-worktime: ## Working time summed from session markers in docs/decisions.md
+worktime: ## Working time of the development summed from the session markers in docs/decisions.md
 	node scripts/worktime.mjs
 
 .PHONY: check-ci

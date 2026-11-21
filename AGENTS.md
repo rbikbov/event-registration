@@ -76,14 +76,6 @@ docs/rules/           rules by topic: db-migrations.md, concurrency.md
 - Past entries are not rewritten; if a decision changed — a new entry with a reference to the old
   one ("cancels the decision of HH:MM").
 
-## Working time accounting
-
-- At the start of a session (including after `/clear`) — the entry `- **HH:MM** — ▶ session start`
-  in [docs/decisions.md](docs/decisions.md), in the last commit of the session —
-  `- **HH:MM** — ■ session end`. The time is from `date`. The sum — `make worktime`.
-- If the previous session was left without `■`, close it with the time of the last commit and tell
-  the human.
-
 ## Small commits
 
 - One commit — one logical change, after which the project works (builds, the tests pass).

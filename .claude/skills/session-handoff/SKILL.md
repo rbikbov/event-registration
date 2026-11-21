@@ -23,9 +23,6 @@ the work stopped from the files alone.
 
 ## Session start
 
-0. If the last session in `docs/decisions.md` is not closed (`make worktime` shows a warning),
-   close it with the `■ session end` marker with the time of the last commit and tell the human.
-   Then put `▶ session start` with the time from `date`.
 1. The `SessionStart` hook has already printed the phase "in progress" and the latest commits. If
    there is no output — read `docs/roadmap.md` and `git log --oneline -10`.
 2. Read the phase's `spec.md` and `tasks.md`.
@@ -57,8 +54,6 @@ the work stopped from the files alone.
 
 ## Session end
 
-- The `- **HH:MM** — ■ session end` marker in `docs/decisions.md` — in the last commit of the
-  session.
 - Everything done is committed; an unfinished task is not checked, and its `tasks.md` (or a message
   to the human) has 1–2 lines: where the work stopped and what is next.
 - To the human — the outcome: what was done (commits), what was checked and how, what remains.
