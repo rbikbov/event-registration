@@ -33,12 +33,18 @@ export function collectConsoleErrors(page: Page, errors: string[]): void {
   });
 }
 
-// A counter on the event panel, such as "Arrived": the value next to its term.
+// A counter on the event panel, such as "Checked in": the value next to its term.
 export function panelStat(page: Page, term: string): Locator {
   return page
     .locator("dl > div")
     .filter({ has: page.getByRole("term").getByText(term, { exact: true }) })
     .getByRole("definition");
+}
+
+// The large answer of the check-in screen. The same words can stand in the header above it as a
+// counter's term ("Checked in"), so the answer is the paragraph with exactly this text.
+export function checkInAnswer(page: Page, text: string): Locator {
+  return page.getByRole("paragraph").filter({ hasText: new RegExp(`^${text}$`) });
 }
 
 export async function createEvent(

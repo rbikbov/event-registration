@@ -93,7 +93,7 @@ const failure = computed(() => {
 
 function checkedInWhen(iso: string): string {
   const moment = formatMoment(iso, new Date(), (at, options) => d(at, options));
-  return moment.withAt ? t("atTime", { time: moment.text }) : moment.text;
+  return moment.withAt ? t("atTime", { time: moment.text }) : t("onDate", { date: moment.text });
 }
 
 function submit(): void {
@@ -173,6 +173,7 @@ function submit(): void {
   "checkedIn": "Пропущен",
   "alreadyCheckedIn": "Уже отмечен {when}",
   "atTime": "в {time}",
+  "onDate": "{date}",
   "notFound": "Билет не найден",
   "notConfirmed": "Билет не подтверждён: лист ожидания или отказ",
   "next": "Следующий"
@@ -187,9 +188,10 @@ function submit(): void {
   "failed": "Could not check in, try again",
   "foreign": "This event belongs to another organizer",
   "offline": "No connection, try again",
-  "checkedIn": "Admitted",
+  "checkedIn": "Checked in",
   "alreadyCheckedIn": "Already checked in {when}",
   "atTime": "at {time}",
+  "onDate": "on {date}",
   "notFound": "Ticket not found",
   "notConfirmed": "Ticket not confirmed: waitlist or cancellation",
   "next": "Next"

@@ -157,7 +157,7 @@ describe("OrgEventEditPage", () => {
 
     expect(bodies).toEqual([]);
     expect(wrapper.get('[data-confirm="reschedule"]').text()).toContain(
-      "The participants (confirmed 2, waitlisted 1) will get a reschedule email",
+      "2 confirmed and 1 waitlisted participants will get an email about the new date",
     );
     await button(wrapper, "Reschedule").trigger("click");
     await flushPromises();
@@ -211,7 +211,7 @@ describe("OrgEventEditPage", () => {
     await type(wrapper, { capacity: "1" });
     await submit(wrapper);
 
-    expect(wrapper.text()).toContain("At least the confirmed count: 2");
+    expect(wrapper.text()).toContain("Must be at least the number of confirmed participants (2)");
     expect(wrapper.find('[role="alert"]').exists()).toBe(false);
   });
 

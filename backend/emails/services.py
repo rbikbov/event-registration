@@ -41,7 +41,7 @@ SUBJECTS = {
     },
 }
 
-# How each language writes a moment in an email: "31 Oct 2026 09:15 UTC", "31.10.2026 09:15 UTC".
+# How each language writes a moment in an email: "7 Oct 2026 09:15 UTC", "07.10.2026 09:15 UTC".
 # The English month is from a table, not strftime's %b: that one follows the process locale.
 MONTHS = ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
 
@@ -101,7 +101,7 @@ def email_time(value: datetime, locale: str = LOCALE) -> str:
     utc = value.astimezone(UTC)
     if locale == "ru":
         return utc.strftime("%d.%m.%Y %H:%M UTC")
-    return f"{utc.day:02} {MONTHS[utc.month - 1]} {utc.year} {utc:%H:%M} UTC"
+    return f"{utc.day} {MONTHS[utc.month - 1]} {utc.year} {utc:%H:%M} UTC"
 
 
 def render_email(

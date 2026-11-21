@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { createEvent, emailTo, extract, organizerPage, panelStat } from "./helpers";
+import { checkInAnswer, createEvent, emailTo, extract, organizerPage, panelStat } from "./helpers";
 
 test("a check-in at the entrance updates the arrivals on a panel open elsewhere", async ({
   browser,
@@ -22,7 +22,7 @@ test("a check-in at the entrance updates the arrivals on a panel open elsewhere"
 
   const panel = await organizerPage(browser);
   await panel.getByRole("link", { name: title }).click();
-  await expect(panelStat(panel, "Arrived")).toHaveText("0");
+  await expect(panelStat(panel, "Checked in")).toHaveText("0");
   // Survives only while the document is not reloaded.
   await panel.evaluate(() => {
     Object.assign(window, { notReloaded: true });
@@ -33,10 +33,10 @@ test("a check-in at the entrance updates the arrivals on a panel open elsewhere"
   await entrance.getByRole("link", { name: "Check-in" }).click();
   await entrance.getByLabel("Ticket code").fill(code);
   await entrance.getByRole("button", { name: "Check in" }).click();
-  await expect(entrance.getByText("Admitted", { exact: true })).toBeVisible();
+  await expect(checkInAnswer(entrance, "Checked in")).toBeVisible();
   await entrance.context().close();
 
-  await expect(panelStat(panel, "Arrived")).toHaveText("1");
+  await expect(panelStat(panel, "Checked in")).toHaveText("1");
   expect(await panel.evaluate(() => "notReloaded" in window)).toBe(true);
   await panel.context().close();
 });
@@ -62,7 +62,7 @@ test("a check-in at one entrance updates the arrivals on another check-in screen
   const second = await organizerPage(browser);
   await second.getByRole("link", { name: title }).click();
   await second.getByRole("link", { name: "Check-in" }).click();
-  await expect(panelStat(second, "Arrived")).toHaveText("0");
+  await expect(panelStat(second, "Checked in")).toHaveText("0");
   await second.evaluate(() => {
     Object.assign(window, { notReloaded: true });
   });
@@ -72,10 +72,10 @@ test("a check-in at one entrance updates the arrivals on another check-in screen
   await first.getByRole("link", { name: "Check-in" }).click();
   await first.getByLabel("Ticket code").fill(code);
   await first.getByRole("button", { name: "Check in" }).click();
-  await expect(first.getByText("Admitted", { exact: true })).toBeVisible();
+  await expect(checkInAnswer(first, "Checked in")).toBeVisible();
   await first.context().close();
 
-  await expect(panelStat(second, "Arrived")).toHaveText("1");
+  await expect(panelStat(second, "Checked in")).toHaveText("1");
   expect(await second.evaluate(() => "notReloaded" in window)).toBe(true);
   await second.context().close();
 });

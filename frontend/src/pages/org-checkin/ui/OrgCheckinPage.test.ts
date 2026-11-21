@@ -102,7 +102,7 @@ describe("OrgCheckinPage", () => {
 
     expect(sent).toEqual({ code: "abcd2345" });
     const answer = wrapper.get('[data-answer="checked_in"]');
-    expect(answer.text()).toContain("Admitted");
+    expect(answer.text()).toContain("Checked in");
     expect(answer.text()).toContain("Ivan");
     expect(answer.text()).toContain("iv***@gmail.com");
     expect(wrapper.find("form").exists()).toBe(false);
@@ -191,7 +191,7 @@ describe("OrgCheckinPage", () => {
       minute: "2-digit",
     }).format(new Date(checkedIn.checked_in_at));
     const answer = wrapper.get('[data-answer="already_checked_in"]');
-    expect(answer.text()).toContain(`Already checked in ${moment}`);
+    expect(answer.text()).toContain(`Already checked in on ${moment}`);
   });
 
   it("says a waitlisted or cancelled ticket is not confirmed", async () => {

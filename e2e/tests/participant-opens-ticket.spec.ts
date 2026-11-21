@@ -29,7 +29,7 @@ test("the ticket email leads to the ticket page, where the participant cancels",
   await expect(participant.getByRole("heading", { name: title, level: 1 })).toBeVisible();
   await expect(participant.getByText(code, { exact: true })).toBeVisible();
 
-  await participant.getByRole("button", { name: "Cancel" }).click();
+  await participant.getByRole("button", { name: "Cancel registration" }).click();
   await participant.getByRole("button", { name: "Yes, cancel" }).click();
 
   await expect(participant.getByText("Registration cancelled")).toBeVisible();

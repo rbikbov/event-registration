@@ -4,6 +4,6 @@ A seat at "{{ title }}" became free, and it is yours.
 Date: {{ starts_at }}
 
 Ticket code: {{ ticket_code }}
-Say it at the entrance.
+Show or tell this code at the entrance.
 
-My ticket and cancelling: {{ manage_url }}{% endautoescape %}
+View or cancel your registration: {{ manage_url }}{% endautoescape %}

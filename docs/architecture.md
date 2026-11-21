@@ -314,7 +314,7 @@ worker (reminders), so `FRONTEND_URL` is set for both.
   cancellation (phase 3). The organizer's event panel (`/org/events/:id`, phase 3): counters of
   seats, confirmed, waitlisted, arrived and free seats, a table of participants in queue order
   with a status filter in the URL. The check-in screen (`/org/events/:id/checkin`, phase 3): a code
-  field, a large answer in place of the form — "admitted" with the name and a masked email,
+  field, a large answer in place of the form — "checked in" with the name and a masked email,
   "already checked in at HH:MM", "ticket not found", "ticket not confirmed" — and "Next"; check-in
   works without the event title. Phase 4: the organizer's event is the `/org/events/:id` layout
   with one `GET`, a stream, a header (title, date, counters) and the "Participants" and
@@ -324,7 +324,7 @@ worker (reminders), so `FRONTEND_URL` is set for both.
   "Edit" tab of the event layout (`/org/events/:id/edit`) — the creation form (the shared model is
   `entities/event`) with the current values; only the changed fields are sent, without changes the
   button is disabled; a date change asks for confirmation with the number of email recipients
-  (without participants — no confirmation); "At least the confirmed count: N" when the limit is
+  (without participants — no confirmation); "Must be at least the number of confirmed participants (N)" when the limit is
   lower; the header and counters are refreshed after saving by the stream snapshot.
 - **Implemented (phase 6):** the shared layout `app/ui/AppLayout.vue` — a header and one `<main>`
   around `RouterView`. The header has "Events", "Organizer login" for a guest, and for a logged-in

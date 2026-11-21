@@ -74,7 +74,7 @@ function button(wrapper: Wrapper, text: string) {
 }
 
 async function confirmCancel(wrapper: Wrapper) {
-  await button(wrapper, "Cancel").trigger("click");
+  await button(wrapper, "Cancel registration").trigger("click");
   await button(wrapper, "Yes, cancel").trigger("click");
 }
 
@@ -90,7 +90,7 @@ describe("TicketPage", () => {
     // The format of a page of one event (shared/lib/i18n).
     expect(text).toContain(createAppI18n().global.d(new Date(event.starts_at), "long"));
     expect(text).toContain("Ann");
-    expect(text).toContain("Cancel");
+    expect(text).toContain("Cancel registration");
   });
 
   it("says a checked-in ticket was let in, and offers no cancel", async () => {
@@ -108,7 +108,7 @@ describe("TicketPage", () => {
     expect(notice).toContain(`You were checked in at ${time}`);
     expect(notice).toContain("This code cannot be used again");
     expect(wrapper.get("[data-ticket-code]").text()).toBe("ABCD2345");
-    expect(wrapper.text()).not.toContain("Cancel");
+    expect(wrapper.text()).not.toContain("Cancel registration");
   });
 
   it("gives the date of a check-in made on another day", async () => {
@@ -123,7 +123,7 @@ describe("TicketPage", () => {
       hour: "2-digit",
       minute: "2-digit",
     }).format(new Date(checkedIn.checked_in_at));
-    expect(wrapper.get("[data-checked-in]").text()).toContain(`You were checked in ${moment}.`);
+    expect(wrapper.get("[data-checked-in]").text()).toContain(`You were checked in on ${moment}.`);
   });
 
   it("shows the waitlist place without a code", async () => {
@@ -133,7 +133,7 @@ describe("TicketPage", () => {
 
     expect(wrapper.text()).toContain("You are on the waitlist, #3");
     expect(wrapper.find("[data-ticket-code]").exists()).toBe(false);
-    expect(wrapper.text()).toContain("Cancel");
+    expect(wrapper.text()).toContain("Cancel registration");
   });
 
   it("shows a cancelled ticket with a link back to the event", async () => {
@@ -198,7 +198,7 @@ describe("TicketPage", () => {
     ticketIs(confirmed);
     const { wrapper } = await mountPage();
 
-    await button(wrapper, "Cancel").trigger("click");
+    await button(wrapper, "Cancel registration").trigger("click");
     expect(wrapper.text()).toContain("Cancel the registration?");
     await button(wrapper, "No").trigger("click");
 
@@ -285,7 +285,7 @@ describe("TicketPage", () => {
 
     await vi.waitFor(() => expect(wrapper.text()).toContain("You were checked in"));
     expect(wrapper.find('[role="alert"]').exists()).toBe(false);
-    expect(wrapper.text()).not.toContain("Cancel");
+    expect(wrapper.text()).not.toContain("Cancel registration");
   });
 
   it("keeps the ticket and shows an error when the cancel fails", async () => {

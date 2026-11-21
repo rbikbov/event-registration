@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { createEvent, emailTo, extract, organizerPage, panelStat } from "./helpers";
+import { checkInAnswer, createEvent, emailTo, extract, organizerPage, panelStat } from "./helpers";
 
 test("a lost stream shows the indicator, and the counters are right once it is back", async ({
   browser,
@@ -31,7 +31,7 @@ test("a lost stream shows the indicator, and the counters are right once it is b
       : route.fulfill({ status: 502 }));
   });
   await panel.getByRole("link", { name: title }).click();
-  await expect(panelStat(panel, "Arrived")).toHaveText("0");
+  await expect(panelStat(panel, "Checked in")).toHaveText("0");
   const indicator = panel.getByText("Connection lost, reconnecting…");
   await expect(indicator).toBeVisible();
   // EventSource reconnects after `retry` and gives up on the 502; the panel opens it again 3 s later.
@@ -43,14 +43,14 @@ test("a lost stream shows the indicator, and the counters are right once it is b
   await entrance.getByRole("link", { name: "Check-in" }).click();
   await entrance.getByLabel("Ticket code").fill(code);
   await entrance.getByRole("button", { name: "Check in" }).click();
-  await expect(entrance.getByText("Admitted", { exact: true })).toBeVisible();
+  await expect(checkInAnswer(entrance, "Checked in")).toBeVisible();
   await entrance.context().close();
   await expect(indicator).toBeVisible();
-  await expect(panelStat(panel, "Arrived")).toHaveText("0");
+  await expect(panelStat(panel, "Checked in")).toHaveText("0");
 
   await panel.unroute("**/stream/");
 
   await expect(indicator).toBeHidden();
-  await expect(panelStat(panel, "Arrived")).toHaveText("1");
+  await expect(panelStat(panel, "Checked in")).toHaveText("1");
   await panel.context().close();
 });

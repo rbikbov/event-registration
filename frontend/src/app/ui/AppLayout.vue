@@ -19,7 +19,7 @@ const queryClient = useQueryClient();
 // The header only shows who is signed in; where a guest may go is the route guard's decision.
 // The session changes on sign-in, sign-out and a 401 only, so `me` is not asked again: not on
 // mount (on an organizer page the guard has just asked it), not on focus — a `null` from there
-// would show "Вход" over an organizer page without the guard ever running.
+// would show "Organizer login" over an organizer page without the guard ever running.
 const me = useQuery({ ...meQuery, refetchOnMount: false, refetchOnWindowFocus: false });
 const user = computed(() => me.data.value ?? null);
 

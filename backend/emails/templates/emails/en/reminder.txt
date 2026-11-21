@@ -3,6 +3,6 @@
 A reminder: "{{ title }}" takes place on {{ starts_at }}.
 
 Ticket code: {{ ticket_code }}
-Say it at the entrance.
+Show or tell this code at the entrance.
 
-My ticket and cancelling: {{ manage_url }}{% endautoescape %}
+View or cancel your registration: {{ manage_url }}{% endautoescape %}

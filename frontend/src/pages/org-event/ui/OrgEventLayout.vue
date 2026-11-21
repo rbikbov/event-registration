@@ -200,7 +200,7 @@ function counters(loaded: OrgEvent) {
     "capacity": "Seats",
     "confirmed": "Confirmed",
     "waitlisted": "Waitlisted",
-    "checkedIn": "Arrived",
+    "checkedIn": "Checked in",
     "freeSeats": "Free"
   }
 }

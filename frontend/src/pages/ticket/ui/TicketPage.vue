@@ -77,7 +77,7 @@ function stopConfirming(): void {
 
 function checkedInWhen(iso: string): string {
   const moment = formatMoment(iso, new Date(), (at, options) => d(at, options));
-  return moment.withAt ? t("atTime", { time: moment.text }) : moment.text;
+  return moment.withAt ? t("atTime", { time: moment.text }) : t("onDate", { date: moment.text });
 }
 </script>
 
@@ -162,6 +162,7 @@ function checkedInWhen(iso: string): string {
   "code": "Код билета",
   "checkedInTitle": "Билет использован",
   "atTime": "в {time}",
+  "onDate": "{date}",
   "checkedIn": "Вы отмечены на входе {when}. Повторно пройти по этому коду нельзя, отказаться от регистрации — тоже.",
   "waitlisted": "Вы в листе ожидания, №{position}",
   "cancelled": "Регистрация отменена",
@@ -183,11 +184,12 @@ function checkedInWhen(iso: string): string {
   "code": "Ticket code",
   "checkedInTitle": "Ticket used",
   "atTime": "at {time}",
+  "onDate": "on {date}",
   "checkedIn": "You were checked in {when}. This code cannot be used again, and the registration cannot be cancelled.",
   "waitlisted": "You are on the waitlist, #{position}",
   "cancelled": "Registration cancelled",
   "registerAgain": "Register again",
-  "cancel": "Cancel",
+  "cancel": "Cancel registration",
   "confirmQuestion": "Cancel the registration?",
   "confirmYes": "Yes, cancel",
   "confirmNo": "No",

@@ -3,6 +3,6 @@
 There are no seats at "{{ title }}", you are on the waitlist: #{{ position }}.
 Date: {{ starts_at }}
 
-If a seat becomes free, an email with the ticket code will come.
+If a seat becomes free, you will get an email with the ticket code.
 
-My ticket and cancelling: {{ manage_url }}{% endautoescape %}
+View or cancel your registration: {{ manage_url }}{% endautoescape %}

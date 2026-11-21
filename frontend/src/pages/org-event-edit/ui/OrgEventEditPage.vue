@@ -238,7 +238,7 @@ const textFields: { name: "title" | "description" | "starts_at"; type: string; m
   "saved": "Saved",
   "tryLater": "Could not save the event, try again later",
   "confirm": {
-    "text": "The participants (confirmed {confirmed}, waitlisted {waitlisted}) will get a reschedule email.",
+    "text": "{confirmed} confirmed and {waitlisted} waitlisted participants will get an email about the new date.",
     "yes": "Reschedule",
     "no": "Cancel"
   },
@@ -250,7 +250,7 @@ const textFields: { name: "title" | "description" | "starts_at"; type: string; m
     "max_value": "Must be at most 10,000",
     "invalid": "Invalid value",
     "past": "The start must be in the future",
-    "below_confirmed": "At least the confirmed count: {n}"
+    "below_confirmed": "Must be at least the number of confirmed participants ({n})"
   }
 }
 </i18n>

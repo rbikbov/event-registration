@@ -8,7 +8,7 @@ function emailTime(local: string): string {
   // A fixed table, as in the backend: Intl's en-GB writes "Sept".
   const month = "Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec".split(" ")[at.getUTCMonth()];
   const iso = at.toISOString();
-  return `${iso.slice(8, 10)} ${month} ${iso.slice(0, 4)} ${iso.slice(11, 16)} UTC`;
+  return `${at.getUTCDate()} ${month} ${iso.slice(0, 4)} ${iso.slice(11, 16)} UTC`;
 }
 
 test("a rescheduled event emails the confirmed and the waitlisted", async ({
@@ -33,7 +33,7 @@ test("a rescheduled event emails the confirmed and the waitlisted", async ({
   await organizer.getByRole("button", { name: "Save" }).click();
   await expect(
     organizer.getByText(
-      "The participants (confirmed 1, waitlisted 1) will get a reschedule email.",
+      "1 confirmed and 1 waitlisted participants will get an email about the new date.",
     ),
   ).toBeVisible();
   await organizer.getByRole("button", { name: "Reschedule" }).click();

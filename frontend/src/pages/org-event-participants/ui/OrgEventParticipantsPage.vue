@@ -58,7 +58,7 @@ function link(filter: RegistrationStatus | null, toPage = 1) {
   };
 }
 
-// A table cell, not a phrase: the time alone needs no "в".
+// A table cell, not a phrase: the time alone needs no "at" and a date no "on".
 function checkedInAt(iso: string): string {
   return formatMoment(iso, new Date(), (at, options) => d(at, options)).text;
 }

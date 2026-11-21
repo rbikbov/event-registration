@@ -1,6 +1,7 @@
 import { expect, test, type APIRequestContext, type Browser, type Page } from "@playwright/test";
 
 import {
+  checkInAnswer,
   collectConsoleErrors,
   createEvent,
   emailTo,
@@ -31,7 +32,7 @@ async function checkInScreen(browser: Browser, title: string): Promise<Page> {
   const page = await organizerPage(browser);
   await page.getByRole("link", { name: title }).click();
   await page.getByRole("link", { name: "Check-in" }).click();
-  await expect(panelStat(page, "Arrived")).toHaveText("0");
+  await expect(panelStat(page, "Checked in")).toHaveText("0");
   return page;
 }
 
@@ -58,7 +59,7 @@ test("the code from the email passes check-in once, and the panel counts the arr
 
   await organizer.getByLabel("Ticket code").fill(code);
   await organizer.getByRole("button", { name: "Check in" }).click();
-  await expect(organizer.getByText("Admitted", { exact: true })).toBeVisible();
+  await expect(checkInAnswer(organizer, "Checked in")).toBeVisible();
   await expect(organizer.getByText("Anna")).toBeVisible();
 
   // The organizer moves on and the same code comes again: it is turned away.
@@ -66,12 +67,12 @@ test("the code from the email passes check-in once, and the panel counts the arr
   await organizer.getByLabel("Ticket code").fill(code);
   await organizer.getByRole("button", { name: "Check in" }).click();
   await expect(organizer.getByText(/^Already checked in at \d{2}:\d{2}$/)).toBeVisible();
-  await expect(organizer.getByText("Admitted", { exact: true })).toBeHidden();
+  await expect(checkInAnswer(organizer, "Checked in")).toBeHidden();
 
   // The header of the check-in counts the arrival too, and the participants tab keeps it.
-  await expect(panelStat(organizer, "Arrived")).toHaveText("1");
+  await expect(panelStat(organizer, "Checked in")).toHaveText("1");
   await organizer.getByRole("link", { name: "Participants" }).click();
-  await expect(panelStat(organizer, "Arrived")).toHaveText("1");
+  await expect(panelStat(organizer, "Checked in")).toHaveText("1");
   await expect(organizer.getByRole("row", { name: /Anna/ })).toContainText(email);
   expect(consoleErrors).toEqual([]);
   await organizer.context().close();
@@ -98,13 +99,13 @@ test("one code at two entrances at once: one lets the ticket in, the other turns
 
   const outcomes = await Promise.all(
     entrances.map(async (page) => {
-      const passed = page.getByText("Admitted", { exact: true });
+      const passed = checkInAnswer(page, "Checked in");
       const turnedAway = page.getByText(/^Already checked in at \d{2}:\d{2}$/);
       await expect(passed.or(turnedAway)).toBeVisible();
       return (await passed.isVisible()) ? "passed" : "turned away";
     }),
   );
   expect(outcomes.sort()).toEqual(["passed", "turned away"]);
-  for (const page of entrances) await expect(panelStat(page, "Arrived")).toHaveText("1");
+  for (const page of entrances) await expect(panelStat(page, "Checked in")).toHaveText("1");
   for (const page of entrances) await page.context().close();
 });

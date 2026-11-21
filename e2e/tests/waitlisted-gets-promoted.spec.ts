@@ -35,7 +35,7 @@ test("a cancelled seat goes to the waitlist head, who gets an email with the tic
 
   const ticket = await emailTo(request, firstEmail, "Ticket");
   await first.goto(extract(ticket, /(http\S+\/tickets\/\S+)/));
-  await first.getByRole("button", { name: "Cancel" }).click();
+  await first.getByRole("button", { name: "Cancel registration" }).click();
   await first.getByRole("button", { name: "Yes, cancel" }).click();
   await expect(first.getByText("Registration cancelled")).toBeVisible();
 
