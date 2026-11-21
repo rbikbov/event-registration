@@ -50,6 +50,7 @@ def test_reschedule_emails_confirmed_and_waitlisted_and_bumps_the_version(event:
     assert seat.ticket_code in to_seat.body
     # The waitlist email has no code and no position: the position goes stale, the link does not.
     assert waiting.ticket_code not in to_waiting.body
+    assert "You are on the waitlist." in to_waiting.body
     assert not re.search(r"#\d", to_waiting.body)
     for email in (to_seat, to_waiting):
         assert email.subject == "Event rescheduled: Meetup"

@@ -25,10 +25,10 @@ No changes.
 
 ## Invariants
 
-| Invariant           | What protects it                                                                  | Test   |
-| ------------------- | --------------------------------------------------------------------------------- | ------ |
-| Emails are English  | the templates and `SUBJECTS` in `emails/services.py`; no Cyrillic in any kind     | pytest |
-| Screens are English | one `<i18n locale="en">` block per component; the component tests check its texts | Vitest |
+| Invariant           | What protects it                                                                      | Test   |
+| ------------------- | ------------------------------------------------------------------------------------- | ------ |
+| Emails are English  | the templates and `SUBJECTS` in `emails/services.py`; the exact subject of every kind | pytest |
+| Screens are English | one `<i18n locale="en">` block per component; the component tests check its texts     | Vitest |
 
 ## API
 

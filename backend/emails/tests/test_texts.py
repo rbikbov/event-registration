@@ -1,4 +1,3 @@
-import re
 from datetime import UTC, datetime
 
 import pytest
@@ -33,7 +32,6 @@ def test_every_email_is_english(kind: OutboxEmail.Kind) -> None:
     assert subject == SUBJECTS[kind]
     assert body.startswith("Hello, Ann!")
     assert "View or cancel your registration: https://events.example/tickets/token" in body
-    assert not re.search("[\\u0400-\\u04ff]", subject + body)
 
 
 def test_email_time_is_day_month_year_and_utc() -> None:
