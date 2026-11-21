@@ -41,7 +41,7 @@ src/widgets|features/            appear with their first slice, not created empt
    `QueryState`: the check-in form works without the event too (the title is only a caption), so the
    "Check-in" tab is outside `QueryState` and visible on an event loading error. Until the `GET`
    answers there are no tabs: the event may turn out to be someone else's.
-5. The interface texts are in Russian, in the `<i18n lang="json" locale="ru">` block of the same
+5. The interface texts are in English, in the `<i18n lang="json" locale="en">` block of the same
    component, obtained through `useI18n({ useScope: "local" })`; stores and pure functions have no
    texts (they return codes, the component picks the text). There are no global messages. The `@`
    character in a message is written as `{'@'}`, otherwise the build fails.

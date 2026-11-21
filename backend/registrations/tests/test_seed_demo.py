@@ -35,7 +35,7 @@ def test_seeds_a_full_event_and_one_that_is_due_for_reminders() -> None:
     assert tomorrow.capacity == 10
     assert statuses(tomorrow) == ["confirmed"] * 3
     for event in (week, tomorrow):
-        assert "демо" in event.title.lower()
+        assert "demo" in event.title.lower()
         assert all(
             e.endswith("@example.com") for e in event.registrations.values_list("email", flat=True)
         )

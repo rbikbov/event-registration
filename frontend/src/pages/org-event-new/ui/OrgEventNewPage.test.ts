@@ -104,8 +104,8 @@ describe("OrgEventNewPage", () => {
     await fill(wrapper, { title: "", starts_at: "", capacity: "0" });
 
     const text = wrapper.text();
-    expect(text).toContain("Обязательное поле");
-    expect(text).toContain("Должно быть не меньше 1");
+    expect(text).toContain("Required field");
+    expect(text).toContain("Must be at least 1");
   });
 
   it("shows server field errors under the field they belong to", async () => {
@@ -118,7 +118,7 @@ describe("OrgEventNewPage", () => {
 
     await fill(wrapper, valid());
 
-    expect(wrapper.text()).toContain("Начало должно быть в будущем");
+    expect(wrapper.text()).toContain("The start must be in the future");
     expect(wrapper.find('[role="alert"]').exists()).toBe(false);
     expect(router.currentRoute.value.path).toBe(routes.orgEventsNew);
   });
@@ -131,11 +131,11 @@ describe("OrgEventNewPage", () => {
     );
     const { wrapper } = await mountPage();
     await fill(wrapper, valid());
-    expect(wrapper.text()).toContain("Начало должно быть в будущем");
+    expect(wrapper.text()).toContain("The start must be in the future");
 
     await type(wrapper, { starts_at: `${new Date().getFullYear() + 2}-05-01T18:00` });
 
-    expect(wrapper.text()).not.toContain("Начало должно быть в будущем");
+    expect(wrapper.text()).not.toContain("The start must be in the future");
     expect(wrapper.get("#starts_at").attributes("aria-invalid")).toBe("false");
   });
 
@@ -146,7 +146,7 @@ describe("OrgEventNewPage", () => {
     await fill(wrapper, valid());
 
     expect(wrapper.get('[role="alert"]').text()).toBe(
-      "Не удалось создать событие, попробуйте позже",
+      "Could not create the event, try again later",
     );
   });
 

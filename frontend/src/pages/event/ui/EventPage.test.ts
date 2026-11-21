@@ -96,7 +96,7 @@ describe("EventPage", () => {
     const text = wrapper.text();
     expect(text).toContain("Meetup");
     expect(text).toContain("Talks and pizza");
-    expect(text).toContain("Свободно 2 места");
+    expect(text).toContain("2 seats free");
     // The format of a page of one event (shared/lib/i18n).
     expect(text).toContain(createAppI18n().global.d(new Date(event.starts_at), "long"));
     expect(wrapper.find("form").exists()).toBe(true);
@@ -108,7 +108,7 @@ describe("EventPage", () => {
     const page = await mountPage();
     const { wrapper } = page;
 
-    expect(wrapper.text()).toContain("Свободных мест нет");
+    expect(wrapper.text()).toContain("No free seats");
   });
 
   it("shows 'not found' for an unknown event", async () => {
@@ -117,7 +117,7 @@ describe("EventPage", () => {
     const page = await mountPage();
     const { wrapper } = page;
 
-    expect(wrapper.get('[role="alert"] h1').text()).toBe("Такого события нет");
+    expect(wrapper.get('[role="alert"] h1').text()).toBe("No such event");
     expect(wrapper.find("form").exists()).toBe(false);
   });
 
@@ -125,7 +125,7 @@ describe("EventPage", () => {
     server.use(http.get("*/api/events/7/", () => HttpResponse.json(event)));
     const { wrapper } = await mountPage({ loaded: false });
 
-    expect(wrapper.get('[role="status"]').text()).toBe("Загружаем…");
+    expect(wrapper.get('[role="status"]').text()).toBe("Loading…");
     await vi.waitFor(() => expect(wrapper.find('[role="status"]').exists()).toBe(false));
     expect(wrapper.text()).toContain("Meetup");
   });
@@ -134,7 +134,7 @@ describe("EventPage", () => {
     server.use(http.get("*/api/events/7/", () => HttpResponse.json({}, { status: 500 })));
     const page = await mountPage();
     const { wrapper } = page;
-    expect(wrapper.get('[role="alert"]').text()).toContain("Не удалось загрузить событие");
+    expect(wrapper.get('[role="alert"]').text()).toContain("Could not load the event");
 
     eventLoaded();
     await wrapper.get('[role="alert"] button').trigger("click");
@@ -158,7 +158,7 @@ describe("EventPage", () => {
     await fill(page, { email: " a@x.io ", name: "Ann" });
 
     expect(body).toEqual({ email: "a@x.io", name: "Ann" });
-    expect(wrapper.get('[role="status"]').text()).toBe("Место подтверждено");
+    expect(wrapper.get('[role="status"]').text()).toBe("Seat confirmed");
     expect(wrapper.find("form").exists()).toBe(false);
     expect(queryClient.getQueryState(publicEventsQuery("past", 2).queryKey)?.isInvalidated).toBe(
       true,
@@ -179,7 +179,7 @@ describe("EventPage", () => {
     const page = await mountPage();
     const { wrapper, router } = page;
     await fill(page, { email: "a@x.io", name: "Ann" });
-    expect(wrapper.get('[role="status"]').text()).toBe("Место подтверждено");
+    expect(wrapper.get('[role="status"]').text()).toBe("Seat confirmed");
 
     await router.push(eventPath(8));
 
@@ -198,7 +198,7 @@ describe("EventPage", () => {
 
     await fill(page, { email: "a@x.io", name: "Ann" });
 
-    expect(wrapper.get('[role="status"]').text()).toBe("Место подтверждено");
+    expect(wrapper.get('[role="status"]').text()).toBe("Seat confirmed");
   });
 
   it("flags empty fields without sending a request", async () => {
@@ -208,7 +208,7 @@ describe("EventPage", () => {
 
     await fill(page, { email: "", name: "" });
 
-    expect(wrapper.text()).toContain("Обязательное поле");
+    expect(wrapper.text()).toContain("Required field");
     expect(wrapper.get("#email").attributes("aria-invalid")).toBe("true");
     expect(wrapper.get("#name").attributes("aria-invalid")).toBe("true");
   });
@@ -220,7 +220,7 @@ describe("EventPage", () => {
 
     await fill(page, { email: "nope", name: "Ann" });
 
-    expect(wrapper.text()).toContain("Некорректное значение");
+    expect(wrapper.text()).toContain("Invalid value");
     expect(wrapper.get("#name").attributes("aria-invalid")).toBe("false");
   });
 
@@ -236,7 +236,7 @@ describe("EventPage", () => {
 
     await fill(page, { email: "a@x.io", name: "Ann" });
 
-    expect(wrapper.text()).toContain("Некорректное значение");
+    expect(wrapper.text()).toContain("Invalid value");
     expect(wrapper.find('[role="alert"]').exists()).toBe(false);
   });
 
@@ -252,7 +252,7 @@ describe("EventPage", () => {
 
     await fill(page, { email: "a@x.io", name: "Ann" });
 
-    expect(wrapper.get('[role="status"]').text()).toBe("Вы в листе ожидания, №3");
+    expect(wrapper.get('[role="status"]').text()).toBe("You are on the waitlist, #3");
     expect(wrapper.find("form").exists()).toBe(false);
   });
 
@@ -268,7 +268,7 @@ describe("EventPage", () => {
 
     await fill(page, { email: "a@x.io", name: "Ann" });
 
-    expect(wrapper.get('[role="status"]').text()).toBe("Вы в листе ожидания");
+    expect(wrapper.get('[role="status"]').text()).toBe("You are on the waitlist");
   });
 
   it("offers the waitlist when no seats are left", async () => {
@@ -276,7 +276,7 @@ describe("EventPage", () => {
     const page = await mountPage();
     const { wrapper } = page;
 
-    expect(wrapper.text()).toContain("Свободных мест нет, можно встать в лист ожидания");
+    expect(wrapper.text()).toContain("No free seats, you can join the waitlist");
     expect(wrapper.find("form").exists()).toBe(true);
   });
 
@@ -290,9 +290,7 @@ describe("EventPage", () => {
 
     await fill(page, { email: "a@x.io", name: "Ann" });
 
-    expect(wrapper.get('[role="alert"]').text()).toBe(
-      "Не удалось зарегистрироваться, попробуйте позже",
-    );
+    expect(wrapper.get('[role="alert"]').text()).toBe("Could not register, try again later");
   });
 
   it("keeps the form and the loaded event when a registration fails", async () => {
@@ -311,9 +309,7 @@ describe("EventPage", () => {
     await fill(page, { email: "a@x.io", name: "Ann" });
 
     expect(loads).toBe(1);
-    expect(wrapper.get('[role="alert"]').text()).toBe(
-      "Не удалось зарегистрироваться, попробуйте позже",
-    );
+    expect(wrapper.get('[role="alert"]').text()).toBe("Could not register, try again later");
     expect(wrapper.get("#email").element).toHaveProperty("value", "a@x.io");
   });
 
@@ -347,7 +343,7 @@ describe("EventPage", () => {
     fail = true;
     await queryClient.refetchQueries();
     await vi.waitFor(() =>
-      expect(wrapper.find('[role="alert"]').text()).toContain("Не удалось обновить событие"),
+      expect(wrapper.find('[role="alert"]').text()).toContain("Could not refresh the event"),
     );
 
     expect(wrapper.get("h1").text()).toBe("Meetup");
@@ -380,7 +376,7 @@ describe("EventPage", () => {
     streams.opened[0]?.emit("snapshot", { ...event, free_seats: 0 });
     await flushPromises();
 
-    expect(wrapper.text()).toContain("Свободных мест нет");
+    expect(wrapper.text()).toContain("No free seats");
   });
 
   // EventSource does not tell why a stream was refused: the event is read again for its status,
@@ -393,9 +389,7 @@ describe("EventPage", () => {
     vi.useFakeTimers();
 
     streams.opened[0]?.fail({ closed: true });
-    await vi.waitFor(() =>
-      expect(wrapper.get('[role="alert"] h1').text()).toBe("Такого события нет"),
-    );
+    await vi.waitFor(() => expect(wrapper.get('[role="alert"] h1').text()).toBe("No such event"));
     vi.advanceTimersByTime(3000);
 
     expect(streams.opened).toHaveLength(1);
@@ -418,7 +412,7 @@ describe("EventPage", () => {
     await vi.advanceTimersByTimeAsync(3000);
 
     expect(streams.opened).toHaveLength(2);
-    expect(wrapper.text()).toContain("Свободно 2 места");
+    expect(wrapper.text()).toContain("2 seats free");
   });
 
   // A GET that read the event before a snapshot could answer after it with older free seats.

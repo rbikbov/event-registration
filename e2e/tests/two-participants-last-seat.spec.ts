@@ -6,9 +6,9 @@ import { collectConsoleErrors, createEvent, organizerPage, panelStat } from "./h
 async function readyToRegister(page: Page, title: string, email: string, name: string) {
   await page.goto("/");
   await page.getByRole("link", { name: title }).click();
-  await expect(page.getByText("Свободно 1 место")).toBeVisible();
+  await expect(page.getByText("1 seat free")).toBeVisible();
   await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Имя").fill(name);
+  await page.getByLabel("Name").fill(name);
 }
 
 // Two browsers send their requests nearly at once, but their order on the server is not
@@ -20,7 +20,7 @@ test("two people on the last seat: one gets it, the other the waitlist", async (
 
   const consoleErrors: string[] = [];
   const people = await Promise.all(
-    ["Анна", "Борис"].map(async (name, index) => {
+    ["Anna", "Boris"].map(async (name, index) => {
       const page = await (await browser.newContext()).newPage();
       collectConsoleErrors(page, consoleErrors);
       await readyToRegister(page, title, `last-seat-${index}-${Date.now()}@example.com`, name);
@@ -28,21 +28,19 @@ test("two people on the last seat: one gets it, the other the waitlist", async (
     }),
   );
 
-  await Promise.all(
-    people.map((page) => page.getByRole("button", { name: "Зарегистрироваться" }).click()),
-  );
+  await Promise.all(people.map((page) => page.getByRole("button", { name: "Register" }).click()));
   for (const page of people) {
     await expect(page.getByRole("status")).toHaveText(
-      /^(Место подтверждено|Вы в листе ожидания, №1)$/,
+      /^(Seat confirmed|You are on the waitlist, #1)$/,
     );
   }
   const results = await Promise.all(people.map((page) => page.getByRole("status").textContent()));
-  expect(results.sort()).toEqual(["Вы в листе ожидания, №1", "Место подтверждено"]);
+  expect(results.sort()).toEqual(["Seat confirmed", "You are on the waitlist, #1"]);
 
   const panel = await organizerPage(browser);
   await panel.getByRole("link", { name: title }).click();
-  await expect(panelStat(panel, "Подтверждено")).toHaveText("1");
-  await expect(panelStat(panel, "В листе ожидания")).toHaveText("1");
+  await expect(panelStat(panel, "Confirmed")).toHaveText("1");
+  await expect(panelStat(panel, "Waitlisted")).toHaveText("1");
 
   expect(consoleErrors).toEqual([]);
   for (const page of [...people, panel]) await page.context().close();

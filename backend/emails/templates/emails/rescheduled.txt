@@ -1,12 +1,12 @@
-{% autoescape off %}Здравствуйте, {{ name }}!
+{% autoescape off %}Hello, {{ name }}!
 
-Событие «{{ title }}» перенесено.
-Было: {{ old_starts_at }}
-Стало: {{ starts_at }}
+The event "{{ title }}" has been rescheduled.
+Was: {{ old_starts_at }}
+Now: {{ starts_at }}
 {% if confirmed %}
-Место за вами, код билета прежний: {{ ticket_code }}
-Назовите его на входе.
+The seat is yours, the ticket code is the same: {{ ticket_code }}
+Show or tell this code at the entrance.
 {% else %}
-Вы в листе ожидания. Если место освободится, придёт письмо с кодом билета.
+You are on the waitlist. If a seat becomes free, you will get an email with the ticket code.
 {% endif %}
-Мой билет и отказ от участия: {{ manage_url }}{% endautoescape %}
+View or cancel your registration: {{ manage_url }}{% endautoescape %}

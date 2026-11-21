@@ -1,6 +1,7 @@
 import { expect, test, type APIRequestContext, type Browser, type Page } from "@playwright/test";
 
 import {
+  checkInAnswer,
   collectConsoleErrors,
   createEvent,
   emailTo,
@@ -20,18 +21,18 @@ async function ticketCode(
   await participant.goto("/");
   await participant.getByRole("link", { name: title }).click();
   await participant.getByLabel("Email").fill(email);
-  await participant.getByLabel("Имя").fill("Анна");
-  await participant.getByRole("button", { name: "Зарегистрироваться" }).click();
-  await expect(participant.getByRole("status")).toHaveText("Место подтверждено");
+  await participant.getByLabel("Name").fill("Anna");
+  await participant.getByRole("button", { name: "Register" }).click();
+  await expect(participant.getByRole("status")).toHaveText("Seat confirmed");
   await participant.context().close();
-  return extract(await emailTo(request, email, "Билет"), /Код билета: (\S+)/);
+  return extract(await emailTo(request, email, "Ticket"), /Ticket code: (\S+)/);
 }
 
 async function checkInScreen(browser: Browser, title: string): Promise<Page> {
   const page = await organizerPage(browser);
   await page.getByRole("link", { name: title }).click();
-  await page.getByRole("link", { name: "Чекин" }).click();
-  await expect(panelStat(page, "Пришло")).toHaveText("0");
+  await page.getByRole("link", { name: "Check-in" }).click();
+  await expect(panelStat(page, "Checked in")).toHaveText("0");
   return page;
 }
 
@@ -49,35 +50,35 @@ test("the code from the email passes check-in once, and the panel counts the arr
   const consoleErrors: string[] = [];
   collectConsoleErrors(organizer, consoleErrors);
   await organizer.getByRole("link", { name: title }).click();
-  await organizer.getByRole("link", { name: "Чекин" }).click();
+  await organizer.getByRole("link", { name: "Check-in" }).click();
   await expect(organizer.getByRole("heading", { name: title })).toBeVisible();
-  await expect(organizer.getByRole("link", { name: "Чекин" })).toHaveAttribute(
+  await expect(organizer.getByRole("link", { name: "Check-in" })).toHaveAttribute(
     "aria-current",
     "page",
   );
 
-  await organizer.getByLabel("Код билета").fill(code);
-  await organizer.getByRole("button", { name: "Отметить" }).click();
-  await expect(organizer.getByText("Пропущен", { exact: true })).toBeVisible();
-  await expect(organizer.getByText("Анна")).toBeVisible();
+  await organizer.getByLabel("Ticket code").fill(code);
+  await organizer.getByRole("button", { name: "Check in" }).click();
+  await expect(checkInAnswer(organizer, "Checked in")).toBeVisible();
+  await expect(organizer.getByText("Anna")).toBeVisible();
 
   // The organizer moves on and the same code comes again: it is turned away.
-  await organizer.getByRole("button", { name: "Следующий" }).click();
-  await organizer.getByLabel("Код билета").fill(code);
-  await organizer.getByRole("button", { name: "Отметить" }).click();
-  await expect(organizer.getByText(/^Уже отмечен в \d{2}:\d{2}$/)).toBeVisible();
-  await expect(organizer.getByText("Пропущен", { exact: true })).toBeHidden();
+  await organizer.getByRole("button", { name: "Next" }).click();
+  await organizer.getByLabel("Ticket code").fill(code);
+  await organizer.getByRole("button", { name: "Check in" }).click();
+  await expect(organizer.getByText(/^Already checked in at \d{2}:\d{2}$/)).toBeVisible();
+  await expect(checkInAnswer(organizer, "Checked in")).toBeHidden();
 
   // The header of the check-in counts the arrival too, and the participants tab keeps it.
-  await expect(panelStat(organizer, "Пришло")).toHaveText("1");
-  await organizer.getByRole("link", { name: "Участники" }).click();
-  await expect(panelStat(organizer, "Пришло")).toHaveText("1");
-  await expect(organizer.getByRole("row", { name: /Анна/ })).toContainText(email);
+  await expect(panelStat(organizer, "Checked in")).toHaveText("1");
+  await organizer.getByRole("link", { name: "Participants" }).click();
+  await expect(panelStat(organizer, "Checked in")).toHaveText("1");
+  await expect(organizer.getByRole("row", { name: /Anna/ })).toContainText(email);
   expect(consoleErrors).toEqual([]);
   await organizer.context().close();
 });
 
-// Both entrances press «Отметить» nearly at once; which request reaches the server first is not
+// Both entrances press "Check in" nearly at once; which request reaches the server first is not
 // controlled here — the race itself is proven by registrations/tests/test_concurrency.py.
 test("one code at two entrances at once: one lets the ticket in, the other turns it away", async ({
   browser,
@@ -91,20 +92,20 @@ test("one code at two entrances at once: one lets the ticket in, the other turns
     checkInScreen(browser, title),
     checkInScreen(browser, title),
   ]);
-  for (const page of entrances) await page.getByLabel("Код билета").fill(code);
+  for (const page of entrances) await page.getByLabel("Ticket code").fill(code);
   await Promise.all(
-    entrances.map((page) => page.getByRole("button", { name: "Отметить" }).click()),
+    entrances.map((page) => page.getByRole("button", { name: "Check in" }).click()),
   );
 
   const outcomes = await Promise.all(
     entrances.map(async (page) => {
-      const passed = page.getByText("Пропущен", { exact: true });
-      const turnedAway = page.getByText(/^Уже отмечен в \d{2}:\d{2}$/);
+      const passed = checkInAnswer(page, "Checked in");
+      const turnedAway = page.getByText(/^Already checked in at \d{2}:\d{2}$/);
       await expect(passed.or(turnedAway)).toBeVisible();
       return (await passed.isVisible()) ? "passed" : "turned away";
     }),
   );
   expect(outcomes.sort()).toEqual(["passed", "turned away"]);
-  for (const page of entrances) await expect(panelStat(page, "Пришло")).toHaveText("1");
+  for (const page of entrances) await expect(panelStat(page, "Checked in")).toHaveText("1");
   for (const page of entrances) await page.context().close();
 });

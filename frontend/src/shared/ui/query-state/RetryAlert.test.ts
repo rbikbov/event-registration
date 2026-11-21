@@ -7,7 +7,7 @@ import { RetryAlert } from ".";
 
 function mountAlert(fetching: boolean) {
   return mount(RetryAlert, {
-    props: { text: "Не удалось обновить", fetching },
+    props: { text: "Could not refresh", fetching },
     global: { plugins: [createAppI18n()] },
   });
 }
@@ -16,7 +16,7 @@ describe("RetryAlert", () => {
   it("shows the text and asks for a retry on click", async () => {
     const wrapper = mountAlert(false);
 
-    expect(wrapper.get('[role="alert"]').text()).toContain("Не удалось обновить");
+    expect(wrapper.get('[role="alert"]').text()).toContain("Could not refresh");
     await wrapper.get("button").trigger("click");
 
     expect(wrapper.emitted("retry")).toHaveLength(1);
@@ -26,7 +26,7 @@ describe("RetryAlert", () => {
     const wrapper = mountAlert(true);
 
     const button = wrapper.get("button");
-    expect(button.text()).toBe("Загружаем…");
+    expect(button.text()).toBe("Loading…");
     expect(button.attributes("disabled")).toBeDefined();
     await button.trigger("click");
 

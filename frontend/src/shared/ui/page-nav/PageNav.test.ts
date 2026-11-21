@@ -16,7 +16,7 @@ async function mountNav(page: number, pages: number) {
   });
   await router.push(link(page));
   const wrapper = mount(PageNav, {
-    props: { page, pages, link, label: "Страницы событий" },
+    props: { page, pages, link, label: "Event pages" },
     global: { plugins: [router, createAppI18n()] },
   });
   return { wrapper, router };
@@ -40,21 +40,21 @@ describe("PageNav", () => {
   it("is named for screen readers", async () => {
     const { wrapper } = await mountNav(1, 3);
 
-    expect(wrapper.get("nav").attributes("aria-label")).toBe("Страницы событий");
+    expect(wrapper.get("nav").attributes("aria-label")).toBe("Event pages");
   });
 
   it("on the first page: no way back, the next pages and a gap before the last", async () => {
     const { wrapper } = await mountNav(1, 10);
 
     expect(bar(wrapper)).toEqual([
-      "Первая страница (off)",
-      "Предыдущая страница (off)",
+      "First page (off)",
+      "Previous page (off)",
       "[1]",
       "2",
       "3",
       "…",
-      "Следующая страница",
-      "Последняя страница",
+      "Next page",
+      "Last page",
     ]);
   });
 
@@ -62,15 +62,15 @@ describe("PageNav", () => {
     const { wrapper } = await mountNav(5, 10);
 
     expect(bar(wrapper)).toEqual([
-      "Первая страница",
-      "Предыдущая страница",
+      "First page",
+      "Previous page",
       "…",
       "4",
       "[5]",
       "6",
       "…",
-      "Следующая страница",
-      "Последняя страница",
+      "Next page",
+      "Last page",
     ]);
   });
 
@@ -78,14 +78,14 @@ describe("PageNav", () => {
     const { wrapper } = await mountNav(10, 10);
 
     expect(bar(wrapper)).toEqual([
-      "Первая страница",
-      "Предыдущая страница",
+      "First page",
+      "Previous page",
       "…",
       "8",
       "9",
       "[10]",
-      "Следующая страница (off)",
-      "Последняя страница (off)",
+      "Next page (off)",
+      "Last page (off)",
     ]);
   });
 
@@ -95,10 +95,10 @@ describe("PageNav", () => {
 
     const edges = wrapper.findAll("button").filter((b) => b.attributes("data-type") !== "page");
     expect(edges.map((b) => [b.text(), b.attributes("aria-label")])).toEqual([
-      ["Первая", "Первая страница"],
-      ["Предыдущая", "Предыдущая страница"],
-      ["Следующая", "Следующая страница"],
-      ["Последняя", "Последняя страница"],
+      ["First", "First page"],
+      ["Previous", "Previous page"],
+      ["Next", "Next page"],
+      ["Last", "Last page"],
     ]);
   });
 
@@ -106,8 +106,8 @@ describe("PageNav", () => {
     const { wrapper } = await mountNav(1, 2);
 
     expect(wrapper.findAll("[data-type='page']").map((b) => b.attributes("aria-label"))).toEqual([
-      "Страница 1",
-      "Страница 2",
+      "Page 1",
+      "Page 2",
     ]);
   });
 
@@ -123,10 +123,10 @@ describe("PageNav", () => {
 
   it.each([
     ["4", 4],
-    ["Первая страница", 1],
-    ["Предыдущая страница", 4],
-    ["Следующая страница", 6],
-    ["Последняя страница", 10],
+    ["First page", 1],
+    ["Previous page", 4],
+    ["Next page", 6],
+    ["Last page", 10],
   ])("goes to the page of %s by its link", async (name, page) => {
     const { wrapper, router } = await mountNav(5, 10);
 

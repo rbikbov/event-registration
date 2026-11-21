@@ -10,8 +10,8 @@ import { eventPath, routes } from "@/shared/config";
 import { createAppI18n } from "@/shared/lib/i18n";
 import { server } from "@/shared/lib/test/msw";
 
-const PAGE_NAV = 'nav[aria-label="Страницы событий"]';
-const PERIOD_NAV = 'nav[aria-label="Какие события показать"]';
+const PAGE_NAV = 'nav[aria-label="Event pages"]';
+const PERIOD_NAV = 'nav[aria-label="Which events to show"]';
 
 // A list answer: one page with all the events.
 function page<T>(results: T[]) {
@@ -70,10 +70,10 @@ describe("HomePage", () => {
 
     const text = wrapper.text();
     expect(text).toContain("Meetup 1");
-    expect(text).toContain("свободно 3 места");
+    expect(text).toContain("3 seats free");
     // The list format of the app (shared/lib/i18n).
     expect(text).toContain(createAppI18n().global.d(new Date(item(1, 3).starts_at), "short"));
-    expect(text).toContain("мест нет");
+    expect(text).toContain("no seats");
     const hrefs = wrapper.findAll("li a").map((a) => a.attributes("href"));
     expect(hrefs).toEqual([eventPath(1), eventPath(2)]);
   });
@@ -83,13 +83,13 @@ describe("HomePage", () => {
 
     const wrapper = await mountPage();
 
-    expect(wrapper.text()).toContain("Ближайших событий пока нет");
+    expect(wrapper.text()).toContain("No upcoming events yet");
   });
 
   it("shows an error with a retry that loads the list", async () => {
     server.use(http.get("*/api/events/", () => HttpResponse.json({}, { status: 500 })));
     const wrapper = await mountPage();
-    expect(wrapper.get('[role="alert"]').text()).toContain("Не удалось загрузить события");
+    expect(wrapper.get('[role="alert"]').text()).toContain("Could not load the events");
 
     server.use(http.get("*/api/events/", () => HttpResponse.json(page([item(1, 1)]))));
     await wrapper.get('[role="alert"] button').trigger("click");
@@ -110,7 +110,7 @@ describe("HomePage", () => {
       },
     });
 
-    expect(wrapper.get('[role="status"]').text()).toBe("Загружаем…");
+    expect(wrapper.get('[role="status"]').text()).toBe("Loading…");
   });
 
   it("keeps the list when a refetch fails, with the error above it", async () => {
@@ -126,7 +126,7 @@ describe("HomePage", () => {
     fail = true;
     await queryClient.refetchQueries();
     await vi.waitFor(() =>
-      expect(wrapper.find('[role="alert"]').text()).toContain("Не удалось обновить события"),
+      expect(wrapper.find('[role="alert"]').text()).toContain("Could not refresh the events"),
     );
 
     expect(wrapper.text()).toContain("Meetup 1");
@@ -144,7 +144,7 @@ describe("HomePage", () => {
     const { wrapper, router } = await mountAt(`${routes.home}?page=2`);
     expect(wrapper.text()).toContain("Meetup 200");
 
-    await wrapper.get(PAGE_NAV).get('button[aria-label="Следующая страница"]').trigger("click");
+    await wrapper.get(PAGE_NAV).get('button[aria-label="Next page"]').trigger("click");
 
     await vi.waitFor(() => expect(wrapper.text()).toContain("Meetup 300"));
     expect(router.currentRoute.value.query).toEqual({ page: "3" });
@@ -155,7 +155,7 @@ describe("HomePage", () => {
     pagedList(45);
     const { wrapper, router } = await mountAt(`${routes.home}?page=2`);
 
-    await wrapper.get(PAGE_NAV).get('button[aria-label="Первая страница"]').trigger("click");
+    await wrapper.get(PAGE_NAV).get('button[aria-label="First page"]').trigger("click");
 
     await vi.waitFor(() => expect(wrapper.text()).toContain("Meetup 100"));
     expect(router.currentRoute.value.fullPath).toBe(routes.home);
@@ -165,8 +165,8 @@ describe("HomePage", () => {
     pagedList(45);
     const { wrapper } = await mountAt(`${routes.home}?page=5`);
 
-    expect(wrapper.text()).toContain("Здесь событий нет.");
-    expect(wrapper.get(`a[href="${routes.home}?page=3"]`).text()).toBe("К последней странице");
+    expect(wrapper.text()).toContain("No events here.");
+    expect(wrapper.get(`a[href="${routes.home}?page=3"]`).text()).toBe("To the last page");
     expect(wrapper.find(PAGE_NAV).exists()).toBe(false);
   });
 
@@ -202,7 +202,7 @@ describe("HomePage", () => {
     const asked = recordedList(0);
     const { wrapper } = await mountAt(routes.home);
 
-    expect(tabs(wrapper)).toEqual(["[Предстоящие]", "Прошедшие"]);
+    expect(tabs(wrapper)).toEqual(["[Upcoming]", "Past"]);
     expect(asked).toEqual(["upcoming 1"]);
   });
 
@@ -210,8 +210,8 @@ describe("HomePage", () => {
     const asked = recordedList(0);
     const { wrapper } = await mountAt(`${routes.home}?period=past`);
 
-    await vi.waitFor(() => expect(wrapper.text()).toContain("Прошедших событий нет"));
-    expect(tabs(wrapper)).toEqual(["Предстоящие", "[Прошедшие]"]);
+    await vi.waitFor(() => expect(wrapper.text()).toContain("No past events"));
+    expect(tabs(wrapper)).toEqual(["Upcoming", "[Past]"]);
     expect(asked).toEqual(["past 1"]);
   });
 
@@ -220,7 +220,7 @@ describe("HomePage", () => {
     const { wrapper, router } = await mountAt(`${routes.home}?page=2`);
     await vi.waitFor(() => expect(asked).toEqual(["upcoming 2"]));
 
-    await tab(wrapper, "Прошедшие").trigger("click");
+    await tab(wrapper, "Past").trigger("click");
 
     await vi.waitFor(() => expect(asked).toEqual(["upcoming 2", "past 1"]));
     expect(router.currentRoute.value.fullPath).toBe(`${routes.home}?period=past`);
@@ -231,7 +231,7 @@ describe("HomePage", () => {
     const { wrapper, router } = await mountAt(`${routes.home}?period=past`);
     await vi.waitFor(() => expect(wrapper.find(PAGE_NAV).exists()).toBe(true));
 
-    await wrapper.get(PAGE_NAV).get('button[aria-label="Страница 2"]').trigger("click");
+    await wrapper.get(PAGE_NAV).get('button[aria-label="Page 2"]').trigger("click");
 
     await vi.waitFor(() => expect(asked).toEqual(["past 1", "past 2"]));
     expect(router.currentRoute.value.fullPath).toBe(`${routes.home}?period=past&page=2`);

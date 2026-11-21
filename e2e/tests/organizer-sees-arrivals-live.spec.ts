@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 
-import { createEvent, emailTo, extract, organizerPage, panelStat } from "./helpers";
+import { checkInAnswer, createEvent, emailTo, extract, organizerPage, panelStat } from "./helpers";
 
 test("a check-in at the entrance updates the arrivals on a panel open elsewhere", async ({
   browser,
@@ -14,15 +14,15 @@ test("a check-in at the entrance updates the arrivals on a panel open elsewhere"
   await participant.goto("/");
   await participant.getByRole("link", { name: title }).click();
   await participant.getByLabel("Email").fill(email);
-  await participant.getByLabel("Имя").fill("Борис");
-  await participant.getByRole("button", { name: "Зарегистрироваться" }).click();
-  await expect(participant.getByRole("status")).toHaveText("Место подтверждено");
+  await participant.getByLabel("Name").fill("Boris");
+  await participant.getByRole("button", { name: "Register" }).click();
+  await expect(participant.getByRole("status")).toHaveText("Seat confirmed");
   await participant.context().close();
-  const code = extract(await emailTo(request, email, "Билет"), /Код билета: (\S+)/);
+  const code = extract(await emailTo(request, email, "Ticket"), /Ticket code: (\S+)/);
 
   const panel = await organizerPage(browser);
   await panel.getByRole("link", { name: title }).click();
-  await expect(panelStat(panel, "Пришло")).toHaveText("0");
+  await expect(panelStat(panel, "Checked in")).toHaveText("0");
   // Survives only while the document is not reloaded.
   await panel.evaluate(() => {
     Object.assign(window, { notReloaded: true });
@@ -30,13 +30,13 @@ test("a check-in at the entrance updates the arrivals on a panel open elsewhere"
 
   const entrance = await organizerPage(browser);
   await entrance.getByRole("link", { name: title }).click();
-  await entrance.getByRole("link", { name: "Чекин" }).click();
-  await entrance.getByLabel("Код билета").fill(code);
-  await entrance.getByRole("button", { name: "Отметить" }).click();
-  await expect(entrance.getByText("Пропущен", { exact: true })).toBeVisible();
+  await entrance.getByRole("link", { name: "Check-in" }).click();
+  await entrance.getByLabel("Ticket code").fill(code);
+  await entrance.getByRole("button", { name: "Check in" }).click();
+  await expect(checkInAnswer(entrance, "Checked in")).toBeVisible();
   await entrance.context().close();
 
-  await expect(panelStat(panel, "Пришло")).toHaveText("1");
+  await expect(panelStat(panel, "Checked in")).toHaveText("1");
   expect(await panel.evaluate(() => "notReloaded" in window)).toBe(true);
   await panel.context().close();
 });
@@ -53,29 +53,29 @@ test("a check-in at one entrance updates the arrivals on another check-in screen
   await participant.goto("/");
   await participant.getByRole("link", { name: title }).click();
   await participant.getByLabel("Email").fill(email);
-  await participant.getByLabel("Имя").fill("Глеб");
-  await participant.getByRole("button", { name: "Зарегистрироваться" }).click();
-  await expect(participant.getByRole("status")).toHaveText("Место подтверждено");
+  await participant.getByLabel("Name").fill("Gleb");
+  await participant.getByRole("button", { name: "Register" }).click();
+  await expect(participant.getByRole("status")).toHaveText("Seat confirmed");
   await participant.context().close();
-  const code = extract(await emailTo(request, email, "Билет"), /Код билета: (\S+)/);
+  const code = extract(await emailTo(request, email, "Ticket"), /Ticket code: (\S+)/);
 
   const second = await organizerPage(browser);
   await second.getByRole("link", { name: title }).click();
-  await second.getByRole("link", { name: "Чекин" }).click();
-  await expect(panelStat(second, "Пришло")).toHaveText("0");
+  await second.getByRole("link", { name: "Check-in" }).click();
+  await expect(panelStat(second, "Checked in")).toHaveText("0");
   await second.evaluate(() => {
     Object.assign(window, { notReloaded: true });
   });
 
   const first = await organizerPage(browser);
   await first.getByRole("link", { name: title }).click();
-  await first.getByRole("link", { name: "Чекин" }).click();
-  await first.getByLabel("Код билета").fill(code);
-  await first.getByRole("button", { name: "Отметить" }).click();
-  await expect(first.getByText("Пропущен", { exact: true })).toBeVisible();
+  await first.getByRole("link", { name: "Check-in" }).click();
+  await first.getByLabel("Ticket code").fill(code);
+  await first.getByRole("button", { name: "Check in" }).click();
+  await expect(checkInAnswer(first, "Checked in")).toBeVisible();
   await first.context().close();
 
-  await expect(panelStat(second, "Пришло")).toHaveText("1");
+  await expect(panelStat(second, "Checked in")).toHaveText("1");
   expect(await second.evaluate(() => "notReloaded" in window)).toBe(true);
   await second.context().close();
 });

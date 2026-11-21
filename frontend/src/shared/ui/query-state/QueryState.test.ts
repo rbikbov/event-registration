@@ -26,8 +26,8 @@ function mountWith(load: () => Promise<string>, props: { healthLink?: boolean } 
           QueryState,
           {
             query,
-            errorText: "Не удалось загрузить",
-            refreshErrorText: "Не удалось обновить",
+            errorText: "Could not load",
+            refreshErrorText: "Could not refresh",
             ...props,
           },
           { default: ({ data }: { data: string }) => h("p", { "data-shown": "" }, data) },
@@ -44,7 +44,7 @@ describe("QueryState", () => {
   it("shows a loading state until the data arrives, then the data", async () => {
     const { wrapper } = mountWith(() => Promise.resolve("Meetup"));
 
-    expect(wrapper.get('[role="status"]').text()).toBe("Загружаем…");
+    expect(wrapper.get('[role="status"]').text()).toBe("Loading…");
     await flushPromises();
 
     expect(wrapper.find('[role="status"]').exists()).toBe(false);
@@ -57,7 +57,7 @@ describe("QueryState", () => {
       fail ? Promise.reject(new Error("down")) : Promise.resolve("Meetup"),
     );
     await flushPromises();
-    expect(wrapper.get('[role="alert"] h2').text()).toBe("Не удалось загрузить");
+    expect(wrapper.get('[role="alert"] h2').text()).toBe("Could not load");
     expect(wrapper.find("[data-shown]").exists()).toBe(false);
 
     fail = false;
@@ -73,7 +73,7 @@ describe("QueryState", () => {
     await flushPromises();
 
     const link = wrapper.get('[role="alert"] a');
-    expect(link.text()).toBe("Состояние сервиса");
+    expect(link.text()).toBe("Service status");
     expect(link.attributes("href")).toBe(routes.health);
   });
 
@@ -81,7 +81,7 @@ describe("QueryState", () => {
     const { wrapper } = mountWith(() => Promise.reject(new Error("down")), { healthLink: false });
     await flushPromises();
 
-    expect(wrapper.get('[role="alert"]').text()).toContain("Не удалось загрузить");
+    expect(wrapper.get('[role="alert"]').text()).toContain("Could not load");
     expect(wrapper.find('[role="alert"] a').exists()).toBe(false);
   });
 
@@ -96,7 +96,7 @@ describe("QueryState", () => {
     await queryClient.refetchQueries();
     await flushPromises();
 
-    expect(wrapper.get('[role="alert"]').text()).toContain("Не удалось обновить");
+    expect(wrapper.get('[role="alert"]').text()).toContain("Could not refresh");
     expect(wrapper.get("[data-shown]").text()).toBe("Meetup");
 
     fail = false;
@@ -116,7 +116,7 @@ describe("QueryState", () => {
 
     await wrapper.get('[role="alert"] button').trigger("click");
 
-    expect(wrapper.get('[role="status"]').text()).toBe("Загружаем…");
+    expect(wrapper.get('[role="status"]').text()).toBe("Loading…");
     expect(wrapper.find('[role="alert"]').exists()).toBe(false);
   });
 
@@ -137,7 +137,7 @@ describe("QueryState", () => {
     await flushPromises();
 
     const button = wrapper.get('[role="alert"] button');
-    expect(button.text()).toBe("Загружаем…");
+    expect(button.text()).toBe("Loading…");
     expect(button.attributes("disabled")).toBeDefined();
     expect(wrapper.get("[data-shown]").text()).toBe("Meetup");
     await button.trigger("click");

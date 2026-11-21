@@ -36,8 +36,8 @@ test("the page bar of a long list fits every width without scrolling sideways", 
   for (const width of WIDTHS) {
     await guest.setViewportSize({ width, height: 800 });
     await guest.goto(`/?page=${MIDDLE_PAGE}`);
-    const bar = guest.getByRole("navigation", { name: "Страницы событий" });
-    await expect(bar.getByRole("button", { name: `Страница ${MIDDLE_PAGE}` })).toBeVisible();
+    const bar = guest.getByRole("navigation", { name: "Event pages" });
+    await expect(bar.getByRole("button", { name: `Page ${MIDDLE_PAGE}` })).toBeVisible();
     const [scrollWidth, windowWidth] = await guest.evaluate(() => [
       document.documentElement.scrollWidth,
       window.innerWidth,

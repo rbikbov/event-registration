@@ -97,18 +97,18 @@ function submit(): void {
   </div>
 </template>
 
-<i18n lang="json" locale="ru">
+<i18n lang="json" locale="en">
 {
-  "title": "Вход для организатора",
+  "title": "Organizer login",
   "email": "Email",
-  "password": "Пароль",
-  "submit": "Войти",
-  "submitting": "Входим…",
-  "wrongCredentials": "Неверный email или пароль",
-  "tryLater": "Не удалось войти, попробуйте позже",
+  "password": "Password",
+  "submit": "Log in",
+  "submitting": "Logging in…",
+  "wrongCredentials": "Wrong email or password",
+  "tryLater": "Could not log in, try again later",
   "errors": {
-    "required": "Обязательное поле",
-    "invalid_email": "Введите email в формате name{'@'}example.com"
+    "required": "Required field",
+    "invalid_email": "Enter an email like name{'@'}example.com"
   }
 }
 </i18n>

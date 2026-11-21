@@ -189,29 +189,29 @@ const fields: { name: "email" | "name"; type: string; autocomplete: string }[] =
   </div>
 </template>
 
-<i18n lang="json" locale="ru">
+<i18n lang="json" locale="en">
 {
-  "error": "Не удалось загрузить событие",
-  "refreshError": "Не удалось обновить событие, показаны прежние данные",
-  "notFound": "Такого события нет",
-  "freeSeats": "Свободно {count} место | Свободно {count} места | Свободно {count} мест",
-  "noSeats": "Свободных мест нет, можно встать в лист ожидания",
-  "register": "Регистрация",
+  "error": "Could not load the event",
+  "refreshError": "Could not refresh the event, showing the previous data",
+  "notFound": "No such event",
+  "freeSeats": "{count} seat free | {count} seats free",
+  "noSeats": "No free seats, you can join the waitlist",
+  "register": "Registration",
   "fields": {
     "email": "Email",
-    "name": "Имя"
+    "name": "Name"
   },
-  "submit": "Зарегистрироваться",
-  "submitting": "Отправляем…",
-  "confirmed": "Место подтверждено",
-  "waitlisted": "Вы в листе ожидания, №{position}",
-  "waitlistedNoPosition": "Вы в листе ожидания",
-  "tryLater": "Не удалось зарегистрироваться, попробуйте позже",
+  "submit": "Register",
+  "submitting": "Sending…",
+  "confirmed": "Seat confirmed",
+  "waitlisted": "You are on the waitlist, #{position}",
+  "waitlistedNoPosition": "You are on the waitlist",
+  "tryLater": "Could not register, try again later",
   "errors": {
-    "required": "Обязательное поле",
-    "blank": "Обязательное поле",
-    "max_length": "Слишком длинное значение",
-    "invalid": "Некорректное значение"
+    "required": "Required field",
+    "blank": "Required field",
+    "max_length": "The value is too long",
+    "invalid": "Invalid value"
   }
 }
 </i18n>

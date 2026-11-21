@@ -23,9 +23,9 @@ const { t } = useI18n({ useScope: "local" });
   </Alert>
 </template>
 
-<i18n lang="json" locale="ru">
+<i18n lang="json" locale="en">
 {
-  "loading": "Загружаем…",
-  "retry": "Повторить"
+  "loading": "Loading…",
+  "retry": "Retry"
 }
 </i18n>

@@ -31,26 +31,26 @@ class Command(BaseCommand):
         # even when the previous one has started or been reminded of.
         full = Event.objects.create(
             organizer=organizer,
-            title="Демо: мастер-класс на два места",
-            description="Два места заняты, третий участник в листе ожидания.",
+            title="Demo: a workshop with two seats",
+            description="Both seats are taken, the third participant is on the waitlist.",
             starts_at=now + timedelta(days=7),
             capacity=2,
         )
         for i in range(1, 4):
-            register(full.id, f"guest{i}@example.com", f"Гость {i}", now=now)
+            register(full.id, f"guest{i}@example.com", f"Guest {i}", now=now)
 
         # Inside the 24-hour window, with seats taken two days ago, that is before the window:
         # the worker's next reminder pass, within 30 s, queues a reminder for each.
         tomorrow = Event.objects.create(
             organizer=organizer,
-            title="Демо: встреча завтра",
-            description="Участники получат напоминание за сутки.",
+            title="Demo: a meetup tomorrow",
+            description="The participants will get a reminder a day before.",
             starts_at=now + timedelta(hours=23),
             capacity=10,
         )
         for i in range(1, 4):
             register(
-                tomorrow.id, f"member{i}@example.com", f"Участник {i}", now=now - timedelta(days=2)
+                tomorrow.id, f"member{i}@example.com", f"Member {i}", now=now - timedelta(days=2)
             )
 
         self.stdout.write(f"Demo events {full.id} and {tomorrow.id} are ready.")

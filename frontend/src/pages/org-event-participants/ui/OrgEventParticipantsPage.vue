@@ -58,7 +58,7 @@ function link(filter: RegistrationStatus | null, toPage = 1) {
   };
 }
 
-// A table cell, not a phrase: the time alone needs no "в".
+// A table cell, not a phrase: the time alone needs no "at" and a date no "on".
 function checkedInAt(iso: string): string {
   return formatMoment(iso, new Date(), (at, options) => d(at, options)).text;
 }
@@ -152,37 +152,37 @@ function statusText(row: OrgRegistration): string {
   </section>
 </template>
 
-<i18n lang="json" locale="ru">
+<i18n lang="json" locale="en">
 {
-  "participants": "Участники",
-  "filter": "Фильтр по статусу",
+  "participants": "Participants",
+  "filter": "Filter by status",
   "filters": {
-    "all": "Все",
-    "confirmed": "Подтверждены",
-    "waitlisted": "Лист ожидания",
-    "cancelled": "Отказались"
+    "all": "All",
+    "confirmed": "Confirmed",
+    "waitlisted": "Waitlist",
+    "cancelled": "Cancelled"
   },
-  "updates": "Есть обновления",
-  "refresh": "Обновить",
-  "refreshing": "Обновляем…",
-  "pages": "Страницы участников",
-  "pastEnd": "На этой странице никого нет.",
-  "lastPage": "К последней странице",
-  "participantsError": "Не удалось загрузить участников",
-  "participantsRefreshError": "Не удалось обновить участников, показан прежний список",
-  "empty": "Регистраций пока нет",
-  "emptyFiltered": "С таким статусом никого нет",
+  "updates": "There are updates",
+  "refresh": "Refresh",
+  "refreshing": "Refreshing…",
+  "pages": "Participant pages",
+  "pastEnd": "No one on this page.",
+  "lastPage": "To the last page",
+  "participantsError": "Could not load the participants",
+  "participantsRefreshError": "Could not refresh the participants, showing the previous list",
+  "empty": "No registrations yet",
+  "emptyFiltered": "No one with this status",
   "columns": {
-    "name": "Имя",
+    "name": "Name",
     "email": "Email",
-    "status": "Статус",
-    "checkedIn": "Отметка на входе"
+    "status": "Status",
+    "checkedIn": "Checked in"
   },
   "status": {
-    "confirmed": "Подтверждён",
-    "waitlisted": "В листе ожидания",
-    "waitlistedAt": "В листе ожидания, №{position}",
-    "cancelled": "Отказался"
+    "confirmed": "Confirmed",
+    "waitlisted": "On the waitlist",
+    "waitlistedAt": "On the waitlist, #{position}",
+    "cancelled": "Cancelled"
   }
 }
 </i18n>

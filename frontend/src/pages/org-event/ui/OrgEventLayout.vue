@@ -152,29 +152,29 @@ function counters(loaded: OrgEvent) {
   </div>
 </template>
 
-<i18n lang="json" locale="ru">
+<i18n lang="json" locale="en">
 {
-  "myEvents": "Мои события",
-  "error": "Не удалось загрузить событие",
-  "refreshError": "Не удалось обновить событие, показаны прежние данные",
-  "checkinError": "Не удалось загрузить событие, чекин работает",
-  "checkinRefreshError": "Не удалось обновить событие, чекин работает",
-  "notFound": "Событие не найдено",
-  "forbidden": "Нет доступа",
-  "foreign": "Это событие другого организатора",
-  "reconnecting": "Соединение потеряно, переподключаюсь…",
-  "tabs": "Разделы события",
+  "myEvents": "My events",
+  "error": "Could not load the event",
+  "refreshError": "Could not refresh the event, showing the previous data",
+  "checkinError": "Could not load the event, check-in works",
+  "checkinRefreshError": "Could not refresh the event, check-in works",
+  "notFound": "Event not found",
+  "forbidden": "No access",
+  "foreign": "This event belongs to another organizer",
+  "reconnecting": "Connection lost, reconnecting…",
+  "tabs": "Event sections",
   "tab": {
-    "participants": "Участники",
-    "checkin": "Чекин",
-    "edit": "Редактирование"
+    "participants": "Participants",
+    "checkin": "Check-in",
+    "edit": "Edit"
   },
   "counters": {
-    "capacity": "Мест",
-    "confirmed": "Подтверждено",
-    "waitlisted": "В листе ожидания",
-    "checkedIn": "Пришло",
-    "freeSeats": "Свободно"
+    "capacity": "Seats",
+    "confirmed": "Confirmed",
+    "waitlisted": "Waitlisted",
+    "checkedIn": "Checked in",
+    "freeSeats": "Free"
   }
 }
 </i18n>

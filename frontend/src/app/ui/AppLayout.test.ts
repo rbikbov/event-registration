@@ -68,7 +68,7 @@ describe("AppLayout", () => {
 
     goOnline(false);
     await flushPromises();
-    expect(wrapper.get("[data-offline]").text()).toBe("Нет подключения к интернету");
+    expect(wrapper.get("[data-offline]").text()).toBe("No internet connection");
     expect(wrapper.get("[data-offline]").attributes("role")).toBe("status");
 
     goOnline(true);
@@ -86,7 +86,7 @@ describe("AppLayout", () => {
 
     const { wrapper } = await mountLayout();
 
-    expect(links(wrapper)).toEqual([["События", routes.home]]);
+    expect(links(wrapper)).toEqual([["Events", routes.home]]);
     expect(wrapper.find("header button").exists()).toBe(false);
     // The answer arrives after a timer, not a tick: wait for it, so it does not outlive the test.
     await vi.waitFor(() => expect(wrapper.find("header button").exists()).toBe(true));
@@ -100,8 +100,8 @@ describe("AppLayout", () => {
     await flushPromises();
 
     expect(links(wrapper)).toEqual([
-      ["События", routes.home],
-      ["Вход для организатора", routes.login],
+      ["Events", routes.home],
+      ["Organizer login", routes.login],
     ]);
   });
 
@@ -130,7 +130,7 @@ describe("AppLayout", () => {
     const { wrapper } = await mountLayout();
     await flushPromises();
 
-    expect(links(wrapper)).toContainEqual(["Вход для организатора", routes.login]);
+    expect(links(wrapper)).toContainEqual(["Organizer login", routes.login]);
   });
 
   it("shows the organizer their events, email and sign-out", async () => {
@@ -140,16 +140,16 @@ describe("AppLayout", () => {
     await flushPromises();
 
     expect(links(wrapper)).toEqual([
-      ["События", routes.home],
-      ["Мои события", routes.orgEvents],
+      ["Events", routes.home],
+      ["My events", routes.orgEvents],
     ]);
     expect(wrapper.get("header").text()).toContain("demo@example.com");
-    expect(wrapper.get("header button").text()).toBe("Выйти");
+    expect(wrapper.get("header button").text()).toBe("Log out");
   });
 
   it.each([
-    ["the organizer on their events", user, routes.orgEvents, "Мои события"],
-    ["a guest on the sign-in page", null, routes.login, "Вход для организатора"],
+    ["the organizer on their events", user, routes.orgEvents, "My events"],
+    ["a guest on the sign-in page", null, routes.login, "Organizer login"],
   ])("marks the current page in the header for %s", async (_who, me, path, link) => {
     server.use(
       http.get("*/api/auth/me/", () =>
@@ -195,7 +195,7 @@ describe("AppLayout", () => {
     expect(router.currentRoute.value.path).toBe(routes.home);
     expect(queryClient.getQueryData(meQuery.queryKey)).toBeNull();
     expect(queryClient.getQueryData(orgEventsQuery("upcoming", 1).queryKey)).toBeUndefined();
-    expect(links(wrapper)).toContainEqual(["Вход для организатора", routes.login]);
+    expect(links(wrapper)).toContainEqual(["Organizer login", routes.login]);
   });
 
   it("keeps the session and says so when signing out fails", async () => {
@@ -209,10 +209,10 @@ describe("AppLayout", () => {
     await wrapper.get("header button").trigger("click");
     await flushPromises();
 
-    expect(wrapper.get('[role="alert"]').text()).toBe("Не удалось выйти, повторите");
+    expect(wrapper.get('[role="alert"]').text()).toBe("Could not log out, try again");
     expect(router.currentRoute.value.path).toBe(routes.orgEvents);
     expect(queryClient.getQueryData(meQuery.queryKey)).toEqual(user);
-    expect(wrapper.get("header button").text()).toBe("Выйти");
+    expect(wrapper.get("header button").text()).toBe("Log out");
   });
 
   it("takes 401 on sign-out as signed out: the session has already ended", async () => {

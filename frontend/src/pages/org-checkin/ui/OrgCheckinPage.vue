@@ -93,7 +93,7 @@ const failure = computed(() => {
 
 function checkedInWhen(iso: string): string {
   const moment = formatMoment(iso, new Date(), (at, options) => d(at, options));
-  return moment.withAt ? t("atTime", { time: moment.text }) : moment.text;
+  return moment.withAt ? t("atTime", { time: moment.text }) : t("onDate", { date: moment.text });
 }
 
 function submit(): void {
@@ -162,19 +162,20 @@ function submit(): void {
   </section>
 </template>
 
-<i18n lang="json" locale="ru">
+<i18n lang="json" locale="en">
 {
-  "code": "Код билета",
-  "submit": "Отметить",
-  "checking": "Проверяем…",
-  "failed": "Не удалось отметить, повторите",
-  "foreign": "Это событие другого организатора",
-  "offline": "Нет связи, повторите",
-  "checkedIn": "Пропущен",
-  "alreadyCheckedIn": "Уже отмечен {when}",
-  "atTime": "в {time}",
-  "notFound": "Билет не найден",
-  "notConfirmed": "Билет не подтверждён: лист ожидания или отказ",
-  "next": "Следующий"
+  "code": "Ticket code",
+  "submit": "Check in",
+  "checking": "Checking…",
+  "failed": "Could not check in, try again",
+  "foreign": "This event belongs to another organizer",
+  "offline": "No connection, try again",
+  "checkedIn": "Checked in",
+  "alreadyCheckedIn": "Already checked in {when}",
+  "atTime": "at {time}",
+  "onDate": "on {date}",
+  "notFound": "Ticket not found",
+  "notConfirmed": "Ticket not confirmed: waitlist or cancellation",
+  "next": "Next"
 }
 </i18n>

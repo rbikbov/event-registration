@@ -20,12 +20,16 @@ MAX_ATTEMPTS = 5
 FIRST_RETRY_DELAY = timedelta(seconds=30)
 
 SUBJECTS = {
-    OutboxEmail.Kind.TICKET: "Билет: {title}",
-    OutboxEmail.Kind.WAITLISTED: "Лист ожидания: {title}",
-    OutboxEmail.Kind.PROMOTED: "Освободилось место: {title}",
-    OutboxEmail.Kind.RESCHEDULED: "Событие перенесено: {title}",
-    OutboxEmail.Kind.REMINDER: "Напоминание: {title}",
+    OutboxEmail.Kind.TICKET: "Ticket: {title}",
+    OutboxEmail.Kind.WAITLISTED: "Waitlist: {title}",
+    OutboxEmail.Kind.PROMOTED: "A seat became free: {title}",
+    OutboxEmail.Kind.RESCHEDULED: "Event rescheduled: {title}",
+    OutboxEmail.Kind.REMINDER: "Reminder: {title}",
 }
+
+# A moment in an email: "7 Oct 2026 09:15 UTC". The month is from a table, not strftime's %b:
+# that one follows the process locale.
+MONTHS = ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
 
 
 def enqueue_email(
@@ -54,7 +58,7 @@ def enqueue_rescheduled(registration: Registration, old_starts_at: datetime) -> 
         OutboxEmail.Kind.RESCHEDULED,
         registration,
         {
-            "old_starts_at": _email_time(old_starts_at),
+            "old_starts_at": email_time(old_starts_at),
             "confirmed": registration.status == Registration.Status.CONFIRMED,
         },
         dedup_key=f"rescheduled:{registration.id}:{registration.event.schedule_version}",
@@ -78,9 +82,16 @@ def reminder_key(registration_id: int, schedule_version: int) -> str:
     return f"reminder:{registration_id}:{schedule_version}"
 
 
-def _email_time(value: datetime) -> str:
+def email_time(value: datetime) -> str:
     # Events have no time zone of their own; the ticket page shows the browser's local time.
-    return value.astimezone(UTC).strftime("%d.%m.%Y %H:%M UTC")
+    utc = value.astimezone(UTC)
+    return f"{utc.day} {MONTHS[utc.month - 1]} {utc.year} {utc:%H:%M} UTC"
+
+
+def render_email(kind: OutboxEmail.Kind, context: dict[str, object]) -> tuple[str, str]:
+    """The subject and the body of an email; `context` has the template values."""
+    subject = SUBJECTS[kind].format(title=context["title"])
+    return subject, render_to_string(f"emails/{kind}.txt", context)
 
 
 def _enqueue(
@@ -100,19 +111,20 @@ def _enqueue(
     context = {
         "name": registration.name,
         "title": event.title,
-        "starts_at": _email_time(event.starts_at),
+        "starts_at": email_time(event.starts_at),
         "ticket_code": registration.ticket_code,
         "manage_url": f"{settings.FRONTEND_URL}/tickets/{registration.manage_token}",
         **extra,
     }
+    subject, body = render_email(kind, context)
     email = OutboxEmail(
         kind=kind,
         registration=registration,
         dedup_key=dedup_key or f"{kind}:{registration.id}:{registration.ticket_code}",
         to=registration.email,
         # One line: a line break in a header makes Django refuse to send the message.
-        subject=SUBJECTS[kind].format(title=" ".join(event.title.split())),
-        body=render_to_string(f"emails/{kind}.txt", context),
+        subject=" ".join(subject.split()),
+        body=body,
     )
     # ON CONFLICT DO NOTHING: the unique dedup_key keeps one email per change.
     OutboxEmail.objects.bulk_create([email], ignore_conflicts=True)

@@ -77,7 +77,7 @@ function stopConfirming(): void {
 
 function checkedInWhen(iso: string): string {
   const moment = formatMoment(iso, new Date(), (at, options) => d(at, options));
-  return moment.withAt ? t("atTime", { time: moment.text }) : moment.text;
+  return moment.withAt ? t("atTime", { time: moment.text }) : t("onDate", { date: moment.text });
 }
 </script>
 
@@ -154,23 +154,24 @@ function checkedInWhen(iso: string): string {
   </div>
 </template>
 
-<i18n lang="json" locale="ru">
+<i18n lang="json" locale="en">
 {
-  "error": "Не удалось загрузить билет",
-  "refreshFailed": "Не удалось обновить билет",
-  "notFound": "Билет не найден",
-  "code": "Код билета",
-  "checkedInTitle": "Билет использован",
-  "atTime": "в {time}",
-  "checkedIn": "Вы отмечены на входе {when}. Повторно пройти по этому коду нельзя, отказаться от регистрации — тоже.",
-  "waitlisted": "Вы в листе ожидания, №{position}",
-  "cancelled": "Регистрация отменена",
-  "registerAgain": "Зарегистрироваться снова",
-  "cancel": "Отказаться",
-  "confirmQuestion": "Отказаться от регистрации?",
-  "confirmYes": "Да, отказаться",
-  "confirmNo": "Нет",
-  "cancelling": "Отменяем…",
-  "cancelFailed": "Не удалось отказаться, попробуйте позже"
+  "error": "Could not load the ticket",
+  "refreshFailed": "Could not refresh the ticket",
+  "notFound": "Ticket not found",
+  "code": "Ticket code",
+  "checkedInTitle": "Ticket used",
+  "atTime": "at {time}",
+  "onDate": "on {date}",
+  "checkedIn": "You were checked in {when}. This code cannot be used again, and the registration cannot be cancelled.",
+  "waitlisted": "You are on the waitlist, #{position}",
+  "cancelled": "Registration cancelled",
+  "registerAgain": "Register again",
+  "cancel": "Cancel registration",
+  "confirmQuestion": "Cancel the registration?",
+  "confirmYes": "Yes, cancel",
+  "confirmNo": "No",
+  "cancelling": "Cancelling…",
+  "cancelFailed": "Could not cancel, try again later"
 }
 </i18n>

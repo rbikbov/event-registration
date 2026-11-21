@@ -17,7 +17,7 @@ make seed        # demo events with participants
 Open <http://localhost:5173>, emails are in Mailpit at <http://localhost:8025>. To stop —
 `make down`. Services, ports and development — [docs/development.md](docs/development.md).
 
-The interface and the emails are in Russian.
+The interface and the emails are in English.
 
 ## What the tests prove
 

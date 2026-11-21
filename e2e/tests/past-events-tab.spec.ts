@@ -14,8 +14,8 @@ async function createEvent(organizer: Page, title: string, inMs: number): Promis
 async function findOnPastTab(page: Page, list: string, title: string): Promise<void> {
   await page.goto(list);
   await page
-    .getByRole("navigation", { name: "Какие события показать" })
-    .getByRole("link", { name: "Прошедшие" })
+    .getByRole("navigation", { name: "Which events to show" })
+    .getByRole("link", { name: "Past" })
     .click();
   await expect(async () => {
     await page.reload();
@@ -28,8 +28,8 @@ async function findOnPastTab(page: Page, list: string, title: string): Promise<v
 // The upcoming tab of a list, loaded: the nearest event shown.
 async function openUpcomingTab(page: Page, nearest: string): Promise<void> {
   await page
-    .getByRole("navigation", { name: "Какие события показать" })
-    .getByRole("link", { name: "Предстоящие" })
+    .getByRole("navigation", { name: "Which events to show" })
+    .getByRole("link", { name: "Upcoming" })
     .click();
   await expect(page.getByRole("link", { name: nearest, exact: true })).toBeVisible();
 }

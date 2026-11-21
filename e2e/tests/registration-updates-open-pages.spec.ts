@@ -22,33 +22,33 @@ test("a registration updates the free seats on an open event page and flags the 
   const visitor = await (await browser.newContext()).newPage();
   await visitor.goto("/");
   await visitor.getByRole("link", { name: title }).click();
-  await expect(visitor.getByText("Свободно 2 места")).toBeVisible();
+  await expect(visitor.getByText("2 seats free")).toBeVisible();
   await markNotReloaded(visitor);
 
   const panel = await organizerPage(browser);
   await panel.getByRole("link", { name: title }).click();
-  await expect(panel.getByText("Регистраций пока нет")).toBeVisible();
+  await expect(panel.getByText("No registrations yet")).toBeVisible();
   await markNotReloaded(panel);
 
   const participant = await (await browser.newContext()).newPage();
   await participant.goto("/");
   await participant.getByRole("link", { name: title }).click();
   await participant.getByLabel("Email").fill(`seats-${Date.now()}@example.com`);
-  await participant.getByLabel("Имя").fill("Вера");
-  await participant.getByRole("button", { name: "Зарегистрироваться" }).click();
-  await expect(participant.getByRole("status")).toHaveText("Место подтверждено");
+  await participant.getByLabel("Name").fill("Vera");
+  await participant.getByRole("button", { name: "Register" }).click();
+  await expect(participant.getByRole("status")).toHaveText("Seat confirmed");
   await participant.context().close();
 
-  await expect(visitor.getByText("Свободно 1 место")).toBeVisible();
+  await expect(visitor.getByText("1 seat free")).toBeVisible();
   expect(await notReloaded(visitor)).toBe(true);
 
   // The counters change at once; the table waits for the organizer.
-  await expect(panelStat(panel, "Подтверждено")).toHaveText("1");
-  await expect(panel.getByText("Есть обновления")).toBeVisible();
-  await expect(panel.getByText("Регистраций пока нет")).toBeVisible();
-  await panel.getByRole("button", { name: "Обновить" }).click();
-  await expect(panel.getByRole("row", { name: /Вера/ })).toBeVisible();
-  await expect(panel.getByText("Есть обновления")).toBeHidden();
+  await expect(panelStat(panel, "Confirmed")).toHaveText("1");
+  await expect(panel.getByText("There are updates")).toBeVisible();
+  await expect(panel.getByText("No registrations yet")).toBeVisible();
+  await panel.getByRole("button", { name: "Refresh" }).click();
+  await expect(panel.getByRole("row", { name: /Vera/ })).toBeVisible();
+  await expect(panel.getByText("There are updates")).toBeHidden();
   expect(await notReloaded(panel)).toBe(true);
 
   await visitor.context().close();

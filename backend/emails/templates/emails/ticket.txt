@@ -1,9 +1,9 @@
-{% autoescape off %}Здравствуйте, {{ name }}!
+{% autoescape off %}Hello, {{ name }}!
 
-Вы зарегистрированы на «{{ title }}», место за вами.
-Дата: {{ starts_at }}
+You are registered for "{{ title }}", the seat is yours.
+Date: {{ starts_at }}
 
-Код билета: {{ ticket_code }}
-Назовите его на входе.
+Ticket code: {{ ticket_code }}
+Show or tell this code at the entrance.
 
-Мой билет и отказ от участия: {{ manage_url }}{% endautoescape %}
+View or cancel your registration: {{ manage_url }}{% endautoescape %}

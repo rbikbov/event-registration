@@ -288,8 +288,9 @@ A separate process `manage.py run_worker`, a loop:
 | `rescheduled` | `confirmed` and `waitlisted`                                                   | once per reschedule                |
 
 The `ticket`, `waitlisted`, `promoted` emails are implemented (phase 2), `rescheduled` and
-`reminder` — phase 5: plain text in Russian, the templates are `emails/templates/emails/<kind>.txt`,
-all have the event title and date (UTC) and the link `{FRONTEND_URL}/tickets/{manage_token}`.
+`reminder` — phase 5: plain text in English (phase 8), the templates are
+`emails/templates/emails/<kind>.txt`, the subjects — `SUBJECTS` in `emails/services.py`. All have
+the event title and date (UTC, "7 Oct 2026 09:15 UTC") and the link `{FRONTEND_URL}/tickets/{manage_token}`.
 `rescheduled` — was / now; to a confirmed one — the code, to one on the waitlist — "you are on the
 waitlist" without the position (the position gets outdated, the link shows the current one).
 `reminder` — the date and the code, without "in a day": a reminder may go out later in the window
@@ -310,9 +311,9 @@ worker (reminders), so `FRONTEND_URL` is set for both.
   "registration cancelled" with a link to the event; "ticket not found"; cancellation with a
   confirmation; a ticket checked in at the entrance — "you were checked in at HH:MM" without
   cancellation (phase 3). The organizer's event panel (`/org/events/:id`, phase 3): counters of
-  seats, confirmed, waitlisted, arrived and free seats, a table of participants in queue order
+  seats, confirmed, waitlisted, checked in and free seats, a table of participants in queue order
   with a status filter in the URL. The check-in screen (`/org/events/:id/checkin`, phase 3): a code
-  field, a large answer in place of the form — "admitted" with the name and a masked email,
+  field, a large answer in place of the form — "checked in" with the name and a masked email,
   "already checked in at HH:MM", "ticket not found", "ticket not confirmed" — and "Next"; check-in
   works without the event title. Phase 4: the organizer's event is the `/org/events/:id` layout
   with one `GET`, a stream, a header (title, date, counters) and the "Participants" and
@@ -322,7 +323,7 @@ worker (reminders), so `FRONTEND_URL` is set for both.
   "Edit" tab of the event layout (`/org/events/:id/edit`) — the creation form (the shared model is
   `entities/event`) with the current values; only the changed fields are sent, without changes the
   button is disabled; a date change asks for confirmation with the number of email recipients
-  (without participants — no confirmation); "At least the confirmed count: N" when the limit is
+  (without participants — no confirmation); "Must be at least the number of confirmed participants (N)" when the limit is
   lower; the header and counters are refreshed after saving by the stream snapshot.
 - **Implemented (phase 6):** the shared layout `app/ui/AppLayout.vue` — a header and one `<main>`
   around `RouterView`. The header has "Events", "Organizer login" for a guest, and for a logged-in
@@ -340,6 +341,10 @@ worker (reminders), so `FRONTEND_URL` is set for both.
   (`shared/ui/expandable-text`). Check-in — "Next" is disabled for 1 s after an answer; the
   check-in time has the date if it is not today. Every screen fits into 360 px without horizontal
   scrolling (e2e `screens-fit-phone`).
+- **Implemented (phase 8):** every text is English — one `<i18n locale="en">` block per component,
+  the app locale `en-GB` (24-hour time, "1 May 2027 at 18:00"); a check-in of another day reads
+  "on 2 November at 23:50". The organizer's counter and column and the check-in answer are all
+  "Checked in"; the ticket's cancel button is "Cancel registration".
 
 ## Environment and demo data
 
@@ -359,6 +364,6 @@ worker (reminders), so `FRONTEND_URL` is set for both.
 - **Implemented (phase 5):** `make seed` (`seed_demo`, only with `DEBUG`; creates the demo accounts
   itself) — on each run adds to the demo organizer an event in a week with 2 seats (2 confirmed,
   1 on the waitlist) and an event in ~23 h with 10 seats and 3 participants whose `confirmed_at` is
-  2 days earlier (the titles contain "Демо"). Registrations go through `register`; ~30 s later
+  2 days earlier (the titles start with "Demo"). Registrations go through `register`; ~30 s later
   there are three reminders in Mailpit. Not idempotent: the "tomorrow" event gets outdated within a
   day, a new run gives a fresh one.

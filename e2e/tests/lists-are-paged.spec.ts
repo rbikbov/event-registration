@@ -26,8 +26,8 @@ async function goToLastPage(page: Page, list: string, last: string): Promise<voi
   await expect(async () => {
     await page.goto(list);
     await page
-      .getByRole("navigation", { name: "Страницы событий" })
-      .getByRole("button", { name: "Последняя страница" })
+      .getByRole("navigation", { name: "Event pages" })
+      .getByRole("button", { name: "Last page" })
       .click();
     await expect(page.getByRole("link", { name: last, exact: true })).toBeVisible({
       timeout: 2_000,
@@ -44,8 +44,8 @@ test("both event lists go page by page to the last event", async ({ browser }) =
   await expect(guest).toHaveURL(/\/\?page=\d+$/);
 
   await guest
-    .getByRole("navigation", { name: "Страницы событий" })
-    .getByRole("button", { name: "Первая страница" })
+    .getByRole("navigation", { name: "Event pages" })
+    .getByRole("button", { name: "First page" })
     .click();
   await expect(guest).toHaveURL(/\/$/);
   await expect(guest.getByRole("link", { name: last, exact: true })).toBeHidden();

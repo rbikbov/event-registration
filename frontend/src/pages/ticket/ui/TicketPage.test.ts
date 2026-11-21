@@ -74,8 +74,8 @@ function button(wrapper: Wrapper, text: string) {
 }
 
 async function confirmCancel(wrapper: Wrapper) {
-  await button(wrapper, "Отказаться").trigger("click");
-  await button(wrapper, "Да, отказаться").trigger("click");
+  await button(wrapper, "Cancel registration").trigger("click");
+  await button(wrapper, "Yes, cancel").trigger("click");
 }
 
 describe("TicketPage", () => {
@@ -90,7 +90,7 @@ describe("TicketPage", () => {
     // The format of a page of one event (shared/lib/i18n).
     expect(text).toContain(createAppI18n().global.d(new Date(event.starts_at), "long"));
     expect(text).toContain("Ann");
-    expect(text).toContain("Отказаться");
+    expect(text).toContain("Cancel registration");
   });
 
   it("says a checked-in ticket was let in, and offers no cancel", async () => {
@@ -100,15 +100,15 @@ describe("TicketPage", () => {
     const { wrapper } = await mountPage();
 
     // The time is shown in the browser's time zone, like the rest of the app.
-    const time = new Intl.DateTimeFormat("ru", { timeStyle: "short" }).format(
+    const time = new Intl.DateTimeFormat("en-GB", { timeStyle: "short" }).format(
       new Date(checkedIn.checked_in_at),
     );
     const notice = wrapper.get("[data-checked-in]").text();
-    expect(notice).toContain("Билет использован");
-    expect(notice).toContain(`Вы отмечены на входе в ${time}`);
-    expect(notice).toContain("Повторно пройти по этому коду нельзя");
+    expect(notice).toContain("Ticket used");
+    expect(notice).toContain(`You were checked in at ${time}`);
+    expect(notice).toContain("This code cannot be used again");
     expect(wrapper.get("[data-ticket-code]").text()).toBe("ABCD2345");
-    expect(wrapper.text()).not.toContain("Отказаться");
+    expect(wrapper.text()).not.toContain("Cancel registration");
   });
 
   it("gives the date of a check-in made on another day", async () => {
@@ -117,13 +117,13 @@ describe("TicketPage", () => {
 
     const { wrapper } = await mountPage();
 
-    const moment = new Intl.DateTimeFormat("ru", {
+    const moment = new Intl.DateTimeFormat("en-GB", {
       day: "numeric",
       month: "long",
       hour: "2-digit",
       minute: "2-digit",
     }).format(new Date(checkedIn.checked_in_at));
-    expect(wrapper.get("[data-checked-in]").text()).toContain(`Вы отмечены на входе ${moment}.`);
+    expect(wrapper.get("[data-checked-in]").text()).toContain(`You were checked in on ${moment}.`);
   });
 
   it("shows the waitlist place without a code", async () => {
@@ -131,9 +131,9 @@ describe("TicketPage", () => {
 
     const { wrapper } = await mountPage();
 
-    expect(wrapper.text()).toContain("Вы в листе ожидания, №3");
+    expect(wrapper.text()).toContain("You are on the waitlist, #3");
     expect(wrapper.find("[data-ticket-code]").exists()).toBe(false);
-    expect(wrapper.text()).toContain("Отказаться");
+    expect(wrapper.text()).toContain("Cancel registration");
   });
 
   it("shows a cancelled ticket with a link back to the event", async () => {
@@ -141,8 +141,8 @@ describe("TicketPage", () => {
 
     const { wrapper } = await mountPage();
 
-    expect(wrapper.text()).toContain("Регистрация отменена");
-    expect(wrapper.get("a[href='/events/7']").text()).toBe("Зарегистрироваться снова");
+    expect(wrapper.text()).toContain("Registration cancelled");
+    expect(wrapper.get("a[href='/events/7']").text()).toBe("Register again");
     expect(wrapper.find("button").exists()).toBe(false);
   });
 
@@ -151,14 +151,14 @@ describe("TicketPage", () => {
 
     const { wrapper } = await mountPage();
 
-    expect(wrapper.get('[role="alert"] h1').text()).toBe("Билет не найден");
+    expect(wrapper.get('[role="alert"] h1').text()).toBe("Ticket not found");
   });
 
   it("shows a loading state until the ticket arrives", async () => {
     server.use(http.get("*/api/tickets/tok/", () => HttpResponse.json(confirmed)));
     const { wrapper } = await mountPage({ loaded: false });
 
-    expect(wrapper.get('[role="status"]').text()).toBe("Загружаем…");
+    expect(wrapper.get('[role="status"]').text()).toBe("Loading…");
     await vi.waitFor(() => expect(wrapper.find('[role="status"]').exists()).toBe(false));
     expect(wrapper.text()).toContain("Meetup");
   });
@@ -166,10 +166,10 @@ describe("TicketPage", () => {
   it("shows a load error with a retry", async () => {
     server.use(http.get("*/api/tickets/tok/", () => HttpResponse.json({}, { status: 500 })));
     const { wrapper } = await mountPage();
-    expect(wrapper.get('[role="alert"]').text()).toContain("Не удалось загрузить билет");
+    expect(wrapper.get('[role="alert"]').text()).toContain("Could not load the ticket");
 
     ticketIs(confirmed);
-    await button(wrapper, "Повторить").trigger("click");
+    await button(wrapper, "Retry").trigger("click");
 
     await vi.waitFor(() => expect(wrapper.find("[data-ticket-code]").exists()).toBe(true));
   });
@@ -191,18 +191,18 @@ describe("TicketPage", () => {
       expect(queryClient.getQueryState(["tickets", "tok"])?.status).toBe("error"),
     );
     expect(wrapper.get("[data-ticket-code]").text()).toBe("ABCD2345");
-    expect(wrapper.get('[role="alert"]').text()).toContain("Не удалось обновить билет");
+    expect(wrapper.get('[role="alert"]').text()).toContain("Could not refresh the ticket");
   });
 
   it("asks before cancelling and keeps the ticket on 'no'", async () => {
     ticketIs(confirmed);
     const { wrapper } = await mountPage();
 
-    await button(wrapper, "Отказаться").trigger("click");
-    expect(wrapper.text()).toContain("Отказаться от регистрации?");
-    await button(wrapper, "Нет").trigger("click");
+    await button(wrapper, "Cancel registration").trigger("click");
+    expect(wrapper.text()).toContain("Cancel the registration?");
+    await button(wrapper, "No").trigger("click");
 
-    expect(wrapper.text()).not.toContain("Отказаться от регистрации?");
+    expect(wrapper.text()).not.toContain("Cancel the registration?");
     expect(wrapper.get("[data-ticket-code]").text()).toBe("ABCD2345");
   });
 
@@ -228,7 +228,7 @@ describe("TicketPage", () => {
 
     await confirmCancel(wrapper);
 
-    await vi.waitFor(() => expect(wrapper.text()).toContain("Регистрация отменена"));
+    await vi.waitFor(() => expect(wrapper.text()).toContain("Registration cancelled"));
     // The text shows from the cancel answer, before the rereads: the lists are reset only after
     // the ticket is reread, so wait for the mutation to finish.
     await vi.waitFor(() => expect(queryClient.isMutating()).toBe(0));
@@ -253,8 +253,8 @@ describe("TicketPage", () => {
     await confirmCancel(wrapper);
 
     await vi.waitFor(() => expect(reads).toBe(2));
-    await vi.waitFor(() => expect(wrapper.text()).toContain("Не удалось обновить билет"));
-    expect(wrapper.text()).toContain("Регистрация отменена");
+    await vi.waitFor(() => expect(wrapper.text()).toContain("Could not refresh the ticket"));
+    expect(wrapper.text()).toContain("Registration cancelled");
     expect(wrapper.find("[data-ticket-code]").exists()).toBe(false);
   });
 
@@ -270,8 +270,8 @@ describe("TicketPage", () => {
 
     await confirmCancel(wrapper);
 
-    expect(button(wrapper, "Отменяем…").attributes("disabled")).toBeDefined();
-    await vi.waitFor(() => expect(wrapper.text()).toContain("Регистрация отменена"));
+    expect(button(wrapper, "Cancelling…").attributes("disabled")).toBeDefined();
+    await vi.waitFor(() => expect(wrapper.text()).toContain("Registration cancelled"));
   });
 
   it("rereads the ticket when it was checked in while the page was open", async () => {
@@ -283,9 +283,9 @@ describe("TicketPage", () => {
 
     await confirmCancel(wrapper);
 
-    await vi.waitFor(() => expect(wrapper.text()).toContain("Вы отмечены на входе"));
+    await vi.waitFor(() => expect(wrapper.text()).toContain("You were checked in"));
     expect(wrapper.find('[role="alert"]').exists()).toBe(false);
-    expect(wrapper.text()).not.toContain("Отказаться");
+    expect(wrapper.text()).not.toContain("Cancel registration");
   });
 
   it("keeps the ticket and shows an error when the cancel fails", async () => {
@@ -296,7 +296,7 @@ describe("TicketPage", () => {
     await confirmCancel(wrapper);
 
     await vi.waitFor(() =>
-      expect(wrapper.get('[role="alert"]').text()).toBe("Не удалось отказаться, попробуйте позже"),
+      expect(wrapper.get('[role="alert"]').text()).toBe("Could not cancel, try again later"),
     );
     expect(wrapper.get("[data-ticket-code]").text()).toBe("ABCD2345");
   });

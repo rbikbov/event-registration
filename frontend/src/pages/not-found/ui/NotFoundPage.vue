@@ -10,8 +10,8 @@ const { t } = useI18n({ useScope: "local" });
   <NotFound :title="t('title')" />
 </template>
 
-<i18n lang="json" locale="ru">
+<i18n lang="json" locale="en">
 {
-  "title": "Страница не найдена"
+  "title": "Page not found"
 }
 </i18n>

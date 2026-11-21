@@ -16,9 +16,9 @@ export async function organizerPage(browser: Browser): Promise<Page> {
   const page = await (await browser.newContext()).newPage();
   await page.goto("/login");
   await page.getByLabel("Email").fill(ORGANIZER.email);
-  await page.getByLabel("Пароль").fill(ORGANIZER.password);
-  await page.getByRole("button", { name: "Войти" }).click();
-  await expect(page.getByRole("heading", { name: "Мои события" })).toBeVisible();
+  await page.getByLabel("Password").fill(ORGANIZER.password);
+  await page.getByRole("button", { name: "Log in" }).click();
+  await expect(page.getByRole("heading", { name: "My events" })).toBeVisible();
   return page;
 }
 
@@ -33,7 +33,7 @@ export function collectConsoleErrors(page: Page, errors: string[]): void {
   });
 }
 
-// A counter on the event panel, such as "Пришло": the value next to its term.
+// A counter on the event panel, such as "Checked in": the value next to its term.
 export function panelStat(page: Page, term: string): Locator {
   return page
     .locator("dl > div")
@@ -41,18 +41,24 @@ export function panelStat(page: Page, term: string): Locator {
     .getByRole("definition");
 }
 
+// The large answer of the check-in screen. The same words can stand in the header above it as a
+// counter's term ("Checked in"), so the answer is the paragraph with exactly this text.
+export function checkInAnswer(page: Page, text: string): Locator {
+  return page.getByRole("paragraph").filter({ hasText: new RegExp(`^${text}$`) });
+}
+
 export async function createEvent(
   browser: Browser,
   { title, capacity }: { title: string; capacity: number },
 ): Promise<void> {
   const page = await organizerPage(browser);
-  await page.getByRole("link", { name: "Создать событие" }).click();
-  await page.getByLabel("Название", { exact: true }).fill(title);
+  await page.getByRole("link", { name: "Create an event" }).click();
+  await page.getByLabel("Title", { exact: true }).fill(title);
   await page
-    .getByLabel("Начало", { exact: true })
+    .getByLabel("Start", { exact: true })
     .fill(`${new Date().getFullYear() + 1}-05-01T18:00`);
-  await page.getByLabel("Мест", { exact: true }).fill(String(capacity));
-  await page.getByRole("button", { name: "Создать", exact: true }).click();
+  await page.getByLabel("Seats", { exact: true }).fill(String(capacity));
+  await page.getByRole("button", { name: "Create", exact: true }).click();
   await expect(page.getByRole("heading", { name: title })).toBeVisible();
   await page.context().close();
 }
@@ -82,16 +88,16 @@ export async function registerOn(
   await page.goto("/");
   await page.getByRole("link", { name: title }).click();
   await page.getByLabel("Email").fill(email);
-  await page.getByLabel("Имя").fill(name);
-  await page.getByRole("button", { name: "Зарегистрироваться" }).click();
+  await page.getByLabel("Name").fill(name);
+  await page.getByRole("button", { name: "Register" }).click();
 }
 
 // The organizer opens the edit tab of their event from the list of their events.
 export async function openEventEdit(browser: Browser, title: string): Promise<Page> {
   const page = await organizerPage(browser);
   await page.getByRole("link", { name: title }).click();
-  await page.getByRole("link", { name: "Редактирование" }).click();
-  await expect(page.getByLabel("Название", { exact: true })).toHaveValue(title);
+  await page.getByRole("link", { name: "Edit" }).click();
+  await expect(page.getByLabel("Title", { exact: true })).toHaveValue(title);
   return page;
 }
 

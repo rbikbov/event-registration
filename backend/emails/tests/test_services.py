@@ -42,7 +42,7 @@ def test_ticket_email_is_a_snapshot_with_code_date_and_link(registration: Regist
     assert "Meetup" in email.subject
     assert registration.ticket_code in email.body
     assert f"https://events.example/tickets/{registration.manage_token}" in email.body
-    assert "17.05.2030 18:30 UTC" in email.body
+    assert "17 May 2030 18:30 UTC" in email.body
     # Plain text: no HTML escaping of the name.
     assert "Ann O'Neil" in email.body
 

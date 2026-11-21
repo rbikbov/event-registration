@@ -19,7 +19,7 @@ const queryClient = useQueryClient();
 // The header only shows who is signed in; where a guest may go is the route guard's decision.
 // The session changes on sign-in, sign-out and a 401 only, so `me` is not asked again: not on
 // mount (on an organizer page the guard has just asked it), not on focus — a `null` from there
-// would show "Вход" over an organizer page without the guard ever running.
+// would show "Organizer login" over an organizer page without the guard ever running.
 const me = useQuery({ ...meQuery, refetchOnMount: false, refetchOnWindowFocus: false });
 const user = computed(() => me.data.value ?? null);
 
@@ -81,13 +81,13 @@ watch(
   </div>
 </template>
 
-<i18n lang="json" locale="ru">
+<i18n lang="json" locale="en">
 {
-  "events": "События",
-  "myEvents": "Мои события",
-  "signIn": "Вход для организатора",
-  "signOut": "Выйти",
-  "signOutError": "Не удалось выйти, повторите",
-  "offline": "Нет подключения к интернету"
+  "events": "Events",
+  "myEvents": "My events",
+  "signIn": "Organizer login",
+  "signOut": "Log out",
+  "signOutError": "Could not log out, try again",
+  "offline": "No internet connection"
 }
 </i18n>

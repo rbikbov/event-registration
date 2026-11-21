@@ -195,32 +195,32 @@ const textFields: { name: "title" | "description" | "starts_at"; type: string; m
   </form>
 </template>
 
-<i18n lang="json" locale="ru">
+<i18n lang="json" locale="en">
 {
   "fields": {
-    "title": "Название",
-    "description": "Описание",
-    "starts_at": "Начало",
-    "capacity": "Мест"
+    "title": "Title",
+    "description": "Description",
+    "starts_at": "Start",
+    "capacity": "Seats"
   },
-  "submit": "Сохранить",
-  "submitting": "Сохраняем…",
-  "saved": "Сохранено",
-  "tryLater": "Не удалось сохранить событие, попробуйте позже",
+  "submit": "Save",
+  "submitting": "Saving…",
+  "saved": "Saved",
+  "tryLater": "Could not save the event, try again later",
   "confirm": {
-    "text": "Участникам (подтверждено {confirmed}, в листе {waitlisted}) уйдёт письмо о переносе.",
-    "yes": "Перенести",
-    "no": "Отмена"
+    "text": "{confirmed} confirmed and {waitlisted} waitlisted participants will get an email about the new date.",
+    "yes": "Reschedule",
+    "no": "Cancel"
   },
   "errors": {
-    "required": "Обязательное поле",
-    "blank": "Обязательное поле",
-    "max_length": "Слишком длинное значение",
-    "min_value": "Должно быть не меньше 1",
-    "max_value": "Должно быть не больше 10 000",
-    "invalid": "Некорректное значение",
-    "past": "Начало должно быть в будущем",
-    "below_confirmed": "Не меньше подтверждённых: {n}"
+    "required": "Required field",
+    "blank": "Required field",
+    "max_length": "The value is too long",
+    "min_value": "Must be at least 1",
+    "max_value": "Must be at most 10,000",
+    "invalid": "Invalid value",
+    "past": "The start must be in the future",
+    "below_confirmed": "Must be at least the number of confirmed participants ({n})"
   }
 }
 </i18n>

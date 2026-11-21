@@ -120,7 +120,7 @@ describe("LoginPage", () => {
 
     await fill(wrapper, "", "");
 
-    expect(wrapper.text()).toContain("Обязательное поле");
+    expect(wrapper.text()).toContain("Required field");
   });
 
   it("shows the email format hint with a literal @", async () => {
@@ -137,7 +137,7 @@ describe("LoginPage", () => {
 
     await fill(wrapper, "demo@example.com", "wrong");
 
-    expect(wrapper.get('[role="alert"]').text()).toBe("Неверный email или пароль");
+    expect(wrapper.get('[role="alert"]').text()).toBe("Wrong email or password");
     expect(router.currentRoute.value.path).toBe(routes.login);
   });
 
@@ -147,7 +147,7 @@ describe("LoginPage", () => {
 
     await fill(wrapper, "demo@example.com", "demo");
 
-    expect(wrapper.get('[role="alert"]').text()).toBe("Не удалось войти, попробуйте позже");
+    expect(wrapper.get('[role="alert"]').text()).toBe("Could not log in, try again later");
   });
 
   it("disables the button while the request is in flight", async () => {

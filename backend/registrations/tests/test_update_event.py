@@ -1,4 +1,5 @@
-from datetime import UTC, timedelta
+import re
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from django.utils import timezone
@@ -28,6 +29,9 @@ def rescheduled() -> list[OutboxEmail]:
 
 
 def test_reschedule_emails_confirmed_and_waitlisted_and_bumps_the_version(event: Event) -> None:
+    # A fixed date, so the email dates are literals here, not rebuilt the way the code builds them.
+    event.starts_at = datetime(2030, 5, 17, 18, 30, tzinfo=UTC)
+    event.save(update_fields=["starts_at"])
     seat = register(event.id, "a@x.io", "Ann").registration
     waiting = register(event.id, "b@x.io", "Bob").registration
     gone = register(event.id, "c@x.io", "Cid").registration
@@ -46,13 +50,12 @@ def test_reschedule_emails_confirmed_and_waitlisted_and_bumps_the_version(event:
     assert seat.ticket_code in to_seat.body
     # The waitlist email has no code and no position: the position goes stale, the link does not.
     assert waiting.ticket_code not in to_waiting.body
-    assert "№" not in to_waiting.body
-    old = old_start.astimezone(UTC).strftime("%d.%m.%Y %H:%M UTC")
-    new = new_start.astimezone(UTC).strftime("%d.%m.%Y %H:%M UTC")
+    assert "You are on the waitlist." in to_waiting.body
+    assert not re.search(r"#\d", to_waiting.body)
     for email in (to_seat, to_waiting):
-        assert email.subject == "Событие перенесено: Meetup"
-        assert old in email.body
-        assert new in email.body
+        assert email.subject == "Event rescheduled: Meetup"
+        assert "Was: 17 May 2030 18:30 UTC" in email.body
+        assert "Now: 18 May 2030 18:30 UTC" in email.body
     assert f"/tickets/{seat.manage_token}" in to_seat.body
     assert f"/tickets/{waiting.manage_token}" in to_waiting.body
 
