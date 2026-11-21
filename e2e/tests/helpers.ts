@@ -7,7 +7,7 @@ import {
 } from "@playwright/test";
 
 // Created by `create_demo_users`: `make e2e` and `stack-e2e` run it before the tests, the
-// backend does not at its start (docs/development.md, "Создать организатора").
+// backend does not at its start (docs/development.md, "Create an organizer").
 export const ORGANIZER = { email: "demo@example.com", password: "demo" };
 const MAILPIT_URL = process.env.E2E_MAILPIT_URL ?? "http://localhost:8025";
 
@@ -23,7 +23,7 @@ export async function organizerPage(browser: Browser): Promise<Page> {
 }
 
 // Collects the console errors of a page. The one allowed: a guest's 401 from `me`, the header
-// asking who is signed in — the answer for a guest, not a failure (frontend-polish spec, "Сессия").
+// asking who is signed in — the answer for a guest, not a failure (frontend-polish spec, "Session").
 export function collectConsoleErrors(page: Page, errors: string[]): void {
   page.on("console", (message) => {
     if (message.type() !== "error") return;

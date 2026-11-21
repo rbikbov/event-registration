@@ -67,12 +67,12 @@
 
 > да, перепиши. так же перепиши в начальном коммите @docs/task.md#3-4  на "Текст задания: общие требования, ожидаемый результат и задание." чтобы в истории репозитория не было упоминания компании
 
-⏺ Bash(git remote -v; git branch -a; git stash list; git status --short; echo ---; git grep -n -i "maddevs\|mad devs" $(git rev-list --all); echo ---; git log --all --format='%H %s%n%b' | grep -i "mad" ; git)
+⏺ Bash(git remote -v; git branch -a; git stash list; git status --short; echo ---; git grep -n -i "the company\|the company" $(git rev-list --all); echo ---; git log --all --format='%H %s%n%b' | grep -i "mad" ; git)
   ⎿  * main
      ---
-     2a0adf3e8ad4cab10fb77fe325837334314ba8d6:docs/task.md:3:Текст задания от MadDevs: общие требования, ожидаемый результат и задание 9 (выбрано из 14).
-     b701e6cd0c16c9f49a756d445755a11deb5437b3:docs/task.md:3:Текст задания от MadDevs: общие требования, ожидаемый результат и задание 9 (выбрано из 14).
-     81033ce40c5a49a2b589bd9f2a1a773eb82b826d:docs/task.md:3:Текст задания от MadDevs: общие требования, ожидаемый результат и задание 9 (выбрано из 14).
+     2a0adf3e8ad4cab10fb77fe325837334314ba8d6:docs/task.md:3:Текст задания от the company: общие требования, ожидаемый результат и задание 9 (выбрано из 14).
+     b701e6cd0c16c9f49a756d445755a11deb5437b3:docs/task.md:3:Текст задания от the company: общие требования, ожидаемый результат и задание 9 (выбрано из 14).
+     81033ce40c5a49a2b589bd9f2a1a773eb82b826d:docs/task.md:3:Текст задания от the company: общие требования, ожидаемый результат и задание 9 (выбрано из 14).
      ---
      … +4 lines
 
@@ -85,7 +85,7 @@
      ---
      … +5 lines
 
-⏺ Bash(ls -la docs/session; git check-ignore -v docs/session; grep -rli "maddevs" . --exclude-dir=.git)
+⏺ Bash(ls -la docs/session; git check-ignore -v docs/session; grep -rli "the company" . --exclude-dir=.git)
   ⎿  total 8
      drwxr-xr-x 2 raf raf 4096 Oct 28 18:56 .
      drwxr-xr-x 3 raf raf 4096 Oct 28 19:13 ..

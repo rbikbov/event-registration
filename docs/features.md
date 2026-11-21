@@ -1,30 +1,30 @@
-# Что работает
+# What works
 
-Все требования задания сделаны и покрыты тестами — [README](../README.md#требования-и-тесты)
-и [полная таблица](requirements.md). Ход работы по фазам — [roadmap.md](roadmap.md).
+All requirements of the assignment are done and covered by tests — the
+[README](../README.md#requirements-and-tests) and the [full table](requirements.md). The course of
+work by phases is in [roadmap.md](roadmap.md).
 
-Работают:
-вход организатора (демо: `demo@example.com` / `demo`), создание события, публичный список и
-страница события с регистрацией, лист ожидания с номером, защита от гонок за последнее место и
-за один email. Письма — с билетом, о попадании в лист ожидания и о полученном месте после
-чужого отказа — уходят через outbox и воркер в Mailpit (<http://localhost:8025>), с повторами
-при ошибке SMTP. Страница билета по ссылке из письма показывает код, номер в листе или отмену
-и позволяет отказаться. Организатор видит панель события — счётчики подтверждённых, листа
-ожидания и пришедших, список участников постранично с фильтром по статусу — и отмечает билеты
-на входе по коду: билет проходит один раз, в том числе при одновременных запросах, повтор
-показывает время первой отметки; от отмеченного билета отказаться нельзя. Счётчики панели и
-свободные места на странице события обновляются без перезагрузки во всех открытых вкладках
-(SSE и Postgres `LISTEN/NOTIFY`); при обрыве панель показывает «Соединение потеряно,
-переподключаюсь…» и после переподключения получает верные счётчики. Организатор
-редактирует событие: при переносе даты подтверждённые и стоящие в листе получают письмо, рост
-лимита отдаёт места первым из листа, лимит ниже числа подтверждённых не принимается. За сутки
-до события каждому, кто получил место раньше, приходит ровно одно напоминание — после
-переноса новое, о новой дате. `make seed` добавляет демо-события с участниками.
-Все экраны — в общем макете с шапкой: вход и выход организатора, возврат после входа на
-открытую страницу, одинаковые загрузка, ошибка с повтором и ссылкой на состояние сервиса,
-«не найдено» для неизвестного адреса; без сети — плашка под шапкой. Списки событий — по 20 на
-страницу, с вкладками «Предстоящие» и «Прошедшие». Каждый экран помещается в ширину телефона
-(360 px).
+What works:
+organizer login (demo: `demo@example.com` / `demo`), event creation, the public list and the event
+page with registration, a waitlist with a position, protection against races for the last seat and
+for one email. Emails — with a ticket, about getting onto the waitlist and about getting a seat
+after someone else cancelled — go through the outbox and the worker to Mailpit
+(<http://localhost:8025>), with retries on an SMTP error. The ticket page from the email link shows
+the code, the place on the waitlist or the cancellation, and lets the participant cancel. The
+organizer sees the event panel — counters of confirmed, waitlisted and arrived participants, a
+paged list of participants with a status filter — and checks tickets in at the entrance by code: a
+ticket passes once, including under simultaneous requests, a repeat shows the time of the first
+check-in; a checked-in ticket cannot be cancelled. The panel counters and the free seats on the
+event page update without a reload in all open tabs (SSE and Postgres `LISTEN/NOTIFY`); on a break
+the panel shows "Connection lost, reconnecting…" and gets the correct counters after reconnecting.
+The organizer edits an event: on a date change the confirmed and waitlisted participants get an
+email, a higher limit gives seats to the first ones on the waitlist, a limit below the confirmed
+count is not accepted. A day before the event everyone who got a seat earlier gets exactly one
+reminder — after a reschedule a new one, about the new date. `make seed` adds demo events with
+participants.
+All screens are in a shared layout with a header: organizer login and logout, a return to the open
+page after login, the same loading, error with a retry and a link to the service status, "not
+found" for an unknown address; without network — a bar under the header. Event lists have 20 per
+page, with the "Upcoming" and "Past" tabs. Every screen fits the width of a phone (360 px).
 
-Линтеры, проверки типов и тесты проходят локально и в CI на каждый PR (`make check`,
-`make e2e`).
+Linters, type checks and tests pass locally and in CI on every PR (`make check`, `make e2e`).

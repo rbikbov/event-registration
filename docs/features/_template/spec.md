@@ -1,50 +1,50 @@
-# <Фича>: spec
+# <Feature>: spec
 
-Фаза — `docs/roadmap.md`, фаза N. Статус: черновик | утверждён ГГГГ-ММ-ДД.
+Phase — `docs/roadmap.md`, phase N. Status: draft | approved YYYY-MM-DD.
 
-<!-- До 150 строк. Процесс — skill feature-workflow. -->
+<!-- Up to 150 lines. The process — the feature-workflow skill. -->
 
-## Что и зачем
+## What and why
 
-<Какие требования из docs/task.md закрывает фаза — 2–4 предложения.>
+<Which requirements from docs/task.md the phase covers — 2–4 sentences.>
 
 ## Non-Goals
 
-- <Что не делаем в этой фазе, хотя захочется.>
+- <What we do not do in this phase, even though we will want to.>
 
-## Модель данных
+## Data model
 
-<Таблицы, поля, ограничения БД, миграции.>
+<Tables, fields, database constraints, migrations.>
 
-## Инварианты
+## Invariants
 
-| Инвариант | Чем защищён                     | Тест |
-| --------- | ------------------------------- | ---- |
-| …         | ограничение БД / блокировка / … | …    |
+| Invariant | What protects it                   | Test |
+| --------- | ---------------------------------- | ---- |
+| …         | a database constraint / a lock / … | …    |
 
 ## API
 
-| Метод и путь | Вход | Ответ | Ошибки (статус → `kind`) |
-| ------------ | ---- | ----- | ------------------------ |
-| …            | …    | …     | …                        |
+| Method and path | Input | Response | Errors (status → `kind`) |
+| --------------- | ----- | -------- | ------------------------ |
+| …               | …     | …        | …                        |
 
 ## UI
 
-<Экраны, состояния: загрузка, ошибка, пусто, успех.>
+<Screens, states: loading, error, empty, success.>
 
-## Крайние случаи
+## Edge cases
 
 - …
 
-## Допущения и открытые вопросы
+## Assumptions and open questions
 
-<!-- Что задание и architecture.md не определяют (ограничения полей, коды ответов, пагинация…):
-     выбранное значение по умолчанию и почему. Человек подтверждает или меняет при утверждении. -->
+<!-- What the assignment and architecture.md do not define (field limits, response codes, paging…):
+     the chosen default and why. The human confirms or changes it on approval. -->
 
-- <Допущение: …, потому что …>
+- <Assumption: …, because …>
 
-## Сценарии приёмки
+## Acceptance scenarios
 
-| Сценарий              | Уровень теста         |
+| Scenario              | Test level            |
 | --------------------- | --------------------- |
 | Given … When … Then … | pytest / Vitest / e2e |

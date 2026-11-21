@@ -1,246 +1,251 @@
-# Руководство разработчика
+# Developer guide
 
-Всё, что нужно, чтобы начать работать с репозиторием: что установить, как запустить, какие
-команды есть, что проверяется автоматически и почему. Документ обновляется вместе с кодом:
-новая команда, инструмент, проверка или нюанс появляются здесь в том же коммите.
+Everything you need to start working on the repository: what to install, how to run it, what
+commands exist, what is checked automatically and why. The document is updated together with the
+code: a new command, tool, check or gotcha appears here in the same commit.
 
-Только посмотреть проект, без разработки, — [README](../README.md).
+To just look at the project, without developing it, see the [README](../README.md).
 
-## Содержание
+## Contents
 
-1. [Что установить](#что-установить)
-2. [Первая настройка](#первая-настройка)
-3. [Запуск](#запуск)
-4. [Команды](#команды)
-5. [Как вести задачу](#как-вести-задачу)
-6. [Типовые задачи](#типовые-задачи)
-7. [Что проверяется автоматически](#что-проверяется-автоматически)
-8. [Коммиты, решения, прогресс](#коммиты-решения-прогресс)
+1. [What to install](#what-to-install)
+2. [First-time setup](#first-time-setup)
+3. [Running](#running)
+4. [Commands](#commands)
+5. [Working on a task](#working-on-a-task)
+6. [Common tasks](#common-tasks)
+7. [Automatic checks](#automatic-checks)
+8. [Commits, decisions, progress](#commits-decisions-progress)
 9. [Backend](#backend) · [Frontend](#frontend) · [E2E](#e2e)
-10. [Правила и skills](#правила-и-skills)
-11. [Хуки Claude Code](#хуки-claude-code)
-12. [Нюансы](#нюансы)
+10. [Rules and skills](#rules-and-skills)
+11. [Claude Code hooks](#claude-code-hooks)
+12. [Gotchas](#gotchas)
 
-## Что установить
+## What to install
 
-| Инструмент       | Версия                                     | Зачем                                                                         | Как поставить                                                                                 |
-| ---------------- | ------------------------------------------ | ----------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| Node.js          | 22 (см. `.nvmrc`)                          | frontend, e2e, git-хуки, форматирование                                       | `nvm install` в корне репозитория                                                             |
-| pnpm             | 10 (см. `packageManager` в `package.json`) | зависимости Node (workspace: корень, `frontend/`, `e2e/`)                     | `corepack enable` — версию возьмёт из `package.json`                                          |
-| uv               | 0.13+                                      | Python и зависимости backend; Python из `backend/.python-version` скачает сам | `curl -LsSf https://astral.sh/uv/install.sh \| sh`                                            |
-| Docker + Compose | Docker Desktop или Docker Engine           | Postgres и весь стек                                                          | WSL: в Docker Desktop включить Settings → Resources → WSL Integration для своего дистрибутива |
-| make             | GNU make                                   | единая точка входа для команд                                                 | обычно уже есть; Debian/Ubuntu: `apt install make`                                            |
+| Tool             | Version                                     | What for                                                                         | How to install                                                                             |
+| ---------------- | ------------------------------------------- | -------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Node.js          | 22 (see `.nvmrc`)                           | frontend, e2e, git hooks, formatting                                             | `nvm install` in the repository root                                                       |
+| pnpm             | 10 (see `packageManager` in `package.json`) | Node dependencies (workspace: root, `frontend/`, `e2e/`)                         | `corepack enable` — it takes the version from `package.json`                               |
+| uv               | 0.13+                                       | Python and backend dependencies; downloads Python from `backend/.python-version` | `curl -LsSf https://astral.sh/uv/install.sh \| sh`                                         |
+| Docker + Compose | Docker Desktop or Docker Engine             | Postgres and the whole stack                                                     | WSL: in Docker Desktop enable Settings → Resources → WSL Integration for your distribution |
+| make             | GNU make                                    | a single entry point for commands                                                | usually already there; Debian/Ubuntu: `apt install make`                                   |
 
-## Первая настройка
-
-```sh
-make install    # зависимости Node и backend, браузер Playwright, git-хуки
-make dev-deps   # Postgres и Mailpit в Docker
-make check      # всё должно пройти
-```
-
-`pnpm install` (внутри `make install`) кроме зависимостей устанавливает git-хуки: скрипт
-`prepare` → husky прописывает `core.hooksPath=.husky/_`. Без этого хуки не работают и
-ошибки всплывут только в CI.
-
-## Запуск
-
-**Для разработки** — сервисы локально, с перезагрузкой при изменениях:
+## First-time setup
 
 ```sh
-make dev-deps       # Postgres и Mailpit
-make dev-backend    # терминал 1: миграции + uvicorn с перезагрузкой на :8000
-make dev-frontend   # терминал 2: http://localhost:5173
-make dev-worker     # терминал 3, если нужны письма: outbox → Mailpit, http://localhost:8025
+make install    # Node and backend dependencies, Playwright browser, git hooks
+make dev-deps   # Postgres and Mailpit in Docker
+make check      # everything must pass
 ```
 
-`make dev-backend` — uvicorn (ASGI), как в Docker, а не `runserver`: `runserver` — WSGI, и
-поток SSE (асинхронный генератор) он отдаёт только целиком, то есть никогда. uvicorn — с
-`--timeout-graceful-shutdown 3` (и в Docker): иначе `--reload` и `docker compose restart`
-ждут открытые потоки SSE без конца. `--reload` следит только за папками кода
-(`RELOAD_DIRS` в `Makefile`): за всем `backend/` вместе с `.venv` наблюдатель uvicorn в
-простое занимает 30–40 % ядра и с `StatReload`, и с `watchfiles`, `--reload-exclude` не
-помогает. Новое приложение Django — дописать в `RELOAD_DIRS`, иначе его код не
-перезагружается.
+Besides the dependencies, `pnpm install` (inside `make install`) installs the git hooks: the
+`prepare` script → husky sets `core.hooksPath=.husky/_`. Without it the hooks do not run and
+errors show up only in CI.
 
-Фронтенд и API открываются с одного адреса (:5173): Vite проксирует `/api` на backend,
-поэтому cookie сессии и `EventSource` работают без CORS. Адрес backend для прокси —
-переменная `API_PROXY_TARGET` (по умолчанию `http://localhost:8000`).
+## Running
 
-**Весь стек в Docker** — как его запускает проверяющий:
+**For development** — services run locally and reload on changes:
 
 ```sh
-make up     # собрать и поднять postgres, backend, worker, mailpit, frontend; http://localhost:5173
-make demo-users  # демо-учётки (один раз на новую базу)
-make seed   # демо-события с участниками; каждый запуск добавляет два новых
-make logs   # логи всех сервисов
-make down   # остановить; данные БД остаются в томе postgres-data
+make dev-deps       # Postgres and Mailpit
+make dev-backend    # terminal 1: migrations + uvicorn with reload on :8000
+make dev-frontend   # terminal 2: http://localhost:5173
+make dev-worker     # terminal 3, if you need emails: outbox → Mailpit, http://localhost:8025
 ```
 
-`make demo-users` нужна один раз на новую базу. Повторный вызов вернёт демо-пароли, если их меняли (это завершит сессии той
-учётки); неизменённые пароли и открытые сессии он не трогает.
+`make dev-backend` runs uvicorn (ASGI), as in Docker, not `runserver`: `runserver` is WSGI, and
+it sends an SSE stream (an async generator) only as a whole, that is, never. uvicorn runs with
+`--timeout-graceful-shutdown 3` (in Docker too): otherwise `--reload` and `docker compose restart`
+wait for open SSE streams forever. `--reload` watches only the code folders (`RELOAD_DIRS` in
+the `Makefile`): watching all of `backend/` together with `.venv`, the uvicorn watcher takes
+30–40 % of a core while idle, with both `StatReload` and `watchfiles`, and `--reload-exclude`
+does not help. A new Django app has to be added to `RELOAD_DIRS`, otherwise its code does not
+reload.
 
-`make seed` добавляет демо-организатору два события с участниками (`@example.com`): полное
-через неделю с листом ожидания и событие через ~23 ч — через ~30 с участникам последнего
-приходят напоминания (видно в Mailpit). Каждый запуск добавляет новые события.
+The frontend and the API are served from one address (:5173): Vite proxies `/api` to the
+backend, so the session cookie and `EventSource` work without CORS. The backend address for the
+proxy is the `API_PROXY_TARGET` variable (default `http://localhost:8000`).
 
-| Сервис   | Адрес                   | Что это                                                   |
-| -------- | ----------------------- | --------------------------------------------------------- |
-| frontend | <http://localhost:5173> | Vue (dev-сервер Vite); `/api` проксируется на backend     |
-| backend  | <http://localhost:8000> | Django + DRF под uvicorn; миграции применяются при старте |
-| postgres | `localhost:5432`        | PostgreSQL 17, пользователь и пароль `postgres`           |
-| mailpit  | <http://localhost:8025> | SMTP-ловушка: сюда приходят все письма (наружу не уходят) |
-| worker   | —                       | отправляет письма из outbox в Mailpit                     |
+**The whole stack in Docker** — the way a reviewer runs it:
 
-Порты меняются переменными `FRONTEND_PORT`, `BACKEND_PORT`, `POSTGRES_PORT`, `MAILPIT_PORT`
-(веб Mailpit) и `MAILPIT_SMTP_PORT`.
+```sh
+make up     # build and start postgres, backend, worker, mailpit, frontend; http://localhost:5173
+make demo-users  # demo accounts (once per new database)
+make seed   # demo events with participants; each run adds two new ones
+make logs   # logs of all services
+make down   # stop; the database data stays in the postgres-data volume
+```
 
-- `make up` = `docker compose up -d --build --wait`: ждёт healthcheck всех сервисов.
-- `backend/Dockerfile`: Python 3.12 + uv, зависимости из `uv.lock` без dev-группы; при старте
-  `migrate`, затем uvicorn (ASGI — для потоков SSE).
-  Токен из ссылки билета в логи backend не попадает: фильтр `config.log_redaction` заменяет
-  его на `<token>` в access-логах uvicorn и `runserver` (`django.server`) и
-  в предупреждениях `django.request` («Not Found»). Оба access-лога поэтому описаны заново в
-  `LOGGING` (`config/settings.py`) со своими форматами: Django применяет его после uvicorn и
-  после своих настроек по умолчанию, а описание логгера заменяет его обработчики.
-- `worker` — тот же образ `backend` с командой `python manage.py run_worker`: берёт из outbox
-  пачки до 20 писем подряд и отправляет их в Mailpit; если писем нет — ждёт 1 с. Стартует
-  после healthy `backend` (миграции применены) и Mailpit, после падения перезапускается
-  (`restart: unless-stopped`). В логе — только `id` писем и класс ошибки, без адресов и
-  ссылок. Письмо, которое не ушло (Mailpit остановлен), остаётся `pending` и повторяется через
-  30 с, 60 с, 120 с, 240 с; после 5 неудач — `failed`. `attempts`, `last_error` и время
-  следующей попытки видны в админке («Outbox emails»). Недоступен Postgres — воркер пишет
-  `Outbox poll failed` и повторяет через 5 с, не завершаясь.
-- Mailpit — SMTP-ловушка: письма не уходят наружу, их видно в веб-интерфейсе
-  http://localhost:8025 (он же API для e2e). SMTP опубликован на :1025 для `make dev-worker`.
-- `frontend/Dockerfile` собирается из корня репозитория (там pnpm workspace и lock-файл).
-  Стадия — переменная `FRONTEND_TARGET` (`build.target` в compose): `dev` (по умолчанию) —
-  dev-сервер Vite с `API_PROXY_TARGET=http://backend:8000`; `gateway` — `vite build` и nginx
-  (`frontend/nginx.conf`) на том же порту: отдаёт `dist/` (неизвестный путь — `index.html`) и
-  проксирует `/api`, `/admin`, `/static` на backend с `Host` клиента. `gateway` ставят
-  `make e2e` и `stack-e2e` (и CI через `make e2e`): e2e идут через прокси с буферизацией, как
-  в продакшене. На слоте 0 `make e2e` подменяет фронтенд `make up` сборкой, следующий
-  `make up` возвращает Vite. Типы сборка не проверяет — это делает `make check`.
-- Поток SSE за nginx: backend шлёт `X-Accel-Buffering: no`. Буферизация nginx сама поток не
-  задерживает, но вместе с gzip для `text/event-stream` — да, и без заголовка снимки не
-  доходят; заголовок нужен всегда, особенно если в прокси включают сжатие.
-- `make up` и `make dev-*` занимают одни и те же порты (5173, 8000): не запускать одновременно
-  или поменять порты переменными `FRONTEND_PORT`, `BACKEND_PORT`, `POSTGRES_PORT`,
-  `MAILPIT_PORT` (веб, 8025), `MAILPIT_SMTP_PORT` (1025). Ссылки в письмах ведут на
+`make demo-users` is needed once per new database. Running it again restores the demo passwords
+if they were changed (this ends the sessions of that account); it leaves unchanged passwords and
+open sessions alone.
+
+`make seed` adds two events with participants (`@example.com`) to the demo organizer: a full one
+in a week with a waitlist, and an event in ~23 h — ~30 s later the participants of the latter get
+reminders (visible in Mailpit). Each run adds new events.
+
+| Service  | Address                 | What it is                                                  |
+| -------- | ----------------------- | ----------------------------------------------------------- |
+| frontend | <http://localhost:5173> | Vue (Vite dev server); `/api` is proxied to the backend     |
+| backend  | <http://localhost:8000> | Django + DRF under uvicorn; migrations are applied at start |
+| postgres | `localhost:5432`        | PostgreSQL 17, user and password `postgres`                 |
+| mailpit  | <http://localhost:8025> | SMTP trap: all emails land here (nothing goes out)          |
+| worker   | —                       | sends emails from the outbox to Mailpit                     |
+
+Ports are changed with the `FRONTEND_PORT`, `BACKEND_PORT`, `POSTGRES_PORT`, `MAILPIT_PORT`
+(Mailpit web) and `MAILPIT_SMTP_PORT` variables.
+
+- `make up` = `docker compose up -d --build --wait`: waits for the healthchecks of all services.
+- `backend/Dockerfile`: Python 3.12 + uv, dependencies from `uv.lock` without the dev group; at
+  start `migrate`, then uvicorn (ASGI — for SSE streams).
+  The token from a ticket link does not get into the backend logs: the `config.log_redaction`
+  filter replaces it with `<token>` in the uvicorn and `runserver` (`django.server`) access logs
+  and in `django.request` warnings ("Not Found"). That is why both access logs are described
+  anew in `LOGGING` (`config/settings.py`) with their own formats: Django applies it after
+  uvicorn and after its own defaults, and a logger description replaces its handlers.
+- `worker` is the same `backend` image with the `python manage.py run_worker` command: it takes
+  batches of up to 20 emails from the outbox in a row and sends them to Mailpit; if there are no
+  emails it waits 1 s. It starts after `backend` is healthy (migrations applied) and after
+  Mailpit, and restarts after a crash (`restart: unless-stopped`). The log has only email `id`s
+  and the error class, no addresses or links. An email that did not go out (Mailpit stopped)
+  stays `pending` and is retried after 30 s, 60 s, 120 s, 240 s; after 5 failures it is
+  `failed`. `attempts`, `last_error` and the time of the next attempt are visible in the admin
+  ("Outbox emails"). If Postgres is unavailable, the worker logs `Outbox poll failed` and retries
+  after 5 s without exiting.
+- Mailpit is an SMTP trap: emails do not go out, they are visible in the web UI at
+  http://localhost:8025 (it is also the API for e2e). SMTP is published on :1025 for
+  `make dev-worker`.
+- `frontend/Dockerfile` is built from the repository root (the pnpm workspace and the lock file
+  are there). The stage is the `FRONTEND_TARGET` variable (`build.target` in compose): `dev`
+  (default) — the Vite dev server with `API_PROXY_TARGET=http://backend:8000`; `gateway` —
+  `vite build` and nginx (`frontend/nginx.conf`) on the same port: serves `dist/` (an unknown
+  path gets `index.html`) and proxies `/api`, `/admin`, `/static` to the backend with the
+  client's `Host`. `gateway` is set by `make e2e` and `stack-e2e` (and by CI through `make e2e`):
+  e2e goes through a buffering proxy, as in production. On slot 0 `make e2e` replaces the
+  frontend of `make up` with the build, the next `make up` brings Vite back. The build does not
+  check types — `make check` does.
+- An SSE stream behind nginx: the backend sends `X-Accel-Buffering: no`. nginx buffering alone
+  does not delay the stream, but together with gzip for `text/event-stream` it does, and without
+  the header the snapshots do not arrive; the header is always needed, especially if compression
+  is turned on in the proxy.
+- `make up` and `make dev-*` take the same ports (5173, 8000): do not run them at the same time,
+  or change the ports with the `FRONTEND_PORT`, `BACKEND_PORT`, `POSTGRES_PORT`, `MAILPIT_PORT`
+  (web, 8025), `MAILPIT_SMTP_PORT` (1025) variables. Links in emails point to
   `http://localhost:${FRONTEND_PORT}`.
-- Стереть данные БД: `docker compose down -v`.
+- Wipe the database data: `docker compose down -v`.
 
-## Команды
+## Commands
 
-Основной вход — `make`; `make help` печатает все цели с описанием. Новая команда должна
-появиться и в Makefile, и в этой таблице.
+The main entry point is `make`; `make help` prints all targets with descriptions. A new command
+must appear both in the Makefile and in this table.
 
-| Команда                                                       | Что делает                                                                                                                                                                      |
-| ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Окружение**                                                 |                                                                                                                                                                                 |
-| `make install`                                                | зависимости Node и backend, браузер Playwright (chromium), git-хуки                                                                                                             |
-| `make dev-deps`                                               | поднять Postgres и Mailpit в Docker и дождаться готовности                                                                                                                      |
-| `make dev-backend` / `make dev-frontend`                      | локальные dev-серверы (см. «Запуск»)                                                                                                                                            |
-| `make dev-worker`                                             | локальный воркер писем: outbox → Mailpit (`manage.py run_worker`)                                                                                                               |
-| `make up` / `make down` / `make logs`                         | весь стек в Docker                                                                                                                                                              |
-| **Проверки**                                                  |                                                                                                                                                                                 |
-| `make check`                                                  | всё, кроме запуска e2e: форматирование, линтеры, типы, схема, тесты — то же, что CI                                                                                             |
-| `make check-backend`                                          | ruff, mypy, миграции, схема, pytest                                                                                                                                             |
-| `make check-frontend`                                         | ESLint, vue-tsc, Vitest                                                                                                                                                         |
-| `make check-e2e`                                              | ESLint и tsc для кода e2e-тестов (сами тесты не запускает)                                                                                                                      |
-| `make check-tooling`                                          | тесты хуков Claude Code и `scripts/` (`node:test`)                                                                                                                              |
-| `make check-readme`                                           | README и `docs/requirements.md`: каждый тест из таблиц «Требования и тесты» существует — файл, функция, название; ссылки на тесты вне таблиц не проверяются, поэтому их там нет |
-| `make check-ci`                                               | workflow GitHub Actions: actionlint и существование тегов actions (нужна сеть)                                                                                                  |
-| `make format-check`                                           | Prettier: форматирование всех файлов                                                                                                                                            |
-| `make lint-backend` / `typecheck-backend` / `test-backend`    | по отдельности: ruff / mypy / pytest (pytest нужен `make dev-deps`)                                                                                                             |
-| `make lint-frontend` / `typecheck-frontend` / `test-frontend` | по отдельности: ESLint / vue-tsc / Vitest                                                                                                                                       |
-| `make migrations-check`                                       | падает, если модели изменены, а миграция не создана                                                                                                                             |
-| `make schema-check`                                           | падает, если `openapi.yaml` или `schema.d.ts` устарели или у view нет описания для схемы                                                                                        |
-| `make demo-users` / `make stack-demo-users SLOT=<N>`          | демо-учётки в запущенном стеке / в стеке слота (см. «Создать организатора»)                                                                                                     |
-| `make seed` / `make stack-seed SLOT=<N>`                      | демо-события с участниками в запущенном стеке / в стеке слота (см. «Демо-данные»)                                                                                               |
-| `make e2e`                                                    | поднять стек (`make up`) со шлюзом nginx и прогнать Playwright против него                                                                                                      |
-| `make stack-up` / `stack-e2e` / `stack-down` `SLOT=<N>`       | стек слота (см. «E2E»): поднять / e2e против него / удалить с томами                                                                                                            |
-| `make stack-check SLOT=<N>`                                   | `make check` на Postgres слота, а не на Postgres из `make dev-deps`                                                                                                             |
-| `make stack-check-backend SLOT=<N>`                           | `make check-backend` на Postgres слота                                                                                                                                          |
-| `make review-worktree REF=<sha>` / `review-worktree-remove`   | копия репозитория для агента `reviewer` на коммите `<sha>` / удалить её                                                                                                         |
-| **Изменения**                                                 |                                                                                                                                                                                 |
-| `make schema`                                                 | пересобрать `backend/openapi.yaml` и типы фронтенда `schema.d.ts` после изменения API                                                                                           |
-| `make fmt`                                                    | отформатировать всё: `eslint --fix`, Prettier, `ruff check --fix`, `ruff format`                                                                                                |
-| **Прочее**                                                    |                                                                                                                                                                                 |
-| `make worktime`                                               | время работы по маркерам сессий в `decisions.md` (см. «Коммиты, решения, прогресс»)                                                                                             |
-| `make export-sessions`                                        | сессии Claude Code проекта — текстом в `docs/session/` (см. «Коммиты, решения, прогресс»)                                                                                       |
+| Command                                                       | What it does                                                                                                                                                                               |
+| ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Environment**                                               |                                                                                                                                                                                            |
+| `make install`                                                | Node and backend dependencies, Playwright browser (chromium), git hooks                                                                                                                    |
+| `make dev-deps`                                               | start Postgres and Mailpit in Docker and wait until they are ready                                                                                                                         |
+| `make dev-backend` / `make dev-frontend`                      | local dev servers (see "Running")                                                                                                                                                          |
+| `make dev-worker`                                             | local email worker: outbox → Mailpit (`manage.py run_worker`)                                                                                                                              |
+| `make up` / `make down` / `make logs`                         | the whole stack in Docker                                                                                                                                                                  |
+| **Checks**                                                    |                                                                                                                                                                                            |
+| `make check`                                                  | everything except running e2e: formatting, linters, types, schema, tests — the same as CI                                                                                                  |
+| `make check-backend`                                          | ruff, mypy, migrations, schema, pytest                                                                                                                                                     |
+| `make check-frontend`                                         | ESLint, vue-tsc, Vitest                                                                                                                                                                    |
+| `make check-e2e`                                              | ESLint and tsc for the e2e test code (does not run the tests)                                                                                                                              |
+| `make check-tooling`                                          | tests of the Claude Code hooks and `scripts/` (`node:test`)                                                                                                                                |
+| `make check-readme`                                           | README and `docs/requirements.md`: every test in the "Requirements and tests" tables exists — file, function, title; test references outside the tables are not checked, so there are none |
+| `make check-ci`                                               | GitHub Actions workflows: actionlint and that the action tags exist (needs network)                                                                                                        |
+| `make format-check`                                           | Prettier: formatting of all files                                                                                                                                                          |
+| `make lint-backend` / `typecheck-backend` / `test-backend`    | separately: ruff / mypy / pytest (pytest needs `make dev-deps`)                                                                                                                            |
+| `make lint-frontend` / `typecheck-frontend` / `test-frontend` | separately: ESLint / vue-tsc / Vitest                                                                                                                                                      |
+| `make migrations-check`                                       | fails if models are changed and no migration is created                                                                                                                                    |
+| `make schema-check`                                           | fails if `openapi.yaml` or `schema.d.ts` are outdated or a view has no description for the schema                                                                                          |
+| `make demo-users` / `make stack-demo-users SLOT=<N>`          | demo accounts in the running stack / in the slot's stack (see "Create an organizer")                                                                                                       |
+| `make seed` / `make stack-seed SLOT=<N>`                      | demo events with participants in the running stack / in the slot's stack (see "Demo data")                                                                                                 |
+| `make e2e`                                                    | start the stack (`make up`) with the nginx gateway and run Playwright against it                                                                                                           |
+| `make stack-up` / `stack-e2e` / `stack-down` `SLOT=<N>`       | the slot's stack (see "E2E"): start / e2e against it / remove with volumes                                                                                                                 |
+| `make stack-check SLOT=<N>`                                   | `make check` on the slot's Postgres instead of the Postgres from `make dev-deps`                                                                                                           |
+| `make stack-check-backend SLOT=<N>`                           | `make check-backend` on the slot's Postgres                                                                                                                                                |
+| `make review-worktree REF=<sha>` / `review-worktree-remove`   | a copy of the repository for the `reviewer` agent at commit `<sha>` / remove it                                                                                                            |
+| **Changes**                                                   |                                                                                                                                                                                            |
+| `make schema`                                                 | rebuild `backend/openapi.yaml` and the frontend types `schema.d.ts` after an API change                                                                                                    |
+| `make fmt`                                                    | format everything: `eslint --fix`, Prettier, `ruff check --fix`, `ruff format`                                                                                                             |
+| **Other**                                                     |                                                                                                                                                                                            |
+| `make worktime`                                               | working time from the session markers in `decisions.md` (see "Commits, decisions, progress")                                                                                               |
+| `make export-sessions`                                        | the project's Claude Code sessions as text in `docs/session/` (see "Commits, decisions, progress")                                                                                         |
 
-Команды Django — из `backend/` через uv: `uv run python manage.py <команда>`.
+Django commands run from `backend/` through uv: `uv run python manage.py <command>`.
 
-## Как вести задачу
+## Working on a task
 
-Порядок для разработчика, который ведёт задачу вместе с Claude Code. Агент идёт по тем же
-шагам, но по своим инструкциям — skills `feature-workflow` (фаза целиком) и `session-handoff`
-(начало и конец работы) и `AGENTS.md` (в том числе свой слот стека); команды этого раздела
-для него не действуют.
+The order for a developer working on a task together with Claude Code. The agent follows the same
+steps, but by its own instructions — the `feature-workflow` (a whole phase) and `session-handoff`
+(start and end of work) skills and `AGENTS.md` (including its own stack slot); the commands of
+this section do not apply to it.
 
-**1. Найти задачу.** В [roadmap.md](roadmap.md) — фаза со статусом «в работе», в ней первая
-неотмеченная задача. Задачи фаз 1–7 лежат в `docs/features/<slug>/tasks.md`.
-Перед началом — `git pull` и чистый `git status`.
+**1. Find the task.** In [roadmap.md](roadmap.md) — the phase with the "in progress" status, and
+in it the first unchecked task. The tasks of phases 1–7 are in `docs/features/<slug>/tasks.md`.
+Before starting — `git pull` and a clean `git status`.
 
-**2. Крупная фаза только началась — сначала spec и задачи, потом код.**
+**2. A large phase has just started — spec and tasks first, code after.**
 
-1. Прочитать раздел фазы в [architecture.md](architecture.md) и требования в
+1. Read the phase's section in [architecture.md](architecture.md) and the requirements in
    [task.md](task.md).
-2. Скопировать `docs/features/_template/spec.md` и `tasks.md` в `docs/features/<slug>/`.
-3. Spec — до 150 строк: модель, инварианты и чем они защищены, API, состояния UI, крайние
-   случаи, сценарии приёмки. **Non-Goals обязательны** — список того, что не делаем, хотя
-   захочется.
-4. Задачи — «одна задача = один коммит», у каждой «готово, когда»; первая — tracer bullet:
-   один сценарий насквозь, от модели до экрана.
-5. Spec и задачи утверждает владелец проекта, до первой строки кода. Коммит —
+2. Copy `docs/features/_template/spec.md` and `tasks.md` to `docs/features/<slug>/`.
+3. Spec — up to 150 lines: model, invariants and what protects them, API, UI states, edge cases,
+   acceptance scenarios. **Non-Goals are required** — a list of what we do not do, even though
+   we will want to.
+4. Tasks — "one task = one commit", each with "done when"; the first is a tracer bullet: one
+   scenario end to end, from the model to the screen.
+5. The project owner approves the spec and tasks before the first line of code. Commit —
    `docs: add <slug> spec and tasks`.
 
-**3. Перед кодом.** Прочитать `AGENTS.md` папок, которые затронет задача, и `docs/rules/` по
-теме ([список](#правила-и-skills)). Найти похожий код и переиспользовать, а не писать второй
-вариант того же.
+**3. Before the code.** Read the `AGENTS.md` of the folders the task touches and the
+`docs/rules/` on the topic ([list](#rules-and-skills)). Find similar code and reuse it instead of
+writing a second version of the same thing.
 
-**4. Тест вперёд — для логики.** Сервисы backend, чистые функции, преобразования: сначала
-тест, он должен упасть по ожидаемой причине, потом код. Разметку и стили проверяют браузер и
-e2e. Изменения API и моделей — по рецептам из «[Типовых задач](#типовые-задачи)».
+**4. Test first — for logic.** Backend services, pure functions, transformations: the test comes
+first, it must fail for the expected reason, then the code. Markup and styles are checked by the
+browser and e2e. API and model changes follow the recipes from "[Common tasks](#common-tasks)".
 
-**5. Проверить.**
+**5. Check.**
 
-- `make check` — всегда;
-- `make e2e` — если затронуты API, UI или сценарии из `e2e/`;
-- руками в браузере (`make dev-backend` + `make dev-frontend`): сценарий задачи и негативные
-  случаи — пустые данные, ошибка, повторная отправка, две вкладки.
+- `make check` — always;
+- `make e2e` — if the API, the UI or scenarios from `e2e/` are touched;
+- by hand in the browser (`make dev-backend` + `make dev-frontend`): the task's scenario and the
+  negative cases — empty data, an error, a repeated submit, two tabs.
 
-**6. Обновить в том же коммите** — чек-лист:
+**6. Update in the same commit** — checklist:
 
-- [ ] задача отмечена `[x]` в roadmap или в `tasks.md` фазы;
-- [ ] принятые по ходу решения — в [decisions.md](decisions.md) (время — из `date`);
-- [ ] новая команда, инструмент, проверка, нюанс — в этом файле;
-- [ ] поведение разошлось со spec — поправлен `spec.md`;
-- [ ] найденное вне задачи — в «На потом» в `tasks.md`, а не в этот коммит.
+- [ ] the task is checked `[x]` in the roadmap or in the phase's `tasks.md`;
+- [ ] decisions made along the way are in [decisions.md](decisions.md) (time from `date`);
+- [ ] a new command, tool, check, gotcha is in this file;
+- [ ] the behavior diverged from the spec — `spec.md` is fixed;
+- [ ] whatever was found outside the task goes to "Later" in `tasks.md`, not into this commit.
 
-**7. Закоммитить** — одна задача, одно сообщение в формате Conventional Commits. Если
-`pre-commit` или `commit-msg` остановили коммит — исправить причину, хук не обходить.
+**7. Commit** — one task, one message in the Conventional Commits format. If `pre-commit` or
+`commit-msg` stopped the commit, fix the cause, do not bypass the hook.
 
-**8. Отправить.** `git push`: `pre-push` проверит затронутые части, затем CI — результат в
-Actions на GitHub или `gh run watch`. Красный CI — первая задача, прежде чем брать следующую.
-Этап фазы — ветка от `main` и pull request; название PR — по правилу из
-[AGENTS.md](../AGENTS.md) («Коммиты маленькими шагами»). CI на PR дополнительно проверит
-сообщения всех коммитов.
+**8. Push.** `git push`: `pre-push` checks the affected parts, then CI — the result is in Actions
+on GitHub or in `gh run watch`. A red CI is the first task before taking the next one. A phase
+stage is a branch from `main` and a pull request; the PR title follows the rule in
+[AGENTS.md](../AGENTS.md) ("Small commits"). CI on a PR additionally checks the messages of all
+commits.
 
-**9. Закрыть фазу**, когда все её задачи отмечены:
+**9. Close the phase** when all its tasks are checked:
 
-- критерии фазы из roadmap проверены фактами — тест, команда, вывод;
-- разделы фазы в [architecture.md](architecture.md) приведены к коду и помечены
-  «реализовано»;
-- обновлены [features.md](features.md) и строки «требование → тест» в [README](../README.md)
-  и [requirements.md](requirements.md);
-- в roadmap фаза — «готова», следующая — «в работе»; закрытие — запись в
+- the phase criteria from the roadmap are verified with facts — a test, a command, an output;
+- the phase's sections in [architecture.md](architecture.md) are brought in line with the code
+  and marked "implemented";
+- [features.md](features.md) and the "requirement → test" rows in the [README](../README.md) and
+  [requirements.md](requirements.md) are updated;
+- in the roadmap the phase is "done", the next one is "in progress"; the closing is an entry in
   [decisions.md](decisions.md);
-- независимое ревью каждого этапа: человек или агент `reviewer` (что ему передавать —
-  skill `feature-workflow`, «Ревью»); находки разбирает человек.
+- an independent review of each stage: a human or the `reviewer` agent (what to give it — the
+  `feature-workflow` skill, "Review"); a human goes through the findings.
 
-Как выглядит история фазы:
+What a phase's history looks like:
 
 ```text
 docs: add registration spec and tasks
@@ -253,115 +258,116 @@ test(e2e): organizer creates an event, participant registers
 docs: close phase 1 (registration)
 ```
 
-## Типовые задачи
+## Common tasks
 
-**Изменить API** (serializer, view, URL):
+**Change the API** (serializer, view, URL):
 
-1. Код и тест backend.
-2. Ответ не из serializer, несколько статусов или поток — описать через `@extend_schema`
-   (пример — `backend/config/health.py`).
-3. `make schema` — обновит `backend/openapi.yaml` и `frontend/src/shared/api/schema.d.ts`.
-4. `make check-frontend`: если фронтенд использует изменённое поле, упадёт vue-tsc — это и
-   есть проверка контракта.
-5. Схема и типы — в том же коммите, что и код.
+1. Backend code and test.
+2. A response not from a serializer, several statuses or a stream — describe it with
+   `@extend_schema` (example — `backend/config/health.py`).
+3. `make schema` — updates `backend/openapi.yaml` and `frontend/src/shared/api/schema.d.ts`.
+4. `make check-frontend`: if the frontend uses a changed field, vue-tsc fails — that is the
+   contract check.
+5. The schema and types go in the same commit as the code.
 
-**Изменить модели БД:**
+**Change database models:**
 
-1. `cd backend && uv run python manage.py makemigrations <app> --name <что_сделано>`.
-2. Посмотреть SQL: `uv run python manage.py sqlmigrate <app> <номер>`.
-3. Правила (не править закоммиченные, схема и данные раздельно) —
+1. `cd backend && uv run python manage.py makemigrations <app> --name <what_was_done>`.
+2. Look at the SQL: `uv run python manage.py sqlmigrate <app> <number>`.
+3. Rules (do not edit committed ones, schema and data separately) —
    [rules/db-migrations.md](rules/db-migrations.md).
 
-**Создать организатора** (вход в админку и экраны организатора):
-`cd backend && uv run python manage.py createsuperuser`. Демо-учётки `demo@example.com` /
-`demo` и `admin@example.com` / `admin` создаёт `python manage.py create_demo_users` (идемпотентна,
-возвращает демо-пароли, если их меняли): в стеке — `make demo-users` после `make up`, в стеке
-слота — `make stack-demo-users`; `make e2e` и `stack-e2e` вызывают её сами, при старте
-`backend` она не запускается. Пароль, который подходит, команда не меняет: новый хеш даже того
-же пароля завершает все сессии учётки (Django привязывает сессию к хешу). При
-`DJANGO_DEBUG=false` команда ничего не создаёт и не меняет паролей, только пишет предупреждение:
-известные пароли и суперпользователь не должны попасть в развёртывание без DEBUG.
+**Create an organizer** (admin login and organizer screens):
+`cd backend && uv run python manage.py createsuperuser`. The demo accounts `demo@example.com` /
+`demo` and `admin@example.com` / `admin` are created by `python manage.py create_demo_users`
+(idempotent, restores the demo passwords if they were changed): in the stack — `make demo-users`
+after `make up`, in a slot's stack — `make stack-demo-users`; `make e2e` and `stack-e2e` call it
+themselves, it does not run at `backend` start. The command does not change a password that
+already matches: a new hash even of the same password ends all sessions of the account (Django
+binds a session to the hash). With `DJANGO_DEBUG=false` the command creates nothing and changes
+no passwords, it only prints a warning: known passwords and a superuser must not get into a
+deployment without DEBUG.
 
-**Демо-данные:** `make seed` (`python manage.py seed_demo`; в стеке слота — `make stack-seed`)
-создаёт демо-учётки и добавляет демо-организатору два события: через неделю на 2 места
-(2 подтверждено, 1 в листе) и через ~23 ч на 10 мест с 3 участниками, получившими место
-двумя днями раньше. Регистрации идут через `register`, поэтому письма с билетами уходят, а
-через ~30 с (проход напоминаний воркера) в Mailpit приходят три напоминания. Команда не
-идемпотентна: каждый запуск добавляет новые события, так что событие «завтра» всегда свежее.
-При `DJANGO_DEBUG=false` ничего не создаёт. Ссылки в напоминаниях рендерит воркер, поэтому
-`FRONTEND_URL` в `docker-compose.yml` задан и ему.
+**Demo data:** `make seed` (`python manage.py seed_demo`; in a slot's stack — `make stack-seed`)
+creates the demo accounts and adds two events to the demo organizer: in a week with 2 seats
+(2 confirmed, 1 on the waitlist) and in ~23 h with 10 seats and 3 participants who got their
+seats two days earlier. Registrations go through `register`, so ticket emails go out, and ~30 s
+later (the worker's reminder pass) three reminders arrive in Mailpit. The command is not
+idempotent: each run adds new events, so the "tomorrow" event is always fresh. With
+`DJANGO_DEBUG=false` it creates nothing. Links in reminders are rendered by the worker, so
+`FRONTEND_URL` in `docker-compose.yml` is set for it too.
 
-**Запустить один тест:**
+**Run a single test:**
 
 - backend: `cd backend && uv run pytest accounts/tests/test_user.py -k lowercase`;
 - frontend: `cd frontend && pnpm test src/pages/health`;
-- e2e: `cd e2e && pnpm test tests/smoke.spec.ts` (`--headed` — с окном, `--debug` —
-  отладчик).
+- e2e: `cd e2e && pnpm test tests/smoke.spec.ts` (`--headed` — with a window, `--debug` — the
+  debugger).
 
-## Что проверяется автоматически
+## Automatic checks
 
-| Когда        | Хук          | Что проверяет                                                                    |
-| ------------ | ------------ | -------------------------------------------------------------------------------- |
-| `git commit` | `pre-commit` | lint-staged — только изменённые файлы, см. таблицу ниже                          |
-| `git commit` | `commit-msg` | commitlint: сообщение в формате Conventional Commits                             |
-| `git push`   | `pre-push`   | `scripts/pre-push.mjs`: проверки тех частей, которые меняют отправляемые коммиты |
-| push / PR    | CI           | `make check` и `make e2e` на GitHub Actions                                      |
+| When         | Hook         | What it checks                                                        |
+| ------------ | ------------ | --------------------------------------------------------------------- |
+| `git commit` | `pre-commit` | lint-staged — only the changed files, see the table below             |
+| `git commit` | `commit-msg` | commitlint: the message is in the Conventional Commits format         |
+| `git push`   | `pre-push`   | `scripts/pre-push.mjs`: checks of the parts the pushed commits change |
+| push / PR    | CI           | `make check` and `make e2e` on GitHub Actions                         |
 
-**`pre-commit` (lint-staged).** Исправления добавляются в коммит; то, что не исправляется
-автоматически, останавливает коммит.
+**`pre-commit` (lint-staged).** Fixes are added to the commit; what cannot be fixed automatically
+stops the commit.
 
-| Файлы                       | Что запускается                   |
+| Files                       | What runs                         |
 | --------------------------- | --------------------------------- |
 | `backend/**/*.py`           | `ruff check --fix`, `ruff format` |
 | `frontend/**/*.{ts,vue,js}` | `eslint --fix`, Prettier          |
 | `e2e/**/*.{ts,js}`          | `eslint --fix`, Prettier          |
 | `*.{mjs,json,md,yml,yaml}`  | Prettier                          |
 
-**`pre-push`.** Медленные проверки (типы, тесты) — здесь, а не в `pre-commit`: хук, который
-тормозит каждый коммит, начинают обходить.
+**`pre-push`.** Slow checks (types, tests) go here, not into `pre-commit`: a hook that slows down
+every commit gets bypassed.
 
-| Изменены файлы                                                                                                | Что запускается                                                                                                                                |
-| ------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `backend/**`                                                                                                  | `make dev-deps check-backend` — поднимет Postgres, если он не запущен; при заданном `SLOT` (push агента) — `make stack-check-backend SLOT=<N>` |
-| `frontend/**`                                                                                                 | `make check-frontend`                                                                                                                          |
-| `e2e/**`                                                                                                      | `make check-e2e`                                                                                                                               |
-| `.github/**`                                                                                                  | `make check-ci`                                                                                                                                |
-| `.claude/hooks/**`, `scripts/**`                                                                              | `make check-tooling`                                                                                                                           |
-| `README.md`, `docs/requirements.md`, `backend/**`, `frontend/**`, `e2e/**`                                    | ещё `make check-readme`: переименованный тест ломает ссылку в таблицах                                                                         |
-| `Makefile`, `docker-compose.yml`, `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `.prettierrc.json` | проверки всех частей                                                                                                                           |
-| только документация                                                                                           | ничего                                                                                                                                         |
+| Changed files                                                                                                 | What runs                                                                                                                                     |
+| ------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `backend/**`                                                                                                  | `make dev-deps check-backend` — starts Postgres if it is not running; with `SLOT` set (an agent's push) — `make stack-check-backend SLOT=<N>` |
+| `frontend/**`                                                                                                 | `make check-frontend`                                                                                                                         |
+| `e2e/**`                                                                                                      | `make check-e2e`                                                                                                                              |
+| `.github/**`                                                                                                  | `make check-ci`                                                                                                                               |
+| `.claude/hooks/**`, `scripts/**`                                                                              | `make check-tooling`                                                                                                                          |
+| `README.md`, `docs/requirements.md`, `backend/**`, `frontend/**`, `e2e/**`                                    | also `make check-readme`: a renamed test breaks a reference in the tables                                                                     |
+| `Makefile`, `docker-compose.yml`, `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml`, `.prettierrc.json` | checks of all parts                                                                                                                           |
+| documentation only                                                                                            | nothing                                                                                                                                       |
 
-Отправляемые коммиты — от того, что уже есть на remote, до отправляемого. Ветка, которой
-ещё нет на remote, сравнивается с тем, что есть на любом remote; если remote пуст —
-проверяется всё. Новая часть репозитория добавляется в `PARTS` в `scripts/pre-push.mjs`
-вместе со строкой в `pre-push.test.mjs`.
+The pushed commits are those from what is already on the remote up to the pushed one. A branch
+that is not on the remote yet is compared with what is on any remote; if the remote is empty,
+everything is checked. A new part of the repository is added to `PARTS` in
+`scripts/pre-push.mjs` together with a row in `pre-push.test.mjs`.
 
-**CI** — `.github/workflows/ci.yml`, на push в `main` и на pull request. Команды те же, что
-локально: отличий между «у меня проходит» и «в CI падает» быть не должно.
+**CI** — `.github/workflows/ci.yml`, on push to `main` and on pull requests. The commands are the
+same as locally: there should be no difference between "passes for me" and "fails in CI".
 
-| Job      | Что делает                                                                                                                  |
-| -------- | --------------------------------------------------------------------------------------------------------------------------- |
-| `checks` | `pnpm install --frozen-lockfile`, `uv sync --frozen`, `make dev-deps`, `make check`; на PR — commitlint по всем коммитам PR |
-| `e2e`    | браузер Playwright, `make e2e` (весь стек в Docker); при падении — логи сервисов и отчёт Playwright в артефактах            |
+| Job      | What it does                                                                                                                  |
+| -------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `checks` | `pnpm install --frozen-lockfile`, `uv sync --frozen`, `make dev-deps`, `make check`; on a PR — commitlint over all PR commits |
+| `e2e`    | Playwright browser, `make e2e` (the whole stack in Docker); on failure — service logs and the Playwright report as artifacts  |
 
-`--frozen-lockfile` / `--frozen`: если `package.json` или `pyproject.toml` изменён без
-обновления lock-файла, CI падает. Workflow проверяет `make check-ci` (входит в `make check`
-и в `pre-push` при изменениях в `.github/`): actionlint — синтаксис и выражения,
-`scripts/check-action-refs.mjs` — что у каждого `uses: owner/repo@ref` есть такой тег или
-ветка. actionlint этого не проверяет: `astral-sh/setup-uv@v10` он пропустил, а CI упал —
-проект не публикует мажорные теги, только полные версии.
+`--frozen-lockfile` / `--frozen`: if `package.json` or `pyproject.toml` is changed without
+updating the lock file, CI fails. The workflow is checked by `make check-ci` (part of
+`make check` and of `pre-push` when `.github/` changes): actionlint — syntax and expressions,
+`scripts/check-action-refs.mjs` — that every `uses: owner/repo@ref` has such a tag or branch.
+actionlint does not check that: it let `astral-sh/setup-uv@v10` through, and CI failed — the
+project does not publish major tags, only full versions.
 
-`actions/checkout` в job `checks` берёт полную историю (`fetch-depth: 0`): по умолчанию клон
-поверхностный, базового коммита PR в нём нет, и commitlint падает с `Invalid revision range`,
-хотя `make check` прошёл.
+`actions/checkout` in the `checks` job takes the full history (`fetch-depth: 0`): by default the
+clone is shallow, the PR's base commit is not in it, and commitlint fails with
+`Invalid revision range` although `make check` passed.
 
-Хуки не обходим (`--no-verify`): если проверка мешает, исправляем причину или обсуждаем
-правило.
+We do not bypass hooks (`--no-verify`): if a check gets in the way, we fix the cause or discuss
+the rule.
 
-## Коммиты, решения, прогресс
+## Commits, decisions, progress
 
-**Коммиты** — [Conventional Commits](https://www.conventionalcommits.org/):
-`<type>(<scope>): <subject>`, по-английски, в повелительном наклонении.
+**Commits** — [Conventional Commits](https://www.conventionalcommits.org/):
+`<type>(<scope>): <subject>`, in English, in the imperative mood.
 
 ```text
 feat(backend): add waitlist promotion on cancel
@@ -369,259 +375,262 @@ fix(frontend): show error when check-in code is empty
 docs: describe pre-push hook
 ```
 
-- Типы: `feat`, `fix`, `refactor`, `perf`, `test`, `docs`, `build`, `ci`, `chore`, `style`,
+- Types: `feat`, `fix`, `refactor`, `perf`, `test`, `docs`, `build`, `ci`, `chore`, `style`,
   `revert`.
-- Scope — часть репозитория: `backend`, `frontend`, `e2e`, `infra`; для изменений во всём
-  репозитории не указывается.
-- Один коммит — одно логическое изменение, после которого проект собирается и тесты
-  проходят.
+- Scope is the part of the repository: `backend`, `frontend`, `e2e`, `infra`; for changes across
+  the whole repository it is omitted.
+- One commit is one logical change after which the project builds and the tests pass.
 
-**Решения** — любой выбор, влияющий на код, структуру, стек или сроки, записывается в
-[decisions.md](decisions.md) в том же коммите, что и изменение. Формат — в
+**Decisions** — any choice that affects the code, structure, stack or deadlines is written to
+[decisions.md](decisions.md) in the same commit as the change. The format is in
 [AGENTS.md](../AGENTS.md).
 
-**Время работы** — границы сессий отмечаются в [decisions.md](decisions.md) строками
-`- **ЧЧ:ММ** — ▶ начало сессии` и `- **ЧЧ:ММ** — ■ конец сессии` (время — из `date`);
-`make worktime` суммирует интервалы. Сессия может пересекать полночь — дата берётся из
-заголовка дня над маркером. Непарный маркер даёт предупреждение, а не молчаливый ноль;
-незакрытая сессия не учитывается. Переход на летнее/зимнее время внутри сессии не
-корректируется. Для сверки — время первого и последнего коммита за день (`git log`).
+**Working time** — session boundaries are marked in [decisions.md](decisions.md) with the lines
+`- **HH:MM** — ▶ session start` and `- **HH:MM** — ■ session end` (time from `date`);
+`make worktime` sums the intervals. A session may cross midnight — the date is taken from the day
+heading above the marker. An unpaired marker gives a warning, not a silent zero; an unclosed
+session is not counted. A daylight saving change inside a session is not corrected. To cross-check
+— the time of the first and last commit of the day (`git log`).
 
-**Прогресс** — [roadmap.md](roadmap.md): фазы со статусом и критериями, задачи с
-отметками. Задача отмечается в том же коммите, который её выполняет.
+**Progress** — [roadmap.md](roadmap.md): phases with a status and criteria, tasks with
+checkboxes. A task is checked in the same commit that does it.
 
-**Экспорт сессий агента** — `make export-sessions` (`scripts/export-sessions.mjs`): каждая
-сессия Claude Code этого проекта (`~/.claude/projects/<путь проекта, кроме букв и цифр —
-«-»>/*.jsonl`) — текстом в формате, близком к `/export`, в `docs/session/`. Встроенный
-`/export` выгружает только текущую сессию, а открыть старую через `--resume` ради экспорта —
-дописать в неё. Исходники только читаются. Не попадают, как и в `/export`, мысли модели и
-переписка субагентов, а также то, что в запрос добавляет среда: уведомления о фоновых задачах,
-контекст IDE, вывод команд после `!` (сама команда остаётся). Имя файла — `ГГГГ-ММ-ДД-ЧЧММ-<время работы>.txt`: местное время первой реплики и сумма
-пауз между репликами основной сессии, каждая — не больше 15 минут (`48m`, `2h05m`). Время
-примерное: сессия, открытая на ночь, не считается сутками работы, но и пауза на чтение длиннее
-15 минут обрезается. Файлы сортируются по времени. Дополнить папку после новых сессий —
-запустить `make export-sessions` ещё раз: он перезаписывает файлы, добавляет новые сессии и
-удаляет прежнюю выгрузку той же сессии (то же начало, другое время работы), остальные файлы не
-трогает — выгрузка сессии, чей `.jsonl` Claude Code уже удалил, остаётся. Идущая сессия
-выгружается до последней записанной реплики. Другая папка
-сессий или вывода — `node scripts/export-sessions.mjs <папка .jsonl> <куда>`. В тексте
-остаётся то, что было в выводе команд: перед коммитом просмотреть файлы.
+**Agent session export** — `make export-sessions` (`scripts/export-sessions.mjs`): each Claude
+Code session of this project (`~/.claude/projects/<project path, everything except letters and
+digits replaced with "-">/*.jsonl`) as text in a format close to `/export`, in `docs/session/`.
+The built-in `/export` exports only the current session, and opening an old one with `--resume`
+for the sake of an export appends to it. The sources are only read. As with `/export`, the
+model's thinking and subagent conversations are left out, as well as what the environment adds to
+a request: background task notifications, IDE context, the output of commands after `!` (the
+command itself stays). The file name is `YYYY-MM-DD-HHMM-<working time>.txt`: the local time of
+the first message and the sum of the pauses between the messages of the main session, each capped
+at 15 minutes (`48m`, `2h05m`). The time is approximate: a session left open overnight does not
+count as a day of work, but a reading pause longer than 15 minutes is cut too. The files sort by
+time. To add new sessions to the folder, run `make export-sessions` again: it overwrites the
+files, adds new sessions and removes the previous export of the same session (same start,
+different working time), and leaves other files alone — the export of a session whose `.jsonl`
+Claude Code has already deleted stays. A running session is exported up to its last written
+message. Another sessions or output folder — `node scripts/export-sessions.mjs <.jsonl folder>
+<destination>`. The text keeps whatever was in command output: look through the files before
+committing.
 
 ## Backend
 
-- Структура: `backend/config/` — настройки, корневые URL, ASGI, `health.py`; приложения
-  Django — папки рядом (`accounts/`). Python 3.12, Django 5.2 LTS, DRF.
-- Переменные окружения читаются только в `config/settings.py`. Значения по умолчанию
-  совпадают с сервисами `docker compose`, поэтому локально ничего задавать не нужно.
-- Почта: `EMAIL_HOST` / `EMAIL_PORT` (SMTP Mailpit, по умолчанию `localhost:1025`),
-  `DEFAULT_FROM_EMAIL`, `FRONTEND_URL` — адрес фронтенда для ссылок в письмах (по умолчанию
-  `http://localhost:5173`). Письма не отправляются из запроса: сервис кладёт их в outbox
-  (`emails.services.enqueue_email`) в своей транзакции. В тестах pytest-django сам
-  подменяет backend почты на `locmem`.
-- Таймаут SMTP — `EMAIL_TIMEOUT = 10` с, константа в `settings.py`, не из env: сервер, который
-  принял соединение и молчит, иначе держал бы пачку воркера и её замки бесконечно. Таймаут —
-  обычная неудачная попытка с повтором.
-- Своя модель пользователя `accounts.User`: вход по email, username нет. Email хранится в
-  нижнем регистре (приводится в `save()`), поэтому обычный `unique` работает без учёта
-  регистра. Точки и `+tag` в адресе значимы — см. запись от 2026-10-28 22:38 в
-  [decisions.md](decisions.md).
-- Тесты — pytest + pytest-django на настоящем Postgres (`make dev-deps`): блокировки,
-  `SKIP LOCKED` и `LISTEN/NOTIFY` на SQLite не проверить. pytest-django создаёт отдельную
-  тестовую БД `test_<имя>` и удаляет её после прогона. Тест, которому нужна БД, помечается
+- Structure: `backend/config/` — settings, root URLs, ASGI, `health.py`; Django apps are folders
+  next to it (`accounts/`). Python 3.12, Django 5.2 LTS, DRF.
+- Environment variables are read only in `config/settings.py`. The defaults match the
+  `docker compose` services, so nothing has to be set locally.
+- Email: `EMAIL_HOST` / `EMAIL_PORT` (Mailpit SMTP, default `localhost:1025`),
+  `DEFAULT_FROM_EMAIL`, `FRONTEND_URL` — the frontend address for links in emails (default
+  `http://localhost:5173`). Emails are not sent from a request: a service puts them into the
+  outbox (`emails.services.enqueue_email`) in its own transaction. In tests pytest-django itself
+  replaces the email backend with `locmem`.
+- The SMTP timeout is `EMAIL_TIMEOUT = 10` s, a constant in `settings.py`, not from env: a server
+  that accepted the connection and stays silent would otherwise hold the worker's batch and its
+  locks forever. A timeout is an ordinary failed attempt with a retry.
+- A custom user model `accounts.User`: login by email, no username. The email is stored in lower
+  case (normalized in `save()`), so a plain `unique` works case-insensitively. Dots and `+tag` in
+  the address are significant — see the 2026-10-28 22:38 entry in [decisions.md](decisions.md).
+- Tests — pytest + pytest-django on a real Postgres (`make dev-deps`): locks, `SKIP LOCKED` and
+  `LISTEN/NOTIFY` cannot be tested on SQLite. pytest-django creates a separate test database
+  `test_<name>` and drops it after the run. A test that needs the database is marked
   `pytest.mark.django_db`.
-- Асинхронные тесты (потоки SSE) — pytest-asyncio в режиме `auto`, без маркера: `async def
-test_…` и `django.test.AsyncClient`. Цикл событий — один на сессию, как один цикл процесса
-  uvicorn, в котором живёт слушатель `LISTEN` (`events/realtime.py`). Тест потока —
-  `django_db(transaction=True)`: поток читает снимок в другом потоке своим соединением и
-  видит только закоммиченное. Ответы с ошибкой (401/403/404) у потока проверяются синхронным
-  `APIClient`: `AsyncClient` не закрывает соединение у ответа без потока, и оно не даёт
-  удалить тестовую БД в конце прогона.
-- mypy в режиме `strict` с плагинами django-stubs и drf-stubs. Generic-классы Django
-  (`UserAdmin[User]`) работают в runtime благодаря `django_stubs_ext.monkeypatch()` в
-  настройках. `# type: ignore` — только с кодом ошибки и причиной в комментарии.
-- ruff: правила `E, F, W, I, B, UP, DJ, S, SIM, RUF`. Миграции форматируются, но не
-  проверяются линтером (сгенерированный код). В тестах разрешены `assert` и пароли в коде.
-- API описан OpenAPI-схемой `backend/openapi.yaml` (drf-spectacular), она закоммичена, по ней
-  фронтенд получает типы (см. «Изменить API»). Генерация идёт с `--fail-on-warn`: view без
-  описания ответа или неоднозначное имя enum — ошибка, а не тихий пробел в схеме.
-- Статику (админка) раздаёт WhiteNoise — одинаково под uvicorn, `runserver`
-  (`whitenoise.runserver_nostatic`) и в тестах: файлы с хэшем в имени из `STATIC_ROOT`
-  (`backend/staticfiles/`, собирается `collectstatic`, в git не попадает). Образ собирает
-  статику при сборке; pytest — один раз за сессию (фикстура в `backend/conftest.py`), потому
-  что тесты идут с `DEBUG=False`, как продакшен.
-- Админка — <http://localhost:8000/admin/> (напрямую на backend: Vite проксирует только
-  `/api`); вход по email, нужен `is_staff`. Каждая модель наших приложений обязана быть
-  зарегистрирована в админке — это проверяет тест.
-- `GET /api/health/` — проверка процесса и БД: 200 `{"status": "ok", "database": "ok"}` или
-  503, если БД недоступна. Используют healthcheck'и compose, e2e и фронтенд.
+- Async tests (SSE streams) — pytest-asyncio in `auto` mode, without a marker: `async def
+test_…` and `django.test.AsyncClient`. There is one event loop per session, like the one loop
+  of the uvicorn process where the `LISTEN` listener lives (`events/realtime.py`). A stream test
+  is `django_db(transaction=True)`: the stream reads the snapshot in another thread with its own
+  connection and sees only what is committed. Error responses (401/403/404) of a stream are
+  checked with the synchronous `APIClient`: `AsyncClient` does not close the connection of a
+  non-streaming response, and it keeps the test database from being dropped at the end of the
+  run.
+- mypy in `strict` mode with the django-stubs and drf-stubs plugins. Django generic classes
+  (`UserAdmin[User]`) work at runtime thanks to `django_stubs_ext.monkeypatch()` in the settings.
+  `# type: ignore` — only with an error code and a reason in a comment.
+- ruff: rules `E, F, W, I, B, UP, DJ, S, SIM, RUF`. Migrations are formatted but not linted
+  (generated code). Tests may use `assert` and passwords in code.
+- The API is described by the OpenAPI schema `backend/openapi.yaml` (drf-spectacular); it is
+  committed, and the frontend gets its types from it (see "Change the API"). Generation runs with
+  `--fail-on-warn`: a view without a response description or an ambiguous enum name is an error,
+  not a silent gap in the schema.
+- Static files (admin) are served by WhiteNoise — the same way under uvicorn, `runserver`
+  (`whitenoise.runserver_nostatic`) and in tests: files with a hash in the name from
+  `STATIC_ROOT` (`backend/staticfiles/`, built by `collectstatic`, not in git). The image collects
+  static files at build time; pytest does it once per session (a fixture in
+  `backend/conftest.py`), because tests run with `DEBUG=False`, like production.
+- The admin is at <http://localhost:8000/admin/> (directly on the backend: Vite proxies only
+  `/api`); login by email, `is_staff` is required. Every model of our apps must be registered in
+  the admin — a test checks it.
+- `GET /api/health/` — a check of the process and the database: 200
+  `{"status": "ok", "database": "ok"}` or 503 if the database is unavailable. Used by the compose
+  healthchecks, e2e and the frontend.
 
 ## Frontend
 
 - Vue 3 + Vite + TypeScript (`strict`, `noUncheckedIndexedAccess`), vue-router,
-  `@tanstack/vue-query` для серверных данных.
-- Слои Feature-Sliced Design в `frontend/src/`: `app` (приложение, роутер, QueryClient) →
-  `pages` → `widgets` → `features` → `entities` → `shared`. Импорт — только в нижние слои, в
-  чужой срез — только через его `index.ts`. Проверяет ESLint (`eslint-plugin-boundaries`).
-  Слои `widgets`, `features`, `entities` появятся с первым срезом — пустыми не создаются.
-- API: `api` из `@/shared/api` — клиент openapi-fetch, типизированный `schema.d.ts`
-  (генерируется `make schema`, руками не правится). Несуществующий путь, метод или поле —
-  ошибка vue-tsc. `unwrap()` превращает ответ в данные или `AppError`; выше `shared/api`
-  ошибки различаются только по `kind` (`network`, `unauthorized`, `not_found`, `conflict`,
-  `validation`, `server`, …).
-- Повтор запросов (vue-query) — только для `network` и `server`: 4xx повтор не исправит.
-- Тесты: Vitest + `@vue/test-utils` в jsdom, сеть — MSW. Каждый тест объявляет свою сеть через
-  `server.use()`; запрос без обработчика роняет тест. Пример —
+  `@tanstack/vue-query` for server data.
+- Feature-Sliced Design layers in `frontend/src/`: `app` (application, router, QueryClient) →
+  `pages` → `widgets` → `features` → `entities` → `shared`. Imports go only to lower layers, and
+  into another slice only through its `index.ts`. ESLint checks it (`eslint-plugin-boundaries`).
+  The `widgets`, `features`, `entities` layers appear with their first slice — they are not
+  created empty.
+- API: `api` from `@/shared/api` — an openapi-fetch client typed by `schema.d.ts` (generated by
+  `make schema`, not edited by hand). A nonexistent path, method or field is a vue-tsc error.
+  `unwrap()` turns a response into data or an `AppError`; above `shared/api` errors differ only
+  by `kind` (`network`, `unauthorized`, `not_found`, `conflict`, `validation`, `server`, …).
+- Request retries (vue-query) — only for `network` and `server`: a retry will not fix a 4xx.
+- Tests: Vitest + `@vue/test-utils` in jsdom, the network is MSW. Each test declares its own
+  network with `server.use()`; a request without a handler fails the test. Example —
   `src/pages/health/ui/HealthPage.test.ts`.
-  Ответ MSW приходит позже одного тика: после действия ждать результат (`vi.waitFor`,
-  `queryClient.isMutating()` для конца мутации с её сбросами), а не `flushPromises()`.
-  Нестабильный тест проверять повтором в одном процессе
-  (`pnpm vitest run <файл> -t "<тест>" --repeats 30 --maxWorkers 2`), а не несколькими
-  `pnpm test` сразу: у каждого — до ~12 воркеров с jsdom, три параллельных прогона уронили
-  WSL с 16 ГБ памяти.
-- ESLint с правилами на типах: `no-floating-promises`, `no-misused-promises`,
-  `switch-exhaustiveness-check`, `consistent-type-imports`, запрет `any`.
-- UI-компоненты — shadcn-vue (Reka UI + Tailwind CSS v4). Код компонентов лежит в
-  репозитории: `src/shared/ui/shadcn/` (сгенерированный, правила ESLint для него смягчены
-  в `eslint.config.js`); `src/shared/ui/` вне этой папки — самописные компоненты.
-  Добавить компонент: `cd frontend && pnpm dlx shadcn-vue@latest add <имя>` — только тот,
-  у которого есть потребитель. Настройка — `frontend/components.json`; `cn()` лежит в
-  `src/shared/lib/class-names.ts`. Дизайн-токены — CSS-переменные в `src/app/styles.css`
-  (`:root`). Нюансы CLI: ему нужен `paths` в `frontend/tsconfig.json` (без него падает с
-  `resolvedPaths: Required`); при несовпадении алиаса он подставляет в импорты npm-пакет
-  `cn` — после `add` проверить `grep -r 'from "cn"' src` и зависимости в `package.json`.
-- Тексты интерфейса — по-русски, через vue-i18n: у каждого компонента свой блок
-  `<i18n lang="json" locale="ru">` рядом с шаблоном (`useI18n({ useScope: "local" })`),
-  блоки собирает `@intlify/unplugin-vue-i18n` (`vite.config.ts`). Глобальных сообщений нет;
-  экземпляр создаёт `createAppI18n()` из `shared/lib/i18n.ts` — им же подключаются тесты
-  компонентов. Ключи в `t()` типами не проверяются: опечатку ловит тест компонента. `@` в
-  сообщении пишется `{'@'}`. Код, идентификаторы и логи — по-английски.
+  An MSW response arrives later than one tick: after an action wait for the result
+  (`vi.waitFor`, `queryClient.isMutating()` for the end of a mutation with its invalidations),
+  not `flushPromises()`. Check a flaky test by repeating it in one process
+  (`pnpm vitest run <file> -t "<test>" --repeats 30 --maxWorkers 2`), not with several
+  `pnpm test` at once: each has up to ~12 workers with jsdom, and three parallel runs brought down
+  WSL with 16 GB of memory.
+- ESLint with type-aware rules: `no-floating-promises`, `no-misused-promises`,
+  `switch-exhaustiveness-check`, `consistent-type-imports`, no `any`.
+- UI components — shadcn-vue (Reka UI + Tailwind CSS v4). The component code lives in the
+  repository: `src/shared/ui/shadcn/` (generated, the ESLint rules for it are relaxed in
+  `eslint.config.js`); `src/shared/ui/` outside that folder holds hand-written components. Add a
+  component: `cd frontend && pnpm dlx shadcn-vue@latest add <name>` — only one that has a
+  consumer. Configuration — `frontend/components.json`; `cn()` is in
+  `src/shared/lib/class-names.ts`. Design tokens are CSS variables in `src/app/styles.css`
+  (`:root`). CLI gotchas: it needs `paths` in `frontend/tsconfig.json` (without it, it fails with
+  `resolvedPaths: Required`); when the alias does not match, it puts the npm package `cn` into
+  the imports — after `add` check `grep -r 'from "cn"' src` and the dependencies in
+  `package.json`.
+- The interface texts are in Russian, through vue-i18n: each component has its own
+  `<i18n lang="json" locale="ru">` block next to the template (`useI18n({ useScope: "local" })`),
+  the blocks are collected by `@intlify/unplugin-vue-i18n` (`vite.config.ts`). There are no global
+  messages; the instance is created by `createAppI18n()` from `shared/lib/i18n.ts` — component
+  tests use it too. Keys in `t()` are not type-checked: a typo is caught by the component test.
+  `@` in a message is written as `{'@'}`. Code, identifiers and logs are in English.
 
 ## E2E
 
-- Playwright, пакет `e2e/`, только chromium. Тесты идут против стека `make up`, но с
-  фронтендом за шлюзом nginx: `make e2e` и `stack-e2e` поднимают его сами со стадией
-  `gateway` (см. «Запуск»), на слоте 0 — вместо Vite из `make up`. Другой адрес —
-  `E2E_BASE_URL`.
-  Письма тесты читают через API Mailpit: `E2E_MAILPIT_URL` (по умолчанию
-  `http://localhost:8025`; `make stack-e2e` передаёт Mailpit своего слота). Ящик общий и не
-  чистится — тест ищет своё письмо по уникальному адресу получателя.
-- Слоты — чтобы человек, агент и ревьюер работали одновременно. Слот — compose-проект
-  `event-registration-s<N>` со своими контейнерами, томами и портами: каждый порт — порт по
-  умолчанию плюс номер слота. Цели: `make stack-up` / `stack-e2e` / `stack-check` /
-  `stack-down`, слот — `SLOT=<N>` (по умолчанию 1). `stack-check` — это `make check` на
-  Postgres слота: иначе тесты backend пересоздавали бы `test_event_registration` в чужом
-  Postgres. `stack-down` удаляет тома только своего слота. Исходники в контейнеры слота не
-  монтируются — код собирается в образ: после правки снова `make stack-up` (или
-  `stack-e2e`, он вызывает `stack-up`), иначе браузер покажет старую версию. Демо-учётки в
-  новом томе слота — `make stack-demo-users` (`stack-e2e` вызывает её сам).
+- Playwright, the `e2e/` package, chromium only. The tests run against the `make up` stack, but
+  with the frontend behind the nginx gateway: `make e2e` and `stack-e2e` start it themselves with
+  the `gateway` stage (see "Running"), on slot 0 — instead of Vite from `make up`. Another
+  address — `E2E_BASE_URL`.
+  The tests read emails through the Mailpit API: `E2E_MAILPIT_URL` (default
+  `http://localhost:8025`; `make stack-e2e` passes the Mailpit of its slot). The mailbox is shared
+  and not cleaned — a test finds its email by a unique recipient address.
+- Slots let a human, an agent and a reviewer work at the same time. A slot is the compose project
+  `event-registration-s<N>` with its own containers, volumes and ports: each port is the default
+  port plus the slot number. Targets: `make stack-up` / `stack-e2e` / `stack-check` /
+  `stack-down`, the slot is `SLOT=<N>` (default 1). `stack-check` is `make check` on the slot's
+  Postgres: otherwise the backend tests would recreate `test_event_registration` in someone
+  else's Postgres. `stack-down` removes only its own slot's volumes. The sources are not mounted
+  into the slot's containers — the code is built into the image: after an edit run
+  `make stack-up` again (or `stack-e2e`, which calls `stack-up`), otherwise the browser shows the
+  old version. Demo accounts in a new slot volume — `make stack-demo-users` (`stack-e2e` calls it
+  itself).
 
-  | Слот | Кто                            | Фронтенд | Backend | Postgres | Mailpit | SMTP |
-  | ---- | ------------------------------ | -------- | ------- | -------- | ------- | ---- |
-  | 0    | человек: `make up`, `dev-deps` | 5173     | 8000    | 5432     | 8025    | 1025 |
-  | 1    | основная сессия агента         | 5174     | 8001    | 5433     | 8026    | 1026 |
-  | 2    | агент `reviewer`               | 5175     | 8002    | 5434     | 8027    | 1027 |
+  | Slot | Who                          | Frontend | Backend | Postgres | Mailpit | SMTP |
+  | ---- | ---------------------------- | -------- | ------- | -------- | ------- | ---- |
+  | 0    | human: `make up`, `dev-deps` | 5173     | 8000    | 5432     | 8025    | 1025 |
+  | 1    | the agent's main session     | 5174     | 8001    | 5433     | 8026    | 1026 |
+  | 2    | the `reviewer` agent         | 5175     | 8002    | 5434     | 8027    | 1027 |
 
-- Ревьюер проверяет коммиты в своей копии репозитория: `make review-worktree REF=<sha>`
-  создаёт worktree в `.claude/worktrees/review` (папка в `.gitignore`) и ставит
-  зависимости из кэшей pnpm и uv — около 5 с; `make review-worktree-remove` удаляет её.
-  Без копии проверки ревьюера шли бы по незакоммиченным правкам автора. Симлинки на
-  `node_modules` и `.venv` основной папки отклонены: при изменении зависимостей в
-  проверяемом диапазоне ревьюер молча проверял бы со старыми.
-- При падении сохраняется trace:
-  `cd e2e && pnpm exec playwright show-trace test-results/<папка теста>/trace.zip`.
-- В `make check` e2e не запускаются (нужен поднятый стек) — там только ESLint и tsc для их
-  кода. Главное правило линтера здесь — `no-floating-promises`: забытый `await` в Playwright
-  делает тест зелёным, ничего не проверив.
+- The reviewer checks commits in its own copy of the repository: `make review-worktree REF=<sha>`
+  creates a worktree in `.claude/worktrees/review` (the folder is in `.gitignore`) and installs
+  the dependencies from the pnpm and uv caches — about 5 s; `make review-worktree-remove` removes
+  it. Without a copy the reviewer's checks would run on the author's uncommitted edits. Symlinks
+  to the main folder's `node_modules` and `.venv` were rejected: if the dependencies changed in
+  the reviewed range, the reviewer would silently check with the old ones.
+- On failure a trace is saved:
+  `cd e2e && pnpm exec playwright show-trace test-results/<test folder>/trace.zip`.
+- `make check` does not run e2e (it needs a running stack) — only ESLint and tsc for their code.
+  The main linter rule here is `no-floating-promises`: a forgotten `await` in Playwright makes a
+  test green without checking anything.
 
-## Правила и skills
+## Rules and skills
 
-Договорённости для кода записаны как правила для агента, но они же действуют для людей —
-их стоит прочитать.
+The code conventions are written as rules for the agent, but they apply to people too — they are
+worth reading.
 
-| Файл                                                                      | О чём                                                                      |
+| File                                                                      | About                                                                      |
 | ------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| [AGENTS.md](../AGENTS.md)                                                 | весь репозиторий: лог решений, коммиты, язык, проверки                     |
-| [backend/AGENTS.md](../backend/AGENTS.md)                                 | тонкие view и `services.py`, env, API и схема, тесты, время, логи          |
-| [frontend/AGENTS.md](../frontend/AGENTS.md)                               | слои FSD, сеть через `shared/api`, состояния UI, имена, тесты              |
-| [frontend/src/shared/api/AGENTS.md](../frontend/src/shared/api/AGENTS.md) | клиент API, `AppError`, сгенерированные типы                               |
-| [e2e/AGENTS.md](../e2e/AGENTS.md)                                         | `await`, ожидания без `sleep`, локаторы, независимые данные, два контекста |
-| [rules/db-migrations.md](rules/db-migrations.md)                          | миграции БД                                                                |
+| [AGENTS.md](../AGENTS.md)                                                 | the whole repository: decision log, commits, language, checks              |
+| [backend/AGENTS.md](../backend/AGENTS.md)                                 | thin views and `services.py`, env, API and schema, tests, time, logs       |
+| [frontend/AGENTS.md](../frontend/AGENTS.md)                               | FSD layers, network through `shared/api`, UI states, names, tests          |
+| [frontend/src/shared/api/AGENTS.md](../frontend/src/shared/api/AGENTS.md) | the API client, `AppError`, generated types                                |
+| [e2e/AGENTS.md](../e2e/AGENTS.md)                                         | `await`, waiting without `sleep`, locators, independent data, two contexts |
+| [rules/db-migrations.md](rules/db-migrations.md)                          | database migrations                                                        |
 
-Правило для папки — `AGENTS.md` в ней (рядом `CLAUDE.md` = `@AGENTS.md`, его читает Claude
-Code); правило по теме — `docs/rules/<тема>.md`.
+A rule for a folder is an `AGENTS.md` in it (next to it, `CLAUDE.md` = `@AGENTS.md`, which
+Claude Code reads); a rule on a topic is `docs/rules/<topic>.md`.
 
-Процедуры («как сделать X по шагам») — skills в `.claude/skills/`: `session-handoff`,
-`feature-workflow`, `fsd-frontend`, `anti-slop-review`, `api-change`; агент
-независимого ревью — `.claude/agents/reviewer.md`. Источник — шаблон
-[rbikbov/frontend-starter](https://github.com/rbikbov/frontend-starter), адаптированный под
-Django + Vue. Шаблоны spec и задач фазы — `docs/features/_template/`.
+Procedures ("how to do X step by step") are skills in `.claude/skills/`: `session-handoff`,
+`feature-workflow`, `fsd-frontend`, `anti-slop-review`, `api-change`; the independent review
+agent is `.claude/agents/reviewer.md`. The source is the
+[rbikbov/frontend-starter](https://github.com/rbikbov/frontend-starter) template, adapted to
+Django + Vue. The templates of a phase's spec and tasks are in `docs/features/_template/`.
 
-Чужие skills (`django-security`, `vue-best-practices`, `vue-router-best-practices`,
-`vue-testing-best-practices`) лежат в `.agents/skills/`, а в `.claude/skills/` — симлинки на
-них; версии — в `skills-lock.json`. Их не правят: `npx skills update` и
-`npx skills experimental_install` (восстановить по lock-файлу) перезапишут папку из
-источника. Уточнения под проект — в `AGENTS.md` или в своих skills. Папка `.agents/`
-исключена из Prettier. Симлинки хранятся в git как есть: на Linux, macOS и WSL `git clone`
-создаёт их сам; на Windows без developer mode (или с `core.symlinks=false`) они станут
-текстовыми файлами и skills будут недоступны — клонировать из WSL или включить
-`git config core.symlinks true`.
+Third-party skills (`django-security`, `vue-best-practices`, `vue-router-best-practices`,
+`vue-testing-best-practices`) live in `.agents/skills/`, and `.claude/skills/` has symlinks to
+them; the versions are in `skills-lock.json`. They are not edited: `npx skills update` and
+`npx skills experimental_install` (restore from the lock file) overwrite the folder from the
+source. Project-specific additions go into `AGENTS.md` or our own skills. The `.agents/` folder
+is excluded from Prettier. Symlinks are stored in git as they are: on Linux, macOS and WSL
+`git clone` creates them itself; on Windows without developer mode (or with
+`core.symlinks=false`) they become text files and the skills are unavailable — clone from WSL or
+enable `git config core.symlinks true`.
 
-## Хуки Claude Code
+## Claude Code hooks
 
-Настроены в `.claude/settings.json`, скрипты — в `.claude/hooks/` (Node, без зависимостей).
-Действуют только для агента, на ручную работу не влияют.
+Configured in `.claude/settings.json`, the scripts are in `.claude/hooks/` (Node, no
+dependencies). They apply only to the agent and do not affect manual work.
 
-| Событие                    | Скрипт                 | Что делает                                                                                                                       |
-| -------------------------- | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `SessionStart`             | `session-start.mjs`    | выводит агенту фазу «в работе», её открытые задачи из `tasks.md` (или подсказку начать со spec) и последние коммиты              |
-| `PreToolUse` (Bash)        | `guard-bash.mjs`       | блокирует обход git-хуков (`--no-verify`, `-n`, `HUSKY=0`, смена `core.hooksPath`), force push и `--amend` отправленного коммита |
-| `PreToolUse` (Edit/Write)  | `guard-migrations.mjs` | блокирует правку закоммиченных миграций `backend/*/migrations/NNNN_*.py`                                                         |
-| `PostToolUse` (Edit/Write) | `format-file.mjs`      | форматирует изменённый файл, как `pre-commit` (Prettier, ruff, ESLint); оставшиеся ошибки линтера показывает агенту              |
+| Event                      | Script                 | What it does                                                                                                                        |
+| -------------------------- | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `SessionStart`             | `session-start.mjs`    | shows the agent the phase "in progress", its open tasks from `tasks.md` (or a hint to start with the spec) and the latest commits   |
+| `PreToolUse` (Bash)        | `guard-bash.mjs`       | blocks bypassing git hooks (`--no-verify`, `-n`, `HUSKY=0`, changing `core.hooksPath`), force push and `--amend` of a pushed commit |
+| `PreToolUse` (Edit/Write)  | `guard-migrations.mjs` | blocks edits of committed migrations `backend/*/migrations/NNNN_*.py`                                                               |
+| `PostToolUse` (Edit/Write) | `format-file.mjs`      | formats the changed file like `pre-commit` (Prettier, ruff, ESLint); shows the agent the remaining linter errors                    |
 
-- `guard-bash.mjs` сначала вырезает из команды heredoc и строки в кавычках (иначе `-n` в
-  тексте сообщения коммита сработал бы как флаг), затем проверяет каждую простую команду
-  (разделители — перевод строки, `;`, `|`, `&`) отдельно. Новый случай — строка в
-  `guard-bash.test.mjs`.
-- Хуки на Edit/Write не видят правку файла через shell (`sed -i`, `>`). Правила от этого не
-  перестают действовать, но соблюдать их в этом случае — на агенте и ревью.
-- Хуки подхватываются при изменении `.claude/settings.json` без перезапуска сессии. Хук
-  блокирует лишнее — исправить скрипт и добавить случай в тест, а не обходить хук.
+- `guard-bash.mjs` first cuts heredocs and quoted strings out of the command (otherwise `-n` in
+  the text of a commit message would act as a flag), then checks each simple command (separators
+  — newline, `;`, `|`, `&`) separately. A new case is a row in `guard-bash.test.mjs`.
+- Hooks on Edit/Write do not see a file edited through the shell (`sed -i`, `>`). The rules still
+  apply, but following them in that case is up to the agent and the review.
+- Hooks are picked up when `.claude/settings.json` changes, without restarting the session. If a
+  hook blocks too much, fix the script and add the case to the test instead of bypassing the hook.
 
-## Нюансы
+## Gotchas
 
-**Окружение и проверки**
+**Environment and checks**
 
-- `pre-push` проверяет **рабочую копию**, а не содержимое отправляемых коммитов: так
-  устроены git-хуки. Незакоммиченные изменения могут и уронить push, и замаскировать ошибку
-  в коммите. Перед push лучше иметь чистый `git status`; коммиты как есть проверяет CI.
-- Сгенерированные `backend/openapi.yaml` и `frontend/src/shared/api/schema.d.ts` исключены из
-  Prettier и ESLint: `make schema-check` сравнивает их с генерацией байт в байт.
-- `docs/task.md` — текст задания как есть; Prettier его не трогает.
-- В WSL2 часы стены (`time.time()`, `timezone.now()`) отскакивают назад примерно на 0,4 с
-  каждые ~30 с, даже без нагрузки: так хост подводит часы виртуальной машины. Тест, который
-  ставит письмо и сразу вызывает `process_batch()` с текущим временем, может найти его
-  «из будущего» и не отправить, а у писем, созданных подряд, метки могут идти не по порядку
-  id. Поэтому время и порядок меток, нужные тесту, задаёт сам тест: момент «письма уже пора
-  отправить» — в `now` (`due()` в `backend/emails/tests/test_worker.py`), порядок —
-  явными `next_attempt_at` (`queue_in_order()` там же).
-- pnpm запускает install-скрипты только у пакетов из `pnpm.onlyBuiltDependencies` в корневом
-  `package.json` (`unrs-resolver` — резолвер импортов для ESLint, `vue-demi`).
+- `pre-push` checks the **working copy**, not the contents of the pushed commits: that is how git
+  hooks work. Uncommitted changes can both fail a push and mask an error in a commit. It is
+  better to have a clean `git status` before a push; CI checks the commits as they are.
+- The generated `backend/openapi.yaml` and `frontend/src/shared/api/schema.d.ts` are excluded
+  from Prettier and ESLint: `make schema-check` compares them with the generation byte for byte.
+- `docs/task.md` is the text of the assignment as is; Prettier does not touch it.
+- In WSL2 the wall clock (`time.time()`, `timezone.now()`) jumps back by about 0.4 s every ~30 s,
+  even without load: that is how the host adjusts the virtual machine's clock. A test that queues
+  an email and immediately calls `process_batch()` with the current time may find it "from the
+  future" and not send it, and emails created in a row may get timestamps out of id order. So the
+  test itself sets the time and order of the timestamps it needs: the "emails are already due"
+  moment goes into `now` (`due()` in `backend/emails/tests/test_worker.py`), the order — through
+  explicit `next_attempt_at` (`queue_in_order()` in the same file).
+- pnpm runs install scripts only for packages from `pnpm.onlyBuiltDependencies` in the root
+  `package.json` (`unrs-resolver` — the import resolver for ESLint, `vue-demi`).
 
 **Docker**
 
-- Healthcheck фронтенда обращается к `127.0.0.1`, а не к `localhost`: в Alpine `localhost`
-  резолвится в IPv6 `::1`, а Vite слушает только IPv4 — проверка падала при работающем
-  сервере.
-- Если на Linux chromium для e2e не стартует из-за системных библиотек:
-  `cd e2e && pnpm exec playwright install --with-deps chromium` (нужен sudo).
+- The frontend healthcheck calls `127.0.0.1`, not `localhost`: in Alpine `localhost` resolves to
+  IPv6 `::1`, and Vite listens only on IPv4 — the check failed while the server was running.
+- If chromium for e2e does not start on Linux because of system libraries:
+  `cd e2e && pnpm exec playwright install --with-deps chromium` (needs sudo).
 
-**Версии и библиотеки фронтенда**
+**Frontend versions and libraries**
 
-- TypeScript закреплён на `~6.0`: typescript-eslint поддерживает TypeScript `<6.1`, а
-  TypeScript 7 (компилятор на Go) — другой API, его пока не поддерживают ни typescript-eslint,
-  ни vue-tsc. openapi-typescript предупреждает о peer `typescript@^5`, но с 6.0 генерация
-  работает (проверяется `make schema-check`).
-- Клиент openapi-fetch получает `fetch: (r) => globalThis.fetch(r)`: иначе он запоминает
-  `fetch` при импорте, MSW в тестах включается позже, и запросы уходили в настоящую сеть.
-- MSW 3: опция называется `onUnhandledFrame`, а не `onUnhandledRequest`, как в MSW 2 и в
-  большинстве примеров в интернете.
+- TypeScript is pinned to `~6.0`: typescript-eslint supports TypeScript `<6.1`, and TypeScript 7
+  (the Go compiler) has a different API that neither typescript-eslint nor vue-tsc supports yet.
+  openapi-typescript warns about the `typescript@^5` peer, but generation works with 6.0 (checked
+  by `make schema-check`).
+- The openapi-fetch client gets `fetch: (r) => globalThis.fetch(r)`: otherwise it captures
+  `fetch` at import, MSW in tests is enabled later, and requests went to the real network.
+- MSW 3: the option is called `onUnhandledFrame`, not `onUnhandledRequest` as in MSW 2 and in
+  most examples on the internet.

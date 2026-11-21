@@ -1,126 +1,141 @@
-# Регистрация, лист ожидания, отказ: spec
+# Registration, waitlist, cancellation: spec
 
-Фаза — `docs/roadmap.md`, фаза 1. Статус: готова.
+Phase — `docs/roadmap.md`, phase 1. Status: done.
 
-## Что и зачем
+## What and why
 
-Закрывает ядро задания: организатор входит и создаёт событие; участник регистрируется по
-email и получает место или номер в листе ожидания; отказ освобождает место и повышает первого
-из листа. Инварианты — «один email — одно место на событие» и «мест не больше `capacity`» —
-держатся на уровне БД и блокировки, а не проверкой в коде. Проект механизмов — разделы
-«Аутентификация», «Модель данных», «Инварианты», «API» в `docs/architecture.md`; spec их
-уточняет и ничего в них не меняет.
+Covers the core of the assignment: the organizer logs in and creates an event; a participant
+registers by email and gets a seat or a place on the waitlist; a cancellation frees the seat and
+promotes the first one from the waitlist. The invariants — "one email — one seat per event" and "no
+more seats than `capacity`" — are held at the database and lock level, not by a check in the code.
+The design of the mechanisms is in the "Authentication", "Data model", "Invariants", "API" sections
+of `docs/architecture.md`; the spec refines them and changes nothing in them.
 
 ## Non-Goals
 
-- Письма и экран билета — фаза 2. Ответ регистрации не содержит `ticket_code` и `manage_token`.
-- Редактирование события, перенос, смена лимита — фаза 5. Чекин, список участников — фаза 3.
-- SSE и живые счётчики — фаза 4. Страница события получает свободные места обычным запросом.
-- Регистрация пользователей, роли, RBAC. Пагинация, поиск, фильтры списков.
-- Защита от перебора пароля и от спама регистраций (rate limit), капча.
-- Запрет регистрации на уже начавшееся событие.
-- Эндпоинты организатора по id события (`/api/org/events/{id}/`) и `get_org_event(user, id)` с
-  404 / 403 — появятся с первым потребителем (редактирование события, список участников). В
-  фазе 1 организатор видит только список своих событий; проверка «чужое» — `for_organizer`.
-- Кнопка выхода организатора: `POST /api/auth/logout/` есть, UI для него — позже.
+- Emails and the ticket screen — phase 2. The registration response contains neither
+  `ticket_code` nor `manage_token`.
+- Editing an event, rescheduling, changing the limit — phase 5. Check-in, the participant list —
+  phase 3.
+- SSE and live counters — phase 4. The event page gets the free seats with an ordinary request.
+- User sign-up, roles, RBAC. Paging, search, list filters.
+- Protection against password brute force and registration spam (rate limit), a captcha.
+- A ban on registering for an event that has already started.
+- Organizer endpoints by event id (`/api/org/events/{id}/`) and `get_org_event(user, id)` with
+  404 / 403 — they will appear with the first consumer (event editing, the participant list). In
+  phase 1 the organizer sees only the list of their events; the "someone else's" check is
+  `for_organizer`.
+- An organizer logout button: `POST /api/auth/logout/` exists, the UI for it comes later.
 
-## Модель данных
+## Data model
 
-Приложение `events` (новая предметная область). Миграции — по `docs/rules/db-migrations.md`.
+The `events` app (a new domain). Migrations follow `docs/rules/db-migrations.md`.
 
-- **Event**: `organizer` FK→User (`PROTECT`), `title` (≤200), `description` (≤2000, может быть
-  пустым), `starts_at` timestamptz, `capacity` (int). `CHECK (capacity > 0)`.
-  `schedule_version` в фазе 1 не добавляется — потребителя нет до фазы 5.
-- **Registration**: `event` FK (`CASCADE`), `email` (нижний регистр), `name` (≤200),
-  `status` (`confirmed` / `waitlisted` / `cancelled`, `CHECK` на допустимые значения),
-  `queued_at`, `confirmed_at` (null), `cancelled_at` (null), `ticket_code` (unique),
-  `manage_token` (unique), `UNIQUE(event, email)`.
-  Поля `checked_in_at` добавит фаза 3, письма — фаза 2.
-- `EventQuerySet.for_organizer(user)` (список); `RegistrationQuerySet` / `annotate` для счётчиков.
-- Админка: Event — создание и правка названия и описания (дата, лимит и организатор у
-  существующего — только чтение, удаление с регистрациями запрещено), Registration — только
-  чтение (`backend/AGENTS.md`, п. 9).
+- **Event**: `organizer` FK→User (`PROTECT`), `title` (≤200), `description` (≤2000, may be empty),
+  `starts_at` timestamptz, `capacity` (int). `CHECK (capacity > 0)`. `schedule_version` is not
+  added in phase 1 — it has no consumer until phase 5.
+- **Registration**: `event` FK (`CASCADE`), `email` (lower case), `name` (≤200), `status`
+  (`confirmed` / `waitlisted` / `cancelled`, a `CHECK` on the allowed values), `queued_at`,
+  `confirmed_at` (null), `cancelled_at` (null), `ticket_code` (unique), `manage_token` (unique),
+  `UNIQUE(event, email)`. The `checked_in_at` field will be added by phase 3, emails by phase 2.
+- `EventQuerySet.for_organizer(user)` (the list); `RegistrationQuerySet` / `annotate` for the
+  counters.
+- Admin: Event — creation and editing of the title and description (the date, limit and organizer
+  of an existing one are read-only, deleting one with registrations is forbidden), Registration —
+  read-only (`backend/AGENTS.md`, item 9).
 
-## Инварианты
+## Invariants
 
-| Инвариант                                       | Чем защищён                                                                          | Тест                            |
-| ----------------------------------------------- | ------------------------------------------------------------------------------------ | ------------------------------- |
-| Один email — одна регистрация на событие        | `UNIQUE(event, email)` + нормализация регистра                                       | pytest, сервис + гонка          |
-| `confirmed` ≤ `capacity`                        | `SELECT … FOR UPDATE` на Event в транзакции регистрации                              | pytest, гонка на Postgres       |
-| Лист ожидания — по `queued_at, id`              | порядок в запросе повышения                                                          | pytest, сервис                  |
-| Отказ и повышение — атомарно                    | одна транзакция, та же блокировка Event                                              | pytest, сервис                  |
-| Организатор работает только со своими событиями | `for_organizer(user)` в списке `/api/org/events/`; по id — с первым эндпоинтом по id | pytest, API, чужих нет в списке |
-| Повторный отказ не повышает второго             | отказ работает только из `confirmed`/`waitlisted`                                    | pytest, сервис                  |
+| Invariant                                             | What protects it                                                                            | Test                                   |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------------- | -------------------------------------- |
+| One email — one registration per event                | `UNIQUE(event, email)` + case normalization                                                 | pytest, service + race                 |
+| `confirmed` ≤ `capacity`                              | `SELECT … FOR UPDATE` on the Event in the registration transaction                          | pytest, a race on Postgres             |
+| The waitlist goes by `queued_at, id`                  | the order in the promotion query                                                            | pytest, service                        |
+| Cancellation and promotion are atomic                 | one transaction, the same Event lock                                                        | pytest, service                        |
+| The organizer works only with their own events        | `for_organizer(user)` in the `/api/org/events/` list; by id — with the first endpoint by id | pytest, API, no one else's in the list |
+| A repeated cancellation does not promote a second one | cancellation works only from `confirmed`/`waitlisted`                                       | pytest, service                        |
 
 ## API
 
-Ошибки — 400 несёт коды полей `{"errors": {поле: [код]}}`, остальные 4xx — `{"detail": …}` (решение от 03:21 в `docs/decisions.md`); фронтенд приводит статус к `AppError.kind`
-(`validation` — 400, `unauthorized` — 401, `forbidden` — 403, `not_found` — 404, остальное — `unknown`/`server`; `forbidden` на чужое событие фронтенд показывает как «нет доступа», а гость (401, в том числе на `me`) отправляется на `/login`).
+Errors — a 400 carries field codes `{"errors": {field: [code]}}`, the other 4xx — `{"detail": …}`
+(decision of 03:21 in `docs/decisions.md`); the frontend maps the status to `AppError.kind`
+(`validation` — 400, `unauthorized` — 401, `forbidden` — 403, `not_found` — 404, the rest —
+`unknown`/`server`; the frontend shows `forbidden` on someone else's event as "no access", and a
+guest (401, including on `me`) is sent to `/login`).
 
-| Метод и путь                               | Вход                                        | Ответ                                                              | Ошибки                   |
-| ------------------------------------------ | ------------------------------------------- | ------------------------------------------------------------------ | ------------------------ |
-| `POST /api/auth/login/`                    | `{email, password}`                         | 200 `{id, email}`, cookie сессии                                   | 400 неверные данные      |
-| `POST /api/auth/logout/`                   | —                                           | 204                                                                | 401 без сессии; 403 CSRF |
-| `GET /api/auth/me/`                        | —                                           | 200 `{id, email}`                                                  | 401 без сессии           |
-| `GET /api/org/events/`                     | —                                           | 200 `[Event]` (+ `confirmed`, `waitlisted` с этапа 3), только свои | 401                      |
-| `POST /api/org/events/`                    | `{title, description, starts_at, capacity}` | 201 Event                                                          | 400 поля; 401            |
-| `GET /api/events/`                         | —                                           | 200 `[{id, title, starts_at, capacity, free_seats}]`, будущие      | —                        |
-| `GET /api/events/{id}/`                    | —                                           | 200 то же + `description`                                          | 404                      |
-| `POST /api/events/{id}/registrations/`     | `{email, name}`                             | 201 / 200 (повтор) `{status, position?}`                           | 400 поля; 404            |
-| `POST /api/tickets/{manage_token}/cancel/` | —                                           | 200 `{status: "cancelled"}`                                        | 404 неизвестный токен    |
+| Method and path                            | Input                                       | Response                                                                  | Errors                          |
+| ------------------------------------------ | ------------------------------------------- | ------------------------------------------------------------------------- | ------------------------------- |
+| `POST /api/auth/login/`                    | `{email, password}`                         | 200 `{id, email}`, session cookie                                         | 400 wrong credentials           |
+| `POST /api/auth/logout/`                   | —                                           | 204                                                                       | 401 without a session; 403 CSRF |
+| `GET /api/auth/me/`                        | —                                           | 200 `{id, email}`                                                         | 401 without a session           |
+| `GET /api/org/events/`                     | —                                           | 200 `[Event]` (+ `confirmed`, `waitlisted` since stage 3), only one's own | 401                             |
+| `POST /api/org/events/`                    | `{title, description, starts_at, capacity}` | 201 Event                                                                 | 400 fields; 401                 |
+| `GET /api/events/`                         | —                                           | 200 `[{id, title, starts_at, capacity, free_seats}]`, future ones         | —                               |
+| `GET /api/events/{id}/`                    | —                                           | 200 the same + `description`                                              | 404                             |
+| `POST /api/events/{id}/registrations/`     | `{email, name}`                             | 201 / 200 (a repeat) `{status, position?}`                                | 400 fields; 404                 |
+| `POST /api/tickets/{manage_token}/cancel/` | —                                           | 200 `{status: "cancelled"}`                                               | 404 unknown token               |
 
-Вход по сессии без токенов в JS; `GET /api/auth/me/` нужен фронтенду, чтобы узнать, вошёл ли
-пользователь (CSRF-cookie выдаёт `ensure_csrf_cookie` на `me`). `position` — только для
-`waitlisted`, считается как число `waitlisted` с `(queued_at, id)` не позже собственного.
+Login by session without tokens in JS; the frontend needs `GET /api/auth/me/` to know whether the
+user is logged in (the CSRF cookie is issued by `ensure_csrf_cookie` on `me`). `position` — only
+for `waitlisted`, counted as the number of `waitlisted` with `(queued_at, id)` no later than one's
+own.
 
 ## UI
 
-UI-библиотека и дизайн-токены выбираются до первой задачи фронтенда (задача 1.2) и
-записываются в `docs/decisions.md`; экраны ниже описывают состояния, не вёрстку.
+The UI library and design tokens are chosen before the first frontend task (task 1.2) and written
+to `docs/decisions.md`; the screens below describe states, not layout.
 
-Слои FSD — по skill `fsd-frontend`; маршруты в `app/router.ts`.
+FSD layers follow the `fsd-frontend` skill; routes are in `app/router.ts`.
 
-- `/login` — форма; ошибка неверных данных; после входа — `/org/events`.
-- `/org/events` — список своих событий (название, дата, `confirmed / capacity`, лист),
-  пусто → «событий пока нет», кнопка «Создать»; неавторизованный → `/login`.
-- `/org/events/new` — форма создания; ошибки полей с сервера; успех → список.
-- `/` — публичный список будущих событий с числом свободных мест (заполненные остаются, «мест нет»); пусто / ошибка / загрузка.
-- `/events/:id` — описание, свободные места, форма `{email, name}`; результат: «место
-  подтверждено» / «вы в листе ожидания, №N»; повторная отправка того же email показывает
-  тот же результат; ошибка полей и сети; кнопка блокируется на время запроса.
+- `/login` — a form; a wrong-credentials error; after login — `/org/events`.
+- `/org/events` — the list of one's own events (title, date, `confirmed / capacity`, waitlist),
+  empty → "no events yet", a "Create" button; unauthorized → `/login`.
+- `/org/events/new` — the creation form; field errors from the server; success → the list.
+- `/` — the public list of future events with the number of free seats (full ones stay, "no
+  seats"); empty / error / loading.
+- `/events/:id` — the description, free seats, a `{email, name}` form; the result: "seat
+  confirmed" / "you are on the waitlist, #N"; submitting the same email again shows the same
+  result; field and network errors; the button is disabled during the request.
 
-## Крайние случаи
+## Edge cases
 
-- `A@x.io` и `a@x.io` — одна регистрация; `a.b@x.io` и `ab@x.io`, `a+t@x.io` — разные.
-- Двойной клик / повтор запроса → 200 с прежним результатом, второго места нет.
-- Регистрация после отказа «оживляет» строку: статус и очередь определяются заново,
-  `ticket_code` выдаётся новый, `queued_at` обновляется.
-- Отказ из листа ожидания никого не повышает; отказ из `confirmed` повышает ровно одного.
-- Событие целиком заполнено, лист пуст: первый новый — `waitlisted`, №1.
-- Когда появится `/api/org/events/{id}/`: чужое событие → 403 (событие публично, существование не секрет); несуществующее → 404. Список `/api/org/events/` содержит только свои. Чужие события администратор смотрит в админке Django, где видны все события.
+- `A@x.io` and `a@x.io` are one registration; `a.b@x.io` and `ab@x.io`, `a+t@x.io` are different.
+- A double click / a repeated request → 200 with the previous result, no second seat.
+- A registration after a cancellation "revives" the row: the status and the queue are decided
+  anew, a new `ticket_code` is issued, `queued_at` is updated.
+- A cancellation from the waitlist promotes nobody; a cancellation from `confirmed` promotes
+  exactly one.
+- The event is completely full, the waitlist is empty: the first new one is `waitlisted`, #1.
+- When `/api/org/events/{id}/` appears: someone else's event → 403 (the event is public, its
+  existence is not a secret); a nonexistent one → 404. The `/api/org/events/` list contains only
+  one's own. The administrator looks at other organizers' events in the Django admin, where all
+  events are visible.
 
-## Допущения и открытые вопросы
+## Assumptions and open questions
 
-- Поля: `title` 1–200, `description` ≤2000, `name` 1–200, `capacity` 1–10000 — разумные
-  пределы, в задании не заданы.
-- `starts_at` при создании должно быть в будущем (400 иначе) — события в прошлом бессмысленны.
-- Публичный список — только будущие события, по возрастанию `starts_at`; без пагинации.
-- Повторная регистрация возвращает 200 и текущий статус (идемпотентность), новая — 201.
-- Отказ идемпотентен: уже отменённая регистрация → 200 `cancelled`, без побочных эффектов.
-- Неверный логин → 400 (а не 401), чтобы не путать с протухшей сессией на фронтенде.
-- `position` не хранится, а вычисляется — иначе его надо пересчитывать при каждом отказе.
+- Fields: `title` 1–200, `description` ≤2000, `name` 1–200, `capacity` 1–10000 — reasonable
+  limits, not set in the assignment.
+- `starts_at` on creation must be in the future (400 otherwise) — events in the past make no
+  sense.
+- The public list — only future events, by ascending `starts_at`; no paging.
+- A repeated registration returns 200 and the current status (idempotency), a new one — 201.
+- A cancellation is idempotent: an already cancelled registration → 200 `cancelled`, no side
+  effects.
+- A wrong login → 400 (not 401), so as not to confuse it with an expired session on the frontend.
+- `position` is not stored but computed — otherwise it would have to be recounted on each
+  cancellation.
 
-## Сценарии приёмки
+## Acceptance scenarios
 
-| Сценарий                                                              | Уровень           |
-| --------------------------------------------------------------------- | ----------------- |
-| Организатор входит; неверный пароль → ошибка; `me` без сессии → 401   | pytest, Vitest    |
-| Создание события; чужих нет в списке                                  | pytest            |
-| Регистрация при свободном месте → `confirmed`                         | pytest, Vitest    |
-| Повтор, другой регистр email → одна запись, второго места нет         | pytest            |
-| Мест нет → `waitlisted`, `position` растёт 1, 2, 3                    | pytest, Vitest    |
-| Отказ `confirmed` → первый из листа `confirmed`, остальные сдвинулись | pytest            |
-| Отказ из листа и повторный отказ — без повышения                      | pytest            |
-| Гонка: N потоков за последнее место → ровно один `confirmed`          | pytest (Postgres) |
-| Гонка: N потоков с одним email → одна запись                          | pytest (Postgres) |
-| Организатор создаёт событие; участник регистрируется, видит результат | e2e               |
+| Scenario                                                                                    | Level             |
+| ------------------------------------------------------------------------------------------- | ----------------- |
+| The organizer logs in; a wrong password → an error; `me` without a session → 401            | pytest, Vitest    |
+| Creating an event; no one else's in the list                                                | pytest            |
+| Registration with a free seat → `confirmed`                                                 | pytest, Vitest    |
+| A repeat, a different email case → one record, no second seat                               | pytest            |
+| No seats → `waitlisted`, `position` grows 1, 2, 3                                           | pytest, Vitest    |
+| A `confirmed` cancels → the first one from the waitlist is `confirmed`, the others moved up | pytest            |
+| A cancellation from the waitlist and a repeated cancellation — no promotion                 | pytest            |
+| Race: N threads for the last seat → exactly one `confirmed`                                 | pytest (Postgres) |
+| Race: N threads with one email → one record                                                 | pytest (Postgres) |
+| The organizer creates an event; a participant registers, sees the result                    | e2e               |

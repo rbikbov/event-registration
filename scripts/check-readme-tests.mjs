@@ -1,4 +1,4 @@
-// Checks that every test the «Требования и тесты» tables point to exists — in README.md and in
+// Checks that every test the "Requirements and tests" tables point to exists — in README.md and in
 // docs/requirements.md: the file, the pytest function after `::`, a `test_x_*` glob and a test
 // title in «…». Without it the tables drift from the tests at the first rename.
 import { execFileSync } from "node:child_process";
@@ -6,7 +6,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { basename, join } from "node:path";
 import { pathToFileURL } from "node:url";
 
-const SECTION = "## Требования и тесты";
+const SECTION = "## Requirements and tests";
 // Files with the section; paths in their tables are from the repository root, as in README.
 export const DOCS = ["README.md", "docs/requirements.md"];
 // Relative paths in the table are from these roots (README says so above the table).

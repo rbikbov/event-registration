@@ -1,94 +1,97 @@
-# Сдача: spec
+# Delivery: spec
 
-Фаза — `docs/roadmap.md`, фаза 7. Статус: утверждён 2026-11-04.
+Phase — `docs/roadmap.md`, phase 7. Status: approved 2026-11-04.
 
-## Что и зачем
+## What and why
 
-Фаза закрывает «Что мы ожидаем от вас» из `docs/task.md` и общие требования 6, 7, 12, 13:
-проверяющий по README находит, какой тест доказывает каждое требование задания, чем и как
-делался проект, в каком он состоянии и что дальше. Код продукта меняется только там, где
-сверка найдёт требование без теста или проверка на мусор — мусор.
+The phase covers "What we expect from you" from `docs/task.md` and general requirements 6, 7, 12,
+13: from the README the reviewer finds which test proves each requirement of the assignment, what
+the project was built with and how, what state it is in and what is next. The product code changes
+only where the cross-check finds a requirement without a test or the junk check finds junk.
 
 ## Non-Goals
 
-- Новые возможности продукта, в том числе из «Что дальше» README (регистрация пользователей,
-  время окончания события, push-сервер).
-- Рефакторинг кода, который проверка на мусор не отметила.
-- Сырые `.jsonl` в репозитории: человек передаёт их лично.
-- Деплой куда-либо, кроме локального запуска.
+- New product features, including those from "What's next" of the README (user sign-up, an event
+  end time, a push server).
+- Refactoring of code that the junk check did not flag.
+- Raw `.jsonl` files in the repository: the human hands them over personally.
+- Deploying anywhere other than a local run.
 
-## Требования задания → тесты
+## Requirements of the assignment → tests
 
-Сейчас таблица README построена по механизмам фаз (54 строки). Проверяющий идёт от текста
-задания, поэтому над ней — короткая таблица в формулировках задания:
+Now the README table is built by the phases' mechanisms (54 rows). The reviewer goes from the text
+of the assignment, so above it there is a short table in the assignment's wording:
 
-- «Должен включать» (5 пунктов) и «Ожидаемое поведение» (6 пунктов; составной пункт —
-  несколькими строками: «письмо с билетом» и «повторная регистрация» отдельно) → тест;
-- общие требования 1–13 → где выполнено: тест, команда или раздел документа (для 1–5, 8–10
-  теста нет — ссылка на код или раздел README).
+- "Must include" (5 items) and "Expected behavior" (6 items; a compound item — in several rows:
+  "an email with the ticket" and "a repeated registration" separately) → a test;
+- general requirements 1–13 → where it is done: a test, a command or a document section (for 1–5,
+  8–10 there is no test — a link to the code or a README section).
 
-Подробная таблица остаётся ниже как есть. Сверка — скрипт `scripts/check-readme-tests.mjs` с
-тестом, в `make check`: каждая ссылка на тест в README существует — файл, функция pytest
-после `::`, e2e по имени файла, название теста в «…». Без скрипта таблица разойдётся с тестами
-при первом переименовании.
+The detailed table stays below as it is. The cross-check is the `scripts/check-readme-tests.mjs`
+script with a test, in `make check`: each test reference in the README exists — a file, a pytest
+function after `::`, e2e by the file name, a test title in «…». Without the script the table drifts
+from the tests at the first rename.
 
-## Два клиента
+## Two clients
 
-Требования о двух клиентах и их e2e:
+The requirements about two clients and their e2e:
 
-| Требование                                             | e2e с двумя контекстами                          |
-| ------------------------------------------------------ | ------------------------------------------------ |
-| Счётчик пришедших обновляется live                     | `organizer-sees-arrivals-live.spec.ts` — есть    |
-| Работает при двух открытых клиентах (общее, п. 11)     | `registration-updates-open-pages.spec.ts` — есть |
-| Два человека на последнее место: место одному          | нет — новый `two-participants-last-seat.spec.ts` |
-| Билет проходит чекин один раз (два входа одновременно) | проверить в исследовании; нет — новый тест       |
+| Requirement                                           | e2e with two contexts                              |
+| ----------------------------------------------------- | -------------------------------------------------- |
+| The arrived counter updates live                      | `organizer-sees-arrivals-live.spec.ts` — exists    |
+| Works with two open clients (general, item 11)        | `registration-updates-open-pages.spec.ts` — exists |
+| Two people for the last seat: the seat goes to one    | none — a new `two-participants-last-seat.spec.ts`  |
+| A ticket passes check-in once (two entrances at once) | check in the research; none — a new test           |
 
-Новый e2e не доказывает одновременность на уровне БД: два браузера отправляют запросы почти
-одновременно, но порядок не гарантирован. Гонку доказывает pytest с потоками
-(`registrations/tests/test_concurrency.py`); e2e — что каждый клиент видит свой верный итог (один — «место
-подтверждено», другой — «лист ожидания, №1»), а панель — 1 и 1. Так и написать в README.
+The new e2e does not prove simultaneity at the database level: two browsers send requests almost at
+the same time, but the order is not guaranteed. The race is proven by pytest with threads
+(`registrations/tests/test_concurrency.py`); e2e — that each client sees its own correct outcome
+(one — "seat confirmed", the other — "waitlist, #1"), and the panel — 1 and 1. Say exactly that in
+the README.
 
 ## README
 
-- «Состояние» — что работает, что не работает, что не делали и почему (общее, п. 12).
-- «Чем делали» — Claude Code; модели — Opus 5.5 (основная, 242 коммита) и Sonnet 5.5
-  (54 коммита) по трейлерам `Co-Authored-By`; почему — пара предложений, текст утверждает
-  человек.
-- «Ход работы» — лог решений с временем, `make worktime` (сумма по сессиям), история
-  коммитов, PR по этапам.
-- «Что дальше» — дополнить push-сервером (Centrifugo) из решения 2026-10-31 21:04.
-- «Что взято чужое» — skills из `vuejs-ai/skills` и `affaan-m/ecc` (`skills-lock.json`),
-  `feature-workflow` — адаптация из `rbikbov/frontend-starter`, компоненты shadcn-vue
-  (генератор), остальное — по итогам исследования (каркасы `create-vue`, `startproject`).
+- "State" — what works, what does not work, what was not done and why (general, item 12).
+- "What it was built with" — Claude Code; the models — Opus 5.5 (the main one, 242 commits) and
+  Sonnet 5.5 (54 commits) by the `Co-Authored-By` trailers; why — a couple of sentences, the human
+  approves the text.
+- "Course of work" — the decision log with the time, `make worktime` (the sum over sessions), the
+  commit history, PRs by stage.
+- "What's next" — add the push server (Centrifugo) from the decision of 2026-10-31 21:04.
+- "What was borrowed" — the skills from `vuejs-ai/skills` and `affaan-m/ecc` (`skills-lock.json`),
+  `feature-workflow` — an adaptation from `rbikbov/frontend-starter`, the shadcn-vue components (a
+  generator), the rest — by the results of the research (the `create-vue`, `startproject`
+  skeletons).
 
-## Экспорт сессий
+## Session export
 
-Встроенный `/export` выгружает только текущую сессию, и запуск его на старой сессии
-(`--resume`) дописал бы в неё новые строки. Поэтому — `scripts/export-sessions.mjs`
-(`make export-sessions`): по каждому `.jsonl` проекта — текстовый файл в формате, близком к
-`/export` (реплики человека, ответы агента, вызовы инструментов кратко), без того, что в запрос
-добавляет среда; исходники только читаются. Имя — `ГГГГ-ММ-ДД-ЧЧММ-<время работы>.txt`: начало
-сессии и сумма пауз между репликами, каждая — не больше 15 минут (время примерное). Повторный
-запуск дополняет папку и заменяет прежнюю выгрузку той же сессии. Файлы — в `docs/session/`,
-отдельным последним коммитом: человек может его откатить.
+The built-in `/export` exports only the current session, and running it on an old session
+(`--resume`) would append new lines to it. Hence `scripts/export-sessions.mjs`
+(`make export-sessions`): for each `.jsonl` of the project — a text file in a format close to
+`/export` (the human's messages, the agent's answers, tool calls in brief), without what the
+environment adds to a request; the sources are only read. The name is
+`YYYY-MM-DD-HHMM-<working time>.txt`: the session start and the sum of the pauses between messages,
+each capped at 15 minutes (the time is approximate). A repeated run extends the folder and replaces
+the previous export of the same session. The files go to `docs/session/`, in a separate last
+commit: the human can revert it.
 
-## Проверка на мусор
+## Junk check
 
-`anti-slop-review` по всему репозиторию (код, `docs/`, README, `AGENTS.md`). Отчёт —
-человеку целиком; исправления по его решениям — отдельными коммитами.
+`anti-slop-review` over the whole repository (code, `docs/`, README, `AGENTS.md`). The report goes
+to the human in full; the fixes by their decisions — in separate commits.
 
-## Допущения и открытые вопросы
+## Assumptions and open questions
 
-- Общие требования 1–5, 8–10 доказываются не тестом, а кодом и командой запуска: тест на
-  «бэкенд на Python» был бы ради таблицы.
-- Скрипт сверки — Node, как `scripts/pre-push.mjs`: без новых зависимостей.
-- Имя файлов экспорта — как выше; если нужно иначе — сказать до экспорта.
+- General requirements 1–5, 8–10 are proven not by a test but by the code and the run command: a
+  test for "a backend in Python" would exist only for the table.
+- The cross-check script is Node, like `scripts/pre-push.mjs`: no new dependencies.
+- The export file names — as above; if they need to be different, say so before the export.
 
-## Сценарии приёмки
+## Acceptance scenarios
 
-| Сценарий                                                                                                                                | Уровень теста  |
-| --------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
-| Given событие на 1 место, два браузера на его странице When оба регистрируются Then один подтверждён, другой №1 в листе, панель — 1 и 1 | e2e            |
-| Given ссылка на несуществующий тест в README When `make check` Then проверка падает с её именем                                         | тест скрипта   |
-| Given README When читает проверяющий Then у каждого пункта задания — тест или место в репозитории                                       | ревью человека |
-| Given `make stack-check` и `make stack-e2e` When фаза закрыта Then оба зелёные                                                          | команда        |
+| Scenario                                                                                                                                            | Test level         |
+| --------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------ |
+| Given an event with 1 seat, two browsers on its page When both register Then one is confirmed, the other is #1 on the waitlist, the panel — 1 and 1 | e2e                |
+| Given a reference to a nonexistent test in the README When `make check` Then the check fails with its name                                          | a script test      |
+| Given the README When the reviewer reads it Then each item of the assignment has a test or a place in the repository                                | the human's review |
+| Given `make stack-check` and `make stack-e2e` When the phase is closed Then both are green                                                          | a command          |

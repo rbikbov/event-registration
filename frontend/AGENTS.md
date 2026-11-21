@@ -1,60 +1,60 @@
 # frontend/ — Vue 3 + Vite
 
-Команды и инструменты — `docs/development.md`, раздел «Frontend». Как писать код (слои, DI,
-состояние, тесты) — skill `fsd-frontend`. Здесь — правила, которые действуют всегда.
+Commands and tools — `docs/development.md`, the "Frontend" section. How to write the code (layers,
+DI, state, tests) — the `fsd-frontend` skill. Here — the rules that always apply.
 
-## Карта
+## Map
 
 ```text
-src/main.ts          точка входа: mountApp("#app")
-src/app/             приложение: App.vue, router.ts, query-client.ts; ui/AppLayout — шапка (по meQuery, выход), плашка «Нет подключения к интернету» и общий <main>
-src/pages/<page>/    экраны: ui/, api/ (запросы, нужные только странице), index.ts; not-found — маршрут `routes.notFound`, последний
-src/pages/org-event/ макет события организатора: запрос, поток, шапка, вкладки —
-                     org-event-participants, org-checkin и org-event-edit (дочерние маршруты)
-src/entities/session/ кто вошёл: meQuery (null — гость), logout, forgetUserData — сброс данных прежнего пользователя при входе и выходе
-src/entities/event/  события: orgEventsQuery / orgEventQuery(id) / orgEventLive(id) / orgEventProbe(id) (организатор), publicEventsQuery / publicEventQuery(id) / publicEventLive(id) / publicEventProbe(id) (публичные); проба — статус события после отказа потока, без записи в его кэш; модель формы события (создание и редактирование) — `model/event-form.ts`; списки — по периоду и странице (`orgEventsQuery(period, page)`, `publicEventsQuery(period, page)`), после изменения событий сбрасываются все страницы — `orgEventListsKey` / `publicEventListsKey`, число страниц — `eventPageCount(count)`; период списка — `periodFromQuery` (`?period=past`, иначе предстоящие)
-src/shared/api/      клиент API, AppError, unwrap, сгенерированный schema.d.ts. Правила: src/shared/api/AGENTS.md
-src/shared/ui/       самописные компоненты (query-state — загрузка и ошибки запроса, при первой ошибке — ссылка на `/health`, `RetryAlert` — ошибка с повтором; error-state — `ErrorState` на месте страницы и `NotFound` над ним; expandable-text — текст до 4 строк с «Развернуть»; nav-link — ссылка шапки и вкладок, текущая страница выделена и с `aria-current`; char-counter — «12/200» под полем с пределом; filter-link — фильтр списка в адресе (статус, период), выбранный выделен и с `aria-current`; page-nav — страницы списка: первая, предыдущая, номера рядом с текущей, следующая, последняя, номер — в адресе); ui/shadcn/ — сгенерированные shadcn-vue, руками не правятся
-src/shared/config/   routes — все пути приложения
-src/shared/lib/      утилиты; safe-next — `?next=` входа, только путь этого приложения; page-query — `pageFromQuery`, номер страницы из `?page=`; moment-format — `formatMoment`, время отметки: дата, если не сегодня; live-source (`LiveSource` — данные от сервера, `sseSource` — по SSE) и use-live — подписка на время жизни компонента; lib/test/ — MSW, фейк EventSource, `goOnline` (сеть браузера) и setup для Vitest
-src/widgets|features/            появляются с первым срезом, пустыми не создаются
+src/main.ts          the entry point: mountApp("#app")
+src/app/             the application: App.vue, router.ts, query-client.ts; ui/AppLayout — the header (by meQuery, logout), the "No internet connection" bar and the shared <main>
+src/pages/<page>/    screens: ui/, api/ (queries needed only by the page), index.ts; not-found — the `routes.notFound` route, the last one
+src/pages/org-event/ the organizer's event layout: the query, the stream, the header, the tabs —
+                     org-event-participants, org-checkin and org-event-edit (child routes)
+src/entities/session/ who is logged in: meQuery (null — a guest), logout, forgetUserData — dropping the previous user's data on login and logout
+src/entities/event/  events: orgEventsQuery / orgEventQuery(id) / orgEventLive(id) / orgEventProbe(id) (organizer), publicEventsQuery / publicEventQuery(id) / publicEventLive(id) / publicEventProbe(id) (public); a probe — the event's status after a stream refusal, without writing into its cache; the event form model (creation and editing) — `model/event-form.ts`; lists — by period and page (`orgEventsQuery(period, page)`, `publicEventsQuery(period, page)`), after events change all pages are invalidated — `orgEventListsKey` / `publicEventListsKey`, the number of pages — `eventPageCount(count)`; the list period — `periodFromQuery` (`?period=past`, otherwise upcoming)
+src/shared/api/      the API client, AppError, unwrap, the generated schema.d.ts. Rules: src/shared/api/AGENTS.md
+src/shared/ui/       hand-written components (query-state — the loading and errors of a query, on the first error — a link to `/health`, `RetryAlert` — an error with a retry; error-state — `ErrorState` in place of the page and `NotFound` on top of it; expandable-text — text up to 4 lines with "Expand"; nav-link — a header and tab link, the current page is highlighted and has `aria-current`; char-counter — "12/200" under a field with a limit; filter-link — a list filter in the address (status, period), the selected one is highlighted and has `aria-current`; page-nav — list pages: first, previous, the numbers next to the current one, next, last, the number is in the address); ui/shadcn/ — generated shadcn-vue, not edited by hand
+src/shared/config/   routes — all application paths
+src/shared/lib/      utilities; safe-next — the login's `?next=`, only a path of this application; page-query — `pageFromQuery`, the page number from `?page=`; moment-format — `formatMoment`, the check-in time: with a date if not today; live-source (`LiveSource` — data from the server, `sseSource` — over SSE) and use-live — a subscription for the component's lifetime; lib/test/ — MSW, a fake EventSource, `goOnline` (the browser's network) and the setup for Vitest
+src/widgets|features/            appear with their first slice, not created empty
 ```
 
-## Правила
+## Rules
 
-1. Импорт — только в нижние слои; в чужой срез — только через его `index.ts`. Проверяет
-   ESLint (`boundaries/dependencies`); правило не отключать и не обходить.
-2. Сеть — только через `api` и `unwrap()` из `@/shared/api`. Выше `shared/api` нет `fetch`,
-   `Response` и HTTP-статусов: только данные и `AppError.kind`.
-3. Типы API не пишутся руками — они из `schema.d.ts` (`make schema`). Нужен тип ответа —
-   `components["schemas"]["<Имя>"]`.
-4. Каждое асинхронное действие в UI показывает загрузку, ошибку и пустое состояние и
-   блокирует повторную отправку.
-   Данные запроса на странице выводятся через `QueryState` (`shared/ui/query-state`), а не
-   цепочкой `v-if="isPending"` / `v-else-if="isError"` / `v-else-if="data"`. TanStack Query
-   при неудачном фоновом обновлении (фокус окна, `invalidateQueries`) ставит `isError`, но
-   оставляет `data`: ветка ошибки перед веткой данных прячет уже загруженное. Ошибка — на
-   месте данных, только если данных нет; иначе — алерт над прежними данными. Ответы, которые
-   повтор не меняет (`not_found`, `forbidden`), страница показывает до `QueryState`. Тест
-   страницы с запросом проверяет и неудачный `refetchQueries()` после загрузки.
-   Исключение — макет события организатора (`pages/org-event`): держит в `QueryState` только шапку: форма
-   чекина работает и без события (название — только подпись), поэтому вкладка «Чекин» стоит
-   вне `QueryState` и видна при ошибке загрузки события. До ответа `GET` вкладок нет: событие
-   может оказаться чужим.
-5. Тексты интерфейса — по-русски, в блоке `<i18n lang="json" locale="ru">` того же
-   компонента, достаются через `useI18n({ useScope: "local" })`; в store и чистых функциях
-   текстов нет (они возвращают коды, компонент подбирает текст). Глобальных сообщений нет.
-   Символ `@` в сообщении пишется `{'@'}`, иначе сборка падает.
-6. Имена: компоненты — `PascalCase.vue`, остальные файлы — `kebab-case.ts`, composable —
-   `use-<что>.ts` с функцией `use<Что>`. Тест — рядом: `<файл>.test.ts`.
-7. Без `any`, `@ts-ignore`, `as unknown as`, пустых `catch`, `console.log`. Каждый промис —
-   `await` или `void` с обработкой ошибки внутри.
-8. Тесты: сеть — только MSW (`server.use()` в каждом тесте), свои модули не мокаются через
-   `vi.mock` — зависимости передаются явно (skill `fsd-frontend`, раздел про DI).
-9. Компонент из `shared/ui/shadcn/` не правится: нужен другой вид — обёртка в `shared/ui/`
-   или токены в `app/styles.css`. Новый — `pnpm dlx shadcn-vue@latest add <имя>`, только
-   с потребителем.
-   Заголовок карточки — `CardHeading` с `level` (`shared/ui/card-heading`), не `CardTitle`:
-   тот всегда `h3` и молча игнорирует `as`.
-10. Пути маршрутов — только из `routes` (`@/shared/config`): ни в роутере, ни в
-    `router.push`/`RouterLink`, ни в тестах строкой `"/..."` не пишутся.
+1. Imports go only to lower layers; into another slice — only through its `index.ts`. ESLint checks
+   it (`boundaries/dependencies`); do not disable or bypass the rule.
+2. Network — only through `api` and `unwrap()` from `@/shared/api`. Above `shared/api` there is no
+   `fetch`, `Response` and HTTP statuses: only data and `AppError.kind`.
+3. API types are not written by hand — they come from `schema.d.ts` (`make schema`). A response type
+   is needed — `components["schemas"]["<Name>"]`.
+4. Each async action in the UI shows loading, an error and an empty state and blocks a repeated
+   submit.
+   The data of a query on a page is rendered through `QueryState` (`shared/ui/query-state`), not by a
+   `v-if="isPending"` / `v-else-if="isError"` / `v-else-if="data"` chain. On a failed background
+   refresh (window focus, `invalidateQueries`) TanStack Query sets `isError` but keeps `data`: an
+   error branch before the data branch hides what is already loaded. The error is in place of the
+   data only if there is no data; otherwise — an alert above the previous data. Answers a retry does
+   not change (`not_found`, `forbidden`) are shown by the page before `QueryState`. A test of a page
+   with a query also checks a failed `refetchQueries()` after the load.
+   The exception is the organizer's event layout (`pages/org-event`): it keeps only the header in
+   `QueryState`: the check-in form works without the event too (the title is only a caption), so the
+   "Check-in" tab is outside `QueryState` and visible on an event loading error. Until the `GET`
+   answers there are no tabs: the event may turn out to be someone else's.
+5. The interface texts are in Russian, in the `<i18n lang="json" locale="ru">` block of the same
+   component, obtained through `useI18n({ useScope: "local" })`; stores and pure functions have no
+   texts (they return codes, the component picks the text). There are no global messages. The `@`
+   character in a message is written as `{'@'}`, otherwise the build fails.
+6. Names: components — `PascalCase.vue`, other files — `kebab-case.ts`, a composable —
+   `use-<what>.ts` with a `use<What>` function. A test — next to it: `<file>.test.ts`.
+7. No `any`, `@ts-ignore`, `as unknown as`, empty `catch`, `console.log`. Each promise — `await` or
+   `void` with error handling inside.
+8. Tests: network — only MSW (`server.use()` in each test), our own modules are not mocked through
+   `vi.mock` — dependencies are passed explicitly (the `fsd-frontend` skill, the section on DI).
+9. A component from `shared/ui/shadcn/` is not edited: a different look is needed — a wrapper in
+   `shared/ui/` or tokens in `app/styles.css`. A new one — `pnpm dlx shadcn-vue@latest add <name>`,
+   only with a consumer.
+   A card heading — `CardHeading` with `level` (`shared/ui/card-heading`), not `CardTitle`: that one
+   is always `h3` and silently ignores `as`.
+10. Route paths — only from `routes` (`@/shared/config`): they are not written as a `"/..."` string
+    in the router, in `router.push`/`RouterLink` or in tests.

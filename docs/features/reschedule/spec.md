@@ -1,125 +1,134 @@
-# Напоминания и перенос события: spec
+# Reminders and event reschedule: spec
 
-Фаза — `docs/roadmap.md`, фаза 5. Статус: утверждён 2026-11-02.
+Phase — `docs/roadmap.md`, phase 5. Status: approved 2026-11-02.
 
-## Что и зачем
+## What and why
 
-Закрывает из задания: «за сутки до события всем участникам приходит напоминание. Ровно одно» и
-«организатор перенёс событие — все участники получают письмо». Плюс экран редактирования
-события (дата, лимит, название, описание) и `make seed` с демо-событиями. Проект — «Фоновые
-задачи и письма», п. 2, и `PATCH` события в `docs/architecture.md`; решения о правилах писем —
-`docs/decisions.md`, 2026-10-28 20:07.
+Covers from the assignment: "a day before the event all participants get a reminder. Exactly one"
+and "the organizer rescheduled the event — all participants get an email". Plus the event edit
+screen (date, limit, title, description) and `make seed` with demo events. The design is
+"Background jobs and emails", item 2, and the event `PATCH` in `docs/architecture.md`; the
+decisions about the email rules — `docs/decisions.md`, 2026-10-28 20:07.
 
 ## Non-Goals
 
-- Отмена и удаление события; письмо об изменении названия или описания.
-- Письма `cancelled`-регистрациям; напоминание стоящим в листе ожидания.
-- Уменьшение лимита ниже числа подтверждённых с переводом людей в лист — отклоняется (400).
-- Часовой пояс события: даты в письмах — UTC, как в фазе 2.
-- Изменение даты и лимита из админки (там они по-прежнему только для чтения).
-- Свои сроки напоминания (не 24 ч), несколько напоминаний, пробуждение воркера по `NOTIFY`.
-- Общая навигация, адаптив — фаза 6.
+- Cancelling and deleting an event; an email about a change of the title or description.
+- Emails to `cancelled` registrations; a reminder to the waitlisted.
+- Lowering the limit below the number of confirmed with moving people to the waitlist — rejected
+  (400).
+- An event time zone: the dates in emails are UTC, as in phase 2.
+- Changing the date and the limit from the admin (they are still read-only there).
+- Custom reminder lead times (not 24 h), several reminders, waking the worker on `NOTIFY`.
+- Shared navigation, responsive layout — phase 6.
 
-## Модель данных
+## Data model
 
-- **Event.`schedule_version`** — int, `default=1`, не меняется извне API. Миграция с
-  постоянным default (Postgres не переписывает таблицу).
-- **OutboxEmail.`kind`** + `reminder`, `rescheduled`: новая миграция заменяет `CHECK`.
-- **`dedup_key`** по видам: `ticket` / `waitlisted` / `promoted` — как раньше
-  (`{kind}:{reg_id}:{ticket_code}`); `reminder` и `rescheduled` —
-  `{kind}:{reg_id}:{schedule_version}`. Ровно одно напоминание на каждую дату события и одно
-  письмо на каждый перенос.
+- **Event.`schedule_version`** — int, `default=1`, not changed from outside the API. A migration
+  with a constant default (Postgres does not rewrite the table).
+- **OutboxEmail.`kind`** + `reminder`, `rescheduled`: a new migration replaces the `CHECK`.
+- **`dedup_key`** by kind: `ticket` / `waitlisted` / `promoted` — as before
+  (`{kind}:{reg_id}:{ticket_code}`); `reminder` and `rescheduled` —
+  `{kind}:{reg_id}:{schedule_version}`. Exactly one reminder per event date and one email per
+  reschedule.
 
-## Инварианты
+## Invariants
 
-| Инвариант                                                     | Чем защищён                                                          | Тест              |
-| ------------------------------------------------------------- | -------------------------------------------------------------------- | ----------------- |
-| Одно напоминание на регистрацию и дату                        | `UNIQUE(dedup_key)` с `schedule_version`, `ON CONFLICT DO NOTHING`   | pytest            |
-| Напоминание не о старой дате                                  | выборка напоминаний под замком Event (`FOR UPDATE SKIP LOCKED`)      | pytest (Postgres) |
-| Место получено внутри 24 ч — без напоминания                  | условие `confirmed_at < starts_at − 24h` в выборке                   | pytest            |
-| Перенос: письмо ⇔ дата изменена и закоммичена                 | `schedule_version += 1` и письма в одной транзакции под замком Event | pytest            |
-| Лимит не меньше подтверждённых; рост лимита повышает из листа | проверка и повышение под замком Event, как в `cancel`                | pytest            |
+| Invariant                                                                       | What protects it                                                               | Test              |
+| ------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ | ----------------- |
+| One reminder per registration and date                                          | `UNIQUE(dedup_key)` with `schedule_version`, `ON CONFLICT DO NOTHING`          | pytest            |
+| A reminder is not about the old date                                            | the reminder selection under the Event lock (`FOR UPDATE SKIP LOCKED`)         | pytest (Postgres) |
+| A seat obtained within 24 h — no reminder                                       | the condition `confirmed_at < starts_at − 24h` in the selection                | pytest            |
+| Reschedule: an email ⇔ the date is changed and committed                        | `schedule_version += 1` and the emails in one transaction under the Event lock | pytest            |
+| The limit is not below the confirmed; a higher limit promotes from the waitlist | the check and the promotion under the Event lock, as in `cancel`               | pytest            |
 
-## Сервисы
+## Services
 
-`registrations/services.py` (повышение из листа и письма уже там; `events` не импортирует
-`registrations`):
+`registrations/services.py` (the promotion from the waitlist and the emails are already there;
+`events` does not import `registrations`):
 
-- **`update_event(event_id, changes, now)`** — замок Event; `changes` — только присланные
-  поля. `starts_at` отличается от текущего → `schedule_version += 1`, письмо `rescheduled`
-  каждому `confirmed` и `waitlisted` (текст: старая и новая дата, код или «в листе ожидания»,
-  ссылка). `capacity` меньше числа `confirmed` → `CapacityBelowConfirmed(confirmed)`, ничего
-  не меняется; больше → повышение первых из листа до заполнения, каждому `promoted`. Любое
-  изменение — `notify_stats_changed`: снимок потока содержит событие целиком.
-- **`enqueue_reminders(now)`** — одна транзакция: события с
-  `starts_at − 24h ≤ now < starts_at`, `FOR UPDATE SKIP LOCKED` (занятое событие — в
-  следующий проход); каждому `confirmed` с `confirmed_at < starts_at − 24h` без письма с
-  этим ключом — `reminder`. Возвращает число поставленных.
+- **`update_event(event_id, changes, now)`** — the Event lock; `changes` — only the sent fields.
+  `starts_at` differs from the current one → `schedule_version += 1`, a `rescheduled` email to each
+  `confirmed` and `waitlisted` (the text: the old and the new date, the code or "on the waitlist",
+  the link). `capacity` below the number of `confirmed` → `CapacityBelowConfirmed(confirmed)`,
+  nothing changes; higher → promoting the first ones from the waitlist until it is full, each gets
+  `promoted`. Any change — `notify_stats_changed`: the stream snapshot contains the whole event.
+- **`enqueue_reminders(now)`** — one transaction: events with `starts_at − 24h ≤ now < starts_at`,
+  `FOR UPDATE SKIP LOCKED` (a busy event goes to the next pass); each `confirmed` with
+  `confirmed_at < starts_at − 24h` without an email with this key gets a `reminder`. Returns the
+  number queued.
 
-Воркер: `Command.poll()` вызывает `enqueue_reminders` не чаще раза в 30 с (`REMINDER_INTERVAL`),
-ошибки БД — как у рассылки. Ничего не планируется заранее: перезапуск воркера и перенос
-ничего не ломают; воркер, лежавший во время окна, после старта досылает, пока событие не началось.
+The worker: `Command.poll()` calls `enqueue_reminders` no more often than once every 30 s
+(`REMINDER_INTERVAL`), database errors — as for sending. Nothing is scheduled in advance: a worker
+restart and a reschedule break nothing; a worker that was down during the window catches up after
+starting, while the event has not started.
 
 ## API
 
-| Метод и путь                  | Вход                                                         | Ответ                    | Ошибки (статус → `kind`)                                                                                                                                              |
-| ----------------------------- | ------------------------------------------------------------ | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `PATCH /api/org/events/{id}/` | любое подмножество `title, description, starts_at, capacity` | 200 `OrgEventSerializer` | 400 → `validation` (поля как при создании; `starts_at` в прошлом — `past`, только если дата меняется; `capacity` < подтверждённых — `below_confirmed`); 401; 403; 404 |
+| Method and path               | Input                                                   | Response                 | Errors (status → `kind`)                                                                                                                                              |
+| ----------------------------- | ------------------------------------------------------- | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `PATCH /api/org/events/{id}/` | any subset of `title, description, starts_at, capacity` | 200 `OrgEventSerializer` | 400 → `validation` (the fields as on creation; `starts_at` in the past — `past`, only if the date changes; `capacity` < confirmed — `below_confirmed`); 401; 403; 404 |
 
-## Письма
+## Emails
 
-- `rescheduled` — «Событие перенесено: {title}»; было / стало (UTC); для `confirmed` — код,
-  для `waitlisted` — «вы в листе ожидания» без номера (номер смотрят по ссылке); ссылка.
-- `reminder` — «Напоминание: {title}»; дата (UTC) без «через сутки» (напоминание может уйти и позже — перенос внутрь окна, воркер после простоя), код, ссылка.
+- `rescheduled` — "Event rescheduled: {title}"; was / now (UTC); for `confirmed` — the code, for
+  `waitlisted` — "you are on the waitlist" without the position (the position is seen via the
+  link); the link.
+- `reminder` — "Reminder: {title}"; the date (UTC) without "in a day" (a reminder may go out later
+  — a reschedule into the window, a worker after downtime), the code, the link.
 
 ## UI
 
-Вкладка «Редактирование» в макете события организатора (`/org/events/:id/edit`, рядом с
-«Участники» и «Чекин»). Форма — та же, что у создания (поля, проверки, тексты ошибок):
-общая модель формы переезжает из `pages/org-event-new` в `entities/event`. Поля заполнены
-текущими значениями; отправляются только изменённые; нет изменений — кнопка неактивна.
-Дата изменена — перед отправкой подтверждение «Участникам (подтверждено N, в листе M) уйдёт
-письмо о переносе». Сохранение: кнопка блокируется, успех — «Сохранено», шапку и счётчики
-обновляет снимок потока (ответ в кэш не пишется: его счётчики могут быть старее снимка);
-ошибка поля — под полем (`below_confirmed`: «Не меньше подтверждённых:
-N»), сеть — сообщение, форма не сбрасывается.
+The "Edit" tab in the organizer's event layout (`/org/events/:id/edit`, next to "Participants" and
+"Check-in"). The form is the same as for creation (fields, checks, error texts): the shared form
+model moves from `pages/org-event-new` to `entities/event`. The fields are filled with the current
+values; only the changed ones are sent; no changes — the button is disabled. The date changed —
+before sending a confirmation "Participants (confirmed N, waitlisted M) will get a reschedule
+email". Saving: the button is disabled, success — "Saved", the header and the counters are updated
+by the stream snapshot (the response is not written into the cache: its counters may be older than
+the snapshot); a field error — under the field (`below_confirmed`: "At least the confirmed count:
+N"), network — a message, the form is not reset.
 
-## Демо-данные
+## Demo data
 
-`make seed` (`manage.py seed_demo`, слот агента — `make stack-seed`): у демо-организатора
-каждый запуск добавляет (1) событие через неделю на 2 места: 2 подтверждено, 1 в листе;
-(2) событие через ~23 ч на 10 мест с 3 участниками, у которых `confirmed_at` сдвинут на 2 дня
-назад (в названии — «демо»). Регистрации — через `register` (письма с билетами тоже
-уходят); через ~30 с в Mailpit — три напоминания. Адреса — `@example.com`.
+`make seed` (`manage.py seed_demo`, the agent's slot — `make stack-seed`): each run adds to the demo
+organizer (1) an event in a week with 2 seats: 2 confirmed, 1 on the waitlist; (2) an event in
+~23 h with 10 seats and 3 participants whose `confirmed_at` is moved 2 days back (the title contains
+"демо"). Registrations go through `register` (ticket emails go out too); ~30 s later there are three
+reminders in Mailpit. The addresses are `@example.com`.
 
-## Крайние случаи
+## Edge cases
 
-- Дата прислана, но не изменилась — ни версии, ни писем.
-- Перенос внутрь 24-часового окна: участники с местом до нового окна получают и письмо о
-  переносе, и напоминание (оно о новой дате).
-- Перенос из окна на позже: напоминание старой версии уже ушло, перед новой датой придёт новое.
-- Отказ, затем регистрация снова внутри окна — `confirmed_at` новый, напоминания нет.
-- Повышенный из листа внутри окна — напоминания нет (письмо `promoted` пришло только что).
-- Событие уже началось: перенос в будущее разрешён; напоминаний по прошедшему не шлём.
-- Два одновременных `PATCH` — по очереди под замком; каждый перенос — своя версия и письма.
+- The date is sent but did not change — neither a version nor emails.
+- A reschedule into the 24-hour window: participants with a seat from before the new window get
+  both the reschedule email and a reminder (it is about the new date).
+- A reschedule out of the window to later: the reminder of the old version has already gone out, a
+  new one will come before the new date.
+- A cancellation, then registering again inside the window — `confirmed_at` is new, no reminder.
+- Promoted from the waitlist inside the window — no reminder (the `promoted` email has just come).
+- The event has already started: a reschedule into the future is allowed; no reminders for a past
+  one.
+- Two simultaneous `PATCH` requests — one at a time under the lock; each reschedule has its own
+  version and emails.
 
-## Допущения и открытые вопросы
+## Assumptions and open questions
 
-- Уменьшение лимита ниже подтверждённых — 400, а не перевод в лист: никого не лишаем места.
-- `rescheduled` для `waitlisted` без номера: номер в письме устаревает, ссылка показывает текущий.
-- Опрос напоминаний раз в 30 с: задержка в демо до ~30 с, запрос дешёвый.
-- `make seed` не идемпотентен: событие «через 23 ч» за сутки устаревает, новый запуск даёт свежее.
+- Lowering the limit below the confirmed — 400, not moving to the waitlist: we take no one's seat.
+- `rescheduled` for `waitlisted` without the position: the position in the email gets outdated, the
+  link shows the current one.
+- Polling reminders once every 30 s: a delay in the demo of up to ~30 s, the query is cheap.
+- `make seed` is not idempotent: the "in 23 h" event gets outdated within a day, a new run gives a
+  fresh one.
 
-## Сценарии приёмки
+## Acceptance scenarios
 
-| Сценарий                                                                                            | Уровень           |
-| --------------------------------------------------------------------------------------------------- | ----------------- |
-| Окно открыто → по одному `reminder` каждому `confirmed` с местом до окна; повтор — не прибавилось   | pytest            |
-| Место получено внутри окна; `waitlisted`; `cancelled`; событие прошло → напоминания нет             | pytest            |
-| Перенос → `rescheduled` `confirmed` и `waitlisted`, версия +1; затем новое напоминание о новой дате | pytest            |
-| Перенос во время прохода напоминаний → напоминание не о старой дате                                 | pytest (Postgres) |
-| Рост лимита → первые из листа повышены с `promoted`; ниже подтверждённых → 400                      | pytest            |
-| `PATCH`: чужое → 403, нет → 404, гость → 401, дата в прошлом → 400                                  | pytest            |
-| Форма редактирования: заполнение, только изменённые поля, подтверждение переноса, ошибки            | Vitest            |
-| Организатор переносит событие → письма о переносе подтверждённому и стоящему в листе в Mailpit      | e2e               |
-| Организатор увеличивает лимит → стоящий в листе получает `promoted` в Mailpit                       | e2e               |
+| Scenario                                                                                                         | Level             |
+| ---------------------------------------------------------------------------------------------------------------- | ----------------- |
+| The window is open → one `reminder` to each `confirmed` with a seat from before the window; a repeat — no more   | pytest            |
+| A seat obtained inside the window; `waitlisted`; `cancelled`; the event is past → no reminder                    | pytest            |
+| A reschedule → `rescheduled` to `confirmed` and `waitlisted`, version +1; then a new reminder about the new date | pytest            |
+| A reschedule during a reminder pass → the reminder is not about the old date                                     | pytest (Postgres) |
+| A higher limit → the first ones from the waitlist are promoted with `promoted`; below the confirmed → 400        | pytest            |
+| `PATCH`: someone else's → 403, missing → 404, a guest → 401, a date in the past → 400                            | pytest            |
+| The edit form: filling, only the changed fields, a reschedule confirmation, errors                               | Vitest            |
+| The organizer reschedules the event → reschedule emails to a confirmed and a waitlisted one in Mailpit           | e2e               |
+| The organizer raises the limit → the waitlisted one gets `promoted` in Mailpit                                   | e2e               |

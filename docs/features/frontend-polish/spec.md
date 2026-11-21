@@ -1,183 +1,194 @@
-# Доводка фронтенда: spec
+# Frontend polish: spec
 
-Фаза — `docs/roadmap.md`, фаза 6. Статус: утверждён 2026-11-03; дополнен этапом 5 в тот же день.
+Phase — `docs/roadmap.md`, phase 6. Status: approved 2026-11-03; extended with stage 5 the same day.
 
-## Что и зачем
+## What and why
 
-Экраны фаз 1–5 сделаны каждый сам по себе: у каждой страницы свой `<main>` с отступами и
-шириной, общей шапки нет, выйти из кабинета организатора нельзя (эндпоинт `logout` есть,
-кнопки нет), неизвестный адрес даёт пустой экран, «не найдено» и ошибки загрузки каждая
-страница рисует по-своему, `/health` без оформления. Фаза собирает их в одно приложение: общий
-layout с навигацией, одинаковые состояния, ширина телефона. Плюс фронтенд из «на потом» фаз
-1–5: возврат после входа, время отметки с датой, описание события (`textarea`, свёрнутый
-показ), пауза у «Следующий» на чекине, нестабильные тесты Vitest. Этап 5 — отложенное по ходу
-фазы и постраничные списки событий: единственное место фазы, где меняются backend и API.
+The screens of phases 1–5 were each made on their own: each page has its own `<main>` with padding
+and width, there is no shared header, one cannot log out of the organizer's area (the `logout`
+endpoint exists, there is no button), an unknown address gives an empty screen, each page draws "not
+found" and loading errors its own way, `/health` has no styling. The phase assembles them into one
+application: a shared layout with navigation, uniform states, phone width. Plus the frontend items
+from "later" of phases 1–5: a return after login, the check-in time with a date, the event
+description (`textarea`, collapsed display), a pause on "Next" at check-in, flaky Vitest tests.
+Stage 5 is what was postponed during the phase plus paged event lists: the only place in the phase
+where the backend and the API change.
 
 ## Non-Goals
 
-- Регистрация пользователей — открытый вопрос 1; дробление страниц на `features` — вопрос 2.
-- Бургер-меню: в шапке не больше трёх пунктов, на 360 px они помещаются в строку.
-- Тёмная тема: в `styles.css` нет тёмной палитры — новая палитра и проверка экранов в двух темах.
-- Анимации переходов; название события в заголовке вкладки (заголовок — по маршруту).
-- Скелетоны вместо «Загружаем…»; переделка вёрстки «для красоты».
+- User sign-up — open question 1; splitting pages into `features` — question 2.
+- A burger menu: the header has no more than three items, at 360 px they fit in a row.
+- A dark theme: `styles.css` has no dark palette — a new palette and checking the screens in two
+  themes.
+- Transition animations; the event title in the tab title (the title comes from the route).
+- Skeletons instead of "Loading…"; reworking the layout "for beauty".
 
-## Где живёт код
+## Where the code lives
 
-- `app/ui/AppLayout.vue` — шапка и `<main>` вокруг `<RouterView>`; потребитель один, поэтому
-  `app`, а не `widgets`. `entities/session/api` — `logout` рядом с `meQuery`.
-- `shared/ui/error-state` — `ErrorState` (заголовок, текст, слот действий) и `NotFound` над ним.
-- `shared/ui/expandable-text` — свёрнутое описание (событие и макет организатора).
-- `shared/ui/char-counter` — счётчик символов под названием и описанием события.
-- `shared/ui/shadcn/textarea` — поле описания (создание и редактирование).
-- `shared/lib` — форматы даты: `short` (списки), `long` (событие, билет, макет) вместо пяти
-  копий `startsAt`; `formatMoment(iso, now)` — время отметки на входе; `safeNext(path)`.
-- `pages/not-found` — маршрут `/:path(.*)*` последним в `app/router.ts`.
+- `app/ui/AppLayout.vue` — the header and `<main>` around `<RouterView>`; it has one consumer, so it
+  is `app`, not `widgets`. `entities/session/api` — `logout` next to `meQuery`.
+- `shared/ui/error-state` — `ErrorState` (a title, a text, an actions slot) and `NotFound` on top of
+  it.
+- `shared/ui/expandable-text` — a collapsed description (the event and the organizer's layout).
+- `shared/ui/char-counter` — a character counter under the event title and description.
+- `shared/ui/shadcn/textarea` — the description field (creation and editing).
+- `shared/lib` — date formats: `short` (lists), `long` (the event, the ticket, the layout) instead of
+  five copies of `startsAt`; `formatMoment(iso, now)` — the check-in time; `safeNext(path)`.
+- `pages/not-found` — the `/:path(.*)*` route, last in `app/router.ts`.
 
-## Сессия
+## Session
 
-- **Кто вошёл, знает `meQuery`; кого куда пускать, решает только guard.** Шапка запрашивает
-  `meQuery` на любом экране и только показывает ответ: 401 `me` у гостя — `null`, никуда не
-  уводит. `GET me` гостю остаётся 401 (ресурса «текущий пользователь» без входа нет); строка
-  401 `me` в консоли гостя — единственная допустимая ошибка консоли при проверке в браузере.
-- **401 в середине сессии:** `session-expiry` не уводит на `/login` сам — ставит `me` в `null`
-  и повторяет текущую навигацию (`router.replace` с `force: true`); решает guard.
-- **Возврат после входа.** Guard уводит с `requiresAuth` на `/login?next=<fullPath>`; вход —
-  на `next`, иначе `/org/events`; вошедший на `/login?next=…` — тоже на `next`. `safeNext`
-  принимает только внутренний путь: начинается с `/`, но не с `//` и не с `/\`; иначе
-  `/org/events` (открытый редирект). После выхода — `/` без `next`.
-- **Данные прежнего пользователя** — `forgetUserData` удаляет все запросы, которых нет на
-  экране: при входе (после 401 в кэше остаются события и участники прежнего) и при выходе.
+- **Who is logged in is known by `meQuery`; who goes where is decided only by the guard.** The
+  header requests `meQuery` on any screen and only shows the answer: a 401 of `me` for a guest is
+  `null` and leads nowhere. `GET me` for a guest stays 401 (there is no "current user" resource
+  without login); the 401 `me` line in a guest's console is the only acceptable console error in a
+  browser check.
+- **A 401 in the middle of a session:** `session-expiry` does not send to `/login` by itself — it
+  sets `me` to `null` and repeats the current navigation (`router.replace` with `force: true`); the
+  guard decides.
+- **Return after login.** The guard sends from `requiresAuth` to `/login?next=<fullPath>`; login
+  goes to `next`, otherwise `/org/events`; a logged-in user on `/login?next=…` also goes to `next`.
+  `safeNext` accepts only an internal path: it starts with `/`, but not with `//` and not with `/\`;
+  otherwise `/org/events` (an open redirect). After logout — `/` without `next`.
+- **The previous user's data** — `forgetUserData` removes all queries that are not on the screen: on
+  login (after a 401 the cache keeps the previous user's events and participants) and on logout.
 
 ## UI
 
-**Шапка** на всех экранах: слева «События» → `/`; справа по `meQuery`: запрос в полёте —
-пусто (без мигания); гость или ошибка — «Вход для организатора»; организатор — «Мои события»,
-«Выйти», email с ширины `sm`. **`<main>`** общий: `mx-auto w-full max-w-4xl px-4 py-6 sm:py-8`;
-страница сужает себя сама (формы — `max-w-xl`), свои `<main>` у страниц убираются; вход — без
-`min-h-screen`. Ссылок «назад» у страниц нет: «События» и «Мои события» — в шапке.
-**Заголовок вкладки** — `meta.title` маршрута (ключ текста в `App.vue`) + «— Регистрация на
-мероприятия», `watchEffect` в `App.vue`.
+**The header** on all screens: on the left "Events" → `/`; on the right by `meQuery`: a request in
+flight — empty (no flicker); a guest or an error — "Organizer login"; an organizer — "My events",
+"Log out", the email from the `sm` width. **`<main>`** is shared:
+`mx-auto w-full max-w-4xl px-4 py-6 sm:py-8`; a page narrows itself (forms — `max-w-xl`), the
+pages' own `<main>` are removed; login — without `min-h-screen`. Pages have no "back" links:
+"Events" and "My events" are in the header. **The tab title** — the route's `meta.title` (a text
+key in `App.vue`) + "— Регистрация на мероприятия", `watchEffect` in `App.vue`.
 
-**Выход.** `POST /api/auth/logout/`, кнопка неактивна, пока запрос в полёте. Успех или 401 —
-`me` в `null`, переход на `/`, затем `forgetUserData`. Ошибка — «Не удалось выйти,
-повторите» под шапкой (`role="alert"`), сессия и экран не меняются.
+**Logout.** `POST /api/auth/logout/`, the button is disabled while the request is in flight. Success
+or 401 — `me` to `null`, a transition to `/`, then `forgetUserData`. An error — "Could not log out,
+try again" under the header (`role="alert"`), the session and the screen do not change.
 
-**Ошибки и «не найдено».** URL не меняется (без перехода на `/404`).
+**Errors and "not found".** The URL does not change (no transition to `/404`).
 
-- `NotFound` (ссылка «К событиям»): неизвестный путь и `/events/abc` — «Страница не найдена»;
-  `/events/:id` — «Такого события нет»; билет — «Билет не найден»; макет — «Событие не найдено».
-- `ErrorState`: макет 403 — «Нет доступа» со ссылкой «Мои события»; первая загрузка в
-  `QueryState` не удалась — текст и «Повторить». Ошибка повторной загрузки при данных —
-  `RetryAlert` над данными, как сейчас.
+- `NotFound` (a "To events" link): an unknown path and `/events/abc` — "Page not found";
+  `/events/:id` — "No such event"; the ticket — "Ticket not found"; the layout — "Event not found".
+- `ErrorState`: a layout 403 — "No access" with a "My events" link; the first load in `QueryState`
+  failed — a text and "Retry". An error of a repeated load with data — a `RetryAlert` above the
+  data, as now.
 
-**Состояния.** Экран, читающий данные, — через `QueryState`; форма — блокировка кнопки и
-ошибка отправки. Аудит сверяет таблицу с кодом: недостающее делается, «есть» — ссылка на тест.
+**States.** A screen that reads data goes through `QueryState`; a form — a disabled button and a
+submit error. The audit checks the table against the code: what is missing is done, "yes" — a link
+to a test.
 
-| Экран                   | Загрузка | Ошибка с повтором | Пусто           | Не найдено   |
-| ----------------------- | -------- | ----------------- | --------------- | ------------ |
-| `/`, `/org/events`      | есть     | есть              | есть            | —            |
-| `/events/:id`, билет    | есть     | есть              | —               | есть         |
-| макет события и вкладки | есть     | есть              | участники: есть | есть (и 403) |
-| `/health`               | есть     | **нет**           | —               | —            |
+| Screen                    | Loading | Error with a retry | Empty             | Not found     |
+| ------------------------- | ------- | ------------------ | ----------------- | ------------- |
+| `/`, `/org/events`        | yes     | yes                | yes               | —             |
+| `/events/:id`, the ticket | yes     | yes                | —                 | yes           |
+| the event layout and tabs | yes     | yes                | participants: yes | yes (and 403) |
+| `/health`                 | yes     | **no**             | —                 | —             |
 
-**Описание события.** В форме создания и редактирования — `textarea` (сейчас `<input>`
-выбрасывает переводы строк). На странице события и в макете организатора — `ExpandableText`:
-`whitespace-pre-line`, свёрнуто до 4 строк (`line-clamp-4`); «Развернуть» / «Свернуть» — только
-если текст обрезан (сравнение `scrollHeight` и `clientHeight`, заново при смене текста и
-ширины). Пустое описание — ничего.
+**The event description.** In the creation and edit forms — a `textarea` (now an `<input>` drops
+line breaks). On the event page and in the organizer's layout — `ExpandableText`:
+`whitespace-pre-line`, collapsed to 4 lines (`line-clamp-4`); "Expand" / "Collapse" — only if the
+text is cut (comparing `scrollHeight` and `clientHeight`, again on a change of the text and the
+width). An empty description — nothing.
 
-**Время отметки на входе** (ответ чекина, билет, колонка таблицы участников) — `formatMoment`:
-тот же календарный день, что сейчас, по поясу браузера — «09:15»; другой день этого года —
-«31 окт. в 09:15»; другой год — «31 окт. 2025 г. в 09:15».
+**The check-in time** (the check-in answer, the ticket, the participant table column) —
+`formatMoment`: the same calendar day as now, in the browser's zone — "09:15"; another day of this
+year — "31 Oct at 09:15"; another year — "31 Oct 2025 at 09:15".
 
-**Чекин, «Следующий»** неактивна 1 с после ответа: случайный Enter или автоповтор клавиши не
-убирает ответ непрочитанным. Фокус на кнопке — как сейчас.
+**Check-in, "Next"** is disabled for 1 s after an answer: an accidental Enter or a key auto-repeat
+does not remove the answer unread. The focus on the button — as now.
 
-**Ширина телефона** — 360 px: нет горизонтальной прокрутки страницы ни на одном экране;
-таблица участников прокручивается в своём блоке, имя и email в ней — с пределом ширины и
-переносом; шапка в одну строку; вкладки макета переносятся (`flex-wrap`); длинные названия,
-имена и email — `wrap-anywhere`. **Единый вид:** `h1 text-2xl
-font-semibold`, два формата даты, карточки списков — `Card`.
+**Phone width** — 360 px: no horizontal page scrolling on any screen; the participant table scrolls
+in its own block, the name and the email in it have a width limit and wrap; the header is in one
+row; the layout tabs wrap (`flex-wrap`); long titles, names and emails — `wrap-anywhere`. **A
+uniform look:** `h1 text-2xl font-semibold`, two date formats, list cards — `Card`.
 
-## Этап 5
+## Stage 5
 
-Из «на потом» этой фазы и фазы 4 (решение от 2026-11-03 23:55).
+From "later" of this phase and phase 4 (decision of 2026-11-03 23:55).
 
-- **Ссылки навигации** — компонент в `shared/ui` над `RouterLink`: текущий раздел выделен
-  (и `aria-current="page"`, как у вкладок макета сейчас); шапка и вкладки макета.
-- **Курсор**: `pointer` у кнопок, `not-allowed` у неактивных (`disabled`, `aria-disabled`) —
-  в стилях приложения, `shared/ui/shadcn` не правится.
-- **`/health` из интерфейса**: в блоке первой ошибки `QueryState` — кнопка-ссылка «Состояние
-  сервиса» рядом с «Повторить». Без сети (`navigator.onLine`, события `online` / `offline`) — одна
-  плашка «Нет подключения к интернету» под шапкой (`AppLayout`), не строка в каждой ошибке.
-- **Формы**: счётчик символов «12/200» под названием и описанием (создание и редактирование);
-  пределы — из `entities/event/model/event-form.ts`, общие со схемой. Библиотека форм не
-  берётся (решение от 2026-11-04 16:13).
-- **Порядок списков**: предстоящие — ближайшие по `starts_at` первыми, прошедшие — недавние
-  первыми; при равном `starts_at` в предстоящих первым больший `id` (создан позже), в прошедших —
-  меньший: прошедшие — тот же порядок, развёрнутый назад (решение от 2026-11-04 16:55).
-- **Постраничная выдача** `/` и `/org/events`: по номеру страницы с общим числом в ответе —
-  без него нельзя перейти на последнюю страницу. Компонент пагинации в `shared/ui`:
-  «первая», «предыдущая», номера рядом с текущей с многоточием, «следующая», «последняя»;
-  одна страница — пагинации нет; номер — в адресе (`?page=`).
-- **Вкладки «Предстоящие» / «Прошедшие»** на `/` и `/org/events` (`period=upcoming|past` в API
-  и в адресе, по умолчанию предстоящие; смена вкладки — первая страница). Прошедшее —
-  `starts_at` в прошлом: времени окончания у события нет. Регистрация на прошедшее событие с
-  его страницы остаётся возможной — запрет и время окончания идут в «что дальше» README.
+- **Navigation links** — a component in `shared/ui` on top of `RouterLink`: the current section is
+  highlighted (and `aria-current="page"`, as the layout tabs have now); the header and the layout
+  tabs.
+- **Cursor**: `pointer` on buttons, `not-allowed` on disabled ones (`disabled`, `aria-disabled`) —
+  in the application styles, `shared/ui/shadcn` is not edited.
+- **`/health` from the interface**: in the first-error block of `QueryState` — a link button
+  "Service status" next to "Retry". Without network (`navigator.onLine`, the `online` / `offline`
+  events) — one "No internet connection" bar under the header (`AppLayout`), not a line in each
+  error.
+- **Forms**: a "12/200" character counter under the title and the description (creation and
+  editing); the limits come from `entities/event/model/event-form.ts`, shared with the schema. No
+  form library is taken (decision of 2026-11-04 16:13).
+- **List order**: upcoming — the nearest by `starts_at` first, past — the recent first; with equal
+  `starts_at` the upcoming put the larger `id` first (created later), the past the smaller: past is
+  the same order turned back (decision of 2026-11-04 16:55).
+- **Paged output** of `/` and `/org/events`: by page number with the total count in the response —
+  without it one cannot go to the last page. A paging component in `shared/ui`: "first",
+  "previous", the numbers next to the current one with an ellipsis, "next", "last"; one page — no
+  paging; the number is in the address (`?page=`).
+- **The "Upcoming" / "Past" tabs** on `/` and `/org/events` (`period=upcoming|past` in the API and
+  in the address, upcoming by default; changing the tab — the first page). Past means `starts_at` in
+  the past: an event has no end time. Registering for a past event from its page stays possible — a
+  ban and an end time go to "what's next" of the README.
 
-Открытые вопросы этапа (решаются в начале задач): 5.4 — счётчик или библиотека форм (решено:
-счётчик); 5.6 — размер страницы (решено: 20); 5.7 — что показывать на странице за концом (`?page=999`): 404 или последнюю (решено: текст
-«Здесь событий нет.» и ссылка на последнюю, как у участников).
+Open questions of the stage (decided at the start of the tasks): 5.4 — a counter or a form library
+(decided: a counter); 5.6 — the page size (decided: 20); 5.7 — what to show on a page past the end
+(`?page=999`): 404 or the last one (decided: the text "No events here." and a link to the last one,
+as for the participants).
 
-## Тесты Vitest
+## Vitest tests
 
-Нестабильные: `TicketPage` «cancels, rereads…», `EventPage.test.ts:197`, под нагрузкой —
-`LoginPage`, `OrgEventNewPage`, `OrgCheckinPage`, `OrgEventPage` («на потом» фаз 2, 4, 5).
-Гипотеза — `flushPromises()` там, где ответ MSW приходит позже тика, и рендер после разбора
-jsdom. Цель — ожидание по результату (`findBy…`, `waitFor`), без увеличения таймаутов.
-Готово — 10 прогонов `make test-frontend` подряд зелёные под нагрузкой (параллельно с
-`make stack-check-backend`). Ограничение — 2 часа; не уложились — гипотеза и что пробовали в
-«на потом».
+Flaky: `TicketPage` "cancels, rereads…", `EventPage.test.ts:197`, under load — `LoginPage`,
+`OrgEventNewPage`, `OrgCheckinPage`, `OrgEventPage` ("later" of phases 2, 4, 5). The hypothesis —
+`flushPromises()` where the MSW response arrives later than a tick, and a render after jsdom is torn
+down. The goal — waiting for the result (`findBy…`, `waitFor`), without raising timeouts. Done — 10
+runs of `make test-frontend` in a row are green under load (in parallel with
+`make stack-check-backend`). The limit is 2 hours; if it does not fit — the hypothesis and what was
+tried go to "later".
 
-## Крайние случаи
+## Edge cases
 
-- Выход в одной вкладке, другая на панели: её следующий запрос — 401 → `me` `null` → guard
-  уводит на `/login?next=…`; повторный клик «Выйти» во время запроса — один `POST`.
-- Гость на неизвестном пути под `/org/...`: путь не `requiresAuth` — 404 без перехода на вход.
-- `next` на `/login` (`/login?next=/login`) или на несуществующий путь — вход ведёт туда, guard
-  или 404 отвечают как обычно; цикла нет: вошедшего с `/login` guard уводит дальше.
-- Чекин → вкладка «Участники»: счётчики могут быть до отметки («на потом» фазы 3); с фазы 4
-  макет держит поток на всех вкладках — проверить, устарело ли; если нет — `invalidateQueries`.
+- Logout in one tab, another is on the panel: its next request — 401 → `me` `null` → the guard sends
+  to `/login?next=…`; a repeated click on "Log out" during the request — one `POST`.
+- A guest on an unknown path under `/org/...`: the path is not `requiresAuth` — 404 without a
+  transition to login.
+- `next` to `/login` (`/login?next=/login`) or to a nonexistent path — login leads there, the guard
+  or the 404 answer as usual; there is no loop: the guard sends a logged-in user from `/login`
+  onward.
+- Check-in → the "Participants" tab: the counters may be from before the check-in ("later" of phase
+  3); since phase 4 the layout holds the stream on all tabs — check whether it is outdated; if not —
+  `invalidateQueries`.
 
-## Допущения и открытые вопросы
+## Assumptions and open questions
 
-1. **Регистрация пользователей** — не в spec; фаза закрывается без неё, в README «что
-   дальше» — строка о ней. Останется время — отдельный этап с дополнением spec.
-2. **Дробление страниц на `features`** — не в этой фазе: вместе с доводкой всех экранов ревью
-   не отделит одно от другого. Предлагаю отдельной задачей после сдачи.
-3. Ширина 360 px; 320 px не проверяем. Email в шапке скрыт до `sm`, а не обрезан.
-4. После выхода — `/`: организатор мог выйти, чтобы посмотреть публичную часть.
-5. Пауза «Следующий» — 1 с; описание свёрнуто до 4 строк.
+1. **User sign-up** — not in the spec; the phase closes without it, the README's "what's next" has a
+   line about it. If time remains — a separate stage with an extension of the spec.
+2. **Splitting pages into `features`** — not in this phase: together with polishing all screens the
+   review will not separate one from the other. I suggest a separate task after the delivery.
+3. Width 360 px; 320 px is not checked. The email in the header is hidden below `sm`, not cut.
+4. After logout — `/`: the organizer may have logged out to look at the public part.
+5. The "Next" pause — 1 s; the description is collapsed to 4 lines.
 
-## Сценарии приёмки
+## Acceptance scenarios
 
-| Сценарий                                                                                        | Тест   |
-| ----------------------------------------------------------------------------------------------- | ------ |
-| Гость (`me` → 401): шапка «Вход для организатора», без перехода на `/login`                     | Vitest |
-| Организатор на публичном экране: «Мои события», «Выйти»                                         | Vitest |
-| 401 на запросе организатора → `/login?next=<путь>`, после входа — обратно на путь               | Vitest |
-| `safeNext`: `/org/events/1` — да; `//evil.com`, `/\evil.com`, `https://…`, пусто — нет          | Vitest |
-| «Выйти» → `/`, «Вход для организатора», `/org/events` ведёт на вход                             | e2e    |
-| `logout` с ошибкой — «Не удалось выйти, повторите», сессия на месте; двойной клик — один `POST` | Vitest |
-| Неизвестный путь и `/events/abc` — «Страница не найдена»; `/events/999` — «Такого события нет»  | Vitest |
-| Заголовок вкладки из `meta.title`; `/health` без backend — «Повторить» шлёт запрос              | Vitest |
-| `formatMoment`: сегодня, вчера в 23:50 через 10 минут, другой день года, другой год             | Vitest |
-| Описание с переводами строк сохраняется и показывается с ними; длинное — «Развернуть»           | Vitest |
-| «Следующий» неактивна 1 с после ответа чекина                                                   | Vitest |
-| Текущий раздел в шапке и текущая вкладка макета выделены, `aria-current="page"`                 | Vitest |
-| Ошибка загрузки — ссылка на `/health`; без сети — плашка под шапкой                             | Vitest |
-| Два события с одним `starts_at`: в предстоящих первым больший `id`, в прошедших — меньший       | pytest |
-| Список длиннее страницы: переход на последнюю и первую страницу, номер — в адресе               | e2e    |
-| `/` и `/org/events`: прошедшее событие — только на вкладке «Прошедшие», недавние первыми        | e2e    |
-| 360 × 740: каждый экран (публичные, вход, панель, вкладки, билет, 404) — `scrollWidth` ≤ окна   | e2e    |
-| Каждое «есть» таблицы «Состояния» — ссылка на тест в задаче аудита                              | Vitest |
+| Scenario                                                                                                | Test   |
+| ------------------------------------------------------------------------------------------------------- | ------ |
+| A guest (`me` → 401): the header has "Organizer login", no transition to `/login`                       | Vitest |
+| An organizer on a public screen: "My events", "Log out"                                                 | Vitest |
+| A 401 on an organizer request → `/login?next=<path>`, after login — back to the path                    | Vitest |
+| `safeNext`: `/org/events/1` — yes; `//evil.com`, `/\evil.com`, `https://…`, empty — no                  | Vitest |
+| "Log out" → `/`, "Organizer login", `/org/events` leads to login                                        | e2e    |
+| `logout` with an error — "Could not log out, try again", the session stays; a double click — one `POST` | Vitest |
+| An unknown path and `/events/abc` — "Page not found"; `/events/999` — "No such event"                   | Vitest |
+| The tab title from `meta.title`; `/health` without the backend — "Retry" sends a request                | Vitest |
+| `formatMoment`: today, yesterday at 23:50 seen 10 minutes later, another day of the year, another year  | Vitest |
+| A description with line breaks is saved and shown with them; a long one — "Expand"                      | Vitest |
+| "Next" is disabled for 1 s after a check-in answer                                                      | Vitest |
+| The current section in the header and the current layout tab are highlighted, `aria-current="page"`     | Vitest |
+| A loading error — a link to `/health`; without network — a bar under the header                         | Vitest |
+| Two events with one `starts_at`: the upcoming put the larger `id` first, the past the smaller           | pytest |
+| A list longer than a page: going to the last and the first page, the number is in the address           | e2e    |
+| `/` and `/org/events`: a past event — only on the "Past" tab, the recent first                          | e2e    |
+| 360 × 740: each screen (public, login, panel, tabs, ticket, 404) — `scrollWidth` ≤ the window           | e2e    |
+| Each "yes" of the "States" table — a link to a test in the audit task                                   | Vitest |

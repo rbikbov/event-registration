@@ -1,6 +1,6 @@
 // Sums working time from the session markers in docs/decisions.md:
-//   - **18:45** — ▶ начало сессии
-//   - **01:17** — ■ конец сессии
+//   - **18:45** — ▶ session start
+//   - **01:17** — ■ session end
 // The date comes from the nearest `## YYYY-MM-DD` heading above the marker, so a session may
 // cross midnight. Wall-clock time is used as is: a DST change inside a session is not corrected.
 import { readFileSync } from "node:fs";
@@ -30,37 +30,37 @@ export function parseSessions(text) {
     if (!marker) continue;
     const [, hh, mm, symbol] = marker;
     if (day === null) {
-      warnings.push(`маркер ${symbol} ${hh}:${mm} стоит до первого заголовка дня`);
+      warnings.push(`marker ${symbol} ${hh}:${mm} comes before the first day heading`);
       continue;
     }
     const at = stamp(day, hh, mm);
 
     if (symbol === "▶") {
-      if (open) warnings.push(`начало ${at}: предыдущая сессия (${open.at}) не закрыта`);
+      if (open) warnings.push(`start ${at}: the previous session (${open.at}) is not closed`);
       open = { at, minutes: toMinutes(day, hh, mm) };
     } else if (!open) {
-      warnings.push(`конец ${at}: нет начала сессии`);
+      warnings.push(`end ${at}: no session start`);
     } else {
       const minutes = toMinutes(day, hh, mm) - open.minutes;
       if (minutes < 0) {
-        warnings.push(`конец ${at} раньше начала ${open.at}`);
+        warnings.push(`end ${at} is earlier than start ${open.at}`);
       } else {
         sessions.push({ start: open.at, end: at, minutes });
       }
       open = null;
     }
   }
-  if (open) warnings.push(`сессия с ${open.at} не закрыта и не учтена`);
+  if (open) warnings.push(`the session from ${open.at} is not closed and not counted`);
   return { sessions, warnings };
 }
 
-const duration = (minutes) => `${Math.floor(minutes / 60)} ч ${minutes % 60} мин`;
+const duration = (minutes) => `${Math.floor(minutes / 60)} h ${minutes % 60} min`;
 
 export function formatReport({ sessions, warnings }) {
   const lines = sessions.map((s) => `${s.start} → ${s.end}  ${duration(s.minutes)}`);
   const total = sessions.reduce((sum, s) => sum + s.minutes, 0);
-  lines.push(`Итого: ${duration(total)}`);
-  for (const warning of warnings) lines.push(`Предупреждение: ${warning}`);
+  lines.push(`Total: ${duration(total)}`);
+  for (const warning of warnings) lines.push(`Warning: ${warning}`);
   return lines.join("\n");
 }
 
