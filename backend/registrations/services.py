@@ -65,19 +65,12 @@ def waitlist_position(registration: Registration) -> int | None:
 def register(
     event_id: int, email: str, name: str, *, now: datetime | None = None
 ) -> RegisterResult:
-    """Register an email for an event; a repeat returns the existing registration.
+    """Register an email for an event: a seat while seats remain, otherwise the waitlist.
 
-    A new registration is confirmed while seats remain, otherwise it joins the waitlist.
-    A seat comes with a ticket email, the waitlist with one that has the position; it is queued
-    in the same transaction, the worker sends it.
-    A cancelled registration is revived: seat or waitlist is decided anew, the ticket code is
-    reissued and the place in the queue is the end of it. A new or revived registration
-    notifies the event's stats stream, a repeat does not.
-
-    The event row is locked for the whole transaction, so registrations for one event run one
-    after another: two requests cannot take the same last seat or insert the same email twice.
-    The queue order is the order of the locks.
-    Raises Event.DoesNotExist for an unknown event.
+    A repeat returns the existing registration; a cancelled one is revived with a new ticket code
+    at the end of the queue. The email (ticket or waitlist) is queued in the same transaction.
+    The event row lock makes registrations for one event run one after another, so two requests
+    cannot take one last seat. Raises Event.DoesNotExist for an unknown event.
     """
     email = email.strip().lower()
     with transaction.atomic():
@@ -135,12 +128,10 @@ def _queue_time(event: Event, now: datetime) -> datetime:
 
 
 def cancel(manage_token: str, *, now: datetime | None = None) -> Registration:
-    """Cancel a registration by its manage token; a cancelled seat goes to the waitlist head.
+    """Cancel a registration by its manage token; a freed seat goes to the waitlist head.
 
-    The promoted one gets an email with the ticket code, queued in the same transaction.
-    Cancelling twice, or cancelling from the waitlist, promotes nobody. A cancellation notifies
-    the event's stats stream, a repeat does not. Raises
-    Registration.DoesNotExist for an unknown token and TicketCheckedIn for a checked-in ticket.
+    A repeat or a cancellation from the waitlist promotes nobody. Raises Registration.DoesNotExist
+    for an unknown token and TicketCheckedIn for a checked-in ticket.
     """
     with transaction.atomic():
         event_id = Registration.objects.values_list("event_id", flat=True).get(
@@ -186,19 +177,13 @@ class CapacityBelowConfirmed(Exception):
 def update_event(event_id: int, changes: EventChanges, *, now: datetime | None = None) -> Event:
     """Apply the organizer's `changes` (only the fields sent) to the event and return it.
 
-    All under the event lock, in one transaction with the emails: an email goes out if and only
-    if its change is committed, and concurrent changes run one after another.
-    - A new start bumps the schedule version and emails every confirmed and waitlisted
-      registration about it; each reschedule has a version and emails of its own.
-    - A capacity below the confirmed count raises CapacityBelowConfirmed and changes nothing;
-      a larger one promotes the waitlist head, in queue order, until the seats are taken.
-    - Any change notifies the event's stats stream: its snapshot has the whole event.
-    A field sent with its current value is no change. Raises Event.DoesNotExist for an unknown
-    event.
+    Under the event lock, in one transaction with the emails. A new start bumps the schedule
+    version and emails the confirmed and the waitlisted; a larger capacity promotes from the
+    waitlist; a capacity below the confirmed count raises CapacityBelowConfirmed and changes
+    nothing. Raises Event.DoesNotExist for an unknown event.
     """
     with transaction.atomic():
         event = Event.objects.select_for_update().get(pk=event_id)
-        # After the lock, like in `cancel`: the promotion time is when it really happened.
         now = now or timezone.now()
         capacity = changes.get("capacity", event.capacity)
         confirmed = _confirmed_count(event)
@@ -242,14 +227,9 @@ REMINDER_LEAD = timedelta(hours=24)
 def enqueue_reminders(*, now: datetime | None = None) -> int:
     """Queue a reminder for each seat of the events starting within REMINDER_LEAD; return how many.
 
-    Called by the worker over and over, nothing is scheduled ahead: a reschedule or a restart
-    breaks nothing, and a worker that was down catches up while the event has not started.
-    A seat taken inside the window gets none: its ticket or promotion email came just now. One
-    reminder per registration and schedule version: a repeat pass queues nothing new.
-
-    The events are locked, and a locked one is skipped till the next pass: a reschedule holding
-    it may have saved a new date not yet committed, and a reminder read past the lock would be
-    about the old one. Two workers split the events instead of waiting for each other.
+    The worker calls it over and over, so nothing is scheduled ahead. A seat taken inside the
+    window gets none. An event locked by a reschedule is skipped till the next pass: read past
+    the lock, its reminder could be about the old date.
     """
     queued = 0
     with transaction.atomic():
@@ -278,14 +258,11 @@ def enqueue_reminders(*, now: datetime | None = None) -> int:
 
 
 def check_in(event_id: int, code: str, *, now: datetime | None = None) -> CheckInResult:
-    """Mark the confirmed ticket with `code` at the event as checked in.
+    """Mark the confirmed ticket with `code` (any case, spaces and dashes) as checked in.
 
-    One conditional UPDATE: it locks the row, so of concurrent requests with one code only the
-    first passes the WHERE; the others wait for its commit, read the row and report a repeat
-    with the time of the first check-in. The code is taken as typed at the entrance: any case,
-    spaces and dashes. The first check-in notifies the event's stats stream, a repeat does not:
-    the counts are the same. Raises Registration.DoesNotExist when the event has no such ticket and
-    TicketNotConfirmed for a waitlisted or cancelled one.
+    One conditional UPDATE: of concurrent requests with one code only the first passes, the
+    others report a repeat with the time of the first check-in. Raises Registration.DoesNotExist
+    when the event has no such ticket and TicketNotConfirmed for a waitlisted or cancelled one.
     """
     code = "".join(code.split()).replace("-", "").upper()
     now = now or timezone.now()
@@ -311,12 +288,10 @@ PAGE_SIZE = 50
 def event_registrations(
     event_id: int, status: str | None = None, page: int = 1
 ) -> QuerySet[Registration]:
-    """A page of the event's registrations in queue order, all or of one `status`.
+    """A page (from 1, PAGE_SIZE each) of the event's registrations in queue order.
 
-    For the organizer, PAGE_SIZE a page from 1; past the end, an empty one. A waitlisted
-    registration has its `position`, the others None: numbered in the same query by a window
-    over the waitlist, in the order waitlist_position counts. The status filter is applied
-    before the window, and the page after it: the numbers on a page go on from the previous.
+    A waitlisted one has its `position`, numbered in the same query by a window function; the
+    page is cut after the window, so the numbers go on from the previous page.
     """
     queue_order = (F("queued_at").asc(), F("id").asc())
     registrations = Registration.objects.filter(event_id=event_id)
@@ -342,10 +317,8 @@ def mask_email(email: str) -> str:
 def get_ticket(manage_token: str) -> Ticket:
     """The registration behind a manage token, with its event and waitlist place.
 
-    A plain read without the event lock: nothing is decided from it, and the lock would queue
-    it behind registrations. A promotion between the two queries leaves a stale position
-    (0 for the promoted one itself) until the next read.
-    Raises Registration.DoesNotExist for an unknown token.
+    Read without the event lock: nothing is decided from it. Raises Registration.DoesNotExist
+    for an unknown token.
     """
     registration = Registration.objects.select_related("event").get(manage_token=manage_token)
     return Ticket(registration, position=waitlist_position(registration))
