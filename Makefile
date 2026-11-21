@@ -34,11 +34,14 @@ dev-deps: ## Start services needed for local development and tests (Postgres, Ma
 	docker compose up -d --wait postgres mailpit
 
 .PHONY: install
-install: ## Install all dependencies, the Playwright browser, git hooks and third-party skills
+install: ## Install all dependencies, the Playwright browser and git hooks
 	pnpm install
-	npx -y skills@1.9.0 experimental_install
 	cd e2e && pnpm exec playwright install chromium
 	$(BACKEND) uv sync
+
+.PHONY: skills
+skills: ## Optional: third-party agent skills at the commits pinned in skills-lock.json
+	npx -y skills@1.9.0 experimental_install
 
 .PHONY: check
 check: format-check check-tooling check-readme check-ci check-backend check-frontend check-e2e ## Run all linters, type checks and tests

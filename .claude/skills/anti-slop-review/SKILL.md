@@ -1,11 +1,11 @@
 ---
 name: anti-slop-review
 description: >
-  A check of code and documentation for "AI slop" before committing a large change, a review or the
-  delivery of the repository: generator and template leftovers, dead and unfinished options, claims
+  A check of code and documentation for "AI slop" before committing a large change, a review, a demo
+  or a release of the repository: generator and template leftovers, dead and unfinished options, claims
   in the README, docs and comments not backed by the code, a promotional tone and emoji, extra
   abstractions, fragile error handling, personal data in logs. Use when asked to check the code or
-  the repository "for junk", to prepare the project for delivery or a demo, to review code written
+  the repository "for junk", to prepare the project for a demo or a release, to review code written
   with AI.
 ---
 
@@ -29,7 +29,7 @@ Principles:
 
 ## Order
 
-1. Determine the scope: a diff, files or the whole repository before the delivery. If a commit
+1. Determine the scope: a diff, files or the whole repository before a demo or a release. If a commit
    range is given (the `reviewer` agent does that) — the diff by it; otherwise
    `git diff <base>...HEAD`.
 2. Run the search from the "Candidates" section — it gives candidates, not findings.

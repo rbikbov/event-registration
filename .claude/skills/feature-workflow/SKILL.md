@@ -51,7 +51,7 @@ slot 2 is the `reviewer` agent's (the table — `docs/development.md`, "E2E").
 
 The template — `docs/features/_template/spec.md`.
 
-- **Ask only what blocks.** Everything the assignment and `architecture.md` do not define (field
+- **Ask only what blocks.** Everything the brief and `architecture.md` do not define (field
   limits, response codes, paging, visibility) the agent decides itself with a reasonable default and
   writes into "Assumptions and open questions" — the human confirms them when approving the spec.
   Endless clarifying questions before the spec are worse.

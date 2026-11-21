@@ -48,7 +48,7 @@ the work stopped from the files alone.
 3. Bring the phase's sections in `docs/architecture.md` in line with the code and mark them
    "implemented".
 4. Update `docs/features.md` and the "requirement → test" rows for the phase's requirements (README
-   — the items of the assignment, `docs/requirements.md` — the rest) — with links to existing
+   — the items of the brief, `docs/requirements.md` — the rest) — with links to existing
    tests.
 5. Change the phase status to `done`, the next one's to `in progress`.
 6. Write the phase closing to `docs/decisions.md` if the scope or the criteria changed along the

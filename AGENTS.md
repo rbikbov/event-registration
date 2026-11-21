@@ -37,7 +37,7 @@ scripts/              repository scripts with tests: pre-push.mjs, worktime.mjs,
 docs/task.md          the original brief — its meaning is not edited
 docs/decisions.md     the decision log with the time
 docs/development.md   the developer guide: setup, commands, checks, gotchas
-docs/features.md      what works (for the reviewer); docs/requirements.md — the general
+docs/features.md      what works (for the reader); docs/requirements.md — the general
                       requirements and the detailed "requirement → test" table;
                       docs/ai-workflow.md — how it was built with AI
 docs/architecture.md  how the system works: model, API, realtime, emails; section status
@@ -114,7 +114,7 @@ docs/rules/           rules by topic: db-migrations.md, concurrency.md
 | `session-handoff`  | the start and end of a session, after a roadmap task, closing a phase                               |
 | `feature-workflow` | the start of a roadmap phase: spec → tasks → tracer bullet → test first → review → browser          |
 | `fsd-frontend`     | frontend code: layers, connecting slices, state, errors, tests                                      |
-| `anti-slop-review` | before committing a large change and before the delivery: junk and unbacked claims                  |
+| `anti-slop-review` | before committing a large change and before a demo or a release: junk and unbacked claims           |
 | `api-change`       | an API change: serializer, view or URL → test → `openapi.yaml` → frontend types → call              |
 | `reviewer` agent   | an independent review of a stage or a phase with a clean context; without subagents — a new session |
 

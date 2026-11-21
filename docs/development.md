@@ -34,9 +34,10 @@ To just look at the project, without developing it, see the [README](../README.m
 ## First-time setup
 
 ```sh
-make install    # Node and backend dependencies, Playwright browser, git hooks, agent skills
+make install    # Node and backend dependencies, Playwright browser, git hooks
 make dev-deps   # Postgres and Mailpit in Docker
 make check      # everything must pass
+make skills     # optional, for work with an AI agent: third-party skills
 ```
 
 Besides the dependencies, `pnpm install` (inside `make install`) installs the git hooks: the
@@ -144,6 +145,7 @@ must appear both in the Makefile and in this table.
 | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **Environment**                                               |                                                                                                                                                                                            |
 | `make install`                                                | Node and backend dependencies, Playwright browser (chromium), git hooks                                                                                                                    |
+| `make skills`                                                 | optional: the third-party agent skills from `skills-lock.json` (see "Rules and skills")                                                                                                    |
 | `make dev-deps`                                               | start Postgres and Mailpit in Docker and wait until they are ready                                                                                                                         |
 | `make dev-backend` / `make dev-frontend`                      | local dev servers (see "Running")                                                                                                                                                          |
 | `make dev-worker`                                             | local email worker: outbox → Mailpit (`manage.py run_worker`)                                                                                                                              |
@@ -568,14 +570,14 @@ agent is `.claude/agents/reviewer.md`. The source is the
 Django + Vue. The templates of a phase's spec and tasks are in `docs/features/_template/`.
 
 Third-party skills (`django-security`, `vue-best-practices`, `vue-router-best-practices`,
-`vue-testing-best-practices`) are not in git: `make install` installs them with
-`npx skills@1.9.0 experimental_install` (the CLI pinned too) from `skills-lock.json`, which pins each one to a commit of its
-source, into `.agents/skills/` with symlinks in `.claude/skills/` (both git-ignored; it needs
-network). They are not edited: `npx skills update` moves them to newer versions and rewrites the
-lock file. Project-specific additions go into `AGENTS.md` or our own skills. Without them the agent
-still works by the project's rules; they add general Vue and Django advice. On Windows without
-developer mode (or with `core.symlinks=false`) the symlinks cannot be created — work from WSL or
-enable `git config core.symlinks true`.
+`vue-testing-best-practices`) are not in git and are optional: `make skills` installs them with
+`npx skills@1.9.0 experimental_install` (the CLI pinned too) from `skills-lock.json`, which pins
+each one to a commit of its source, into `.agents/skills/` with symlinks in `.claude/skills/` (both
+git-ignored; it needs network). A clone made while they were in git loses them on update — run
+`make skills` again. They are not edited: `npx skills update` moves them to newer versions and
+rewrites the lock file. Project-specific additions go into `AGENTS.md` or our own skills. Without
+them the agent still works by the project's rules (no rule refers to them); they add general Vue
+and Django advice. On Windows the symlinks need developer mode — work from WSL.
 
 ## Claude Code hooks
 
