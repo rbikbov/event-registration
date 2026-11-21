@@ -81,17 +81,6 @@ watch(
   </div>
 </template>
 
-<i18n lang="json" locale="ru">
-{
-  "events": "События",
-  "myEvents": "Мои события",
-  "signIn": "Вход для организатора",
-  "signOut": "Выйти",
-  "signOutError": "Не удалось выйти, повторите",
-  "offline": "Нет подключения к интернету"
-}
-</i18n>
-
 <i18n lang="json" locale="en">
 {
   "events": "Events",

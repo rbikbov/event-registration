@@ -5,8 +5,8 @@ export type FormatDate = (at: Date, options: Intl.DateTimeFormatOptions) => stri
  * When something happened (a check-in at the entrance), with as much of the date as tells that
  * moment apart from now: the time alone today, the day for another day of this year, the year
  * for another year. Intl says "2 November at 23:50" with the date, but "at 09:15" needs its "at"
- * from the phrase (and Russian its "в"): `withAt` tells the component to put its own "at {time}"
- * around the text.
+ * from the phrase: `withAt` tells the component to put its own "at {time}" around the text, and
+ * "on {date}" around a date otherwise.
  */
 export function formatMoment(
   iso: string,

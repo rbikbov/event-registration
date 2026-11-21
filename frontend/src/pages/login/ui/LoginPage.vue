@@ -97,22 +97,6 @@ function submit(): void {
   </div>
 </template>
 
-<i18n lang="json" locale="ru">
-{
-  "title": "Вход для организатора",
-  "email": "Email",
-  "password": "Пароль",
-  "submit": "Войти",
-  "submitting": "Входим…",
-  "wrongCredentials": "Неверный email или пароль",
-  "tryLater": "Не удалось войти, попробуйте позже",
-  "errors": {
-    "required": "Обязательное поле",
-    "invalid_email": "Введите email в формате name{'@'}example.com"
-  }
-}
-</i18n>
-
 <i18n lang="json" locale="en">
 {
   "title": "Organizer login",

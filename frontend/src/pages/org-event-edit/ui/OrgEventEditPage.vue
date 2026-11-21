@@ -195,36 +195,6 @@ const textFields: { name: "title" | "description" | "starts_at"; type: string; m
   </form>
 </template>
 
-<i18n lang="json" locale="ru">
-{
-  "fields": {
-    "title": "Название",
-    "description": "Описание",
-    "starts_at": "Начало",
-    "capacity": "Мест"
-  },
-  "submit": "Сохранить",
-  "submitting": "Сохраняем…",
-  "saved": "Сохранено",
-  "tryLater": "Не удалось сохранить событие, попробуйте позже",
-  "confirm": {
-    "text": "Участникам (подтверждено {confirmed}, в листе {waitlisted}) уйдёт письмо о переносе.",
-    "yes": "Перенести",
-    "no": "Отмена"
-  },
-  "errors": {
-    "required": "Обязательное поле",
-    "blank": "Обязательное поле",
-    "max_length": "Слишком длинное значение",
-    "min_value": "Должно быть не меньше 1",
-    "max_value": "Должно быть не больше 10 000",
-    "invalid": "Некорректное значение",
-    "past": "Начало должно быть в будущем",
-    "below_confirmed": "Не меньше подтверждённых: {n}"
-  }
-}
-</i18n>
-
 <i18n lang="json" locale="en">
 {
   "fields": {

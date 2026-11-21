@@ -76,14 +76,6 @@ function retry(): void {
   </div>
 </template>
 
-<i18n lang="json" locale="ru">
-{
-  "loading": "Загружаем…",
-  "retry": "Повторить",
-  "health": "Состояние сервиса"
-}
-</i18n>
-
 <i18n lang="json" locale="en">
 {
   "loading": "Loading…",

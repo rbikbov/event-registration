@@ -22,12 +22,6 @@ const { t } = useI18n({ useScope: "local" });
   </ErrorState>
 </template>
 
-<i18n lang="json" locale="ru">
-{
-  "toEvents": "К событиям"
-}
-</i18n>
-
 <i18n lang="json" locale="en">
 {
   "toEvents": "To events"

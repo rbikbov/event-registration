@@ -26,7 +26,6 @@ All screens are in a shared layout with a header: organizer login and logout, a 
 page after login, the same loading, error with a retry and a link to the service status, "not
 found" for an unknown address; without network — a bar under the header. Event lists have 20 per
 page, with the "Upcoming" and "Past" tabs. Every screen fits the width of a phone (360 px).
-The interface and the emails are in English; each component keeps a Russian version of its texts
-for a later language switch.
+The interface and the emails are in English.
 
 Linters, type checks and tests pass locally and in CI on every PR (`make check`, `make e2e`).

@@ -147,8 +147,8 @@ process: when there are thousands of connections or more than one backend proces
 ## Phase 8. English interface and emails — in progress
 
 Spec and tasks — `docs/features/english-ui/`. Criteria: every screen, the emails and the demo data
-are English by default; every component keeps its Russian texts with the same keys (a test);
-`make check` and `make e2e` pass.
+are English; the Russian texts are removed (decision of 2026-11-21 02:22); `make check` and
+`make e2e` pass.
 
 ## What's next
 
@@ -166,8 +166,9 @@ assignment to become a product.
   the middle of a check-in.
 - A flaky Vitest (`window is not defined` from `vue-i18n` after jsdom is closed) — find which
   promise or timer of a test outlives the test.
-- A language switch and Russian emails: the English interface is the default since phase 8, the
-  Russian texts are kept but nothing shows them. Done properly: the language in the address
+- A second language (Russian) and a language switch: since phase 8 the interface and the emails
+  are English only; the Russian texts are in the git history before phase 8. Done properly: the
+  language in the address
   (`/en/…`, `/ru/…`, links in emails lead to the email's language), the first choice by
   `Accept-Language`, a switch in the header with the language names, `Registration.locale` so that
   each participant gets the emails in the language they registered in (decision of 2026-11-21

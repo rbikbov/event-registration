@@ -20,7 +20,11 @@ Spec — `spec.md`. One task — one commit; the `[x]` check goes into the same 
 - [x] 1.5. e2e in English; README and docs: the interface and the emails are English by default.
       Done when: `make stack-e2e` is green.
 
-- [ ] 1.6. Closing the phase: `architecture.md`, `features.md`, the requirement tables, roadmap.
+- [x] 1.6. The review findings and English only: the Russian blocks, templates and subjects are
+      removed with the key test (decision of 2026-11-21 02:22). Done when: no Russian text in the code and the tests, except the session export test data
+      (`export-sessions.test.mjs`); the docs keep it only in the history (`docs/task.md`,
+      `docs/session/`, the log, quotes of the old interface in the specs of phases 2–6).
+- [ ] 1.7. Closing the phase: `architecture.md`, `features.md`, the requirement tables, roadmap.
 
 ## Log
 

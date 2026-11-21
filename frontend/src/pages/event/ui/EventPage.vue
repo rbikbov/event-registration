@@ -189,33 +189,6 @@ const fields: { name: "email" | "name"; type: string; autocomplete: string }[] =
   </div>
 </template>
 
-<i18n lang="json" locale="ru">
-{
-  "error": "Не удалось загрузить событие",
-  "refreshError": "Не удалось обновить событие, показаны прежние данные",
-  "notFound": "Такого события нет",
-  "freeSeats": "Свободно {count} место | Свободно {count} места | Свободно {count} мест",
-  "noSeats": "Свободных мест нет, можно встать в лист ожидания",
-  "register": "Регистрация",
-  "fields": {
-    "email": "Email",
-    "name": "Имя"
-  },
-  "submit": "Зарегистрироваться",
-  "submitting": "Отправляем…",
-  "confirmed": "Место подтверждено",
-  "waitlisted": "Вы в листе ожидания, №{position}",
-  "waitlistedNoPosition": "Вы в листе ожидания",
-  "tryLater": "Не удалось зарегистрироваться, попробуйте позже",
-  "errors": {
-    "required": "Обязательное поле",
-    "blank": "Обязательное поле",
-    "max_length": "Слишком длинное значение",
-    "invalid": "Некорректное значение"
-  }
-}
-</i18n>
-
 <i18n lang="json" locale="en">
 {
   "error": "Could not load the event",

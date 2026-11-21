@@ -154,28 +154,6 @@ function checkedInWhen(iso: string): string {
   </div>
 </template>
 
-<i18n lang="json" locale="ru">
-{
-  "error": "Не удалось загрузить билет",
-  "refreshFailed": "Не удалось обновить билет",
-  "notFound": "Билет не найден",
-  "code": "Код билета",
-  "checkedInTitle": "Билет использован",
-  "atTime": "в {time}",
-  "onDate": "{date}",
-  "checkedIn": "Вы отмечены на входе {when}. Повторно пройти по этому коду нельзя, отказаться от регистрации — тоже.",
-  "waitlisted": "Вы в листе ожидания, №{position}",
-  "cancelled": "Регистрация отменена",
-  "registerAgain": "Зарегистрироваться снова",
-  "cancel": "Отказаться",
-  "confirmQuestion": "Отказаться от регистрации?",
-  "confirmYes": "Да, отказаться",
-  "confirmNo": "Нет",
-  "cancelling": "Отменяем…",
-  "cancelFailed": "Не удалось отказаться, попробуйте позже"
-}
-</i18n>
-
 <i18n lang="json" locale="en">
 {
   "error": "Could not load the ticket",

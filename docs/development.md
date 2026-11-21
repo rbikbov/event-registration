@@ -500,12 +500,8 @@ test_…` and `django.test.AsyncClient`. There is one event loop per session, li
   the imports — after `add` check `grep -r 'from "cn"' src` and the dependencies in
   `package.json`.
 - The interface texts are in English, through vue-i18n: each component has its own
-  `<i18n lang="json" locale="en">` and `<i18n lang="json" locale="ru">` blocks next to the template
-  (`useI18n({ useScope: "local" })`). The app locale is `en-GB` (24-hour time, the day before the
-  month); the Russian blocks are not shown until a language switch and are the fallback for a text
-  without an English version; `src/app/i18n-blocks.test.ts` checks that both blocks have the same
-  keys — a new text is written in both languages. A component test that needs Russian passes
-  `createAppI18n("ru")`. The blocks are collected by `@intlify/unplugin-vue-i18n` (`vite.config.ts`). There are no global
+  `<i18n lang="json" locale="en">` block next to the template (`useI18n({ useScope: "local" })`).
+  The app locale is `en-GB` (24-hour time, the day before the month). The blocks are collected by `@intlify/unplugin-vue-i18n` (`vite.config.ts`). There are no global
   messages; the instance is created by `createAppI18n()` from `shared/lib/i18n.ts` — component
   tests use it too. Keys in `t()` are not type-checked: a typo is caught by the component test.
   `@` in a message is written as `{'@'}`. Code, identifiers and logs are in English.

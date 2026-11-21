@@ -152,33 +152,6 @@ function counters(loaded: OrgEvent) {
   </div>
 </template>
 
-<i18n lang="json" locale="ru">
-{
-  "myEvents": "Мои события",
-  "error": "Не удалось загрузить событие",
-  "refreshError": "Не удалось обновить событие, показаны прежние данные",
-  "checkinError": "Не удалось загрузить событие, чекин работает",
-  "checkinRefreshError": "Не удалось обновить событие, чекин работает",
-  "notFound": "Событие не найдено",
-  "forbidden": "Нет доступа",
-  "foreign": "Это событие другого организатора",
-  "reconnecting": "Соединение потеряно, переподключаюсь…",
-  "tabs": "Разделы события",
-  "tab": {
-    "participants": "Участники",
-    "checkin": "Чекин",
-    "edit": "Редактирование"
-  },
-  "counters": {
-    "capacity": "Мест",
-    "confirmed": "Подтверждено",
-    "waitlisted": "В листе ожидания",
-    "checkedIn": "Пришло",
-    "freeSeats": "Свободно"
-  }
-}
-</i18n>
-
 <i18n lang="json" locale="en">
 {
   "myEvents": "My events",

@@ -98,28 +98,6 @@ function link(toPeriod: EventPeriod, toPage = 1) {
   </div>
 </template>
 
-<i18n lang="json" locale="ru">
-{
-  "title": "События",
-  "error": "Не удалось загрузить события",
-  "refreshError": "Не удалось обновить события, показан прежний список",
-  "pastEnd": "Здесь событий нет.",
-  "lastPage": "К последней странице",
-  "pages": "Страницы событий",
-  "empty": {
-    "upcoming": "Ближайших событий пока нет",
-    "past": "Прошедших событий нет"
-  },
-  "period": "Какие события показать",
-  "periods": {
-    "upcoming": "Предстоящие",
-    "past": "Прошедшие"
-  },
-  "freeSeats": "свободно {count} место | свободно {count} места | свободно {count} мест",
-  "noSeats": "мест нет"
-}
-</i18n>
-
 <i18n lang="json" locale="en">
 {
   "title": "Events",

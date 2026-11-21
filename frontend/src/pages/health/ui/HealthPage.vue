@@ -28,15 +28,6 @@ const health = useQuery(healthQuery);
   </div>
 </template>
 
-<i18n lang="json" locale="ru">
-{
-  "title": "Состояние сервиса",
-  "ok": "Backend и база данных работают",
-  "unavailable": "Backend или база данных не отвечают",
-  "refreshError": "Backend или база данных перестали отвечать, показан прежний ответ"
-}
-</i18n>
-
 <i18n lang="json" locale="en">
 {
   "title": "Service status",

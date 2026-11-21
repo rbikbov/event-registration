@@ -57,13 +57,6 @@ async function toggle(): Promise<void> {
   </div>
 </template>
 
-<i18n lang="json" locale="ru">
-{
-  "expand": "Развернуть",
-  "collapse": "Свернуть"
-}
-</i18n>
-
 <i18n lang="json" locale="en">
 {
   "expand": "Expand",

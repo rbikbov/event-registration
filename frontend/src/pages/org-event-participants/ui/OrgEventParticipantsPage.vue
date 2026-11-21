@@ -152,41 +152,6 @@ function statusText(row: OrgRegistration): string {
   </section>
 </template>
 
-<i18n lang="json" locale="ru">
-{
-  "participants": "Участники",
-  "filter": "Фильтр по статусу",
-  "filters": {
-    "all": "Все",
-    "confirmed": "Подтверждены",
-    "waitlisted": "Лист ожидания",
-    "cancelled": "Отказались"
-  },
-  "updates": "Есть обновления",
-  "refresh": "Обновить",
-  "refreshing": "Обновляем…",
-  "pages": "Страницы участников",
-  "pastEnd": "На этой странице никого нет.",
-  "lastPage": "К последней странице",
-  "participantsError": "Не удалось загрузить участников",
-  "participantsRefreshError": "Не удалось обновить участников, показан прежний список",
-  "empty": "Регистраций пока нет",
-  "emptyFiltered": "С таким статусом никого нет",
-  "columns": {
-    "name": "Имя",
-    "email": "Email",
-    "status": "Статус",
-    "checkedIn": "Отметка на входе"
-  },
-  "status": {
-    "confirmed": "Подтверждён",
-    "waitlisted": "В листе ожидания",
-    "waitlistedAt": "В листе ожидания, №{position}",
-    "cancelled": "Отказался"
-  }
-}
-</i18n>
-
 <i18n lang="json" locale="en">
 {
   "participants": "Participants",

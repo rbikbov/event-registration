@@ -162,24 +162,6 @@ function submit(): void {
   </section>
 </template>
 
-<i18n lang="json" locale="ru">
-{
-  "code": "Код билета",
-  "submit": "Отметить",
-  "checking": "Проверяем…",
-  "failed": "Не удалось отметить, повторите",
-  "foreign": "Это событие другого организатора",
-  "offline": "Нет связи, повторите",
-  "checkedIn": "Пропущен",
-  "alreadyCheckedIn": "Уже отмечен {when}",
-  "atTime": "в {time}",
-  "onDate": "{date}",
-  "notFound": "Билет не найден",
-  "notConfirmed": "Билет не подтверждён: лист ожидания или отказ",
-  "next": "Следующий"
-}
-</i18n>
-
 <i18n lang="json" locale="en">
 {
   "code": "Ticket code",

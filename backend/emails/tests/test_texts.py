@@ -36,17 +36,5 @@ def test_every_email_is_english(kind: OutboxEmail.Kind) -> None:
     assert not re.search("[\\u0400-\\u04ff]", subject + body)
 
 
-@pytest.mark.parametrize("kind", list(OutboxEmail.Kind))
-def test_the_russian_version_of_every_email_renders(kind: OutboxEmail.Kind) -> None:
-    subject, body = render_email(kind, CONTEXT, "ru")
-
-    assert subject.endswith(": Meetup")
-    assert "https://events.example/tickets/token" in body
-
-
-@pytest.mark.parametrize(
-    ("locale", "expected"),
-    [("en", "7 Jan 2031 09:05 UTC"), ("ru", "07.01.2031 09:05 UTC")],
-)
-def test_email_time_is_written_the_way_of_the_language(locale: str, expected: str) -> None:
-    assert email_time(datetime(2031, 1, 7, 9, 5, tzinfo=UTC), locale) == expected
+def test_email_time_is_day_month_year_and_utc() -> None:
+    assert email_time(datetime(2031, 1, 7, 9, 5, tzinfo=UTC)) == "7 Jan 2031 09:05 UTC"

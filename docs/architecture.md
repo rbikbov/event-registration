@@ -289,9 +289,8 @@ A separate process `manage.py run_worker`, a loop:
 
 The `ticket`, `waitlisted`, `promoted` emails are implemented (phase 2), `rescheduled` and
 `reminder` — phase 5: plain text in English (phase 8), the templates are
-`emails/templates/emails/en/<kind>.txt`, the subjects — `SUBJECTS` in `emails/services.py`; the
-Russian ones (`ru/`) are kept for a later language switch and are rendered only by a test.
-All have the event title and date (UTC, "31 Oct 2026 09:15 UTC") and the link `{FRONTEND_URL}/tickets/{manage_token}`.
+`emails/templates/emails/<kind>.txt`, the subjects — `SUBJECTS` in `emails/services.py`. All have
+the event title and date (UTC, "7 Oct 2026 09:15 UTC") and the link `{FRONTEND_URL}/tickets/{manage_token}`.
 `rescheduled` — was / now; to a confirmed one — the code, to one on the waitlist — "you are on the
 waitlist" without the position (the position gets outdated, the link shows the current one).
 `reminder` — the date and the code, without "in a day": a reminder may go out later in the window

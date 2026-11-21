@@ -99,20 +99,6 @@ function numbers(items: ({ type: "page"; value: number } | { type: "ellipsis" })
   </Pagination>
 </template>
 
-<i18n lang="json" locale="ru">
-{
-  "first": "Первая страница",
-  "firstShort": "Первая",
-  "previous": "Предыдущая страница",
-  "previousShort": "Предыдущая",
-  "next": "Следующая страница",
-  "nextShort": "Следующая",
-  "last": "Последняя страница",
-  "lastShort": "Последняя",
-  "page": "Страница {n}"
-}
-</i18n>
-
 <i18n lang="json" locale="en">
 {
   "first": "First page",

@@ -22,25 +22,6 @@ watchEffect(() => {
   </AppLayout>
 </template>
 
-<i18n lang="json" locale="ru">
-{
-  "app": "Регистрация на мероприятия",
-  "titles": {
-    "home": "События",
-    "event": "Событие",
-    "health": "Состояние сервиса",
-    "login": "Вход",
-    "orgEvents": "Мои события",
-    "orgEventsNew": "Новое событие",
-    "participants": "Участники",
-    "checkin": "Чекин",
-    "edit": "Редактирование",
-    "ticket": "Билет",
-    "notFound": "Страница не найдена"
-  }
-}
-</i18n>
-
 <i18n lang="json" locale="en">
 {
   "app": "Event registration",

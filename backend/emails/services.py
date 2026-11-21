@@ -19,30 +19,16 @@ BATCH_SIZE = 20
 MAX_ATTEMPTS = 5
 FIRST_RETRY_DELAY = timedelta(seconds=30)
 
-# The emails are in English. The Russian subjects and templates (emails/templates/emails/ru/) are
-# kept for a later language switch, when a registration stores its language (docs/decisions.md,
-# 2026-11-21 01:19); a test renders them too, so they stay in step with the English ones.
-LOCALE = "en"
-
 SUBJECTS = {
-    "en": {
-        OutboxEmail.Kind.TICKET: "Ticket: {title}",
-        OutboxEmail.Kind.WAITLISTED: "Waitlist: {title}",
-        OutboxEmail.Kind.PROMOTED: "A seat became free: {title}",
-        OutboxEmail.Kind.RESCHEDULED: "Event rescheduled: {title}",
-        OutboxEmail.Kind.REMINDER: "Reminder: {title}",
-    },
-    "ru": {
-        OutboxEmail.Kind.TICKET: "Билет: {title}",
-        OutboxEmail.Kind.WAITLISTED: "Лист ожидания: {title}",
-        OutboxEmail.Kind.PROMOTED: "Освободилось место: {title}",
-        OutboxEmail.Kind.RESCHEDULED: "Событие перенесено: {title}",
-        OutboxEmail.Kind.REMINDER: "Напоминание: {title}",
-    },
+    OutboxEmail.Kind.TICKET: "Ticket: {title}",
+    OutboxEmail.Kind.WAITLISTED: "Waitlist: {title}",
+    OutboxEmail.Kind.PROMOTED: "A seat became free: {title}",
+    OutboxEmail.Kind.RESCHEDULED: "Event rescheduled: {title}",
+    OutboxEmail.Kind.REMINDER: "Reminder: {title}",
 }
 
-# How each language writes a moment in an email: "7 Oct 2026 09:15 UTC", "07.10.2026 09:15 UTC".
-# The English month is from a table, not strftime's %b: that one follows the process locale.
+# A moment in an email: "7 Oct 2026 09:15 UTC". The month is from a table, not strftime's %b:
+# that one follows the process locale.
 MONTHS = ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
 
 
@@ -96,20 +82,16 @@ def reminder_key(registration_id: int, schedule_version: int) -> str:
     return f"reminder:{registration_id}:{schedule_version}"
 
 
-def email_time(value: datetime, locale: str = LOCALE) -> str:
+def email_time(value: datetime) -> str:
     # Events have no time zone of their own; the ticket page shows the browser's local time.
     utc = value.astimezone(UTC)
-    if locale == "ru":
-        return utc.strftime("%d.%m.%Y %H:%M UTC")
     return f"{utc.day} {MONTHS[utc.month - 1]} {utc.year} {utc:%H:%M} UTC"
 
 
-def render_email(
-    kind: OutboxEmail.Kind, context: dict[str, object], locale: str = LOCALE
-) -> tuple[str, str]:
-    """The subject and the body of an email in a language; `context` has the template values."""
-    subject = SUBJECTS[locale][kind].format(title=context["title"])
-    return subject, render_to_string(f"emails/{locale}/{kind}.txt", context)
+def render_email(kind: OutboxEmail.Kind, context: dict[str, object]) -> tuple[str, str]:
+    """The subject and the body of an email; `context` has the template values."""
+    subject = SUBJECTS[kind].format(title=context["title"])
+    return subject, render_to_string(f"emails/{kind}.txt", context)
 
 
 def _enqueue(
