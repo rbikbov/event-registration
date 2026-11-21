@@ -184,6 +184,8 @@ def update_event(event_id: int, changes: EventChanges, *, now: datetime | None =
     """
     with transaction.atomic():
         event = Event.objects.select_for_update().get(pk=event_id)
+        # After the lock, like in `register` and `cancel`: the promotion time is when it really
+        # happened.
         now = now or timezone.now()
         capacity = changes.get("capacity", event.capacity)
         confirmed = _confirmed_count(event)
@@ -317,8 +319,10 @@ def mask_email(email: str) -> str:
 def get_ticket(manage_token: str) -> Ticket:
     """The registration behind a manage token, with its event and waitlist place.
 
-    Read without the event lock: nothing is decided from it. Raises Registration.DoesNotExist
-    for an unknown token.
+    Read without the event lock: nothing is decided from it. A promotion between the two queries
+    leaves a stale position, 0 for the promoted one itself, until the next read (decided not to
+    handle: docs/decisions.md, 2026-10-31 02:20). Raises Registration.DoesNotExist for an unknown
+    token.
     """
     registration = Registration.objects.select_related("event").get(manage_token=manage_token)
     return Ticket(registration, position=waitlist_position(registration))

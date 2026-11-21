@@ -569,7 +569,7 @@ Django + Vue. The templates of a phase's spec and tasks are in `docs/features/_t
 
 Third-party skills (`django-security`, `vue-best-practices`, `vue-router-best-practices`,
 `vue-testing-best-practices`) are not in git: `make install` installs them with
-`npx skills experimental_install` from `skills-lock.json`, which pins each one to a commit of its
+`npx skills@1.9.0 experimental_install` (the CLI pinned too) from `skills-lock.json`, which pins each one to a commit of its
 source, into `.agents/skills/` with symlinks in `.claude/skills/` (both git-ignored; it needs
 network). They are not edited: `npx skills update` moves them to newer versions and rewrites the
 lock file. Project-specific additions go into `AGENTS.md` or our own skills. Without them the agent

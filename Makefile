@@ -36,7 +36,7 @@ dev-deps: ## Start services needed for local development and tests (Postgres, Ma
 .PHONY: install
 install: ## Install all dependencies, the Playwright browser, git hooks and third-party skills
 	pnpm install
-	npx -y skills experimental_install
+	npx -y skills@1.9.0 experimental_install
 	cd e2e && pnpm exec playwright install chromium
 	$(BACKEND) uv sync
 

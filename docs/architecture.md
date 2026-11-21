@@ -181,7 +181,8 @@ API change — [development.md](development.md#common-tasks).
   `{status, ticket_code?, position?, name, checked_in_at, event: {id, title, starts_at}}` / 404
   (unknown token); `ticket_code` — only for `confirmed`, `position` — only for `waitlisted`. The
   read is done without the event lock: a promotion between two requests gives an outdated position
-  until the next read
+  until the next read — 0 for the promoted one itself, a window of fractions of a millisecond left
+  unhandled (decision of 2026-10-31 02:20)
 
 **Implemented — SSE streams (phase 4):** `text/event-stream`, the first message is a snapshot with
 `retry: 3000`, then a snapshot on each change of the event's counters and `: ping` after 15 s

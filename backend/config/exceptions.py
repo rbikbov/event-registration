@@ -18,8 +18,8 @@ class Conflict(APIException):
 def api_exception_handler(exc: Exception, context: dict[str, Any]) -> Response | None:
     """DRF's handler, except that a 400 carries error codes instead of English messages.
 
-    The interface is Russian, so the frontend maps `{"errors": {field: [code]}}` to its own
-    texts. An error not tied to a field (raised in `validate()`) is under `non_field_errors`.
+    The interface has texts of its own, so the frontend maps `{"errors": {field: [code]}}` to
+    them. An error not tied to a field (raised in `validate()`) is under `non_field_errors`.
     """
     response = exception_handler(exc, context)
     if response is not None and isinstance(exc, ValidationError):
