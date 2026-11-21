@@ -37,3 +37,10 @@ backend/staticfiles/
 
 # agent session exports (`make export-sessions`): raw transcripts, not committed
 docs/session/
+
+# third-party skills, installed from skills-lock.json by `make install` (`npx skills experimental_install`)
+.agents/
+.claude/skills/django-security
+.claude/skills/vue-best-practices
+.claude/skills/vue-router-best-practices
+.claude/skills/vue-testing-best-practices

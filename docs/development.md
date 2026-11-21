@@ -34,7 +34,7 @@ To just look at the project, without developing it, see the [README](../README.m
 ## First-time setup
 
 ```sh
-make install    # Node and backend dependencies, Playwright browser, git hooks
+make install    # Node and backend dependencies, Playwright browser, git hooks, agent skills
 make dev-deps   # Postgres and Mailpit in Docker
 make check      # everything must pass
 ```
@@ -568,13 +568,13 @@ agent is `.claude/agents/reviewer.md`. The source is the
 Django + Vue. The templates of a phase's spec and tasks are in `docs/features/_template/`.
 
 Third-party skills (`django-security`, `vue-best-practices`, `vue-router-best-practices`,
-`vue-testing-best-practices`) live in `.agents/skills/`, and `.claude/skills/` has symlinks to
-them; the versions are in `skills-lock.json`. They are not edited: `npx skills update` and
-`npx skills experimental_install` (restore from the lock file) overwrite the folder from the
-source. Project-specific additions go into `AGENTS.md` or our own skills. The `.agents/` folder
-is excluded from Prettier. Symlinks are stored in git as they are: on Linux, macOS and WSL
-`git clone` creates them itself; on Windows without developer mode (or with
-`core.symlinks=false`) they become text files and the skills are unavailable — clone from WSL or
+`vue-testing-best-practices`) are not in git: `make install` installs them with
+`npx skills experimental_install` from `skills-lock.json`, which pins each one to a commit of its
+source, into `.agents/skills/` with symlinks in `.claude/skills/` (both git-ignored; it needs
+network). They are not edited: `npx skills update` moves them to newer versions and rewrites the
+lock file. Project-specific additions go into `AGENTS.md` or our own skills. Without them the agent
+still works by the project's rules; they add general Vue and Django advice. On Windows without
+developer mode (or with `core.symlinks=false`) the symlinks cannot be created — work from WSL or
 enable `git config core.symlinks true`.
 
 ## Claude Code hooks
