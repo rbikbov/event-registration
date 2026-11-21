@@ -606,7 +606,7 @@ dependencies). They apply only to the agent and do not affect manual work.
   better to have a clean `git status` before a push; CI checks the commits as they are.
 - The generated `backend/openapi.yaml` and `frontend/src/shared/api/schema.d.ts` are excluded
   from Prettier and ESLint: `make schema-check` compares them with the generation byte for byte.
-- `docs/task.md` is the text of the assignment as is; Prettier does not touch it.
+- `docs/task.md` is the text of the assignment translated from Russian; its meaning is not edited.
 - In WSL2 the wall clock (`time.time()`, `timezone.now()`) jumps back by about 0.4 s every ~30 s,
   even without load: that is how the host adjusts the virtual machine's clock. A test that queues
   an email and immediately calls `process_batch()` with the current time may find it "from the

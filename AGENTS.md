@@ -34,7 +34,7 @@ e2e/                  Playwright; rules — e2e/AGENTS.md
 Makefile              all commands (make help); docker-compose.yml — the services
 scripts/              repository scripts with tests: pre-push.mjs, worktime.mjs,
                       check-action-refs.mjs, check-readme-tests.mjs, export-sessions.mjs
-docs/task.md          the text of the assignment (in Russian) — not edited
+docs/task.md          the text of the assignment, translated from Russian — its meaning is not edited
 docs/decisions.md     the decision log with the time
 docs/development.md   the developer guide: setup, commands, checks, gotchas
 docs/features.md      what works (for the reviewer); docs/requirements.md — the general
@@ -103,8 +103,9 @@ docs/session/         raw exports of the agent sessions (in Russian) — not edi
 
 ## Language
 
-- Documentation (`README.md`, `docs/`, `AGENTS.md`) — in English. Except `docs/task.md` (the text
-  of the assignment as is) and `docs/session/` (raw session exports): they stay in Russian.
+- Documentation (`README.md`, `docs/`, `AGENTS.md`) — in English. Except `docs/session/` (raw
+  session exports): it stays in Russian. `docs/task.md` is a translation of the assignment; the
+  Russian original is in the git history and in `rbikbov/event-registration-original`.
 - Code (identifiers, comments, log strings) and commit messages — in English.
 - The interface texts and the emails — in English (`frontend/AGENTS.md`, rule 5;
   `backend/emails/templates/emails/`).

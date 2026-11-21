@@ -1,57 +1,80 @@
-# Тестовое задание: регистрация на мероприятия
+# Test assignment: event registration
 
-Текст задания: общие требования, ожидаемый результат и задание.
+The text of the assignment: the general requirements, the expected result and the task. Translated
+from Russian; the original is in the git history.
 
-# Требования
+# Requirements
 
-Одинаковы для всех заданий.
+The same for all tasks.
 
-1. **Клиент-серверный продукт:** отдельный backend и отдельный frontend, общаются по сети.
-2. **Backend:** Python, Go или Node.js. Это предпочтительные варианты, но не обязательные. Если у выбора языка, библиотек и инструментов были веские причины — опишите их.
-3. **Frontend:** Vue или React.
-4. **Хранилище:** реляционная СУБД. PostgreSQL, MySQL или любой аналог на выбор, предпочтительно PostgreSQL.
-5. **Учётные записи и вход** — на ваше усмотрение, включая модель входа. Можно ограничиться логином и паролем, можно обойтись без входа.
-6. **Промпты или лог решений сдаются вместе с кодом:** почему проект устроен именно так, а не иначе, почему выбраны эти пакеты и подходы. Что именно и в каком виде — в разделе «Что мы ожидаем от вас».
-7. **Использование AI-агентов ожидается.** Мы исходим из того, что проект делается вместе с агентом, поэтому и просим промпты. Скрывать это не нужно.
-8. **Предварительные требования** для развёртывания проекта описаны.
-9. **Локальный запуск.** Проект быстро разворачивается локально.
-10. **Внешние сервисы можно эмулировать.** Почту, сторонние API и подобное можно заменить заглушками.
-11. **Работает при двух одновременно открытых клиентах** (например, две вкладки браузера).
-12. **Честное описание состояния проекта:** что работает, что нет, что не делали и почему.
-13. **Доказуемость.** Проект должен доказывать свою работоспособность.
+1. **A client-server product:** a separate backend and a separate frontend that talk over the
+   network.
+2. **Backend:** Python, Go or Node.js. These are the preferred options, but not required ones. If
+   there were good reasons for the choice of the language, libraries and tools, describe them.
+3. **Frontend:** Vue or React.
+4. **Storage:** a relational DBMS. PostgreSQL, MySQL or any equivalent of your choice, preferably
+   PostgreSQL.
+5. **Accounts and login** — at your discretion, including the login model. You may limit it to a
+   login and a password, or do without login.
+6. **Prompts or a decision log are handed in together with the code:** why the project is built
+   this way and not another, why these packages and approaches were chosen. What exactly and in
+   what form — in the section "What we expect from you".
+7. **The use of AI agents is expected.** We assume the project is made together with an agent, and
+   that is why we ask for the prompts. There is no need to hide it.
+8. **The prerequisites** for deploying the project are described.
+9. **Local run.** The project is quick to deploy locally.
+10. **External services may be emulated.** Email, third-party APIs and the like may be replaced
+    with stubs.
+11. **Works with two clients open at the same time** (for example, two browser tabs).
+12. **An honest description of the project's state:** what works, what does not, what was not done
+    and why.
+13. **Provability.** The project must prove that it works.
+
+---
+
+# What we expect from you
+
+At the end of the work we expect from you:
+
+1. A link to the project's repository on GitHub.
+2. What it was built with: which model, which tool. And why those, in a couple of sentences.
+3. Prompts, a decision log or an export of the agent session. An export is the file your tool
+   produces (`.jsonl` or similar), we will handle it with care. If you would rather not hand over
+   the export, a decision log or a development journal will do.
+4. The course of work over time. It matters to us to see that the work went step by step rather
+   than being handed in all at once: by the commit history, the session log or the decision log.
+   Record timestamps from the start of the work to the end and along the way. Ask the agent to do
+   it.
+5. A description of the project: how to deploy it and what state it is in.
+6. What you would do in the next round: what did not make it into the scope, but you consider
+   necessary.
+7. If you based the work on someone else's solution, a template or a generator — say so.
 
 ---
 
-# Что мы ожидаем от вас
+## Task 9. Event registration
 
-По итогам работы мы ждём от вас:
+The product is an event registration service: the organizer creates an event with a limited number
+of seats, participants register, and they are checked in at the entrance.
 
-1. Ссылку на репозиторий с проектом в GitHub.
-2. Чем делали: какая модель, какой инструмент. И почему именно они, в паре предложений.
-3. Промпты, лог решений или экспорт сессии агента. Экспорт — файл, который выдаёт ваш инструмент (`.jsonl` или подобный), с ним мы обойдёмся бережно. Если отдавать экспорт не хочется, подойдёт лог решений или журнал разработки.
-4. Ход работы во времени. Нам важно видеть, что работа шла постепенно, а не сдана залпом: по истории коммитов, по логу сессии или по логу решений. Фиксируйте временные метки от начала работы до конца и в процессе. Попросите об этом агента.
-5. Описание проекта: как развернуть и в каком он состоянии.
-6. Что сделали бы следующим заходом: что не вошло в объём, но вы считаете нужным.
-7. Если брали за основу чужое решение, шаблон или генератор — укажите это.
+### Must include:
 
----
-## Задание 9. Регистрация на мероприятия
+- **An event:** description, date and time, seat limit.
+- **A participant registers by email**, cancelling participation.
+- **A waitlist** when the seats run out.
+- **A ticket with a code** and a check-in screen at the entrance. The scanner may be replaced with
+  code input.
+- **The organizer's screen:** how many registered, on the waitlist, arrived.
 
-Продукт представляет собой сервис регистрации на мероприятия: организатор создаёт событие с ограничением по местам, участники регистрируются, на входе их отмечают.
+### Expected behavior:
 
-### Должен включать:
-* **Событие:** описание, дата и время, лимит мест.
-* **Регистрация участника** по email, отказ от участия.
-* **Лист ожидания**, когда места кончились.
-* **Билет с кодом** и экран чекина на входе. Сканер можно заменить вводом кода.
-* **Экран организатора:** сколько зарегистрировано, в листе ожидания, пришло.
-
-### Ожидаемое поведение:
-* Зарегистрировавшийся получает письмо с билетом. Повторная регистрация на тот же email не создаёт второго места.
-* Когда места закончились, новые регистрации попадают в лист ожидания. Кто-то отказался — первый из листа автоматически получает место и письмо.
-* Два человека на последнее место одновременно: место достаётся одному, второй попадает в лист ожидания.
-* За сутки до события всем участникам приходит напоминание. Ровно одно.
-* Билет проходит чекин один раз. Счётчик пришедших у организатора обновляется live.
-* Организатор перенёс событие — все участники получают письмо.
+- A registered participant gets an email with the ticket. Registering again with the same email
+  does not create a second seat.
+- When the seats have run out, new registrations go onto the waitlist. Someone cancelled — the first
+  one on the waitlist automatically gets the seat and an email.
+- Two people for the last seat at once: the seat goes to one, the other goes onto the waitlist.
+- A day before the event all participants get a reminder. Exactly one.
+- A ticket passes check-in once. The organizer's arrived counter updates live.
+- The organizer rescheduled the event — all participants get an email.
 
 ---
