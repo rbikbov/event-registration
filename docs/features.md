@@ -1,6 +1,6 @@
 # What works
 
-All requirements of the assignment are done and covered by tests — the
+All requirements of the brief are done and covered by tests — the
 [README](../README.md#requirements-and-tests) and the [full table](requirements.md). The course of
 work by phases is in [roadmap.md](roadmap.md).
 

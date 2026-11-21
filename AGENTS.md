@@ -1,6 +1,6 @@
 # Event registration — rules for the agent
 
-An event registration service (the assignment — [docs/task.md](docs/task.md)). A monorepo:
+An event registration service (the original brief — [docs/task.md](docs/task.md)). A monorepo:
 `backend/` — Django + DRF, `frontend/` — Vue 3, `e2e/` — Playwright. This file is read at the
 start of every session, so it holds only what is always needed. The details are in the folders'
 `AGENTS.md` (loaded when working in the folder) and in `docs/rules/`.
@@ -34,7 +34,7 @@ e2e/                  Playwright; rules — e2e/AGENTS.md
 Makefile              all commands (make help); docker-compose.yml — the services
 scripts/              repository scripts with tests: pre-push.mjs, worktime.mjs,
                       check-action-refs.mjs, check-readme-tests.mjs, export-sessions.mjs
-docs/task.md          the text of the assignment — its meaning is not edited
+docs/task.md          the original brief — its meaning is not edited
 docs/decisions.md     the decision log with the time
 docs/development.md   the developer guide: setup, commands, checks, gotchas
 docs/features.md      what works (for the reviewer); docs/requirements.md — the general

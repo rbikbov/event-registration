@@ -152,9 +152,9 @@ are English; the Russian texts are removed (decision of 2026-11-21 02:22); `make
 
 ## What's next
 
-The requirements of the assignment are met; below is what was postponed along the way (the
-Non-Goals of the specs and "Later" in `docs/features/*/`) and what is needed for the test
-assignment to become a product.
+The requirements of the brief are met; below is what was postponed along the way (the Non-Goals of
+the specs and "Later" in `docs/features/*/`) and what is needed for the project to become a
+product.
 
 ### Next round
 

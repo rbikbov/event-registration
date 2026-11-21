@@ -1,7 +1,7 @@
 # Requirements and tests: in full
 
-The main table by the items of the assignment is in the [README](../README.md#requirements-and-tests);
-here are the general requirements of the assignment and a detailed table for each behavior.
+The main table by the items of the brief is in the [README](../README.md#requirements-and-tests);
+here are the general requirements of the brief and a detailed table for each behavior.
 
 ## Requirements and tests
 
