@@ -10,8 +10,8 @@ Stack: Vue 3 + Vite, Django + DRF, PostgreSQL 17. What exactly works —
 - **Decisions:** every choice made with the agent is in [the decision log](docs/decisions.md) with
   the time — what was chosen, what was rejected and why.
 - **Phases:** the work went by [the roadmap](docs/roadmap.md); phases 1–8 have a spec and tasks in
-  `docs/features/<phase>/`, one task — one commit; since stage 3 of phase 1 — every stage went through a
-  branch and a PR (usually one PR per stage).
+  `docs/features/<phase>/`, one task — one commit; since stage 3 of phase 1 — every stage went
+  through a branch and a PR (usually one PR per stage).
 - **Review:** since the same stage each stage was reviewed by an independent `reviewer` agent with a
   clean context (`.claude/agents/reviewer.md`); its findings and the human's decisions on them are
   in the log.
