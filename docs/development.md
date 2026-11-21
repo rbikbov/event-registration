@@ -318,19 +318,19 @@ written to [decisions.md](decisions.md) in the same commit as the change.
 
 **Working time** — from October 28 to November 21, 2026 the session boundaries were marked in
 [decisions.md](decisions.md) with the lines `- **HH:MM** — ▶ session start` and
-`- **HH:MM** — ■ session end`; new sessions are not marked. `make worktime` sums the intervals. A session may cross midnight — the date is taken from the day
-heading above the marker. An unpaired marker gives a warning, not a silent zero; an unclosed
-session is not counted. A daylight saving change inside a session is not corrected. To cross-check
-— the time of the first and last commit of the day (`git log`).
+`- **HH:MM** — ■ session end`; new sessions are not marked. `make worktime` sums the intervals.
+A session may cross midnight — the date is taken from the day heading above the marker. An
+unpaired marker gives a warning, not a silent zero; an unclosed session is not counted. A daylight
+saving change inside a session is not corrected. To cross-check — the time of the first and last
+commit of the day (`git log`).
 
 **Progress** — [roadmap.md](roadmap.md): phases with a status and criteria, tasks with
 checkboxes. A task is checked in the same commit that does it.
 
 **Agent session export** — `make export-sessions` (`scripts/export-sessions.mjs`): each Claude
 Code session of this project (`~/.claude/projects/<project path, everything except letters and
-digits replaced with "-">/*.jsonl`) as text in a format close to `/export`, in `docs/session/` (git-ignored: the exports are raw
-transcripts and are not committed).
-The built-in `/export` exports only the current session, and opening an old one with `--resume`
+digits replaced with "-">/*.jsonl`) as text in a format close to `/export`, in `docs/session/`
+(git-ignored: the exports are raw transcripts and are not committed). The built-in `/export` exports only the current session, and opening an old one with `--resume`
 for the sake of an export appends to it. The sources are only read. As with `/export`, the
 model's thinking and subagent conversations are left out, as well as what the environment adds to
 a request: background task notifications, IDE context, the output of commands after `!` (the
