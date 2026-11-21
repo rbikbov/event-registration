@@ -1,8 +1,40 @@
 # Event registration
 
-A test assignment: an event registration service with a seat limit, a waitlist, tickets and
-check-in. Stack: Vue 3 + Vite, Django + DRF, PostgreSQL 17. All requirements of the assignment are
-done and covered by tests; what exactly works — [docs/features.md](docs/features.md).
+An event registration service — a seat limit, a waitlist, tickets with codes, check-in at the
+entrance, live counters — built together with an AI agent (Claude Code) in small, reviewed steps.
+Stack: Vue 3 + Vite, Django + DRF, PostgreSQL 17.
+
+## What works
+
+- **Participants** register for an event by email, without an account: one email — one seat; when
+  the seats run out — the waitlist with a position. The ticket page from the email link shows the
+  code and the status and lets them cancel; a cancellation gives the seat to the first one waiting.
+- **Emails** — the ticket, the waitlist, a seat after someone else cancelled, a reschedule, a
+  reminder a day before — go through the outbox and the worker to Mailpit.
+- **Organizers** (demo: `demo@example.com` / `demo`) create and edit events: a new date notifies the
+  participants, a higher limit gives seats to the waitlist, a limit below the confirmed count is not
+  accepted. The event panel has counters and a paged list of participants with a status filter;
+  tickets are checked in at the entrance by code, and a checked-in ticket cannot be cancelled.
+- **Live:** the panel counters and the free seats on the event page update in all open tabs; on a
+  break the panel shows "Connection lost, reconnecting…" and catches up after reconnecting.
+- **Screens:** a shared layout with a header, loading, error with a retry and "not found" states, a
+  bar when offline, event lists 20 per page with the "Upcoming" and "Past" tabs; every screen fits
+  a phone (360 px).
+
+## How it was built
+
+- **Decisions:** every choice made with the agent is in [the decision log](docs/decisions.md) with
+  the time — what was chosen, what was rejected and why.
+- **Phases:** the work went by [the roadmap](docs/roadmap.md); phases 1–8 have a spec and tasks in
+  `docs/features/<phase>/`, one task — one commit; since stage 3 of phase 1 — every stage went
+  through a branch and a PR (usually one PR per stage).
+- **Review:** since the same stage each stage was reviewed by an independent `reviewer` agent with a
+  clean context (`.claude/agents/reviewer.md`); its findings and the human's decisions on them are
+  in the log.
+- **Rules:** the agent works by `AGENTS.md` (in the root and in the folders), `docs/rules/`, its
+  skills in `.claude/skills/`, and hooks in `.claude/hooks/` that stop it from bypassing checks.
+
+The tools, the models and what was borrowed — [docs/ai-workflow.md](docs/ai-workflow.md).
 
 ## Running
 
@@ -16,8 +48,6 @@ make seed        # demo events with participants
 
 Open <http://localhost:5173>, emails are in Mailpit at <http://localhost:8025>. To stop —
 `make down`. Services, ports and development — [docs/development.md](docs/development.md).
-
-The interface and the emails are in English.
 
 ## What the tests prove
 
@@ -39,10 +69,10 @@ Linters, types, pytest, Vitest and Playwright run in CI on every PR (`make check
 Paths are from the repository root; `pytest` — `backend/`, `Vitest` — `frontend/src/`, e2e — `e2e/tests/`.
 That each test mentioned exists is checked by `make check-readme` (part of `make check`).
 
-The items of the assignment in its own words (`docs/task.md`); the general requirements and a detailed table for
-each behavior — [docs/requirements.md](docs/requirements.md).
+The items of [the original brief](docs/task.md) in its own words; the general requirements and a
+detailed table for each behavior — [docs/requirements.md](docs/requirements.md).
 
-| Requirement of the assignment                                                              | Test                                                                                                                                                                                                                                                             |
+| Requirement of the brief                                                                   | Test                                                                                                                                                                                                                                                             |
 | ------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | An event: description, date and time, seat limit                                           | `events/tests/test_org_events_api.py::test_create_makes_the_caller_the_organizer`, `::test_create_requires_all_main_fields`; e2e `organizer-creates-event.spec.ts`                                                                                               |
 | A participant registers by email                                                           | `registrations/tests/test_registration_api.py::test_register_returns_201_and_status_without_secrets`; e2e `participant-registers.spec.ts`                                                                                                                        |
@@ -74,9 +104,9 @@ What was postponed and what is needed to turn this into a product — [docs/road
 
 ## Documents
 
-- [The assignment](docs/task.md) and [the decision log with the time](docs/decisions.md)
+- [The original brief](docs/task.md) and [the decision log with the time](docs/decisions.md)
 - [How the system works](docs/architecture.md) and [the course of work by phases](docs/roadmap.md)
-- [How it was built with AI](docs/ai-workflow.md): Claude Code, the agent rules, review, session
-  export, what was borrowed
+- [How it was built with AI](docs/ai-workflow.md): Claude Code, the agent rules, review, what was
+  borrowed
 - `AGENTS.md` in the folders — rules for the agent; `CLAUDE.md` next to each is one line
   `@AGENTS.md`, because Claude Code reads only that file.

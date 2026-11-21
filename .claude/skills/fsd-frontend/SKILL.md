@@ -125,7 +125,7 @@ cache (except optimistic updates with a rollback).
 | Pure functions                             | Vitest, without mocks                                            | MUST for non-trivial logic |
 | A factory / a composable with dependencies | Vitest with fake `deps`                                          | MUST if there are deps     |
 | A component, a page                        | `@vue/test-utils` + MSW + a fresh `QueryClient` (`retry: false`) | SHOULD for user scenarios  |
-| The critical path                          | Playwright (`e2e/`)                                              | as the assignment requires |
+| The critical path                          | Playwright (`e2e/`)                                              | as the brief requires      |
 
 MUST: check the behavior through the slice's public API; replace dependencies through DI or MSW, not
 with `vi.mock` of our own modules. An example of a component test —

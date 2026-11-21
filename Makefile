@@ -39,6 +39,10 @@ install: ## Install all dependencies, the Playwright browser and git hooks
 	cd e2e && pnpm exec playwright install chromium
 	$(BACKEND) uv sync
 
+.PHONY: skills
+skills: ## Optional: third-party agent skills at the commits pinned in skills-lock.json
+	npx -y skills@1.9.0 experimental_install
+
 .PHONY: check
 check: format-check check-tooling check-readme check-ci check-backend check-frontend check-e2e ## Run all linters, type checks and tests
 
@@ -55,11 +59,11 @@ check-readme: ## README: every test the requirement tables point to exists
 	node scripts/check-readme-tests.mjs
 
 .PHONY: export-sessions
-export-sessions: ## Claude Code sessions of this project as text in docs/session (reads ~/.claude)
+export-sessions: ## Claude Code sessions of this project as text in docs/session, not committed (reads ~/.claude)
 	node scripts/export-sessions.mjs
 
 .PHONY: worktime
-worktime: ## Working time summed from session markers in docs/decisions.md
+worktime: ## Working time of the development summed from the session markers in docs/decisions.md
 	node scripts/worktime.mjs
 
 .PHONY: check-ci

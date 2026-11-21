@@ -1,11 +1,12 @@
 # Event registration — rules for the agent
 
-An event registration service (the assignment — [docs/task.md](docs/task.md)). A monorepo:
+An event registration service (the original brief — [docs/task.md](docs/task.md)). A monorepo:
 `backend/` — Django + DRF, `frontend/` — Vue 3, `e2e/` — Playwright. This file is read at the
 start of every session, so it holds only what is always needed. The details are in the folders'
 `AGENTS.md` (loaded when working in the folder) and in `docs/rules/`.
 
-Commands (`make help`), tools and what the hooks check — [docs/development.md](docs/development.md).
+Commands (`make help`), tools and checks — [docs/development.md](docs/development.md); skills and
+Claude Code hooks — [docs/ai-workflow.md](docs/ai-workflow.md).
 Before saying a task is done — `make stack-check` (that is `make check` on slot 1's Postgres in
 Docker; it needs network: `check-ci` checks the action tags against GitHub).
 
@@ -34,16 +35,14 @@ e2e/                  Playwright; rules — e2e/AGENTS.md
 Makefile              all commands (make help); docker-compose.yml — the services
 scripts/              repository scripts with tests: pre-push.mjs, worktime.mjs,
                       check-action-refs.mjs, check-readme-tests.mjs, export-sessions.mjs
-docs/task.md          the text of the assignment, translated from Russian — its meaning is not edited
+docs/task.md          the original brief — its meaning is not edited
 docs/decisions.md     the decision log with the time
 docs/development.md   the developer guide: setup, commands, checks, gotchas
-docs/features.md      what works (for the reviewer); docs/requirements.md — the general
-                      requirements and the detailed "requirement → test" table;
-                      docs/ai-workflow.md — how it was built with AI
+docs/requirements.md  the general requirements and the detailed "requirement → test" table
+docs/ai-workflow.md   how it was built with AI: tools, agent rules, skills, hooks
 docs/architecture.md  how the system works: model, API, realtime, emails; section status
 docs/roadmap.md       phases, statuses, criteria; the phases' specs and tasks — docs/features/<slug>/
 docs/rules/           rules by topic: db-migrations.md, concurrency.md
-docs/session/         raw exports of the agent sessions (in Russian) — not edited
 .claude/settings.json Claude Code hooks; the scripts — .claude/hooks/
 .claude/skills/       the agent's procedures (skills)
 ```
@@ -58,7 +57,8 @@ docs/session/         raw exports of the agent sessions (in Russian) — not edi
 4. Three failed attempts to fix the same thing — stop and describe to the human what was tried and
    what the hypothesis is.
 5. A new command, tool, check or environment gotcha — into
-   [docs/development.md](docs/development.md) in the same commit.
+   [docs/development.md](docs/development.md) in the same commit; a skill or a Claude Code hook —
+   into [docs/ai-workflow.md](docs/ai-workflow.md).
 6. A phase stage is not done until the `reviewer` agent has gone through it and the human has gone
    through its findings. How to hand it over — the `feature-workflow` skill, "Review".
 
@@ -75,14 +75,6 @@ docs/session/         raw exports of the agent sessions (in Russian) — not edi
 - State the rejected options and the reason, if they were discussed.
 - Past entries are not rewritten; if a decision changed — a new entry with a reference to the old
   one ("cancels the decision of HH:MM").
-
-## Working time accounting
-
-- At the start of a session (including after `/clear`) — the entry `- **HH:MM** — ▶ session start`
-  in [docs/decisions.md](docs/decisions.md), in the last commit of the session —
-  `- **HH:MM** — ■ session end`. The time is from `date`. The sum — `make worktime`.
-- If the previous session was left without `■`, close it with the time of the last commit and tell
-  the human.
 
 ## Small commits
 
@@ -103,9 +95,7 @@ docs/session/         raw exports of the agent sessions (in Russian) — not edi
 
 ## Language
 
-- Documentation (`README.md`, `docs/`, `AGENTS.md`) — in English. Except `docs/session/` (raw
-  session exports): it stays in Russian. `docs/task.md` is a translation of the assignment; the
-  Russian original is in the git history and in `rbikbov/event-registration-original`.
+- Documentation (`README.md`, `docs/`, `AGENTS.md`) — in English.
 - Code (identifiers, comments, log strings) and commit messages — in English.
 - The interface texts and the emails — in English (`frontend/AGENTS.md`, rule 5;
   `backend/emails/templates/emails/`).
@@ -117,7 +107,7 @@ docs/session/         raw exports of the agent sessions (in Russian) — not edi
 | `session-handoff`  | the start and end of a session, after a roadmap task, closing a phase                               |
 | `feature-workflow` | the start of a roadmap phase: spec → tasks → tracer bullet → test first → review → browser          |
 | `fsd-frontend`     | frontend code: layers, connecting slices, state, errors, tests                                      |
-| `anti-slop-review` | before committing a large change and before the delivery: junk and unbacked claims                  |
+| `anti-slop-review` | before committing a large change and before a demo or a release: junk and unbacked claims           |
 | `api-change`       | an API change: serializer, view or URL → test → `openapi.yaml` → frontend types → call              |
 | `reviewer` agent   | an independent review of a stage or a phase with a clean context; without subagents — a new session |
 

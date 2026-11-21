@@ -1,7 +1,7 @@
 # Requirements and tests: in full
 
-The main table by the items of the assignment is in the [README](../README.md#requirements-and-tests);
-here are the general requirements of the assignment and a detailed table for each behavior.
+The main table by the items of the brief is in the [README](../README.md#requirements-and-tests);
+here are the general requirements of the brief and a detailed table for each behavior.
 
 ## Requirements and tests
 
@@ -17,13 +17,13 @@ That each test mentioned exists is checked by `make check-readme` (part of `make
 | 3. Frontend: Vue or React                                     | Vue 3 + Vite, `frontend/`                                                                                                                                                                                                     |
 | 4. A relational DBMS, preferably PostgreSQL                   | PostgreSQL 17; the race locks and `LISTEN/NOTIFY` rely on it — `docs/rules/concurrency.md`                                                                                                                                    |
 | 5. Accounts and login                                         | the organizer — email and password, a Django session; a participant — no account: an email and a link to the ticket; `accounts/tests/test_auth_api.py::test_login_returns_user_and_starts_session`                            |
-| 6. Prompts or a decision log                                  | `docs/decisions.md` with the time; the agent's rules and procedures — `AGENTS.md`, `.claude/skills/`; session export — [How it was built with AI](ai-workflow.md)                                                             |
+| 6. Prompts or a decision log                                  | `docs/decisions.md` with the time; the agent's rules and procedures — `AGENTS.md`, `.claude/skills/`; the session exports — in the git history, [How it was built with AI](ai-workflow.md)                                    |
 | 7. Use of AI agents                                           | [How it was built with AI](ai-workflow.md)                                                                                                                                                                                    |
 | 8. Prerequisites                                              | [Running](../README.md#running): Docker with Compose and `make`                                                                                                                                                               |
 | 9. A quick local start                                        | `make up` — the whole stack in Docker; CI starts it the same way (`.github/workflows/ci.yml`, the `e2e` job)                                                                                                                  |
 | 10. External services are stubs                               | email — Mailpit (an SMTP trap), emails do not go out                                                                                                                                                                          |
 | 11. Works with two open clients                               | e2e with two browser contexts: `registration-updates-open-pages.spec.ts`, `organizer-sees-arrivals-live.spec.ts`, `two-participants-last-seat.spec.ts`, `organizer-checks-in.spec.ts` («one code at two entrances at once …») |
-| 12. An honest description of the state                        | [What works](features.md) and [What's next](roadmap.md#whats-next)                                                                                                                                                            |
+| 12. An honest description of the state                        | [What works](../README.md#what-works) and [What's next](roadmap.md#whats-next)                                                                                                                                                |
 | 13. Provability                                               | the tables of the README and of this file; `make check` (linters, types, pytest, Vitest) and `make e2e` — in CI on every PR                                                                                                   |
 
 ### In detail
