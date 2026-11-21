@@ -35,10 +35,10 @@ The work went from October 28 to November 4, 2026, in sessions. Each session is 
 translation and cleanup of November 20–21 — 65 h 11 min in all. The markers were introduced on the
 evening of October 29, earlier sessions are marked retroactively by commit times (such entries are
 labeled). The sum is approximate: the markers were put by hand and do not match the agent's sessions
-one to one, and an end on November 3 has no start, so that session is not counted. After November 21
-the sessions are not marked. Phase stages are separate branches and PRs since stage 3 of phase 1 (PR
-#1); since then each stage also gets an independent review by the `reviewer` agent, since PR #7 in a
-separate copy of the repository and its own stack. Commits are small steps, one per task.
+one to one. After November 21 the sessions are not marked. Phase stages are separate branches and
+PRs since stage 3 of phase 1 (PR #1); since then each stage also gets an independent review by the
+`reviewer` agent, since PR #7 in a separate copy of the repository and its own stack. Commits are
+small steps, one per task.
 
 ## Skills and hooks
 
